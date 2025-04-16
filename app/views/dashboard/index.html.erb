@@ -1,2 +1,7 @@
-<h1>Something is Cooking</h1>
-<p><%= link_to 'Log out', destroy_user_session_path, method: :delete %></p>
+<div style="display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; flex-direction: column;">
+    <h1>
+    Hold on! We are building something special for you.
+    </h1>
+    <br>
+    <p><%= link_to 'Log out', destroy_user_session_path, method: :delete, class: 'login-button', style: 'text-decoration: none;'%></p>
+</div>

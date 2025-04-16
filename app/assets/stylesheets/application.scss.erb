@@ -1,0 +1,40 @@
+@import 'devise.scss';
+.flash-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .flash-message {
+    padding: 12px 18px;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    font-size: 0.95rem;
+    color: white;
+    animation: slideIn 0.3s ease-out;
+    min-width: 250px;
+    max-width: 300px;
+  }
+  
+  .flash-message.notice {
+    background-color: #1c64f2;
+  }
+  
+  .flash-message.alert {
+    background-color: #f44336;
+  }
+  
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateX(100%);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }

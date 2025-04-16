@@ -10,12 +10,26 @@
   </head>
 
   <body>
-    <% if notice %>
-      <p class="notice"><%= notice %></p>
-    <% end %>
-    <% if alert %>
-      <p class="alert"><%= alert %></p>
-    <% end %>
+    <div class="flash-container">
+      <% flash.each do |key, message| %>
+        <div class="flash-message <%= key %>">
+          <%= message %>
+        </div>
+      <% end %>
+    </div>
+
     <%= yield %>
   </body>
 </html>
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    setTimeout(() => {
+      document.querySelectorAll('.flash-message').forEach(el => {
+        el.style.opacity = '0';
+        el.style.transition = 'opacity 0.5s ease';
+        setTimeout(() => el.remove(), 500);
+      });
+    }, 4000);
+  });
+</script>

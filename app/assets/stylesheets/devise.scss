@@ -1,0 +1,147 @@
+body {
+    background-color: #f2f2f2;
+    font-family: 'Helvetica Neue', sans-serif;
+  }
+  
+  .login-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+  }
+  
+  .login-box {
+    background-color: white;
+    padding: 3rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    width: 22.5rem;
+    margin-bottom: 10rem;
+    padding-right: 4.5rem;
+    padding-top: 2rem;
+  }
+  
+  .login-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 2rem;
+    margin-top: 1rem;
+  }
+  
+  .logo {
+    font-size: 2rem;
+    color: #1c64f2;
+    background-color: #d9eaff;
+    border-radius: 50%;
+    width: 45px;
+    height: 45px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    margin-right: 10px;
+    text-transform: uppercase;
+  }
+  
+  .login-header h1 {
+    font-size: 1.4rem;
+    margin: 0;
+    line-height: 1.2rem;
+  }
+  
+  .login-header h1 span {
+    color: #888;
+    font-weight: normal;
+  }
+  
+  h2 {
+    font-size: 1.1rem;
+    margin-bottom: 1.5rem;
+    color: #333;
+  }
+  
+  .field {
+    margin-bottom: 1rem;
+  }
+  
+  .input-field {
+    width: 100%;
+    padding: 10px;
+    font-size: 0.95rem;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+  }
+  
+  .remember-me {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+  
+  .actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 2rem;
+  }
+  
+  .login-button {
+    background-color: #1c64f2;
+    border: none;
+    color: white;
+    padding: 10px 18px;
+    border-radius: 4px;
+    width: 37%;
+    cursor: pointer;
+    text-decoration: none !important;
+  }
+  
+  .forgot {
+    color: #666;
+    font-size: 0.9rem;
+  }
+  
+  .linkedin-signin {
+    margin-top: 1.5rem;
+    text-align: center;
+  }
+  
+  .linkedin-btn {
+    background-color: white;
+    border: 1px solid #ddd;
+    padding: 10px;
+    width: 100%;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  
+  .linkedin-btn img {
+    height: 20px;
+  }
+
+  .bottom-signup {
+    text-align: right;
+    margin-right: -2.5rem;
+    margin-top: 15px;
+    font-size: 0.9rem;
+    color: #555;
+    margin-bottom: -1.5rem;
+  }
+  
+  .bottom-signup a {
+    color: #1c64f2;
+    text-decoration: none;
+    font-weight: 500;
+    margin-left: 5px;
+  }
+  
+  .bottom-signup a:hover {
+    text-decoration: underline;
+  }
+  
+  
