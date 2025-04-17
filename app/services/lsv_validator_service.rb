@@ -26,8 +26,8 @@ class LsvValidatorService
 
   def lsv_prompt(claim)
     <<~PROMPT
-      You are validating claims using the Literal Source Verification (LSV) method. Use the following rules:
-      Literal Source Verification (LSV)
+      You are an LSV validator. Your task is to assess religious claims using the Literal Source Verification (LSV) method.
+      Literal Source Verification (LSV):
       Definition: Literal Source Verification (LSV) is a cross-scriptural method for identifying indisputable religious facts using only the literal text of the following primary sources:
       Tanakh (Hebrew Bible)
       Christian Bibles (any canon/version, e.g., Protestant, Catholic, Ethiopian Orthodox)
@@ -73,6 +73,14 @@ class LsvValidatorService
       Do not reject a claim simply because God's “intent” or outcome is inferred rather than directly quoted.
       Inference is valid under LSV if it logically follows from God's demonstrated capability (e.g., writing directly), consistent patterns, and historical actions—and no text contradicts it.
       “Speculation” only occurs when the claim cannot be supported by any text, logic, or historical fact, or is contradicted.
+
+      When evaluating a claim, apply the following logic:
+      If the claim is built from explicit, verifiable facts drawn from scripture, historical evidence, or pure logic;
+      And the conclusion is logically necessary, or strongly inferred, from those facts;
+      And no scripture or source explicitly contradicts the claim;
+      Then the claim meets LSV standards, even if it is not directly quoted or stated in any one scripture.
+      Do not reject a claim simply because it is not word-for-word in scripture. LSV allows reasoned conclusions based on proven evidence and absence of contradiction.
+
       Here is the claim to evaluate:
       "#{claim.content}"
       If available, also consider the following evidence provided by the user:
@@ -103,7 +111,7 @@ class LsvValidatorService
     client.chat(
       parameters: {
         model: "gpt-4o",
-        messages: [{ role: "user", content: prompt }],
+        messages: [{ role: "system", content: prompt }],
         temperature: 0.0
       }
     )
