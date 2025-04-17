@@ -1,4 +1,8 @@
-@import 'devise.scss';
+@import 'components/devise.scss';
+@import 'components/dashboard.scss';
+@import 'components/claims.scss';
+
+
 .flash-container {
     position: fixed;
     bottom: 20px;

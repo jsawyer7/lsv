@@ -1,0 +1,25 @@
+<div class="validator-container">
+  <div class="validator-box">
+    <div class="validator-header">
+      <div class="logo">LV</div>
+      <h1>Literal Source Verifier<br><span>Claim Validator</span></h1>
+    </div>
+
+    <%= form_with(model: @claim, local: true) do |f| %>
+      <div class="field">
+        <h2>🧾 Step 1: Enter Your Claim</h2>
+        <%= f.text_area :content, class: "input-field", placeholder: "Claim: Jesus is not God..." %>
+      </div>
+
+      <div class="field">
+        <h2>📜 Step 2: Enter Your Evidence</h2>
+        <%= f.text_area :evidence, class: "input-field", placeholder: "- 1 Timothy 2:5 — 'One mediator...'" %>
+      </div>
+
+      <div class="actions">
+        <%= f.submit "Run LSV Validation", class: "validator-button" %>
+        <%= link_to "← Back to Dashboard", root_path, class: "back-button" %>
+      </div>
+    <% end %>
+  </div>
+</div>

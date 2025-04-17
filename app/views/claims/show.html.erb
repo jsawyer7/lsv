@@ -1,0 +1,19 @@
+<div class="validator-container">
+  <div class="validator-box">
+    <div class="validator-header">
+      <div class="logo">LV</div>
+      <h1>Claim Result<br><span><%= @claim.result %></span></h1>
+    </div>
+
+    <div class="result-body">
+      <p><strong>Claim:</strong><br><%= @claim.content %></p>
+      <p><strong>Evidence:</strong><br><%= simple_format(@claim.evidence) %></p>
+      <p><strong>AI Reasoning:</strong><br><%= simple_format(@claim.reasoning) %></p>
+    </div>
+
+    <div class="actions">
+      <%= link_to "Submit Another Claim", new_claim_path, class: "validator-button" %>
+      <%= link_to "← Back to Dashboard", root_path, class: "back-button" %>
+    </div>
+  </div>
+</div>

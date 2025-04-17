@@ -1,7 +1,25 @@
-<div style="display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; flex-direction: column;">
-    <h1>
-    Hold on! We are building something special for you.
-    </h1>
-    <br>
-    <p><%= link_to 'Log out', destroy_user_session_path, method: :delete, class: 'login-button', style: 'text-decoration: none;'%></p>
+<div class="dashboard-container">
+  <div class="top-right">
+    <%= link_to 'Log out', destroy_user_session_path, method: :delete, class: 'logout-button' %>
+  </div>
+
+  <div class="dashboard-header">
+    <h1>Welcome to Literal Source Verification</h1>
+    <%= link_to "➕ New Claim", new_claim_path, class: "new-claim-button" %>
+    <p>Your Recent Claims</p>
+  </div>
+
+  <% if @claims.any? %>
+    <div class="claims-list">
+      <% @claims.each do |claim| %>
+        <div class="claim-card">
+          <h3><%= truncate(claim.content, length: 100) %></h3>
+          <p><strong>Status:</strong> <%= claim.result %></p>
+          <%= link_to "View Full Claim", claim_path(claim), class: "view-button" %>
+        </div>
+      <% end %>
+    </div>
+  <% else %>
+    <p class="no-claims">You haven’t submitted any claims yet.</p>
+  <% end %>
 </div>
