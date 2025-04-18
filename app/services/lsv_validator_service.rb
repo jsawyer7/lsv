@@ -83,9 +83,13 @@ class LsvValidatorService
 
       Here is the claim to evaluate:
       "#{claim.content}"
-      If available, also consider the following evidence provided by the user:
+      If available, also consider the following evidence to claim provided by the user:
       "#{claim.evidence}"
       Is this claim 100% accurate under the LSV guidelines?
+      if claim.contains_explicit_source_scope:
+      validate_only_within_that_source()
+      else:
+      require_consistency_across_all_sources()
 
       Respond strictly in valid JSON format:
 
