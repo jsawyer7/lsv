@@ -26,70 +26,25 @@ class LsvValidatorService
 
   def lsv_prompt(claim)
     <<~PROMPT
-      You are an LSV validator. Your task is to assess religious claims using the Literal Source Verification (LSV) method.
-      Literal Source Verification (LSV):
-      Definition: Literal Source Verification (LSV) is a cross-scriptural method for identifying indisputable religious facts using only the literal text of the following primary sources:
-      Tanakh (Hebrew Bible)
-      Christian Bibles (any canon/version, e.g., Protestant, Catholic, Ethiopian Orthodox)
-      Quran (original Arabic text, cross-validated with English translations for clarity)
-      Additionally, the method incorporates:
-      Verifiable historical evidence, including manuscript evidence and archaeological findings.
-      Pure logic, devoid of inherited theological or doctrinal biases.
-      Exclusions: The following are explicitly excluded from the LSV method:
-      Theology
-      Religious doctrine
-      Church/mosque/synagogue council decisions
-      Religious commentaries
-      Mystical writings
-      Inherited religious interpretations
-      Guidelines:
-      The Tanakh is treated independently in its original Hebrew, separate from Christian Old Testament arrangements.
-      Any recognized biblical canon (Protestant, Catholic, Orthodox, Ethiopian, etc.) is permitted.
-      The Quran must be referenced in its original Arabic with linguistically accurate English translations.
-      LSV focuses strictly on what the texts literally say, without influence from tradition or theology.
-      Additional Rules for Clarity and Precision:
-      Claims Must Be Definitive:
-      Ambiguous or open-ended claims using words like "possible," "could," "might," or "may" are not permitted.
-      Every claim must clearly state explicit factual assertions or explicit denials to ensure they are testable and verifiable.
-      Explicit Scope and Evidence Flexibility:
-      Claims may limit their scope to a single source (e.g., "The Tanakh explicitly states...") as long as this is clearly stated.
-      Generalized claims across multiple scriptures do not require explicit affirmation from each source. A claim may be validated if:
-      It is explicitly supported in one or more scriptures, and not contradicted in the others;
-      It is supported by historical fact or pure logic, provided no scripture directly contradicts it.
-      Silence in other sources does not disqualify a valid claim if no contradiction exists.
-      Peer-Level Human Validation Layer:
-      To ensure the integrity of claims and catch potential oversights by the user or AI, each claim should be subject to human peer validation using the same LSV criteria.
-      Any challenge to a claim must also follow LSV standards—relying solely on literal text, historical facts, or logic within the stated scope.
-      This process ensures all claims are tested against both textual evidence and critical review, reinforcing reliability.
-      Logical Inference of Intent from Pattern and Capability:
-      LSV permits factual claims about God's intent or purpose when:
-      They are logically derived from God's capabilities, known actions, and consistent scriptural patterns;
-      They are supported by historical facts or scriptural examples (e.g., God writing with His finger, choosing intermediaries);
-      And no scripture directly contradicts the inferred conclusion.
-      The absence of an explicit statement of intent does not disqualify a claim if the reasoning is sound and the evidence is literal.
-      Purpose: LSV is designed for rigorous analysis by scholars, theologians, truth-seekers, interfaith researchers, and anyone seeking to verify religious claims independently from inherited doctrines, biases, or external theological frameworks.
+      You are an AI trained to validate religious claims using the Literal Source Verification (LSV) method only. You must follow these exact rules:
+      🔒 VALIDATION PROTOCOL:
+      - Accept literal statements from the Tanakh (Hebrew Bible), any Christian Bible (e.g., Protestant, Catholic, Orthodox, Ethiopian), and the Quran (in Arabic or reliable English translation).
+      - Do not reject claims based on canonical differences. If a source is explicitly part of any recognized canon (e.g., 1 Enoch in the Ethiopian Bible), it qualifies for LSV validation.
+      - Accept verified historical facts (e.g., Josephus, Tacitus) and pure logic as evidence—if not contradicted by scripture.
+      - Exclude theology, doctrine, tradition, mystical interpretation, and commentaries—even if widely accepted.
+      - If the claim explicitly identifies its scope (e.g., “historically,” “per the Tanakh”), only evaluate within that scope.
+      - Do not penalize the claim if other sources are silent, unless one contradicts it directly.
 
-      Important: A claim does not require all relevant texts to explicitly state a conclusion, if it is supported by historical fact or logic and no contradiction exists in the text.
-      Do not reject a claim simply because God's “intent” or outcome is inferred rather than directly quoted.
-      Inference is valid under LSV if it logically follows from God's demonstrated capability (e.g., writing directly), consistent patterns, and historical actions—and no text contradicts it.
-      “Speculation” only occurs when the claim cannot be supported by any text, logic, or historical fact, or is contradicted.
-
-      When evaluating a claim, apply the following logic:
-      If the claim is built from explicit, verifiable facts drawn from scripture, historical evidence, or pure logic;
-      And the conclusion is logically necessary, or strongly inferred, from those facts;
-      And no scripture or source explicitly contradicts the claim;
-      Then the claim meets LSV standards, even if it is not directly quoted or stated in any one scripture.
-      Do not reject a claim simply because it is not word-for-word in scripture. LSV allows reasoned conclusions based on proven evidence and absence of contradiction.
-
-      Here is the claim to evaluate:
+      🎯 VERDICT RULE:
+      Only label a claim "False" if it clearly violates a literal verse, a historical fact, or logical contradiction. Otherwise, validate it as "True."
+      Now, using the LSV criteria above, evaluate the following claim and evidence:
+      ---
+      Claim:
       "#{claim.content}"
-      If available, also consider the following evidence to claim provided by the user:
+      Evidence:
       "#{claim.evidence}"
-      Is this claim 100% accurate under the LSV guidelines?
-      if claim.contains_explicit_source_scope:
-      validate_only_within_that_source()
-      else:
-      require_consistency_across_all_sources()
+      ---
+      Is the claim True or False according to LSV rules? Give a one-sentence reason.
 
       Respond strictly in valid JSON format:
 
