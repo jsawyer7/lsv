@@ -1,0 +1,29 @@
+<div class="claims-container">
+  <div class="claims-header">
+    <h1>Verified Claims</h1>
+    <%= link_to "Submit New Claim", new_claim_path, class: "btn-primary" %>
+  </div>
+
+  <div class="claims-grid">
+    <% @claims.each do |claim| %>
+      <div class="claim-card">
+        <div class="claim-content">
+          <p class="claim-text"><%= claim.content %></p>
+          <span class="badge badge-<%= claim_status_class(claim.result) %>">
+            <%= claim.result %>
+          </span>
+        </div>
+        <div class="claim-actions">
+          <%= link_to "View Details", claim_path(claim), class: "view-link" %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+  <% if @claims.empty? %>
+    <div class="empty-state">
+      <p>No claims have been submitted yet.</p>
+      <%= link_to "Submit Your First Claim", new_claim_path, class: "btn-primary" %>
+    </div>
+  <% end %>
+</div> 

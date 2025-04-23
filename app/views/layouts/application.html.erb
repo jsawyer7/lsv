@@ -2,11 +2,33 @@
 <html>
   <head>
     <title>LiteralVerification</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
 
-    <%= stylesheet_link_tag 'application', media: 'all', 'data-turbo-track': 'reload' %>
+    <%# SF Pro Font %>
+    <link rel="stylesheet" href="https://fonts.cdnfonts.com/css/sf-pro-display">
+    
+    <%# Font Awesome %>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <%= stylesheet_link_tag "application", media: "all", "data-turbo-track": "reload" %>
     <%= javascript_importmap_tags %>
+
+    <%# Force reload styles in development %>
+    <% if Rails.env.development? %>
+      <script>
+        document.addEventListener('DOMContentLoaded', () => {
+          const timestamp = new Date().getTime();
+          const styleSheets = document.querySelectorAll('link[rel="stylesheet"]');
+          styleSheets.forEach(link => {
+            if (link.href.includes('assets')) {
+              link.href = `${link.href}?t=${timestamp}`;
+            }
+          });
+        });
+      </script>
+    <% end %>
   </head>
 
   <body>

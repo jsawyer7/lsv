@@ -1,44 +1,147 @@
-@import 'components/devise.scss';
-@import 'components/dashboard.scss';
-@import 'components/claims.scss';
+// Typography
+$font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+$font-weights: (
+  "regular": 400,
+  "medium": 500,
+  "semibold": 600,
+  "bold": 700
+);
 
+// Colors
+$color-text: #0B0146; // Dark indigo used for headings
+$color-body: #5A5A89; // Lighter shade used for body text
+
+// Primary Color
+$color-primary-main: #346FCF;
+
+// Secondary Colors
+$color-secondary-dark: #2C2E3E;
+$color-secondary-blue: #2563C7;
+$color-secondary-light-purple: #D9DBE9;
+$color-secondary-white: #FFFFFF;
+
+// Neutral Colors
+$color-neutral-800: #A7AABC;
+$color-neutral-700: #434656;
+$color-neutral-600: #6E7191;
+$color-neutral-500: #A0A3BD;
+$color-neutral-400: #F7F9FF;
+
+// Global styles
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: $font-family;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+// Import component styles after variables are defined
+@import 'components/logo';
+@import 'components/devise';
+@import 'components/dashboard';
+@import 'components/claims';
+@import 'components/home';
+
+// Headings
+h1, .heading-h1 {
+  font-family: $font-family;
+  font-size: 60px;
+  line-height: 70px;
+  font-weight: map-get($font-weights, "bold");
+  color: $color-text;
+}
+
+h2, .heading-h2 {
+  font-family: $font-family;
+  font-size: 40px;
+  line-height: 48px;
+  font-weight: map-get($font-weights, "bold");
+  color: $color-text;
+}
+
+h3, .heading-h3 {
+  font-family: $font-family;
+  font-size: 32px;
+  line-height: 40px;
+  font-weight: map-get($font-weights, "bold");
+  color: $color-text;
+}
+
+h4, .heading-h4 {
+  font-family: $font-family;
+  font-size: 24px;
+  line-height: 28px;
+  font-weight: map-get($font-weights, "semibold");
+  color: $color-text;
+}
+
+// Body text
+.body-large {
+  font-family: $font-family;
+  font-size: 24px;
+  line-height: 38px;
+  font-weight: map-get($font-weights, "regular");
+  color: $color-body;
+}
+
+.body-default {
+  font-family: $font-family;
+  font-size: 18px;
+  line-height: 30px;
+  font-weight: map-get($font-weights, "regular");
+  color: $color-body;
+}
+
+.body-small {
+  font-family: $font-family;
+  font-size: 14px;
+  line-height: 24px;
+  font-weight: map-get($font-weights, "regular");
+  color: $color-body;
+}
 
 .flash-container {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    z-index: 1000;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.flash-message {
+  padding: 12px 18px;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+  font-size: 0.95rem;
+  color: white;
+  animation: slideIn 0.3s ease-out;
+  min-width: 250px;
+  max-width: 300px;
+}
+
+.flash-message.notice {
+  background-color: #1c64f2;
+}
+
+.flash-message.alert {
+  background-color: #f44336;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
   }
-  
-  .flash-message {
-    padding: 12px 18px;
-    border-radius: 8px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
-    font-size: 0.95rem;
-    color: white;
-    animation: slideIn 0.3s ease-out;
-    min-width: 250px;
-    max-width: 300px;
+  to {
+    opacity: 1;
+    transform: translateX(0);
   }
-  
-  .flash-message.notice {
-    background-color: #1c64f2;
-  }
-  
-  .flash-message.alert {
-    background-color: #f44336;
-  }
-  
-  @keyframes slideIn {
-    from {
-      opacity: 0;
-      transform: translateX(100%);
-    }
-    to {
-      opacity: 1;
-      transform: translateX(0);
-    }
-  }
+}

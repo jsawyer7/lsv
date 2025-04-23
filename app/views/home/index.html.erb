@@ -1,0 +1,183 @@
+<%# Hero Section %>
+<div class="hero-section">
+  <div class="nav-container">
+    <div class="logo">
+      <%= link_to root_path do %>
+        <h3>Verifaith</h3>
+      <% end %>
+    </div>
+    <div class="nav-buttons">
+      <%= link_to "Sign In", new_user_session_path, class: "btn-secondary" %>
+      <%= link_to "Get Started", new_user_registration_path, class: "btn-primary" %>
+    </div>
+  </div>
+
+  <div class="main-content">
+    <div class="floating-avatars">
+      <div class="avatar avatar-1">
+        <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="18" cy="18" r="18" fill="#E1F2FF"/>
+          <circle cx="18" cy="15" r="6" fill="#1E88E5"/>
+          <path d="M8 30C8 25.5817 11.5817 22 16 22H20C24.4183 22 28 25.5817 28 30V32H8V30Z" fill="#1E88E5"/>
+        </svg>
+      </div>
+      <div class="avatar avatar-2">
+        <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="18" cy="18" r="18" fill="#FFE1E1"/>
+          <circle cx="18" cy="15" r="6" fill="#FF6B6B"/>
+          <path d="M8 30C8 25.5817 11.5817 22 16 22H20C24.4183 22 28 25.5817 28 30V32H8V30Z" fill="#FF6B6B"/>
+        </svg>
+      </div>
+      <div class="avatar avatar-3">
+        <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="18" cy="18" r="18" fill="#E1FFE4"/>
+          <circle cx="18" cy="15" r="6" fill="#4CAF50"/>
+          <path d="M8 30C8 25.5817 11.5817 22 16 22H20C24.4183 22 28 25.5817 28 30V32H8V30Z" fill="#4CAF50"/>
+        </svg>
+      </div>
+      <div class="avatar avatar-4">
+        <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="18" cy="18" r="18" fill="#F2E1FF"/>
+          <circle cx="18" cy="15" r="6" fill="#9C27B0"/>
+          <path d="M8 30C8 25.5817 11.5817 22 16 22H20C24.4183 22 28 25.5817 28 30V32H8V30Z" fill="#9C27B0"/>
+        </svg>
+      </div>
+      <div class="avatar avatar-5">
+        <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="18" cy="18" r="18" fill="#FFF3E1"/>
+          <circle cx="18" cy="15" r="6" fill="#FF9800"/>
+          <path d="M8 30C8 25.5817 11.5817 22 16 22H20C24.4183 22 28 25.5817 28 30V32H8V30Z" fill="#FF9800"/>
+        </svg>
+      </div>
+      <div class="avatar avatar-6">
+        <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="18" cy="18" r="18" fill="#E1F5FF"/>
+          <circle cx="18" cy="15" r="6" fill="#00BCD4"/>
+          <path d="M8 30C8 25.5817 11.5817 22 16 22H20C24.4183 22 28 25.5817 28 30V32H8V30Z" fill="#00BCD4"/>
+        </svg>
+      </div>
+    </div>
+
+    <h1>Faith Deserve Facts</h1>
+    <p class="body-large">Discover and follow theological leaders who build on verifiable claims, not assumptions.</p>
+    
+    <div class="cta-buttons">
+      <%= link_to "Explore Verified Facts", claims_path, class: "btn-primary" %>
+      <button class="btn-watch">
+        <div class="play-circle">
+          <i class="fas fa-play"></i>
+        </div>
+        Watch How It Works
+      </button>
+    </div>
+  </div>
+</div>
+
+<%# Core Functionality Section %>
+<div class="core-functionality">
+  <h2>Core Functionality</h2>
+  
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="icon">
+        <i class="fas fa-paper-plane"></i>
+      </div>
+      <h4>Submit a Claim</h4>
+      <p class="body-small">With Scriptural, historical, or logical evidence.</p>
+    </div>
+
+    <div class="feature-card">
+      <div class="icon">
+        <i class="fas fa-check-circle"></i>
+      </div>
+      <h4>Verified by AI + Peers</h4>
+      <p class="body-small">Claim becomes a Fact after dual validation.</p>
+    </div>
+
+    <div class="feature-card">
+      <div class="icon">
+        <i class="fas fa-book-reader"></i>
+      </div>
+      <h4>Follow Interpretive Theories</h4>
+      <p class="body-small">Explore frameworks built only on confirmed Facts.</p>
+    </div>
+  </div>
+</div>
+
+<%# Featured Claims Section %>
+<div class="featured-claims">
+  <h2>Featured Claims</h2>
+  
+  <div class="claims-grid">
+    <div class="claim-card">
+      <p class="claim-text">Muhammad is the messenger of God</p>
+      <span class="badge badge-success">Fact</span>
+    </div>
+
+    <div class="claim-card">
+      <p class="claim-text">Jesus was not crucified</p>
+      <span class="badge badge-neutral">Claim</span>
+    </div>
+
+    <div class="claim-card">
+      <p class="claim-text">The earth is flat</p>
+      <span class="badge badge-danger">False</span>
+    </div>
+  </div>
+</div>
+
+<%# LSV Section %>
+<div class="lsv-section">
+  <h2>What Is LSV?</h2>
+  <p class="body-large">Literal Source Verification is a method to identify indisputable religious facts using only scripture, history and logic.</p>
+  <%= link_to "Learn About LSV", "#", class: "btn-primary" %>
+</div>
+
+<%# Join Movement Section %>
+<div class="join-movement">
+  <div class="content">
+    <h2>Join The Movement Of Verified Faith</h2>
+    <p class="body-large">Become a part of a community dedicated to promoting truth and authenticity in faith through verified evidence-based claims.</p>
+    <%= link_to "Become a Verified Leader", "#", class: "btn-secondary" %>
+  </div>
+</div>
+
+<%# Footer %>
+<footer class="site-footer">
+  <div class="footer-content">
+    <div class="footer-brand">
+      <h3>Verifaith</h3>
+      <p class="body-small">Unbiased, educational insights into the world's faiths and philosophies.</p>
+      <div class="social-links">
+        <a href="#"><i class="fab fa-github"></i></a>
+        <a href="#"><i class="fab fa-twitter"></i></a>
+        <a href="#"><i class="fab fa-linkedin"></i></a>
+        <a href="#"><i class="fab fa-youtube"></i></a>
+      </div>
+    </div>
+
+    <div class="footer-links">
+      <div class="link-column">
+        <h4>Useful Links</h4>
+        <ul>
+          <li><%= link_to "About Us", "#" %></li>
+          <li><%= link_to "How It Works", "#" %></li>
+          <li><%= link_to "Contact Us", "#" %></li>
+          <li><%= link_to "Onboard Company", "#" %></li>
+        </ul>
+      </div>
+
+      <div class="link-column">
+        <h4>Company</h4>
+        <ul>
+          <li><%= link_to "Newsletters", "#" %></li>
+          <li><%= link_to "Get in Touch", "#" %></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-bottom">
+    <p class="body-small">All rights reserved 2025</p>
+  </div>
+</footer>

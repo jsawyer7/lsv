@@ -1,0 +1,46 @@
+// Logo component styles
+.logo {
+  font-size: 2rem;
+  color: $color-primary-main;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: bold;
+  margin-right: 10px;
+  a {
+    text-decoration: none;
+  }
+
+  // Variants
+  &--large {
+    width: 60px;
+    height: 60px;
+    font-size: 2.5rem;
+  }
+
+  &--small {
+    width: 35px;
+    height: 35px;
+    font-size: 1.5rem;
+  }
+
+  // Context-specific styles
+  .login-header & {
+    color: $color-primary-main;
+  }
+
+  .validator-header & {
+    color: $color-primary-main;
+  }
+
+  .nav-container & {
+    margin: 0;
+    
+    h3 {
+      font-size: 3rem !important;
+      color: $color-primary-main;
+      margin: 0;
+      font-size: 28px;
+    }
+  }
+} 

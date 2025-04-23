@@ -15,5 +15,15 @@ module LiteralVerification
     # Application configuration can go into files in config/initializers
     # -- all .rb files in that directory are automatically loaded after loading
     # the framework and any gems in your application.
+    
+    # Enable the asset pipeline
+    config.assets.enabled = true
+    
+    # Add additional assets to the asset load path
+    config.assets.paths << Rails.root.join('app', 'assets', 'stylesheets')
+    config.assets.paths << Rails.root.join('app', 'assets', 'stylesheets', 'components')
+    
+    # Precompile additional assets
+    config.assets.precompile += %w( application.scss )
   end
 end
