@@ -1,0 +1,46 @@
+<script>
+  console.log('JavaScript is loading!');
+
+  document.addEventListener('DOMContentLoaded', function() {
+    initializeMobileMenu();
+    initializeFlashMessages();
+  });
+
+  function initializeMobileMenu() {
+    console.log('Initializing mobile menu');
+    const menuToggle = document.querySelector('.menu-toggle');
+    const navButtons = document.querySelector('.nav-buttons');
+    
+    if (!menuToggle || !navButtons) {
+      console.log('Menu elements not found:', { menuToggle, navButtons });
+      return;
+    }
+    
+    console.log('Menu elements found');
+    
+    menuToggle.addEventListener('click', function(e) {
+      console.log('Menu clicked');
+      e.preventDefault();
+      menuToggle.classList.toggle('active');
+      navButtons.classList.toggle('active');
+    });
+    
+    // Close menu when clicking outside
+    document.addEventListener('click', function(e) {
+      if (!menuToggle.contains(e.target) && !navButtons.contains(e.target)) {
+        menuToggle.classList.remove('active');
+        navButtons.classList.remove('active');
+      }
+    });
+  }
+
+  function initializeFlashMessages() {
+    setTimeout(() => {
+      document.querySelectorAll('.flash-message').forEach(el => {
+        el.style.opacity = '0';
+        el.style.transition = 'opacity 0.5s ease';
+        setTimeout(() => el.remove(), 500);
+      });
+    }, 4000);
+  }
+</script> 

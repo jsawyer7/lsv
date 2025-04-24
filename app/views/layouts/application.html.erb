@@ -12,8 +12,7 @@
     <%# Font Awesome %>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
-    <%= stylesheet_link_tag "application", media: "all", "data-turbo-track": "reload" %>
-    <%= javascript_importmap_tags %>
+    <%= stylesheet_link_tag "application", media: "all" %>
 
     <%# Force reload styles in development %>
     <% if Rails.env.development? %>
@@ -41,17 +40,8 @@
     </div>
 
     <%= yield %>
+
+    <%# Include JavaScript at the end of body %>
+    <%= render 'shared/javascript' %>
   </body>
 </html>
-
-<script>
-  document.addEventListener("DOMContentLoaded", () => {
-    setTimeout(() => {
-      document.querySelectorAll('.flash-message').forEach(el => {
-        el.style.opacity = '0';
-        el.style.transition = 'opacity 0.5s ease';
-        setTimeout(() => el.remove(), 500);
-      });
-    }, 4000);
-  });
-</script>

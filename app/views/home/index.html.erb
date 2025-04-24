@@ -6,11 +6,13 @@
         <h3>Verifaith</h3>
       <% end %>
     </div>
-    <div class="menu-toggle">
+
+    <button type="button" class="menu-toggle" aria-expanded="false" aria-label="Toggle navigation menu">
       <span></span>
       <span></span>
       <span></span>
-    </div>
+    </button>
+
     <div class="nav-buttons">
       <%= link_to "Sign In", new_user_session_path, class: "btn-secondary" %>
       <%= link_to "Get Started", new_user_registration_path, class: "btn-primary" %>
