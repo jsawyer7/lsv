@@ -1,25 +1,19 @@
 <script>
-  console.log('JavaScript is loading!');
-
   document.addEventListener('DOMContentLoaded', function() {
     initializeMobileMenu();
     initializeFlashMessages();
   });
 
   function initializeMobileMenu() {
-    console.log('Initializing mobile menu');
     const menuToggle = document.querySelector('.menu-toggle');
     const navButtons = document.querySelector('.nav-buttons');
     
     if (!menuToggle || !navButtons) {
-      console.log('Menu elements not found:', { menuToggle, navButtons });
       return;
     }
     
-    console.log('Menu elements found');
     
     menuToggle.addEventListener('click', function(e) {
-      console.log('Menu clicked');
       e.preventDefault();
       menuToggle.classList.toggle('active');
       navButtons.classList.toggle('active');
@@ -42,5 +36,39 @@
         setTimeout(() => el.remove(), 500);
       });
     }, 4000);
+  }
+
+  document.addEventListener('turbo:load', () => {
+    setupPasswordToggle();
+  });
+
+  document.addEventListener('DOMContentLoaded', () => {
+    setupPasswordToggle();
+  });
+
+  function setupPasswordToggle() {
+    const toggleButton = document.querySelector('.toggle-password');
+    if (!toggleButton) return;
+
+    const passwordInput = document.querySelector('input[type="password"]');
+    if (!passwordInput) return;
+
+    toggleButton.addEventListener('click', (e) => {
+      e.preventDefault();
+      const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+      passwordInput.setAttribute('type', type);
+      
+      // Update the icon and aria-label
+      const icon = toggleButton.querySelector('i');
+      if (type === 'password') {
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+        toggleButton.setAttribute('aria-label', 'Show password');
+      } else {
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+        toggleButton.setAttribute('aria-label', 'Hide password');
+      }
+    });
   }
 </script> 

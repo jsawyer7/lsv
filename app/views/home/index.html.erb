@@ -3,7 +3,7 @@
   <div class="nav-container">
     <div class="logo">
       <%= link_to root_path do %>
-        <h3>Verifaith</h3>
+        <%= image_tag "verifaith-logo.png", class: "nav-logo", alt: "Logo" %>
       <% end %>
     </div>
 
@@ -135,7 +135,9 @@
 <footer class="site-footer">
   <div class="footer-content">
     <div class="footer-brand">
-      <h3>Verifaith</h3>
+      <h3>
+        <%= image_tag "footer-logo.png", alt: "Verifaith Logo", class: "footer-logo" %>
+      </h3>
       <p class="body-small">Unbiased, educational insights into the world's faiths and philosophies.</p>
       <div class="social-links">
         <a href="#"><i class="fab fa-github"></i></a>
