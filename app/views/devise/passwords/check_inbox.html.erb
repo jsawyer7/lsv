@@ -1,0 +1,24 @@
+<%# Check Inbox Page %>
+<div class="login-container">
+  <%# Left side content %>
+  <div class="login-left">
+    <h1>Movement<br/>Of Verified Faith</h1>
+    <p>Join a community committed to truth and authenticity in faith through evidence-based claims.</p>
+  </div>
+
+  <%# Right side check inbox message %>
+  <div class="login-right">
+    <div class="login-form-container">
+      <%= image_tag "verifaith-logo.png", alt: "Verifaith Logo", class: "login-logo" %>
+      
+      <div class="form-icon">
+        <%= image_tag "forgot.png", alt: "Check Inbox Icon" %>
+      </div>
+      
+      <h2 class="forgot-password">Check Your Inbox</h2>
+      <p class="form-description">We have sent password reset instructions to <%= @email %>.</p>
+
+      <%= link_to "Back to Login", new_session_path(resource_name), class: "login-button" %>
+    </div>
+  </div>
+</div> 

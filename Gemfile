@@ -38,6 +38,8 @@ group :development do
   gem 'listen', '~> 3.2'
   # Spring speeds up development by keeping your application running in the background. Read more: https://github.com/rails/spring
   gem 'rb-fsevent'
+  # Preview email in the browser instead of sending it
+  gem 'letter_opener'
 end
 
 group :test do

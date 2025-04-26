@@ -76,6 +76,28 @@
     margin-bottom: 2rem;
     font-weight: 600;
   }
+
+  .forgot-password {
+    margin-bottom: 0;
+  }
+  
+  .form-description {
+    color: #4a5568;
+    margin-bottom: 2rem;
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+
+  .form-hint {
+    color: #718096;
+    margin-top: 1rem;
+    font-size: 0.875rem;
+    margin-bottom: 1rem;
+  }
+
+  .inbox-check {
+    margin-bottom: 0;
+  }
 }
 
 .login-form {
@@ -132,6 +154,22 @@
       &:hover {
         color: #6b7280;
       }
+    }
+  }
+}
+
+.login-links {
+  margin-top: 1.5rem;
+  color: #4a5568;
+  font-size: 0.875rem;
+
+  a {
+    color: #1E88E5;
+    text-decoration: none;
+    font-weight: 500;
+
+    &:hover {
+      text-decoration: underline;
     }
   }
 }

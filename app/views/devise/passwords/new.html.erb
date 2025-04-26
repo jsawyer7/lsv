@@ -1,15 +1,35 @@
-<h2>Forgot your password?</h2>
-
-<%= form_for(resource, as: resource_name, url: password_path(resource_name), html: { method: :post }) do |f| %>
-
-  <div class="field">
-    <%= f.label :email %><br />
-    <%= f.email_field :email, autofocus: true, autocomplete: "email" %>
+<%# Forgot Password Page %>
+<div class="login-container">
+  <%# Left side content %>
+  <div class="login-left">
+    <h1>Movement<br/>Of Verified Faith</h1>
+    <p>Join a community committed to truth and authenticity in faith through evidence-based claims.</p>
   </div>
 
-  <div class="actions">
-    <%= f.submit "Send me reset password instructions" %>
-  </div>
-<% end %>
+  <%# Right side forgot password form %>
+  <div class="login-right">
+    <div class="login-form-container">
+      <%= image_tag "verifaith-logo.png", alt: "Verifaith Logo", class: "login-logo" %>
+      
+      <div class="form-icon">
+        <%= image_tag "forgot.png", alt: "Forgot Password Icon" %>
+      </div>
+      
+      <h2>Forgot Password?</h2>
+      <p class="form-description">Enter the email of your account and we will send the email to reset your password.</p>
 
-<%= render "devise/shared/links" %>
+      <%= form_for(resource, as: resource_name, url: password_path(resource_name), html: { method: :post, class: "login-form" }) do |f| %>
+        <div class="form-group">
+          <%= f.label :email, "Email Address" %>
+          <%= f.email_field :email, autofocus: true, autocomplete: "email", placeholder: "Enter email" %>
+        </div>
+
+        <%= f.submit "Continue", class: "login-button" %>
+      <% end %>
+
+      <div class="login-links">
+        <span>Remember Password? <%= link_to "Login", new_session_path(resource_name) %></span>
+      </div>
+    </div>
+  </div>
+</div>

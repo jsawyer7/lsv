@@ -1,0 +1,24 @@
+<%# Password Updated Success Page %>
+<div class="login-container">
+  <%# Left side content %>
+  <div class="login-left">
+    <h1>Movement<br/>Of Verified Faith</h1>
+    <p>Join a community committed to truth and authenticity in faith through evidence-based claims.</p>
+  </div>
+
+  <%# Right side success message %>
+  <div class="login-right">
+    <div class="login-form-container">
+      <%= image_tag "verifaith-logo.png", alt: "Verifaith Logo", class: "login-logo" %>
+      
+      <div class="form-icon success">
+        <%= image_tag "updated.png", alt: "Success Icon" %>
+      </div>
+      
+      <h2 class="forgot-password">Password Updated!</h2>
+      <p class="form-description">Your password has been successfully updated.</p>
+
+      <%= link_to "Back to Login", root_path, class: "login-button" %>
+    </div>
+  </div>
+</div> 
