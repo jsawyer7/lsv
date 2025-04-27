@@ -1,0 +1,117 @@
+<%# Email Verification Page %>
+<div class="login-container">
+  <%# Left side content %>
+  <div class="login-left">
+    <h1>Movement<br/>Of Verified Faith</h1>
+    <p>Join a community committed to truth and authenticity in faith through evidence-based claims.</p>
+  </div>
+
+  <%# Right side verification form %>
+  <div class="login-right">
+    <div class="login-form-container">
+      <%= image_tag "verifaith-logo.png", alt: "Verifaith Logo", class: "login-logo" %>
+      
+      <div class="form-icon">
+        <%= image_tag "verify.png", alt: "Verify Email Icon" %>
+      </div>
+      
+      <h2>Verify your email</h2>
+      <p class="form-description">
+        We have sent a 6 digit verification code to your email
+        <strong><%= @email %></strong>. Please enter the code to verify your account.
+      </p>
+
+      <%= form_tag verify_code_path, method: :post, class: "login-form", data: { turbo: false } do %>
+        <div class="verification-code-container">
+          <% 6.times do |i| %>
+            <input type="text" 
+                   name="code[]" 
+                   maxlength="1" 
+                   class="verification-code-input" 
+                   data-index="<%= i %>"
+                   <%= "autofocus" if i == 0 %>>
+          <% end %>
+        </div>
+
+        <% if flash[:error].present? %>
+          <div class="flash-error">
+            <i class="fas fa-exclamation-circle"></i>
+            <%= flash[:error] %>
+          </div>
+        <% end %>
+
+        <%= submit_tag "Verify Code", class: "login-button" %>
+      <% end %>
+
+      <div class="login-links">
+        <p>Didn't receive any email? Check in spam or</p>
+        <%= button_to "Resend verification code", resend_code_path, method: :post, class: "link-button" %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<% content_for :javascript do %>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const inputs = document.querySelectorAll('.verification-code-input');
+      
+      inputs.forEach((input, index) => {
+        input.addEventListener('keyup', (e) => {
+          if (e.key !== 'Backspace' && input.value.length === 1 && index < inputs.length - 1) {
+            inputs[index + 1].focus();
+          }
+          if (e.key === 'Backspace' && index > 0) {
+            inputs[index - 1].focus();
+          }
+        });
+
+        input.addEventListener('keydown', (e) => {
+          if (e.key === 'Backspace' && input.value.length === 0 && index > 0) {
+            e.preventDefault();
+            inputs[index - 1].value = '';
+            inputs[index - 1].focus();
+          }
+        });
+
+        input.addEventListener('paste', (e) => {
+          e.preventDefault();
+          const pastedData = e.clipboardData.getData('text').slice(0, 6);
+          
+          pastedData.split('').forEach((char, charIndex) => {
+            if (charIndex < inputs.length) {
+              inputs[charIndex].value = char;
+            }
+          });
+
+          if (inputs[5].value) inputs[5].focus();
+        });
+      });
+    });
+  </script>
+<% end %>
+
+<%# Email Confirmation Success Page %>
+<div class="login-container">
+  <%# Left side content %>
+  <div class="login-left">
+    <h1>Movement<br/>Of Verified Faith</h1>
+    <p>Join a community committed to truth and authenticity in faith through evidence-based claims.</p>
+  </div>
+
+  <%# Right side success message %>
+  <div class="login-right">
+    <div class="login-form-container">
+      <%= image_tag "verifaith-logo.png", alt: "Verifaith Logo", class: "login-logo" %>
+      
+      <div class="form-icon success">
+        <%= image_tag "updated.png", alt: "Success Icon" %>
+      </div>
+      
+      <h2>Email Confirmed!</h2>
+      <p class="form-description">Your email has been successfully verified. You can now sign in to your account.</p>
+
+      <%= link_to "Sign In", new_user_session_path, class: "login-button" %>
+    </div>
+  </div>
+</div> 

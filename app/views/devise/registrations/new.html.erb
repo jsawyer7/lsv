@@ -1,7 +1,8 @@
-<%# Left side content %>
+<%# Sign Up Page %>
 <div class="login-container">
+  <%# Left side content %>
   <div class="login-left">
-    <h1>Movement<br>Of Verified Faith</h1>
+    <h1>Movement<br/>Of Verified Faith</h1>
     <p>Join a community committed to truth and authenticity in faith through evidence-based claims.</p>
   </div>
 
@@ -19,20 +20,18 @@
         </div>
 
         <div class="form-group">
-          <%= f.label :password, "Password" %>
+          <%= f.label :password %>
           <div class="password-input-container">
             <%= f.password_field :password, autocomplete: "new-password", placeholder: "Enter password" %>
             <button type="button" class="toggle-password">
               <i class="far fa-eye"></i>
             </button>
           </div>
-          <% if @minimum_password_length %>
-            <small class="password-hint">At least <%= @minimum_password_length %> characters</small>
-          <% end %>
+          <span class="password-hint">Must be at least 6 characters</span>
         </div>
 
         <div class="form-group">
-          <%= f.label :password_confirmation, "Confirm Password" %>
+          <%= f.label :password_confirmation %>
           <div class="password-input-container">
             <%= f.password_field :password_confirmation, autocomplete: "new-password", placeholder: "Confirm password" %>
             <button type="button" class="toggle-password">
@@ -41,7 +40,7 @@
           </div>
         </div>
 
-        <%= f.submit "Sign up", class: "login-button" %>
+        <%= f.submit "Sign Up", class: "login-button" %>
       <% end %>
 
       <div class="divider">

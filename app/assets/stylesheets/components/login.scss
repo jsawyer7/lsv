@@ -296,6 +296,46 @@
   }
 }
 
+.verification-code-container {
+  display: flex;
+  justify-content: space-between;
+  margin: 20px 0;
+  gap: 10px;
+}
+
+.verification-code-input {
+  width: 40px;
+  height: 40px;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 18px;
+  font-weight: 500;
+  background: #F9FAFB;
+  transition: all 0.3s ease;
+
+  &:focus {
+    border-color: #3B82F6;
+    background: white;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+  }
+}
+
+.link-button {
+  background: none;
+  border: none;
+  color: #3B82F6;
+  cursor: pointer;
+  font-weight: 500;
+  padding: 0;
+  text-decoration: underline;
+  
+  &:hover {
+    color: #2563EB;
+  }
+}
+
 @media (max-width: 768px) {
   .login-container {
     flex-direction: column;

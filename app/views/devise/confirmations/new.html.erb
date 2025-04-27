@@ -1,15 +1,36 @@
-<h2>Resend confirmation instructions</h2>
-
-<%= form_for(resource, as: resource_name, url: confirmation_path(resource_name), html: { method: :post }) do |f| %>
-
-  <div class="field">
-    <%= f.label :email %><br />
-    <%= f.email_field :email, autofocus: true, autocomplete: "email", value: (resource.pending_reconfirmation? ? resource.unconfirmed_email : resource.email) %>
+<%# Resend Confirmation Page %>
+<div class="login-container">
+  <%# Left side content %>
+  <div class="login-left">
+    <h1>Movement<br/>Of Verified Faith</h1>
+    <p>Join a community committed to truth and authenticity in faith through evidence-based claims.</p>
   </div>
 
-  <div class="actions">
-    <%= f.submit "Resend confirmation instructions" %>
-  </div>
-<% end %>
+  <%# Right side confirmation form %>
+  <div class="login-right">
+    <div class="login-form-container">
+      <%= image_tag "verifaith-logo.png", alt: "Verifaith Logo", class: "login-logo" %>
+      
+      <div class="form-icon">
+        <%= image_tag "signup.png", alt: "Verify Email Icon" %>
+      </div>
+      
+      <h2>Resend confirmation instructions</h2>
+      <p class="form-description">Enter your email address to receive confirmation instructions.</p>
 
-<%= render "devise/shared/links" %>
+      <%= form_for(resource, as: resource_name, url: confirmation_path(resource_name), html: { method: :post, class: "login-form" }) do |f| %>
+
+        <div class="form-group">
+          <%= f.label :email %>
+          <%= f.email_field :email, autofocus: true, value: (resource.pending_reconfirmation? ? resource.unconfirmed_email : resource.email), placeholder: "Enter email" %>
+        </div>
+
+        <%= f.submit "Resend confirmation instructions", class: "login-button" %>
+      <% end %>
+
+      <div class="login-links">
+        <%= render "devise/shared/links" %>
+      </div>
+    </div>
+  </div>
+</div>

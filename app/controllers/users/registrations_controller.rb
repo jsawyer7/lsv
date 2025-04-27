@@ -1,24 +1,49 @@
 # frozen_string_literal: true
 
 class Users::RegistrationsController < Devise::RegistrationsController
-  def create
-    build_resource(sign_up_params)
+  before_action :configure_sign_up_params, only: [:create]
 
-    resource.save
-    yield resource if block_given?
-    if resource.persisted?
+  # GET /resource/sign_up
+  def new
+    self.resource = User.new
+  end
+
+  # POST /resource
+  def create
+    self.resource = User.new(sign_up_params)
+
+    if resource.save
       if resource.active_for_authentication?
-        set_flash_message! :notice, :signed_up
-        sign_up(resource_name, resource)
+        flash[:notice] = "Welcome! You have signed up successfully."
+        sign_in(resource_name, resource)
         respond_with resource, location: after_sign_up_path_for(resource)
       else
-        set_flash_message! :notice, :"signed_up_but_#{resource.inactive_message}"
+        flash[:notice] = "A confirmation email has been sent to your email address. Please check your email and click on the confirmation link."
         expire_data_after_sign_in!
         respond_with resource, location: after_inactive_sign_up_path_for(resource)
       end
     else
-      flash[:alert] = resource.errors.full_messages.join(', ')
-      redirect_to new_user_registration_path
+      clean_up_passwords resource
+      flash[:alert] = resource.errors.full_messages.first
+      respond_with resource
     end
+  end
+
+  protected
+
+  def configure_sign_up_params
+    devise_parameter_sanitizer.permit(:sign_up, keys: [:email, :password, :password_confirmation])
+  end
+
+  def sign_up_params
+    params.require(:user).permit(:email, :password, :password_confirmation)
+  end
+
+  def after_sign_up_path_for(resource)
+    new_user_confirmation_path
+  end
+
+  def after_inactive_sign_up_path_for(resource)
+    new_user_confirmation_path
   end
 end
