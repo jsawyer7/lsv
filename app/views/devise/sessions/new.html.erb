@@ -43,7 +43,7 @@
         <span>OR</span>
       </div>
 
-      <%= link_to '', class: "google-login", data: { turbo: false } do %>
+      <%= link_to user_google_oauth2_omniauth_authorize_path, data: { turbo: false }, method: :post, class: "google-login" do %>
         <%= image_tag "https://www.google.com/favicon.ico", alt: "Google", class: "google-icon" %>
         Continue with Google
       <% end %>
