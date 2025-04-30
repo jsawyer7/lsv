@@ -7,6 +7,16 @@ class User < ApplicationRecord
 
   has_many :claims
 
+  # Define roles
+  enum role: {
+    user: 0,
+    moderator: 1,
+    admin: 2
+  }
+
+  # Set default role before creation
+  before_create :set_default_role
+
   def active_for_authentication?
     super && confirmed?
   end
@@ -18,5 +28,31 @@ class User < ApplicationRecord
       user.full_name = auth.info.name
       user.avatar_url = auth.info.image
     end
+  end
+
+  # Define ransackable attributes
+  def self.ransackable_attributes(auth_object = nil)
+    %w[
+      id
+      email
+      role
+      full_name
+      created_at
+      updated_at
+      confirmed_at
+      provider
+      uid
+    ]
+  end
+
+  # Define ransackable associations
+  def self.ransackable_associations(auth_object = nil)
+    %w[claims]
+  end
+
+  private
+
+  def set_default_role
+    self.role ||= :user
   end
 end
