@@ -4,21 +4,21 @@ class ClaimPolicy < ApplicationPolicy
       if user.admin?
         scope.all
       else
-        scope.none
+        scope.where(user_id: user.id)
       end
     end
   end
 
   def index?
-    user.admin?
+    true # Anyone can view the list of claims
   end
 
   def show?
-    user.admin?
+    user.admin? || record.user_id == user.id # Users can view their own claims
   end
 
   def create?
-    user.admin?
+    user.present? # Any logged-in user can create claims
   end
 
   def new?
@@ -26,7 +26,8 @@ class ClaimPolicy < ApplicationPolicy
   end
 
   def update?
-    user.admin?
+    return true if user.admin?
+    user.present? && record.user_id == user.id # Users can edit their own claims
   end
 
   def edit?
@@ -34,6 +35,7 @@ class ClaimPolicy < ApplicationPolicy
   end
 
   def destroy?
-    user.admin?
+    return true if user.admin?
+    user.present? && record.user_id == user.id # Users can delete their own claims
   end
 end 
