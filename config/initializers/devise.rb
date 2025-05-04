@@ -280,10 +280,8 @@ Devise.setup do |config|
       image_size: 50,
       access_type: 'offline',
       provider_ignores_state: true,
-      redirect_uri: -> { Rails.env.production? ? 
-        'https://www.verifaith.com/users/auth/google_oauth2/callback' : 
-        'http://localhost:3000/users/auth/google_oauth2/callback' 
-      }
+      origin_param: 'return_to',
+      callback_path: '/users/auth/google_oauth2/callback'
     }
 
   # Configure OmniAuth to accept both GET and POST requests
