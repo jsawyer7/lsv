@@ -14,7 +14,7 @@ Devise.setup do |config|
   # confirmation, reset password and unlock tokens in the database.
   # Devise will use the `secret_key_base` as its `secret_key`
   # by default. You can change it below and use your own secret key.
-  # config.secret_key = 'f98802c71b635c45a6114e34351b5739be10f99dcf70844c52c1a35a5e5238a492450750e7e44116156f0aafd5a28de8eb343b890d66cf2592a5b13fa012f7f7'
+  config.secret_key = Rails.application.credentials.secret_key_base
 
   # ==> Controller configuration
   # Configure the parent class to the devise controllers.
@@ -24,13 +24,11 @@ Devise.setup do |config|
   # Configure the e-mail address which will be shown in Devise::Mailer,
   # note that it will be overwritten if you use your own mailer class
   # with default "from" parameter.
-  config.mailer_sender = 'please-change-me-at-config-initializers-devise@example.com'
+  config.mailer_sender = ENV.fetch('GMAIL_USERNAME', 'noreply@verifaith.com')
 
   # Configure the class responsible to send e-mails.
-  # config.mailer = 'Devise::Mailer'
-
-  # Configure the parent class responsible to send e-mails.
-  # config.parent_mailer = 'ActionMailer::Base'
+  config.mailer = 'Devise::Mailer'
+  config.parent_mailer = 'ActionMailer::Base'
 
   # ==> ORM configuration
   # Load and configure the ORM. Supports :active_record (default) and
@@ -103,7 +101,7 @@ Devise.setup do |config|
   # avoid CSRF token fixation attacks. This means that, when using AJAX
   # requests for sign in and sign up, you need to get a new CSRF token
   # from the server. You can disable this option at your own risk.
-  # config.clean_up_csrf_token_on_authentication = true
+  config.clean_up_csrf_token_on_authentication = true
 
   # When false, Devise will not attempt to reload routes on eager load.
   # This can reduce the time taken to boot the app but if your application
@@ -143,7 +141,9 @@ Devise.setup do |config|
   # without confirming their account.
   # Default is 0.days, meaning the user cannot access the website without
   # confirming their account.
-  # config.allow_unconfirmed_access_for = 2.days
+  config.reconfirmable = true
+  config.allow_unconfirmed_access_for = nil
+  config.confirm_within = 3.days
 
   # A period that the user is allowed to confirm their account before their
   # token becomes invalid. For example, if set to 3.days, the user can confirm
@@ -157,7 +157,7 @@ Devise.setup do |config|
   # initial account confirmation) to be applied. Requires additional unconfirmed_email
   # db field (see migrations). Until confirmed, new email is stored in
   # unconfirmed_email column, and copied to email column on successful confirmation.
-  config.reconfirmable = true
+  # config.reconfirmable = true
 
   # Defines which key will be used when confirming an account
   # config.confirmation_keys = [:email]
@@ -170,11 +170,11 @@ Devise.setup do |config|
   config.expire_all_remember_me_on_sign_out = true
 
   # If true, extends the user's remember period when remembered via cookie.
-  # config.extend_remember_period = false
+  config.extend_remember_period = true
 
   # Options to be passed to the created cookie. For instance, you can set
   # secure: true in order to force SSL only cookies.
-  # config.rememberable_options = {}
+  config.rememberable_options = { secure: true }
 
   # ==> Configuration for :validatable
   # Range for password length.
@@ -228,7 +228,7 @@ Devise.setup do |config|
 
   # When set to false, does not sign a user in automatically after their password is
   # reset. Defaults to true, so a user is signed in automatically after a reset.
-  # config.sign_in_after_reset_password = true
+  config.sign_in_after_reset_password = true
 
   # ==> Configuration for :encryptable
   # Allow you to use another hashing or encryption algorithm besides bcrypt (default).
@@ -244,7 +244,7 @@ Devise.setup do |config|
   # Turn scoped views on. Before rendering "sessions/new", it will first check for
   # "users/sessions/new". It's turned off by default because it's slower if you
   # are using only default views.
-  # config.scoped_views = false
+  config.scoped_views = true
 
   # Configure the default scope given to Warden. By default it's the first
   # devise role declared in your routes (usually :user).
@@ -269,17 +269,23 @@ Devise.setup do |config|
   config.sign_out_via = :delete
 
   # ==> OmniAuth
-  # Add a new OmniAuth provider. Check the wiki for more information on setting
-  # up on your models and hooks.
+  # Add a new provider section for Google OAuth2
   config.omniauth :google_oauth2,
-                  ENV['GOOGLE_OAUTH_CLIENT_ID'],
-                  ENV['GOOGLE_OAUTH_CLIENT_SECRET'],
-                  {
-                    scope: 'email,profile',
-                    prompt: 'select_account',
-                    image_aspect_ratio: 'square',
-                    image_size: 50
-                  }
+    ENV['GOOGLE_OAUTH_CLIENT_ID'],
+    ENV['GOOGLE_OAUTH_CLIENT_SECRET'],
+    {
+      scope: 'email,profile',
+      prompt: 'select_account',
+      image_aspect_ratio: 'square',
+      image_size: 50
+    }
+
+  # Configure OmniAuth to accept both GET and POST requests
+  OmniAuth.config.allowed_request_methods = [:get, :post]
+  OmniAuth.config.silence_get_warning = true
+
+  # ==> OmniAuth CSRF Protection
+  # OmniAuth.config.allowed_request_methods = [:post]
 
   # ==> Warden configuration
   # If you want to use other strategies, that are not supported by Devise, or

@@ -18,16 +18,40 @@ class User < ApplicationRecord
   before_create :set_default_role
 
   def active_for_authentication?
-    super && confirmed?
+    super && (confirmed? || provider.present?)
   end
 
   def self.from_omniauth(auth)
-    where(provider: auth.provider, uid: auth.uid).first_or_create do |user|
-      user.email = auth.info.email
-      user.password = Devise.friendly_token[0, 20]
-      user.full_name = auth.info.name
-      user.avatar_url = auth.info.image
+    # Try to find by provider/uid first
+    user = User.find_by(provider: auth.provider, uid: auth.uid)
+    
+    # If not found by provider/uid, try to find by email
+    user ||= User.find_by(email: auth.info.email)
+    
+    if user
+      # Update existing user's OAuth credentials
+      user.update(
+        provider: auth.provider,
+        uid: auth.uid,
+        full_name: auth.info.name,
+        avatar_url: auth.info.image
+      )
+    else
+      # Create new user if none exists
+      user = User.new(
+        email: auth.info.email,
+        password: Devise.friendly_token[0, 20],
+        full_name: auth.info.name,
+        avatar_url: auth.info.image,
+        provider: auth.provider,
+        uid: auth.uid
+      )
+      user.skip_confirmation!
+      user.confirm
+      user.save!
     end
+
+    user
   end
 
   # Define ransackable attributes
