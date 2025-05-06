@@ -1,89 +1,326 @@
+@import "components/search";
+@import "components/header_actions";
+
 .dashboard-container {
-    position: relative;
-    height: 100vh;
-    padding: 1rem;
-    background-color: #f2f2f2;
+  display: flex;
+  min-height: 100vh;
+  background-color: #f8f9fe;
+}
+
+.logout-button {
+  background-color: #f44336;
+  color: white;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 4px;
+  text-decoration: none;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.logout-button:hover {
+  background-color: #d32f2f;
+}
+
+
+.dashboard-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.dashboard-header h1 {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.dashboard-header p {
+  font-size: 1.1rem;
+  color: #555;
+}
+
+.new-claim-button {
+  display: inline-block;
+  margin-top: 1rem;
+  background-color: #4CAF50;
+  color: white;
+  padding: 10px 20px;
+  text-decoration: none;
+  border-radius: 5px;
+}
+
+.claims-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.claim-card h3 {
+  font-size: 1rem;
+  color: #333;
+}
+
+.view-button {
+  display: inline-block;
+  margin-top: 0.5rem;
+  color: #1c64f2;
+  text-decoration: underline;
+}
+
+.no-claims {
+  text-align: center;
+  color: #999;
+  font-style: italic;
+  margin-top: 2rem;
+}
+
+// Sidebar/Navigation
+.dashboard-nav {
+  width: 250px;
+  background-color: white;
+  border-right: 1px solid #edf2f7;
+  padding: 15px 0;
+  flex-shrink: 0;
+
+  @media (max-width: 768px) {
+    width: 60px;
+    .nav-text {
+      display: none;
+    }
   }
-  
-  .top-right {
-    position: absolute;
-    top: 1rem;
-    right: 1rem;
+}
+
+.i-nav-logo {
+  display: flex;
+  justify-content: center;
+  padding-bottom: 11px;
+  border-bottom: 1px solid #edf2f7;
+  img {
+    height: 45px;
   }
-  
-  .logout-button {
-    background-color: #f44336;
-    color: white;
-    padding: 8px 14px;
-    border: none;
-    border-radius: 4px;
+}
+
+.new-claim-button {
+  display: flex !important;
+}
+
+.nav-items {
+  padding: 20px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+  margin: 10px;
+
+  .nav-item {
+    display: flex;
+    padding: 12px 40px;
+    color: #64748b;
     text-decoration: none;
-    font-size: 0.9rem;
-    cursor: pointer;
-    transition: background-color 0.2s ease-in-out;
+    transition: all 0.2s;
+
+    &:hover {
+      background-color: #f8f9fe;
+      color: #3b82f6;
+    }
+
+    &.active {
+      color: #3b82f6;
+      background-color: #eff6ff;
+      border-radius: 1rem;
+      .nav-text {
+        color: #1c64f2;
+      }
+    }
+
+    .nav-icon {
+      width: 20px;
+      height: 20px;
+      margin-right: 12px;
+    }
+
+    .nav-text {
+      font-size: 14px;
+      font-weight: 500;
+    }
   }
-  
-  .logout-button:hover {
-    background-color: #d32f2f;
+}
+
+// Main Content Area
+.dashboard-main {
+  flex: 1;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+// Header
+.dashboard-header {
+  display: flex;
+  justify-content: end;
+  align-items: center;
+  padding: 20px;
+  background-color: white;
+  border-bottom: 1px solid #edf2f7;
+
+  .header-title {
+    font-size: 24px;
+    font-weight: 600;
+    color: #1e293b;
   }
-  
-  
-  .dashboard-header {
-    text-align: center;
-    margin-bottom: 2rem;
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+
+    .search-bar {
+      position: relative;
+      
+      input {
+        width: 300px;
+        padding: 8px 16px;
+        padding-left: 40px;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 14px;
+        outline: none;
+        transition: all 0.2s;
+
+        &:focus {
+          border-color: #3b82f6;
+          box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+        }
+
+        @media (max-width: 768px) {
+          width: 200px;
+        }
+      }
+
+      .search-icon {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #94a3b8;
+      }
+    }
+
+    .notifications {
+      position: relative;
+      padding: 8px;
+      border-radius: 50%;
+      background-color: #f8f9fe;
+      cursor: pointer;
+
+      .notification-count {
+        position: absolute;
+        top: 0;
+        right: 0;
+        background-color: #ef4444;
+        color: white;
+        font-size: 10px;
+        padding: 2px 6px;
+        border-radius: 10px;
+      }
+    }
+
+    .user-profile {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+
+      img {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        object-fit: cover;
+      }
+
+      .dropdown-icon {
+        color: #64748b;
+      }
+    }
   }
-  
-  .dashboard-header h1 {
-    font-size: 2rem;
-    margin-bottom: 0.5rem;
+}
+
+// Content Cards
+.content-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+  padding: 20px;
+}
+
+.content-card {
+  background-color: white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+
+    .source-tags {
+      display: flex;
+      gap: 4px;
+      font-size: 12px;
+      color: #64748b;
+    }
   }
-  
-  .dashboard-header p {
-    font-size: 1.1rem;
-    color: #555;
+
+  .card-title {
+    font-size: 16px;
+    font-weight: 500;
+    color: #1e293b;
+    margin-bottom: 8px;
   }
-  
-  .new-claim-button {
+
+  .card-status {
     display: inline-block;
-    margin-top: 1rem;
-    background-color: #4CAF50;
-    color: white;
-    padding: 10px 20px;
-    text-decoration: none;
-    border-radius: 5px;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 12px;
+    font-weight: 500;
+
+    &.fact {
+      background-color: #dcfce7;
+      color: #16a34a;
+    }
+
+    &.claim {
+      background-color: #dbeafe;
+      color: #2563eb;
+    }
+
+    &.disputed {
+      background-color: #fee2e2;
+      color: #dc2626;
+    }
   }
-  
-  .claims-list {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 1.5rem;
+}
+
+// New Claim Button
+.new-claim-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background-color: #3b82f6;
+  color: white;
+  border-radius: 8px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.2s;
+
+  &:hover {
+    background-color: #2563eb;
   }
-  
-  .claim-card {
-    background-color: #fff;
-    border: 1px solid #ddd;
-    border-left: 5px solid #4CAF50;
-    padding: 1rem;
-    border-radius: 8px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+
+  .plus-icon {
+    font-size: 20px;
   }
-  
-  .claim-card h3 {
-    font-size: 1rem;
-    color: #333;
-  }
-  
-  .view-button {
-    display: inline-block;
-    margin-top: 0.5rem;
-    color: #1c64f2;
-    text-decoration: underline;
-  }
-  
-  .no-claims {
-    text-align: center;
-    color: #999;
-    font-style: italic;
-    margin-top: 2rem;
-  }
+} 
   

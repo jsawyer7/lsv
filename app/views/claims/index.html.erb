@@ -1,29 +1,37 @@
 <div class="claims-container">
   <div class="claims-header">
-    <h1>Verified Claims</h1>
-    <%= link_to "Submit New Claim", new_claim_path, class: "btn-primary" %>
+    <%= link_to new_claim_path, class: "btn-primary new-claim-button" do %>
+      <%= image_tag "newclaim.png", class: "btn-icon" %>
+      <span>New Claim</span>
+    <% end %>
   </div>
 
   <div class="claims-grid">
     <% @claims.each do |claim| %>
-      <div class="claim-card">
+      <%= link_to claim_path(claim), class: "claim-card" do %>
         <div class="claim-content">
-          <p class="claim-text"><%= claim.content %></p>
+          <p class="claim-text">
+            <%= truncate(claim.content, length: 64) %>
+          </p>
           <span class="badge badge-<%= claim_status_class(claim.result) %>">
             <%= claim.result %>
           </span>
         </div>
-        <div class="claim-actions">
-          <%= link_to "View Details", claim_path(claim), class: "view-link" %>
-        </div>
-      </div>
+      <% end %>
     <% end %>
   </div>
 
   <% if @claims.empty? %>
     <div class="empty-state">
       <p>No claims have been submitted yet.</p>
-      <%= link_to "Submit Your First Claim", new_claim_path, class: "btn-primary" %>
+      <%= link_to new_claim_path, class: "btn-primary" do %>
+        <%= image_tag "newclaim.png", class: "btn-icon" %>
+        <span>Submit Your First Claim</span>
+      <% end %>
+    </div>
+  <% else %>
+    <div class="pagination-container">
+      <%= paginate @claims %>
     </div>
   <% end %>
 </div> 

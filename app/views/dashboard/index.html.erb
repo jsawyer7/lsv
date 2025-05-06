@@ -1,25 +1,37 @@
-<div class="dashboard-container">
-  <div class="top-right">
-    <%= link_to 'Log out', destroy_user_session_path, method: :delete, class: 'logout-button' %>
+<div class="claims-container">
+  <div class="claims-header">
+    <%= link_to new_claim_path, class: "btn-primary new-claim-button" do %>
+      <%= image_tag "newclaim.png", class: "btn-icon" %>
+      <span>New Claim</span>
+    <% end %>
   </div>
 
-  <div class="dashboard-header">
-    <h1>Welcome to Literal Source Verification</h1>
-    <%= link_to "➕ New Claim", new_claim_path, class: "new-claim-button" %>
-    <p>Your Recent Claims</p>
-  </div>
-
-  <% if @claims.any? %>
-    <div class="claims-list">
-      <% @claims.each do |claim| %>
-        <div class="claim-card">
-          <h3><%= truncate(claim.content, length: 100) %></h3>
-          <p><strong>Status:</strong> <%= claim.result %></p>
-          <%= link_to "View Full Claim", claim_path(claim), class: "view-button" %>
+  <div class="claims-grid">
+    <% @claims.each do |claim| %>
+      <%= link_to claim_path(claim), class: "claim-card" do %>
+        <div class="claim-content">
+          <p class="claim-text">
+            <%= truncate(claim.content, length: 64) %>
+          </p>
+          <span class="badge badge-<%= claim_status_class(claim.result) %>">
+            <%= claim.result %>
+          </span>
         </div>
+      <% end %>
+    <% end %>
+  </div>
+
+  <% if @claims.empty? %>
+    <div class="empty-state">
+      <p>No claims have been submitted yet.</p>
+      <%= link_to new_claim_path, class: "btn-primary" do %>
+        <%= image_tag "newclaim.png", class: "btn-icon" %>
+        <span>Submit Your First Claim</span>
       <% end %>
     </div>
   <% else %>
-    <p class="no-claims">You haven’t submitted any claims yet.</p>
+    <div class="pagination-container">
+      <%= paginate @claims %>
+    </div>
   <% end %>
 </div>

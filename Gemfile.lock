@@ -355,6 +355,7 @@ DEPENDENCIES
   devise
   dotenv-rails
   jbuilder (~> 2.7)
+  kaminari (~> 1.2)
   letter_opener
   listen (~> 3.2)
   omniauth-google-oauth2

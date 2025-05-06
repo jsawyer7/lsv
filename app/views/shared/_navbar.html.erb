@@ -1,0 +1,19 @@
+<nav class="dashboard-nav">
+  <div class="i-nav-logo">
+    <%= link_to root_path do %>
+      <%= image_tag "verifaith-logo.png", alt: "VeriFaith Logo" %>
+    <% end %>
+  </div>
+
+  <div class="nav-items">
+    <%= link_to dashboard_path, class: "nav-item #{'active' if current_page?(dashboard_path)}" do %>
+      <i class="fas fa-eye nav-icon"></i>
+      <span class="nav-text">Browse Facts</span>
+    <% end %>
+
+    <%= link_to claims_path, class: "nav-item #{'active' if request.path.start_with?('/claims')}" do %>
+      <i class="fas fa-file-alt nav-icon"></i>
+      <span class="nav-text">Claims</span>
+    <% end %>
+  </div>
+</nav> 

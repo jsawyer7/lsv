@@ -64,3 +64,5 @@ gem 'sassc-rails'
 
 # Authorization
 gem 'pundit'
+
+gem "kaminari", "~> 1.2"
