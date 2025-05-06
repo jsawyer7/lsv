@@ -24,10 +24,6 @@
   <% if @claims.empty? %>
     <div class="empty-state">
       <p>No claims have been submitted yet.</p>
-      <%= link_to new_claim_path, class: "btn-primary" do %>
-        <%= image_tag "newclaim.png", class: "btn-icon" %>
-        <span>Submit Your First Claim</span>
-      <% end %>
     </div>
   <% else %>
     <div class="pagination-container">
