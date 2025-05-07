@@ -19,21 +19,23 @@
       <div class="dashboard-main">
         <header class="dashboard-header">
           <div class="header-actions">
-            <%= form_with url: dashboard_path, method: :get, data: { controller: "search" } do |f| %>
-              <div class="search-bar">
-                <i class="fas fa-search search-icon"></i>
-                <%= f.text_field :search, 
-                    placeholder: "Search Claims",
-                    value: params[:search],
-                    data: { 
-                      search_target: "input"
-                    } %>
-              </div>
+            <% if current_page?(dashboard_path) || current_page?(claims_path) %>
+              <%= form_with url: dashboard_path, method: :get, data: { controller: "search" } do |f| %>
+                <div class="search-bar">
+                  <i class="fas fa-search search-icon"></i>
+                  <%= f.text_field :search, 
+                      placeholder: "Search Claims",
+                      value: params[:search],
+                      data: { 
+                        search_target: "input"
+                      } %>
+                </div>
+              <% end %>
             <% end %>
 
             <div class="notifications">
               <i class="fas fa-bell"></i>
-              <span class="notification-count">0</span>
+              <span class="notification-count">3</span>
             </div>
 
             <div class="separator">|</div>
@@ -41,14 +43,14 @@
             <div class="user-profile">
               <% if user_signed_in? %>
                 <div class="user-info" data-action="click->dropdown#toggle">
-                  <span class="nav-text"><%= current_user.full_name&.titleize || current_user.email %></span>
+                  <span class="nav-text"><%= current_user.email %></span>
                   <i class="fas fa-chevron-down dropdown-icon"></i>
                 </div>
 
                 <div class="dropdown-menu" data-dropdown-target="menu">
                   <%= button_to destroy_user_session_path, method: :delete, class: "dropdown-item" do %>
                     <i class="fas fa-sign-out-alt"></i>
-                    <span>Sign Out</span>
+                    <span>Log Out</span>
                   <% end %>
                 </div>
               <% else %>
