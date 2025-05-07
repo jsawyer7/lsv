@@ -43,7 +43,7 @@
             <div class="user-profile">
               <% if user_signed_in? %>
                 <div class="user-info" data-action="click->dropdown#toggle">
-                  <span class="nav-text"><%= current_user.email %></span>
+                  <span class="nav-text"><%= current_user.full_name&.titleize || current_user.email %></span>
                   <i class="fas fa-chevron-down dropdown-icon"></i>
                 </div>
 
