@@ -22,36 +22,27 @@
   <div class="main-content">
     <div class="floating-avatars">
       <div class="avatar avatar-1">
-        <%= render partial: 'shared/svgs', locals: { svg_class: 'svg-avatar-1' } %>
+        <%= image_tag "rel_one.png", class: "avatar-img" %>
       </div>
       <div class="avatar avatar-2">
-        <%= render partial: 'shared/svgs', locals: { svg_class: 'svg-avatar-2' } %>
+        <%= image_tag "rel_two.png", class: "avatar-img" %>
       </div>
       <div class="avatar avatar-3">
-        <%= render partial: 'shared/svgs', locals: { svg_class: 'svg-avatar-3' } %>
+        <%= image_tag "rel_three.png", class: "avatar-img" %>
       </div>
       <div class="avatar avatar-4">
-        <%= render partial: 'shared/svgs', locals: { svg_class: 'svg-avatar-4' } %>
+        <%= image_tag "rel_four.png", class: "avatar-img" %>
       </div>
       <div class="avatar avatar-5">
-        <%= render partial: 'shared/svgs', locals: { svg_class: 'svg-avatar-5' } %>
-      </div>
-      <div class="avatar avatar-6">
-        <%= render partial: 'shared/svgs', locals: { svg_class: 'svg-avatar-6' } %>
+        <%= image_tag "rel_five.png", class: "avatar-img" %>
       </div>
     </div>
 
-    <h1>Faith Deserve Facts</h1>
-    <p class="body-large">Discover and follow theological leaders who build on verifiable claims, not assumptions.</p>
+    <h1>True Faith Demands Facts</h1>
+    <p class="body-large">The world's first AI-validated, peer-reviewed religious fact checker</p>
     
     <div class="cta-buttons">
-      <%= link_to "Explore Verified Facts", new_user_session_path, class: "btn-primary" %>
-      <button class="btn-watch">
-        <div class="play-circle">
-          <i class="fas fa-play"></i>
-        </div>
-        Watch How It Works
-      </button>
+      <%= link_to "Explore Verified Claims", new_user_session_path, class: "btn-primary" %>
     </div>
   </div>
 </div>
@@ -59,37 +50,75 @@
 <%# Core Functionality Section %>
 <div class="core-functionality">
   <h2>Core Functionality</h2>
+  <p class="subtitle">Discover the powerful features that make our platform intelligent, efficient, and easy to use.</p>
   
   <div class="features-grid">
     <div class="feature-card">
       <div class="icon">
-        <i class="fas fa-paper-plane"></i>
+        <%= image_tag "core_one.png", class: "feature-icon" %>
+      </div>
+      <h4>Explore Verified Facts</h4>
+      <p class="body-small">Browse AI + peer-verified truths</p>
+    </div>
+
+    <div class="feature-card">
+      <div class="icon">
+        <%= image_tag "core_two.png", class: "feature-icon" %>
+      </div>
+      <h4>Challenge a Claim</h4>
+      <p class="body-small">Dispute claims with better evidence</p>
+    </div>
+
+    <div class="feature-card">
+      <div class="icon">
+        <%= image_tag "core_three.png", class: "feature-icon" %>
       </div>
       <h4>Submit a Claim</h4>
-      <p class="body-small">With Scriptural, historical, or logical evidence.</p>
+      <p class="body-small">Propose new claim with scriptural/historical support</p>
     </div>
 
     <div class="feature-card">
       <div class="icon">
-        <i class="fas fa-check-circle"></i>
-      </div>
-      <h4>Verified by AI + Peers</h4>
-      <p class="body-small">Claim becomes a Fact after dual validation.</p>
-    </div>
-
-    <div class="feature-card">
-      <div class="icon">
-        <i class="fas fa-book-reader"></i>
+        <%= image_tag "core_four.png", class: "feature-icon" %>
       </div>
       <h4>Follow Interpretive Theories</h4>
-      <p class="body-small">Explore frameworks built only on confirmed Facts.</p>
+      <p class="body-small">Track frameworks built on verified facts</p>
     </div>
+
+    <div class="feature-card">
+      <div class="icon">
+        <%= image_tag "core_five.png", class: "feature-icon" %>
+      </div>
+      <h4>Tag + Save for Study</h4>
+      <p class="body-small">Build your own fact library</p>
+    </div>
+
+    <div class="feature-card">
+      <div class="icon">
+        <%= image_tag "core_six.png", class: "feature-icon" %>
+      </div>
+      <h4>Join or Create a Group</h4>
+      <p class="body-small">Study, discuss, and verify claims with others</p>
+    </div>
+  </div>
+</div>
+
+<%# How it Works Section %>
+<div class="how-it-works">
+  <h2>How it works</h2>
+  <p class="subtitle">Explore the video to see how our platform works with the integrated AI module, enhancing functionality and delivering a smarter, more efficient user experience.</p>
+  
+  <div class="video-container">
+    <%= image_tag "video_thumbnail.png", class: "video-thumbnail" %>
+    <button class="play-button">
+      <i class="fas fa-play"></i>
+    </button>
   </div>
 </div>
 
 <%# Featured Claims Section %>
 <div class="featured-claims">
-  <h2>Featured Claims</h2>
+  <h2 class="claims-heading">Featured Claims</h2>
   
   <div class="claims-grid">
     <div class="claim-card success-card">
@@ -112,7 +141,7 @@
 <%# LSV Section %>
 <div class="lsv-section">
   <h2>What Is LSV?</h2>
-  <p class="body-large">Literal Source Verification is a method to identify indisputable religious facts using only scripture, history and logic.</p>
+  <p class="body-large">Literal Source Verification (LSV) is a groundbreaking method that replaces tradition and opinion with evidence-based truth—using only scripture, history, and logic. Every claim is tested by AI, then confirmed by peers. Only facts survive.</p>
   <%= link_to "Learn About LSV", new_user_session_path, class: "btn-primary" %>
 </div>
 
@@ -121,8 +150,8 @@
   <div class="content">
     <div class="text-content">
       <div class="circle-decoration"></div>
-      <h2>Join The Movement Of Verified Faith</h2>
-      <p>Become a part of a community dedicated to promoting truth and authenticity in faith through verified evidence-based claims.</p>
+      <h2>Let's Find Truth Together</h2>
+      <p>Never before in human history have we had this much knowledge at our fingertips. But in a world flooded with opinions, the real challenge is verifying truth. We're building a community of truth-seekers who rely on evidence, not assumptions. No traditions. No opinions. Just truth you can test.</p>
     </div>
     <div class="downward-arrow">
       <%= render partial: 'shared/svgs', locals: { svg_class: 'svg-curved-arrow' } %>
@@ -136,39 +165,65 @@
   <div class="footer-content">
     <div class="footer-brand">
       <h3>
-        <%= image_tag "footer-logo.png", alt: "Verifaith Logo", class: "footer-logo" %>
+        <%= image_tag "f_verifaith.png", alt: "Verifaith Logo", class: "footer-logo" %>
       </h3>
-      <p class="body-small">Unbiased, educational insights into the world's faiths and philosophies.</p>
+      <p class="body-small">One platform. All faiths. Truth you can test</p>
       <div class="social-links">
-        <a href="#"><i class="fab fa-github"></i></a>
-        <a href="#"><i class="fab fa-twitter"></i></a>
-        <a href="#"><i class="fab fa-linkedin"></i></a>
-        <a href="#"><i class="fab fa-youtube"></i></a>
+        <%= link_to "#", class: "social-link" do %>
+          <%= image_tag "f_google.png", alt: "Google" %>
+        <% end %>
+        <%= link_to "#", class: "social-link" do %>
+          <%= image_tag "f_twitter.png", alt: "Twitter" %>
+        <% end %>
+        <%= link_to "#", class: "social-link" do %>
+          <%= image_tag "f_insta.png", alt: "Instagram" %>
+        <% end %>
+        <%= link_to "#", class: "social-link" do %>
+          <%= image_tag "f_linkedin.png", alt: "LinkedIn" %>
+        <% end %>
       </div>
     </div>
 
     <div class="footer-links">
       <div class="link-column">
-        <h4>Useful Links</h4>
+        <h4>Platform</h4>
         <ul>
-          <li><%= link_to "About Us", "#" %></li>
-          <li><%= link_to "How It Works", "#" %></li>
-          <li><%= link_to "Contact Us", "#" %></li>
-          <li><%= link_to "Onboard Company", "#" %></li>
+          <li><%= link_to "Explore Claims", "#" %></li>
+          <li><%= link_to "Submit a Claim", "#" %></li>
+          <li><%= link_to "Challenge a Claim", "#" %></li>
+          <li><%= link_to "Follow Theories", "#" %></li>
         </ul>
       </div>
 
       <div class="link-column">
-        <h4>Company</h4>
+        <h4>Learn</h4>
         <ul>
-          <li><%= link_to "Newsletters", "#" %></li>
-          <li><%= link_to "Get in Touch", "#" %></li>
+          <li><%= link_to "What is LSV?", "#" %></li>
+          <li><%= link_to "How It Works", "#" %></li>
+          <li><%= link_to "FAQ", "#" %></li>
+        </ul>
+      </div>
+
+      <div class="link-column">
+        <h4>About</h4>
+        <ul>
+          <li><%= link_to "Our Mission", "#" %></li>
+          <li><%= link_to "Contact", "#" %></li>
+        </ul>
+      </div>
+
+      <div class="link-column">
+        <h4>Legal</h4>
+        <ul>
+          <li><%= link_to "Privacy Policy", "#" %></li>
+          <li><%= link_to "Terms of Use", "#" %></li>
+          <li><%= link_to "AI & Data Use", "#" %></li>
         </ul>
       </div>
     </div>
   </div>
 
   <div class="footer-bottom">
-    <p class="body-small">All rights reserved 2025</p>
+    <p class="body-small">One platform. All faiths. Truth you can test. © 2025 VeriFaith. All rights reserved.</p>
   </div>
 </footer>
