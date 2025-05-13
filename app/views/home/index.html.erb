@@ -1,3 +1,4 @@
+<%= render 'shared/landing_js' %>
 <%# Hero Section %>
 <div class="hero-section">
   <div class="nav-container">
@@ -108,11 +109,17 @@
   <h2>How it works</h2>
   <p class="subtitle">Explore the video to see how our platform works with the integrated AI module, enhancing functionality and delivering a smarter, more efficient user experience.</p>
   
-  <div class="video-container">
-    <%= image_tag "video_thumbnail.png", class: "video-thumbnail" %>
-    <button class="play-button">
-      <i class="fas fa-play"></i>
-    </button>
+  <div class="video-container" onclick="toggleVideo(event)">
+    <div class="video-wrapper">
+      <video id="landing-video" class="video-player" poster="<%= asset_path('video_thumbnail.png') %>">
+        <source src="<%= asset_path('landing.mp4') %>" type="video/mp4">
+        Your browser does not support the video tag.
+      </video>
+      <div class="video-overlay"></div>
+      <button class="play-button">
+        <i class="fas fa-play"></i>
+      </button>
+    </div>
   </div>
 </div>
 

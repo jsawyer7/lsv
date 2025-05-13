@@ -1,0 +1,39 @@
+<script>
+window.toggleVideo = function(event) {
+  const video = document.getElementById('landing-video');
+  const playButton = document.querySelector('.play-button');
+  const videoOverlay = document.querySelector('.video-overlay');
+  
+  if (event && event.target.closest('.play-button')) {
+    event.stopPropagation();
+  }
+
+  if (video.paused) {
+    video.play();
+    playButton.style.opacity = '0';
+    videoOverlay.style.display = 'none';
+  } else {
+    video.pause();
+    video.currentTime = 0;
+    playButton.style.opacity = '1';
+    videoOverlay.style.display = 'block';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  const video = document.getElementById('landing-video');
+  const playButton = document.querySelector('.play-button');
+  const videoOverlay = document.querySelector('.video-overlay');
+
+  video.addEventListener('ended', function() {
+    this.currentTime = 0;
+    playButton.style.opacity = '1';
+    videoOverlay.style.display = 'block';
+  });
+
+  video.addEventListener('pause', function() {
+    playButton.style.opacity = '1';
+    videoOverlay.style.display = 'block';
+  });
+});
+</script>
