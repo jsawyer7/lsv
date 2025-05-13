@@ -1,0 +1,85 @@
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const form = document.querySelector('.challenge-form-ajax');
+  const overlay = document.querySelector('.processing-overlay');
+  let processingTimeout;
+
+  function showLoader() {
+    overlay.classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function hideLoader() {
+    overlay.classList.remove('active');
+    document.body.style.overflow = '';
+  }
+
+  function startProcessingTimeout() {
+    processingTimeout = setTimeout(() => {
+      hideLoader();
+      const errorDiv = document.createElement('div');
+      errorDiv.className = 'error-messages';
+      errorDiv.innerHTML = '<p class="error">The request is taking longer than expected. Please check back in a few moments.</p>';
+      form.prepend(errorDiv);
+    }, 30000);
+  }
+
+  function clearProcessingTimeout() {
+    if (processingTimeout) {
+      clearTimeout(processingTimeout);
+    }
+  }
+
+  form.addEventListener('submit', function(event) {
+    event.preventDefault();
+    showLoader();
+    startProcessingTimeout();
+
+    const formData = new FormData(form);
+    const url = form.getAttribute('action');
+
+    fetch(url, {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'Accept': 'application/json',
+        'X-CSRF-Token': document.querySelector("[name='csrf-token']").content
+      },
+      credentials: 'same-origin'
+    })
+    .then(response => {
+      if (!response.ok) {
+        return response.json().then(data => Promise.reject(data));
+      }
+      return response.json();
+    })
+    .then(data => {
+      clearProcessingTimeout();
+      hideLoader();
+      
+      const challengesList = document.querySelector('#challenges');
+      if (challengesList && data.html) {
+        challengesList.innerHTML = data.html;
+        form.reset();
+      } else {
+        window.location.reload();
+      }
+    })
+    .catch(error => {
+      clearProcessingTimeout();
+      hideLoader();
+      const errorDiv = document.createElement('div');
+      errorDiv.className = 'error-messages';
+      errorDiv.innerHTML = `<p class="error">${error.errors ? error.errors.join(', ') : 'Failed to submit challenge. Please try again.'}</p>`;
+      form.prepend(errorDiv);
+    });
+  });
+
+  document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape' && overlay.classList.contains('active')) {
+      hideLoader();
+      clearProcessingTimeout();
+    }
+  });
+});
+</script>

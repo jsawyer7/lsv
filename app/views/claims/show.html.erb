@@ -17,3 +17,28 @@
     </div>
   </div>
 </div>
+
+<div class="claim-container">
+  <div class="challenges-section">
+    <h2>Challenges</h2>
+    
+    <div id="challenges">
+      <%= render partial: 'challenges/challenge', collection: @claim.challenges %>
+    </div>
+
+    <% if user_signed_in? %>
+      <div id="challenge_form">
+        <%= render 'challenges/form', claim: @claim, challenge: @claim.challenges.new %>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<div class="processing-overlay">
+  <div class="loader-container">
+    <div class="loader"></div>
+    <p class="loader-text">Processing your challenge...</p>
+  </div>
+</div>
+
+<%= stylesheet_link_tag "claims" %>

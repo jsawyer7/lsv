@@ -10,9 +10,23 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2025_04_30_231545) do
+ActiveRecord::Schema[7.0].define(version: 2025_05_13_222846) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
+
+  create_table "challenges", force: :cascade do |t|
+    t.text "text", null: false
+    t.text "ai_response"
+    t.string "status", default: "pending"
+    t.bigint "claim_id", null: false
+    t.bigint "user_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["claim_id", "user_id"], name: "index_challenges_on_claim_id_and_user_id"
+    t.index ["claim_id"], name: "index_challenges_on_claim_id"
+    t.index ["status"], name: "index_challenges_on_status"
+    t.index ["user_id"], name: "index_challenges_on_user_id"
+  end
 
   create_table "claims", force: :cascade do |t|
     t.bigint "user_id", null: false
@@ -47,5 +61,7 @@ ActiveRecord::Schema[7.0].define(version: 2025_04_30_231545) do
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
   end
 
+  add_foreign_key "challenges", "claims"
+  add_foreign_key "challenges", "users"
   add_foreign_key "claims", "users"
 end

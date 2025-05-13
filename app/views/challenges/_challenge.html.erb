@@ -1,0 +1,24 @@
+<div class="challenge-card" id="<%= dom_id(challenge) %>">
+  <div class="challenge-header">
+    <div class="user-info">
+      <span class="user-name"><%= challenge.user.full_name || challenge.user.email %></span>
+      <span class="challenge-date"><%= time_ago_in_words(challenge.created_at) %> ago</span>
+    </div>
+    <span class="status-badge <%= challenge.status %>">
+      <%= challenge.status.capitalize %>
+    </span>
+  </div>
+
+  <div class="challenge-text">
+    <%= simple_format(challenge.text) %>
+  </div>
+
+  <% if challenge.ai_response.present? %>
+    <div class="ai-response">
+      <h4>AI Analysis</h4>
+      <div class="ai-response-content">
+        <%= simple_format(challenge.ai_response) %>
+      </div>
+    </div>
+  <% end %>
+</div> 

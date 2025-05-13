@@ -16,4 +16,8 @@ Rails.application.routes.draw do
 
   get 'dashboard', to: 'dashboard#index'
   resources :claims, only: [:new, :create, :show, :index]
+
+  resources :claims do
+    resources :challenges, only: [:create, :show]
+  end
 end

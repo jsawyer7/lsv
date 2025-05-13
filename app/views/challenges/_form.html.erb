@@ -1,0 +1,21 @@
+<%= render 'shared/challenge_js' %>
+<div class="challenge-form">
+  <%= form_with(model: [claim, challenge], local: false, class: "challenge-form-ajax") do |f| %>
+    <% if challenge.errors.any? %>
+      <div class="error-messages">
+        <% challenge.errors.full_messages.each do |message| %>
+          <p class="error"><%= message %></p>
+        <% end %>
+      </div>
+    <% end %>
+
+    <div class="form-group">
+      <%= f.label :text, "Your Challenge" %>
+      <%= f.text_area :text, rows: 4, placeholder: "Enter your challenge here...", class: "form-control" %>
+    </div>
+
+    <div class="form-actions">
+      <%= f.submit "Submit Challenge", class: "btn btn-primary" %>
+    </div>
+  <% end %>
+</div>
