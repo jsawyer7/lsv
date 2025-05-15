@@ -8,7 +8,14 @@
     <div class="result-body">
       <p><strong>Claim:</strong><br><%= @claim.content %></p>
       <p><strong>Evidence:</strong><br><%= simple_format(@claim.evidence) %></p>
-      <p><strong>AI Reasoning:</strong><br><%= simple_format(@claim.reasoning) %></p>
+      
+      <% @claim.reasonings.each do |reasoning| %>
+        <div class="reasoning-section">
+          <h3><%= reasoning.source %> Analysis</h3>
+          <h3>Result:<br><span><%= reasoning.result %></span></h3>
+          <p><strong>AI Reasoning:</strong><br><%= simple_format(reasoning.response) %></p>
+        </div>
+      <% end %>
     </div>
 
     <div class="actions">

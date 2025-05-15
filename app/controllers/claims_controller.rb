@@ -15,8 +15,8 @@ class ClaimsController < ApplicationController
     @claim = current_user.claims.new(claim_params)
 
     if @claim.save
-      response = LsvValidatorService.new(@claim).run_validation!
-      @claim.update(result: response[:badge], reasoning: response[:reasoning])
+      LsvValidatorService.new(@claim).run_validation!
+
       redirect_to @claim, notice: "Claim validated successfully."
     else
       render :new, status: :unprocessable_entity
