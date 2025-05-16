@@ -1,0 +1,115 @@
+<%= javascript_tag do %>
+  window.validatedClaim = null;
+
+  function showClaimStep() {
+    console.log('Showing claim step');
+    document.getElementById('claim-step').style.display = 'block';
+    document.getElementById('evidence-step').style.display = 'none';
+  }
+
+  function showEvidenceStep() {
+    console.log('Showing evidence step');
+    document.getElementById('claim-step').style.display = 'none';
+    document.getElementById('evidence-step').style.display = 'block';
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded, setting up form handlers');
+    
+    const form = document.getElementById('claim-form');
+    const validateButton = document.getElementById('validate-claim');
+    const submitButton = document.getElementById('submit-claim');
+    const claimInput = form.querySelector('[name="claim[content]"]');
+    const evidenceInput = form.querySelector('[name="claim[evidence]"]');
+    const errorMessage = document.querySelector('.error-message');
+    const evidenceError = document.querySelector('.evidence-error');
+
+    // Validate claim button handler
+    validateButton.addEventListener('click', function() {
+      console.log('Validate button clicked');
+      const content = claimInput.value;
+      
+      if (!content.trim()) {
+        errorMessage.textContent = 'Please enter a claim';
+        errorMessage.style.display = 'block';
+        return;
+      }
+
+      validateButton.disabled = true;
+      validateButton.textContent = 'Validating...';
+
+      console.log('Sending validation request for:', content);
+      fetch('/claims/validate_claim', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': document.querySelector("[name='csrf-token']").content
+        },
+        body: JSON.stringify({ claim: { content: content } })
+      })
+      .then(response => response.json())
+      .then(data => {
+        console.log('Validation response:', data);
+        if (data.valid) {
+          window.validatedClaim = data.cleaned_claim;
+          claimInput.value = data.cleaned_claim;
+          errorMessage.style.display = 'none';
+          showEvidenceStep();
+        } else {
+          errorMessage.textContent = data.error;
+          errorMessage.style.display = 'block';
+        }
+      })
+      .catch(error => {
+        console.error('Validation error:', error);
+        errorMessage.textContent = 'An error occurred while validating the claim';
+        errorMessage.style.display = 'block';
+      })
+      .finally(() => {
+        validateButton.disabled = false;
+        validateButton.textContent = 'Continue';
+      });
+    });
+
+    // Form submission handler
+    form.addEventListener('submit', function(e) {
+      console.log('Form submit triggered');
+      e.preventDefault();
+      
+      const evidence = evidenceInput.value;
+      console.log('Current values:', {
+        claim: claimInput.value,
+        validatedClaim: window.validatedClaim,
+        evidence: evidence
+      });
+
+      if (!evidence.trim()) {
+        console.log('Evidence missing');
+        evidenceError.textContent = 'Please enter evidence';
+        evidenceError.style.display = 'block';
+        return;
+      }
+
+      if (!window.validatedClaim) {
+        console.log('No validated claim found');
+        errorMessage.textContent = 'Please validate your claim first';
+        showClaimStep();
+        return;
+      }
+
+      // Set the final values
+      claimInput.value = window.validatedClaim;
+      
+      console.log('Submitting form with:', {
+        finalClaim: claimInput.value,
+        finalEvidence: evidenceInput.value
+      });
+
+      // Disable the submit button
+      submitButton.disabled = true;
+      
+      // Submit the form
+      form.submit();
+    });
+  });
+<% end %>

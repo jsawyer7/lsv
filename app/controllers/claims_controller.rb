@@ -11,12 +11,22 @@ class ClaimsController < ApplicationController
     @claim = Claim.new
   end
 
+  def validate_claim
+    result = LsvInitialClaimValidatorService.new(params[:claim][:content]).run_validation!
+    
+    if result[:valid]
+      cleaned_claim = result[:reason].presence || params[:claim][:content]
+      render json: { valid: true, cleaned_claim: cleaned_claim }
+    else
+      render json: { valid: false, error: result[:reason] }, status: :unprocessable_entity
+    end
+  end
+
   def create
     @claim = current_user.claims.new(claim_params)
 
     if @claim.save
       LsvValidatorService.new(@claim).run_validation!
-
       redirect_to @claim, notice: "Claim validated successfully."
     else
       render :new, status: :unprocessable_entity

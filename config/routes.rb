@@ -19,5 +19,6 @@ Rails.application.routes.draw do
 
   resources :claims do
     resources :challenges, only: [:create, :show]
+    post :validate_claim, on: :collection
   end
 end

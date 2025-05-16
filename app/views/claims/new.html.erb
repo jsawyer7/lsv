@@ -1,3 +1,5 @@
+<%= render 'shared/claim_js' %>
+
 <div class="validator-container">
   <div class="validator-box">
     <div class="validator-header">
@@ -5,20 +7,25 @@
       <h1>Literal Source Verifier<br><span>Claim Validator</span></h1>
     </div>
 
-    <%= form_with(model: @claim, local: true) do |f| %>
-      <div class="field">
+    <%= form_with(model: @claim, local: true, html: { id: 'claim-form' }) do |f| %>
+      <div class="field" id="claim-step">
         <h2>🧾 Step 1: Enter Your Claim</h2>
         <%= f.text_area :content, class: "input-field", placeholder: "Claim: Jesus is not God..." %>
+        <div class="error-message" style="display: none; color: red; margin-top: 10px;"></div>
+        <div class="actions">
+          <button type="button" id="validate-claim" class="validator-button">Continue</button>
+          <%= link_to "← Back to Dashboard", root_path, class: "back-button" %>
+        </div>
       </div>
 
-      <div class="field">
+      <div class="field" id="evidence-step" style="display: none;">
         <h2>📜 Step 2: Enter Your Evidence</h2>
         <%= f.text_area :evidence, class: "input-field", placeholder: "- 1 Timothy 2:5 — 'One mediator...'" %>
-      </div>
-
-      <div class="actions">
-        <%= f.submit "Run LSV Validation", class: "validator-button" %>
-        <%= link_to "← Back to Dashboard", root_path, class: "back-button" %>
+        <div class="error-message evidence-error" style="display: none; color: red; margin-top: 10px;"></div>
+        <div class="actions">
+          <button type="submit" class="validator-button" id="submit-claim">Run LSV Validation</button>
+          <button type="button" class="back-button" onclick="showClaimStep()">← Back to Claim</button>
+        </div>
       </div>
     <% end %>
   </div>
