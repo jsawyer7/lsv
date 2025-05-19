@@ -26,7 +26,8 @@ class ClaimsController < ApplicationController
     @claim = current_user.claims.new(claim_params)
 
     if @claim.save
-      LsvValidatorService.new(@claim).run_validation!
+      response = LsvValidatorService.new(@claim).run_validation!
+      store_claim_result(@claim) if response
       redirect_to @claim, notice: "Claim validated successfully."
     else
       render :new, status: :unprocessable_entity
@@ -38,6 +39,15 @@ class ClaimsController < ApplicationController
   end
 
   private
+
+  def store_claim_result(claim)
+    primary_reasonings = claim.reasonings.where(primary_source: true)
+    if primary_reasonings.any? { |r| r.result == '❌ False' }
+      claim.update(result: '❌ False')
+    elsif primary_reasonings.all? { |r| r.result == '✅ True' } && primary_reasonings.any?
+      claim.update(result: '✅ True')
+    end
+  end
 
   def claim_params
     params.require(:claim).permit(:content, :evidence)

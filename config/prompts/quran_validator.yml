@@ -87,7 +87,8 @@ system: |
             "source": "Quran internal usage or Classical Arabic lexicons (clearly specified which)."
           }
         ],
-        "reasoning_summary": "Explain verdict using only Quranic evidence and strict logic. Cite exact verse matches, keyword audits, and explain True, False, or Inconclusive determination clearly."
+        "reasoning_summary": "Explain verdict using only Quranic evidence and strict logic. Cite exact verse matches, keyword audits, and explain True, False, or Inconclusive determination clearly.",
+        "primary": "True / False"
       }
     },
     "instructions": "This validator must assess the claim strictly by the literal wording of the Quran. No interpretation from Islamic schools, theology, tafsir, or cultural traditions may be used. Figurative language may only be accepted literally if explained within the Quran itself. Output must be in strict JSON format exactly as specified above. If any required fields are missing or improperly formatted, the validator must automatically retry generation while keeping the same evidence base."
@@ -103,13 +104,29 @@ user: |
     Claim: {{claim}}
     Evidence: {{evidence}}
     ---
-    Is the claim True or False according to LSV rules? Give a one-sentence reason.
+    Is the claim True or False according to LSV rules? Give a one-sentence reason and fill out primary field as True in output if user provided any evidence from Quran and False if not.
 
 assistant: |
   Respond strictly in valid JSON format:
-      {
-        "valid": true or false,
-        "reasoning": "Your reasoning for whether this claim meets the LSV standard.",
-        "flag": "none" | "rejected" | "evidence weak"
-      }
+    "output_format": {
+      "result": "True / False / Inconclusive",
+      "evidence": [
+        {
+          "type": "QuranVerse",
+          "reference": "Surah:Ayah",
+          "arabic": "[Full Arabic verse here]",
+          "translation": "[Yusuf Ali translation here]"
+        }
+      ],
+      "definition_audit": [
+        {
+          "term": "[keyword]",
+          "used_in_claim": true,
+          "quran_references": ["Surah:Ayah"],
+          "source": "Quran internal usage or Classical Arabic lexicons (clearly specified which)."
+        }
+      ],
+      "reasoning_summary": "Explain verdict using only Quranic evidence and strict logic. Cite exact verse matches, keyword audits, and explain True, False, or Inconclusive determination clearly.",
+      "primary": "True / False"
+    }
   Do not include anything outside this JSON block.

@@ -16,13 +16,15 @@ class LsvValidatorService
 
       result = {
         badge: parse_badge(json),
-        reasoning: parse_reasoning(response)
+        reasoning: parse_reasoning(response),
+        primary: parse_primary_source(json)
       }
 
       @claim.reasonings.create!(
         source: source,
         response: result[:reasoning],
-        result: result[:badge]
+        result: result[:badge],
+        primary_source: result[:primary]
       )
     end
 
@@ -94,23 +96,30 @@ class LsvValidatorService
   end
 
   def parse_badge(response)
-    case response["valid"]
-    when true
+    case response["result"]
+    when 'True'
       "✅ True"
-    when false
-      if response["flag"] == "evidence weak"
-        "⚠️ Unverifiable"
-      else
-        "❌ False"
-      end
+    when 'False'
+      "❌ False"
+    when 'Inconclusive'
+      "⚠️ Unverifiable"
     else
       "⚠️ Unknown"
     end
   end
 
+  def parse_primary_source(response)
+    case response["primary"]
+    when 'True'
+      true
+    else
+      false
+    end
+  end
+
   def parse_reasoning(response)
     result = parse_response_json(response)
-    result["reasoning"] || "No reasoning provided."
+    result["reasoning_summary"] || "No reasoning provided."
   end
 
   def openai_api_key

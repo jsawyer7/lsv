@@ -16,6 +16,37 @@
           <p><strong>AI Reasoning:</strong><br><%= simple_format(reasoning.response) %></p>
         </div>
       <% end %>
+
+      <div class="sources-columns" style="display: flex; gap: 2rem; margin-top: 2rem;">
+        <div class="primary-sources" style="flex: 1;">
+          <h3>Primary Sources</h3>
+          <% @claim.reasonings.where(primary_source: true).each do |reasoning| %>
+            <% color = case reasoning.result
+              when '✅ True' then '#d1fae5' # green
+              when '❌ False' then '#fee2e2' # red
+              when '⚠️ Unverifiable' then '#fef9c3' # yellow
+              else '#f3f4f6' # gray
+            end %>
+            <div style="background: <%= color %>; padding: 0.75rem 1rem; border-radius: 6px; margin-bottom: 0.5rem; font-weight: 500;">
+              <%= reasoning.source %>
+            </div>
+          <% end %>
+        </div>
+        <div class="secondary-sources" style="flex: 1;">
+          <h3>Secondary Sources</h3>
+          <% @claim.reasonings.where(primary_source: false).each do |reasoning| %>
+            <% color = case reasoning.result
+              when '✅ True' then '#d1fae5' # green
+              when '❌ False' then '#fee2e2' # red
+              when '⚠️ Unverifiable' then '#fef9c3' # yellow
+              else '#f3f4f6' # gray
+            end %>
+            <div style="background: <%= color %>; padding: 0.75rem 1rem; border-radius: 6px; margin-bottom: 0.5rem; font-weight: 500;">
+              <%= reasoning.source %>
+            </div>
+          <% end %>
+        </div>
+      </div>
     </div>
 
     <div class="actions">

@@ -71,6 +71,7 @@ system: |
           }
         ],
         "reasoning_summary": "Explain verdict using only literal historical evidence and strict logic. Cite exact source matches, authenticity audits if relevant, and explain why the claim is True, False, or Inconclusive."
+        "primary": "True / False"
       }
     },
     "instructions": "This validator must assess the historical claim strictly by verifiable primary sources, archaeological evidence, or peer-reviewed academic research. No theology, religious traditions, legends, ideological reconstructions, or faithbook beliefs may be used to validate historical events. Faithbook documents may only demonstrate the existence of beliefs, not validate events. Output must be in strict JSON format exactly as specified above. If any required fields are missing or improperly formatted, the validator must automatically retry generation while keeping the same evidence base."
@@ -86,13 +87,29 @@ user: |
     Claim: {{claim}}
     Evidence: {{evidence}}
     ---
-    Is the claim True or False according to LSV rules? Give a one-sentence reason.
+    Is the claim True or False according to LSV rules? Give a one-sentence reason and fill out primary field as True in output if user provided any evidence from Historical and False if not.
 
 assistant: |
   Respond strictly in valid JSON format:
-      {
-        "valid": true or false,
-        "reasoning": "Your reasoning for whether this claim meets the LSV standard.",
-        "flag": "none" | "rejected" | "evidence weak"
-      }
+    "output_format": {
+      "result": "True / False / Inconclusive",
+      "evidence": [
+        {
+          "type": "HistoricalEvidence",
+          "reference": "Source Title or Artifact Description",
+          "summary": "[Short summary of the evidence]",
+          "date": "[Approximate date of evidence if known]"
+        }
+      ],
+      "definition_audit": [
+        {
+          "term": "[keyword or historical entity]",
+          "used_in_claim": true,
+          "historical_references": ["Source citations or artifact references"],
+          "source": "Primary document / Archaeological artifact / Peer-reviewed study (specify which)"
+        }
+      ],
+      "reasoning_summary": "Explain verdict using only literal historical evidence and strict logic. Cite exact source matches, authenticity audits if relevant, and explain why the claim is True, False, or Inconclusive.",
+      "primary": "True / False"
+    }
   Do not include anything outside this JSON block.
