@@ -10,13 +10,12 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2025_05_19_223708) do
+ActiveRecord::Schema[7.0].define(version: 2025_05_21_201021) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
   create_table "challenges", force: :cascade do |t|
     t.text "text", null: false
-    t.text "ai_response"
     t.string "status", default: "pending"
     t.bigint "claim_id", null: false
     t.bigint "user_id", null: false
@@ -40,15 +39,15 @@ ActiveRecord::Schema[7.0].define(version: 2025_05_19_223708) do
   end
 
   create_table "reasonings", force: :cascade do |t|
-    t.bigint "claim_id", null: false
     t.string "source", null: false
     t.text "response"
     t.string "result"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.boolean "primary_source", default: false
-    t.index ["claim_id", "source"], name: "index_reasonings_on_claim_id_and_source", unique: true
-    t.index ["claim_id"], name: "index_reasonings_on_claim_id"
+    t.string "reasonable_type"
+    t.bigint "reasonable_id"
+    t.index ["reasonable_type", "reasonable_id", "source"], name: "index_reasonings_on_reasonable_and_source", unique: true
   end
 
   create_table "users", force: :cascade do |t|
@@ -76,5 +75,4 @@ ActiveRecord::Schema[7.0].define(version: 2025_05_19_223708) do
   add_foreign_key "challenges", "claims"
   add_foreign_key "challenges", "users"
   add_foreign_key "claims", "users"
-  add_foreign_key "reasonings", "claims"
 end

@@ -13,12 +13,17 @@
     <%= simple_format(challenge.text) %>
   </div>
 
-  <% if challenge.ai_response.present? %>
-    <div class="ai-response">
-      <h4>AI Analysis</h4>
-      <div class="ai-response-content">
-        <%= simple_format(challenge.ai_response) %>
-      </div>
+  <% challenge.reasonings.each do |reasoning| %>
+    <% color = case reasoning.result
+      when '✅ True' then '#d1fae5' # green
+      when '❌ False' then '#fee2e2' # red
+      when '⚠️ Unverifiable' then '#fef9c3' # yellow
+      else '#f3f4f6' # gray
+    end %>
+    <div class="reasoning-section" style="background: <%= color %>; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+      <h4><%= reasoning.source %> Analysis</h4>
+      <div><strong>Result:</strong> <%= reasoning.result %></div>
+      <div><strong>AI Reasoning:</strong> <%= simple_format(reasoning.response) %></div>
     </div>
   <% end %>
 </div> 

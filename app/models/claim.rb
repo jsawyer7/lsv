@@ -1,7 +1,7 @@
 class Claim < ApplicationRecord
   belongs_to :user
   has_many :challenges, dependent: :destroy
-  has_many :reasonings, dependent: :destroy
+  has_many :reasonings, as: :reasonable, dependent: :destroy
 
   validates :content, presence: true
   validates :evidence, presence: true
