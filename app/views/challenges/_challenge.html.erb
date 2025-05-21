@@ -13,7 +13,16 @@
     <%= simple_format(challenge.text) %>
   </div>
 
-  <% challenge.reasonings.each do |reasoning| %>
+  <% sorted_reasonings = challenge.reasonings.sort_by do |r|
+    case r.result
+    when '✅ True' then 0
+    when '❌ False' then 1
+    when '⚠️ Unverifiable' then 2
+    else 3
+    end
+  end %>
+
+  <% sorted_reasonings.each do |reasoning| %>
     <% color = case reasoning.result
       when '✅ True' then '#d1fae5' # green
       when '❌ False' then '#fee2e2' # red
