@@ -1,0 +1,67 @@
+<%# Footer %>
+<footer class="site-footer">
+  <div class="footer-content">
+    <div class="footer-brand">
+      <h3>
+        <%= image_tag "f_verifaith.png", alt: "Verifaith Logo", class: "footer-logo" %>
+      </h3>
+      <p class="body-small">One platform. All faiths. Truth you can test</p>
+      <div class="social-links">
+        <%= link_to "#", class: "social-link" do %>
+          <%= image_tag "f_google.png", alt: "Google" %>
+        <% end %>
+        <%= link_to "#", class: "social-link" do %>
+          <%= image_tag "f_twitter.png", alt: "Twitter" %>
+        <% end %>
+        <%= link_to "#", class: "social-link" do %>
+          <%= image_tag "f_insta.png", alt: "Instagram" %>
+        <% end %>
+        <%= link_to "#", class: "social-link" do %>
+          <%= image_tag "f_linkedin.png", alt: "LinkedIn" %>
+        <% end %>
+      </div>
+    </div>
+
+    <div class="footer-links">
+      <div class="link-column">
+        <h4>Platform</h4>
+        <ul>
+          <li><%= link_to "Explore Claims", "#" %></li>
+          <li><%= link_to "Submit a Claim", "#" %></li>
+          <li><%= link_to "Challenge a Claim", "#" %></li>
+          <li><%= link_to "Follow Theories", "#" %></li>
+        </ul>
+      </div>
+
+      <div class="link-column">
+        <h4>Learn</h4>
+        <ul>
+          <li><%= link_to "What is LSV?", "#" %></li>
+          <li><%= link_to "How It Works", "#" %></li>
+          <li><%= link_to "FAQ", "#" %></li>
+        </ul>
+      </div>
+
+      <div class="link-column">
+        <h4>About</h4>
+        <ul>
+          <li><%= link_to "Our Mission", "#" %></li>
+          <li><%= link_to "Contact", "#" %></li>
+        </ul>
+      </div>
+
+      <div class="link-column">
+        <h4>Legal</h4>
+        <ul>
+          <li><%= link_to "Privacy Policy", privacy_path %></li>
+          <li><%= link_to "Terms of Use", "#" %></li>
+          <li><%= link_to "AI & Data Use", "#" %></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-bottom">
+    <p class="body-small">One platform. All faiths. Truth you can test. © 2025 VeriFaith. All rights reserved.</p>
+  </div>
+</footer>

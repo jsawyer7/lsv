@@ -21,4 +21,6 @@ Rails.application.routes.draw do
     resources :challenges, only: [:create, :show]
     post :validate_claim, on: :collection
   end
+
+  get '/privacy', to: 'static#privacy', as: :privacy
 end

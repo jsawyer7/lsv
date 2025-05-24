@@ -1,0 +1,920 @@
+// Privacy Policy Page Styles
+.privacy-policy-container {
+  background: #fff;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 100px;
+  font-family: 'SF Pro Display', 'Inter', Arial, sans-serif;
+  color: #1e293b;
+}
+
+.privacy-policy-header {
+  text-align: left;
+  margin-bottom: 2.5rem;
+  padding-top: 2.5rem;
+  padding-left: 0;
+  padding-right: 0;
+
+  h1 {
+    font-size: 2.2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: #2563eb;
+    letter-spacing: -1px;
+  }
+
+  .privacy-policy-meta {
+    display: flex;
+    gap: 2rem;
+    font-size: 1rem;
+    color: #64748b;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+  }
+
+  p {
+    font-size: 1.1rem;
+    color: #334155;
+    margin-bottom: 0;
+    line-height: 1.7;
+  }
+}
+
+.privacy-policy-section {
+  margin-bottom: 2.5rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid #e5e7eb;
+  padding-left: 0;
+  padding-right: 0;
+
+  &:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+  }
+
+  h2 {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 1.2rem;
+    margin-top: 0;
+  }
+
+  h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #2563eb;
+    margin-bottom: 0.7rem;
+    margin-top: 1.2rem;
+  }
+
+  ul {
+    margin: 0 0 1.2rem 1.2rem;
+    padding: 0;
+    list-style: disc;
+    color: #334155;
+    font-size: 1rem;
+    line-height: 1.7;
+    li {
+      margin-bottom: 0.5rem;
+    }
+    ul {
+      margin-top: 0.5rem;
+      margin-bottom: 0.5rem;
+      list-style: circle;
+    }
+  }
+
+  p {
+    color: #475569;
+    font-size: 1rem;
+    margin-bottom: 1rem;
+    line-height: 1.7;
+  }
+}
+
+.privacy-contact-methods {
+  display: flex;
+  gap: 2.5rem;
+  margin-top: 1.5rem;
+  flex-wrap: wrap;
+
+  .privacy-contact-item {
+    background: #f1f5f9;
+    border-radius: 8px;
+    padding: 1.2rem 1.5rem;
+    min-width: 220px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    box-shadow: 0 2px 8px rgba(30, 41, 59, 0.04);
+    margin-bottom: 1rem;
+
+    .privacy-contact-label {
+      font-size: 0.98rem;
+      color: #2563eb;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      letter-spacing: 0.5px;
+    }
+    a, span {
+      font-size: 1.05rem;
+      color: #1e293b;
+      word-break: break-all;
+    }
+    a {
+      text-decoration: underline;
+      color: #2563eb;
+      &:hover {
+        color: #1d4ed8;
+      }
+    }
+  }
+}
+
+.nav-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem 5%;
+  background: white;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+
+  @media (max-width: 768px) {
+    padding: 1rem 5%;
+  }
+
+  .logo {
+    h3 {
+      font-size: 2rem;
+      font-weight: map-get($font-weights, "bold");
+      margin: 0;
+    }
+    .nav-logo {
+      height: 50px;
+    }
+  }
+
+  .menu-toggle {
+    display: none;
+    flex-direction: column;
+    gap: 0.25rem;
+    cursor: pointer;
+    padding: 0.5rem;
+    z-index: 101;
+    background: transparent;
+    border: none;
+    outline: none;
+    position: relative;
+    margin: 0;
+    -webkit-tap-highlight-color: transparent;
+
+    @media (max-width: 768px) {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    span {
+      display: block;
+      width: 24px;
+      height: 2px;
+      background-color: #1d2430;
+      transition: transform 0.3s ease, opacity 0.3s ease;
+      transform-origin: center;
+      position: relative;
+
+      + span {
+        margin-top: 5px;
+      }
+    }
+
+    &.active {
+      span {
+        &:first-child {
+          transform: translateY(0);
+        }
+        &:nth-child(2) {
+          opacity: 0.5;
+        }
+        &:last-child {
+          transform: translateY(0);
+        }
+      }
+    }
+  }
+
+  .nav-buttons {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+
+    @media (max-width: 768px) {
+      position: fixed;
+      top: 0;
+      right: -100%;
+      width: 250px;
+      height: 100vh;
+      background: white;
+      flex-direction: column;
+      padding: 5rem 2rem;
+      transition: transform 0.3s ease;
+      box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+      z-index: 100;
+      transform: translateX(100%);
+
+      &.active {
+        transform: translateX(0);
+        right: 0;
+      }
+
+      .btn-secondary, .btn-primary {
+        width: 100%;
+        text-align: center;
+        margin: 0.5rem 0;
+      }
+    }
+
+    .btn-secondary {
+      padding: 0.75rem 1.5rem;
+      background: white;
+      border: 1px solid rgba(7, 6, 6, 0.86);
+      border-radius: 8px;
+      color: #1d2430;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      font-weight: map-get($font-weights, "bold");
+      
+      &:hover {
+        background: #f8f9fa;
+      }
+    }
+
+    .btn-primary {
+      padding: 0.75rem 1.5rem;
+      background: #2196F3;
+      border-radius: 8px;
+      color: white;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      font-weight: map-get($font-weights, "medium");
+      
+      &:hover {
+        background: #1976D2;
+      }
+    }
+  }
+
+  @media (max-width: 768px) {
+    .menu-toggle {
+      display: flex;
+    }
+  }
+}
+
+// Privacy Policy Hero Section
+.privacy-hero-section {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 340px;
+  padding: 3.5rem 0 2.5rem 0;
+  position: relative;
+
+  @media (max-width: 900px) {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 2rem 0 1.5rem 0;
+  }
+}
+
+.privacy-hero-content {
+  margin-top: 3rem;
+  flex: 1 1 60%;
+  max-width: 60%;
+  padding-right: 2.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+
+  @media (max-width: 900px) {
+    max-width: 100%;
+    padding-right: 0;
+    margin-bottom: 2rem;
+  }
+}
+
+.privacy-hero-title {
+  font-size: 2.8rem;
+  font-weight: 800;
+  color: #23263b;
+  margin-bottom: 2rem;
+  letter-spacing: -1.5px;
+  line-height: 1.1;
+}
+
+.privacy-hero-meta {
+  display: flex;
+  gap: 2.5rem;
+  font-size: 1.1rem;
+  color: #23263b;
+  font-weight: 500;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+
+  span {
+    display: block;
+    margin-bottom: 0.2rem;
+  }
+}
+
+.privacy-hero-text {
+  font-size: 1.15rem;
+  color: #23263b;
+  line-height: 1.7;
+  margin-bottom: 0.5rem;
+  p {
+    margin-bottom: 1.1rem;
+    margin-top: 0;
+  }
+}
+
+.privacy-hero-image {
+  flex: 0 0 368px;
+  max-width: 368px;
+  min-width: 260px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  background: #fff;
+  box-sizing: border-box;
+  padding: 1.2rem 1.2rem 0.5rem 1.2rem;
+  margin-left: 2.5rem;
+  min-height: 368px;
+
+  img {
+    width: 100%;
+    height: auto;
+    max-width: 320px;
+    object-fit: contain;
+    display: block;
+  }
+
+  @media (max-width: 1100px) {
+    flex: 0 0 260px;
+    max-width: 260px;
+    min-width: 180px;
+    min-height: 220px;
+    margin-left: 1.2rem;
+    padding: 0.7rem;
+  }
+  @media (max-width: 900px) {
+    margin-left: 0;
+    margin-bottom: 2rem;
+    align-self: center;
+  }
+}
+
+// Information We Collect Section
+.info-collect-section {
+  margin-top: 3.5rem;
+  margin-bottom: 3.5rem;
+
+  .privacy-section-title {
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: #23263b;
+    margin-bottom: 2.5rem;
+    letter-spacing: -1px;
+  }
+
+  .info-collect-columns {
+    display: flex;
+    gap: 3.5rem;
+    margin-bottom: 2.5rem;
+
+    @media (max-width: 900px) {
+      flex-direction: column;
+      gap: 2rem;
+    }
+  }
+
+  .info-collect-col {
+    flex: 1 1 0;
+    min-width: 260px;
+
+    h3 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #23263b;
+      margin-bottom: 1.2rem;
+    }
+
+    ul {
+      list-style: disc;
+      margin-left: 1.2rem;
+      color: #23263b;
+      font-size: 1.08rem;
+      line-height: 1.7;
+
+      li {
+        margin-bottom: 1.1rem;
+        strong {
+          font-weight: 700;
+        }
+      }
+    }
+  }
+
+  .info-collect-not-collect {
+    margin-top: 2.5rem;
+
+    h3 {
+      font-size: 1.18rem;
+      font-weight: 700;
+      color: #23263b;
+      margin-bottom: 1rem;
+    }
+
+    p {
+      font-size: 1.05rem;
+      color: #23263b;
+      margin-bottom: 0.7rem;
+    }
+
+    ul {
+      list-style: disc;
+      margin-left: 1.2rem;
+      color: #23263b;
+      font-size: 1.08rem;
+      line-height: 1.7;
+
+      li {
+        margin-bottom: 0.7rem;
+        strong {
+          font-weight: 700;
+        }
+      }
+    }
+  }
+}
+
+// How We Use Your Information Section
+.use-info-section {
+  margin-top: 3.5rem;
+  margin-bottom: 3.5rem;
+
+  .privacy-section-title {
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: #23263b;
+    margin-bottom: 2.2rem;
+    letter-spacing: -1px;
+  }
+
+  .use-info-intro {
+    font-size: 1.15rem;
+    color: #23263b;
+    margin-bottom: 1.2rem;
+  }
+
+  .use-info-list {
+    list-style: disc;
+    margin-left: 2.2rem;
+    color: #23263b;
+    font-size: 1.13rem;
+    line-height: 1.8;
+    max-width: 700px;
+
+    li {
+      margin-bottom: 1.1rem;
+      strong {
+        font-weight: 700;
+      }
+    }
+  }
+}
+
+// How We Protect Your Data Section
+.protect-data-section {
+  margin-top: 3.5rem;
+  margin-bottom: 3.5rem;
+
+  .privacy-section-title {
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: #23263b;
+    margin-bottom: 2.2rem;
+    letter-spacing: -1px;
+  }
+
+  .protect-data-list {
+    list-style: disc;
+    margin-left: 2.2rem;
+    color: #23263b;
+    font-size: 1.13rem;
+    line-height: 1.8;
+    max-width: 900px;
+
+    li {
+      margin-bottom: 1.1rem;
+      strong {
+        font-weight: 700;
+      }
+    }
+  }
+}
+
+// How We Share Your Information Section
+.share-info-section {
+  margin-top: 3.5rem;
+  margin-bottom: 3.5rem;
+
+  .privacy-section-title {
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: #23263b;
+    margin-bottom: 2.2rem;
+    letter-spacing: -1px;
+  }
+
+  .share-info-intro {
+    font-size: 1.15rem;
+    color: #23263b;
+    margin-bottom: 1.2rem;
+  }
+
+  .share-info-list {
+    list-style: disc;
+    margin-left: 2.2rem;
+    color: #23263b;
+    font-size: 1.13rem;
+    line-height: 1.8;
+    max-width: 900px;
+    margin-bottom: 1.5rem;
+
+    li {
+      margin-bottom: 1.1rem;
+      strong {
+        font-weight: 700;
+      }
+    }
+  }
+
+  .share-info-note {
+    font-size: 1.08rem;
+    color: #23263b;
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+}
+
+// Analytics & Aggregated Data Use Section
+.analytics-section {
+  margin-top: 3.5rem;
+  margin-bottom: 3.5rem;
+
+  .privacy-section-title {
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: #23263b;
+    margin-bottom: 2.2rem;
+    letter-spacing: -1px;
+  }
+
+  .analytics-intro {
+    font-size: 1.15rem;
+    color: #23263b;
+    margin-bottom: 1.2rem;
+  }
+
+  .analytics-uses-list {
+    list-style: disc;
+    margin-left: 2.2rem;
+    color: #23263b;
+    font-size: 1.13rem;
+    line-height: 1.8;
+    margin-bottom: 1.5rem;
+
+    li {
+      margin-bottom: 1.1rem;
+      strong {
+        font-weight: 700;
+      }
+    }
+  }
+
+  .analytics-data-intro {
+    font-size: 1.08rem;
+    color: #23263b;
+    margin-bottom: 0.7rem;
+    margin-top: 1.2rem;
+  }
+
+  .analytics-data-list {
+    list-style: disc;
+    margin-left: 2.2rem;
+    color: #23263b;
+    font-size: 1.13rem;
+    line-height: 1.8;
+    margin-bottom: 1.2rem;
+
+    li {
+      margin-bottom: 0.7rem;
+      strong {
+        font-weight: 700;
+      }
+    }
+  }
+
+  .analytics-note {
+    font-size: 1.08rem;
+    color: #23263b;
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+}
+
+// Your Data Rights Section
+.data-rights-section {
+  margin-top: 3.5rem;
+  margin-bottom: 3.5rem;
+
+  .privacy-section-title {
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: #23263b;
+    margin-bottom: 2.2rem;
+    letter-spacing: -1px;
+  }
+
+  .data-rights-columns {
+    display: flex;
+    gap: 4rem;
+    margin-bottom: 1.5rem;
+    @media (max-width: 900px) {
+      flex-direction: column;
+      gap: 2rem;
+    }
+  }
+
+  .data-rights-col {
+    flex: 1 1 0;
+    min-width: 260px;
+
+    h3 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #23263b;
+      margin-bottom: 1.2rem;
+    }
+
+    ul {
+      list-style: disc;
+      margin-left: 1.2rem;
+      color: #23263b;
+      font-size: 1.08rem;
+      line-height: 1.7;
+      margin-bottom: 1.2rem;
+      li {
+        margin-bottom: 1.1rem;
+      }
+    }
+
+    .data-rights-note {
+      font-size: 1.05rem;
+      color: #23263b;
+      margin-top: 0.5rem;
+      margin-bottom: 0.5rem;
+      a {
+        color: #2563eb;
+        text-decoration: underline;
+        &:hover {
+          color: #1d4ed8;
+        }
+      }
+    }
+  }
+}
+
+// Data Retention Section
+.data-retention-section {
+  margin-top: 3.5rem;
+  margin-bottom: 3.5rem;
+
+  .privacy-section-title {
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: #23263b;
+    margin-bottom: 2.2rem;
+    letter-spacing: -1px;
+  }
+
+  .data-retention-list {
+    list-style: disc;
+    margin-left: 2.2rem;
+    color: #23263b;
+    font-size: 1.13rem;
+    line-height: 1.8;
+    max-width: 900px;
+    li {
+      margin-bottom: 1.1rem;
+    }
+  }
+}
+
+// Cookies & Similar Technologies Section
+.cookies-section {
+  margin-top: 3.5rem;
+  margin-bottom: 3.5rem;
+
+  .privacy-section-title {
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: #23263b;
+    margin-bottom: 2.2rem;
+    letter-spacing: -1px;
+  }
+
+  .cookies-intro {
+    font-size: 1.15rem;
+    color: #23263b;
+    margin-bottom: 1.2rem;
+    margin-top: 1.2rem;
+  }
+
+  .cookies-list {
+    list-style: disc;
+    margin-left: 2.2rem;
+    color: #23263b;
+    font-size: 1.13rem;
+    line-height: 1.8;
+    margin-bottom: 1.5rem;
+    li {
+      margin-bottom: 1.1rem;
+      strong {
+        font-weight: 700;
+      }
+    }
+  }
+
+  .cookies-note {
+    font-size: 1.08rem;
+    color: #23263b;
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+}
+
+// Children's Privacy Section
+.children-section {
+  margin-top: 3.5rem;
+  margin-bottom: 3.5rem;
+
+  .privacy-section-title {
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: #23263b;
+    margin-bottom: 2.2rem;
+    letter-spacing: -1px;
+  }
+
+  .children-text {
+    font-size: 1.13rem;
+    color: #23263b;
+    line-height: 1.7;
+    max-width: 900px;
+    margin-bottom: 1.5rem;
+  }
+}
+
+// Changes To This Policy Section
+.changes-section {
+  margin-top: 3.5rem;
+  margin-bottom: 3.5rem;
+
+  .privacy-section-title {
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: #23263b;
+    margin-bottom: 2.2rem;
+    letter-spacing: -1px;
+  }
+
+  .changes-text {
+    font-size: 1.13rem;
+    color: #23263b;
+    margin-bottom: 1.5rem;
+    ul.changes-list {
+      list-style: disc;
+      margin-left: 2.2rem;
+      margin-bottom: 1.2rem;
+      margin-top: 1.2rem;
+      li {
+        margin-bottom: 0.7rem;
+      }
+    }
+  }
+}
+
+// Contact Us Section
+.contact-section {
+  margin-top: 3.5rem;
+  margin-bottom: 3.5rem;
+
+  .privacy-section-title {
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: #23263b;
+    margin-bottom: 2.2rem;
+    letter-spacing: -1px;
+  }
+
+  .contact-text {
+    font-size: 1.13rem;
+    color: #23263b;
+    margin-bottom: 2.2rem;
+  }
+
+  .contact-cards {
+    display: flex;
+    gap: 2.5rem;
+    flex-wrap: wrap;
+    margin-top: 1.5rem;
+    margin-bottom: 2rem;
+    @media (max-width: 900px) {
+      flex-direction: column;
+      gap: 1.2rem;
+    }
+  }
+
+  .contact-card {
+    background: #f7f7f8;
+    border-radius: 18px;
+    padding: 2rem 2.5rem 1.5rem 2rem;
+    min-width: 260px;
+    flex: 1 1 320px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    position: relative;
+    box-shadow: 0 2px 8px rgba(30, 41, 59, 0.04);
+    margin-bottom: 1rem;
+
+    .contact-label {
+      font-size: 1.08rem;
+      color: #23263b;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      letter-spacing: 0.5px;
+    }
+    .contact-value {
+      font-size: 1.18rem;
+      color: #23263b;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      a {
+        color: #23263b;
+        text-decoration: underline;
+        &:hover {
+          color: #2563eb;
+        }
+      }
+    }
+    .contact-icon {
+      position: absolute;
+      right: 2rem;
+      bottom: 1.5rem;
+      font-size: 2rem;
+      color: #4f8ee6;
+      opacity: 0.85;
+      @media (max-width: 900px) {
+        position: static;
+        margin-top: 1rem;
+        align-self: flex-end;
+      }
+    }
+  }
+}
+
+// Responsive adjustments
+@media (max-width: 900px) {
+  .privacy-policy-container {
+    max-width: 100vw;
+    padding: 0;
+  }
+  .privacy-contact-methods {
+    flex-direction: column;
+    gap: 1.2rem;
+  }
+}

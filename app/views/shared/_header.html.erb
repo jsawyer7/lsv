@@ -1,0 +1,17 @@
+<div class="nav-container">
+  <div class="logo">
+    <%= link_to root_path do %>
+      <%= image_tag "verifaith-logo.png", class: "nav-logo", alt: "Logo" %>
+    <% end %>
+  </div>
+  <button type="button" class="menu-toggle" aria-expanded="false" aria-label="Toggle navigation menu">
+    <span></span>
+    <span></span>
+    <span></span>
+  </button>
+
+    <div class="nav-buttons">
+        <%= link_to "Sign In", new_user_session_path, class: "btn-secondary" %>
+        <%= link_to "Get Started", new_user_registration_path, class: "btn-primary" %>
+    </div>
+</div>
