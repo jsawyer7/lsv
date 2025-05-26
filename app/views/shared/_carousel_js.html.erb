@@ -1,0 +1,73 @@
+<script>
+// LSV Carousel JS
+// Shows 3 of 5 items at a time, with left/right navigation and dot indicators
+
+function getGapPx(track) {
+  const gap = getComputedStyle(track).gap;
+  if (gap.endsWith('px')) return parseFloat(gap);
+  if (gap.endsWith('rem')) return parseFloat(gap) * parseFloat(getComputedStyle(document.documentElement).fontSize);
+  return 0;
+}
+
+function getVisibleCount() {
+  if (window.innerWidth <= 700) return 1;
+  return 3;
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  const track = document.querySelector('.lsv-carousel-track');
+  const items = Array.from(document.querySelectorAll('.lsv-carousel-item'));
+  const left = document.querySelector('.lsv-carousel-arrow.left');
+  const right = document.querySelector('.lsv-carousel-arrow.right');
+  const dots = Array.from(document.querySelectorAll('.lsv-carousel-dot'));
+  if (!track || items.length < 1) return;
+
+  let current = 0;
+  let visible = getVisibleCount();
+  let maxIndex = items.length - visible;
+
+  function updateCarousel() {
+    visible = getVisibleCount();
+    maxIndex = items.length - visible;
+    if (current > maxIndex) current = maxIndex;
+    if (current < 0) current = 0;
+    const cardWidth = items[0].offsetWidth;
+    const gapPx = getGapPx(track);
+    const offset = current * (cardWidth + gapPx);
+    track.style.transform = `translateX(-${offset}px)`;
+    dots.forEach((dot, i) => dot.classList.toggle('active', i === current));
+    if (left) left.classList.toggle('disabled', current === 0);
+    if (right) right.classList.toggle('disabled', current === maxIndex);
+  }
+
+  if (left) {
+    left.addEventListener('click', () => {
+      if (current > 0) {
+        current--;
+        updateCarousel();
+      }
+    });
+  }
+  if (right) {
+    right.addEventListener('click', () => {
+      if (current < maxIndex) {
+        current++;
+        updateCarousel();
+      }
+    });
+  }
+  dots.forEach((dot, i) => {
+    dot.addEventListener('click', () => {
+      if (i <= maxIndex) {
+        current = i;
+        updateCarousel();
+      }
+    });
+  });
+
+  // Responsive: recalculate on resize
+  window.addEventListener('resize', updateCarousel);
+
+  updateCarousel();
+});
+</script> 

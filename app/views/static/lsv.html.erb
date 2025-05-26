@@ -1,0 +1,219 @@
+<%= render 'shared/header' %>
+<div class="lsv-page">
+  <div class="lsv-hero-section">
+    <div class="lsv-hero-content">
+      <h1>What Is LSV?</h1>
+      <div>The Framework Behind VeriFaith</div>
+    </div>
+    <div class="lsv-hero-image">
+      <%= image_tag 'lsv_first.png', alt: 'What is LSV Illustration' %>
+    </div>
+  </div>
+
+  <div class="lsv-section-page">
+    <div class="lsv-section-content">
+      <h2>What Is Literal Source Verification (LSV)?</h2>
+      <p><strong>Literal Source Verification (LSV)</strong> is the method VeriFaith uses to test whether a religious or theological claim is objectively true.</p>
+      <p>LSV is a publicly maintained, cross-religious framework designed to analyze claims using only what can be verified in the original source text — with no interpretation, theology, or tradition allowed.</p>
+      <p>LSV was created to solve a simple problem:<br>Most theology is based on inherited beliefs — not provable facts.</p>
+    </div>
+    <div class="lsv-section-image">
+      <%= image_tag 'lsv_second.png', alt: 'Literal Source Verification Illustration' %>
+    </div>
+  </div>
+
+  <div class="lsv-carousel-section">
+    <h2 class="lsv-carousel-title">How LSV Works</h2>
+    <div class="lsv-carousel-subtitle">
+      To be validated under LSV, every claim must pass 5 strict rules.
+    </div>
+    <div class="lsv-carousel">
+      <button class="lsv-carousel-arrow left" aria-label="Previous">&#8592;</button>
+      <div class="lsv-carousel-viewport">
+        <div class="lsv-carousel-track">
+          <div class="lsv-carousel-item">
+            <div class="lsv-carousel-icon clarity"><%= image_tag 'clarity.png', alt: 'Clarity' %></div>
+            <div class="lsv-carousel-label">Clarity</div>
+            <div class="lsv-carousel-desc">The claim must be clearly worded, absolute, and testable; no vague or interpretive language.</div>
+          </div>
+          <div class="lsv-carousel-item">
+            <div class="lsv-carousel-icon dependency"><%= image_tag 'dependency.png', alt: 'Literal Source Dependency' %></div>
+            <div class="lsv-carousel-label">Literal Source Dependency</div>
+            <div class="lsv-carousel-desc">The claim must be supported only by source text (scripture or history), not commentary, doctrine, or theological tradition.</div>
+          </div>
+          <div class="lsv-carousel-item">
+            <div class="lsv-carousel-icon accuracy"><%= image_tag 'accuracy.png', alt: 'Original Language Accuracy' %></div>
+            <div class="lsv-carousel-label">Original Language Accuracy</div>
+            <div class="lsv-carousel-desc">The relevant source must be analyzed in its original language (Hebrew, Greek, Arabic, Sanskrit, etc.) to avoid translation bias.</div>
+          </div>
+          <div class="lsv-carousel-item">
+            <div class="lsv-carousel-icon validation"><%= image_tag 'validation.png', alt: 'AI Validation' %></div>
+            <div class="lsv-carousel-label">AI Validation</div>
+            <div class="lsv-carousel-desc">A neutral AI model (trained for LSV logic) must process the claim and return a consistent, logic-bound result.</div>
+          </div>
+          <div class="lsv-carousel-item">
+            <div class="lsv-carousel-icon confirmation"><%= image_tag 'confirmation.png', alt: 'Peer Confirmation' %></div>
+            <div class="lsv-carousel-label">Peer Confirmation</div>
+            <div class="lsv-carousel-desc">At least two independent human validators must confirm the AI's conclusion for the claim to be accepted as a Fact.</div>
+          </div>
+        </div>
+      </div>
+      <button class="lsv-carousel-arrow right" aria-label="Next">&#8594;</button>
+    </div>
+    <div class="lsv-carousel-dots">
+      <% 3.times do |i| %>
+        <span class="lsv-carousel-dot" data-index="<%= i %>"></span>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="lsv-why-section">
+    <div class="lsv-why-image">
+      <%= image_tag 'avatars_image.png', alt: 'VeriFaith Community' %>
+    </div>
+    <div class="lsv-why-content">
+      <h2>Why VeriFaith Uses LSV</h2>
+      <p>
+        We built VeriFaith to be the world's first truth-based religious validation system<br>
+        and that means theology cannot shape facts.<br>
+        Only facts should shape theology.
+      </p>
+      <p>
+        LSV is the only known framework that:
+        <ul>
+          <li><strong>Works across all religions</strong></li>
+          <li><strong>Requires original language analysis</strong></li>
+          <li><strong>Rejects doctrinal assumptions</strong></li>
+          <li><strong>Is fully challengeable and repeatable</strong></li>
+        </ul>
+      </p>
+      <p>
+        VeriFaith doesn't "believe" anything by default.<br>
+        We test every claim using LSV — so only what can be proven is promoted as truth.
+      </p>
+    </div>
+  </div>
+
+  <div class="lsv-compare-section">
+    <h2 class="lsv-compare-title">How LSV Compares To Other Frameworks</h2>
+    <div class="lsv-compare-table-wrapper">
+      <table class="lsv-compare-table">
+        <thead>
+          <tr>
+            <th>Rank</th>
+            <th>Framework</th>
+            <th>Score(1-10)</th>
+            <th>Why It Scored This Way</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>01</td>
+            <td>Literal Source Verification (LSV)</td>
+            <td>9.8</td>
+            <td>9.8 Highest logical rigor, original-language validation, AI + peer review, theology excluded. Cross-faith, repeatable, transparent.</td>
+          </tr>
+          <tr>
+            <td>02</td>
+            <td>Philosophical Logic</td>
+            <td>7.5</td>
+            <td>Strong logical foundation but unanchored from source texts. Good for reasoning, not verifying.</td>
+          </tr>
+          <tr>
+            <td>03</td>
+            <td>Textual Criticism</td>
+            <td>7.3</td>
+            <td>Great for manuscript analysis but not designed for truth claims. Doesn't assess meaning.</td>
+          </tr>
+          <tr>
+            <td>04</td>
+            <td>Hadith Chain Method (Isnad)</td>
+            <td>6.8</td>
+            <td>Rigorous chain of transmission, but theological trust is required.</td>
+          </tr>
+          <tr>
+            <td>05</td>
+            <td>Rabbinic/Talmudic Logic</td>
+            <td>6.7</td>
+            <td>Strong internal reasoning, but relies on tradition and assumed authority.</td>
+          </tr>
+          <tr>
+            <td>06</td>
+            <td>Historical-Critical Method</td>
+            <td>5.7</td>
+            <td>Claims neutrality but is shaped by Western secular theology. Often overrides source meaning with scholarly theory.</td>
+          </tr>
+          <tr>
+            <td>07</td>
+            <td>Catholic Magisterial Tradition</td>
+            <td>5.2</td>
+            <td>Consistent but authority-bound. Claims are unchallengeable and circular.</td>
+          </tr>
+          <tr>
+            <td>08</td>
+            <td>Protestant Hermeneutics</td>
+            <td>5.0</td>
+            <td>Text-centered, but heavily shaped by denominational tradition and filtered interpretation.</td>
+          </tr>
+          <tr>
+            <td>09</td>
+            <td>Mystical/Experiential Revelation</td>
+            <td>3.8</td>
+            <td>Personally meaningful, but unverifiable and non-transferable.</td>
+          </tr>
+          <tr>
+            <td>10</td>
+            <td>Popular Theology / Cultural Tradition</td>
+            <td>2.1</td>
+            <td>Dominant in modern preaching. Built on emotion, tradition, and authority — not verifiable sources.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="lsv-compare-footnote">
+      "LSV scored highest for its neutrality, source dependency, cross-canon integrity, and repeatability. It is the most logically disciplined framework available today for testing religious truth."
+    </div>
+  </div>
+
+  <div class="lsv-ownership-section">
+    <div class="lsv-ownership-row">
+      <div class="lsv-ownership-image">
+        <%= image_tag 'lsv_second.png', alt: 'LSV Ownership' %>
+      </div>
+      <div class="lsv-ownership-content">
+        <h2>Who Owns LSV?</h2>
+        <p>LSV is not owned by VeriFaith.<br>
+        It is maintained as an <strong>open-source, public framework</strong> by the nonprofit <a href="https://literalverification.org" target="_blank">LiteralVerification.org</a>.<br><br>
+        Anyone — scholars, institutions, teachers, researchers — can use LSV freely to analyze religious claims, so long as they follow its five rule pillars.<br><br>
+        VeriFaith simply puts it into action at scale — across every major religion.</p>
+      </div>
+    </div>
+
+    <div class="lsv-ownership-row">
+      <div class="lsv-ownership-content content-reverse">
+        <h2>Why This Matters</h2>
+        <p>Most religions were built on the best guesses of less-informed people — without the tools we have now:</p>
+        <ul>
+          <li>Digitized source texts</li>
+          <li>Access to original languages</li>
+          <li>Cross-canon comparison</li>
+          <li>AI-powered validation</li>
+          <li>Public peer challenge systems</li>
+        </ul>
+        <p>LSV brings all of that together into a single, verifiable standard — so theology must face the source, not hide behind tradition.</p>
+      </div>
+      <div class="lsv-ownership-image">
+        <%= image_tag 'lsv_second.png', alt: 'LSV Why This Matters' %>
+      </div>
+    </div>
+
+    <div class="lsv-ownership-final">
+      <h2>Who Owns LSV?</h2>
+      <p>No emotion. No commentary. No theological privilege.</p>
+      <p>Just text, language, logic and truth that survives challenge.</p>
+    </div>
+  </div>
+</div>
+
+<%= render 'shared/carousel_js' %>
+<%= render 'shared/footer' %>

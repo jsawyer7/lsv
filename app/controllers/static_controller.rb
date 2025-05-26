@@ -4,4 +4,5 @@ class StaticController < ApplicationController
   def privacy; end
   def ai_data; end
   def terms; end
+  def lsv; end
 end
