@@ -1,0 +1,290 @@
+<%= render 'shared/header' %>
+<div class="ai-data-container">
+  <div class="ai-data-hero-section">
+    <div class="ai-data-hero-content">
+      <h1 class="ai-data-hero-title">AI &amp; Data</h1>
+      <div class="ai-data-hero-meta">
+        <span class="ai-data-hero-effective">Effective Date: 02 Jan, 2025</span>
+        <span class="ai-data-hero-updated">Last Updated: 15 May, 2025</span>
+      </div>
+      <div class="ai-data-hero-text">
+        <p>VeriFaith, Inc. ("VeriFaith", "we", "our", or "us") uses artificial intelligence ("AI") to validate religious claims, enhance source fidelity, and power core features of the VeriFaith platform. This AI &amp; Data Use Policy explains how AI is used, what content it processes, which models may be involved, and how user rights and data are protected.</p>
+        <p>VeriFaith is committed to transparency, theological neutrality, and compliance with global privacy and AI regulations.</p>
+      </div>
+    </div>
+    <div class="ai-data-hero-image">
+      <%= image_tag 'ai.png', alt: 'AI & Data Use Illustration' %>
+    </div>
+  </div>
+
+  <div class="ai-data-section ai-purpose-section">
+    <h2 class="ai-section-title">1. PURPOSES OF AI IN VERIFAITH</h2>
+    <div class="ai-section-intro">
+      VeriFaith uses AI as a core technology for delivering source-based, non-theological validation of religious and historical claims. AI is used to:
+    </div>
+    <div class="ai-purpose-columns">
+      <div class="ai-purpose-col ai-purpose-left">
+        <div class="ai-purpose-block">
+          <h3>1.1 Claim Validation</h3>
+          <ul>
+            <li>Validate user-submitted claims against <strong>selected canons</strong> using <strong>Literal Source Verification (LSV)</strong></li>
+            <li>Analyze content in the <strong>original language</strong> (e.g., Hebrew, Greek, Arabic, Sanskrit, etc.)</li>
+            <li>Classify claim results per source: <span class="ai-icon valid">✅</span>Valid, <span class="ai-icon invalid">❌</span>Invalid, <span class="ai-icon neutral">⚠️</span>Neutral</li>
+          </ul>
+        </div>
+        <div class="ai-purpose-block">
+          <h3>1.3 Evidence &amp; Claim Enhancement</h3>
+          <div class="ai-purpose-block-desc">AI may:</div>
+          <ul>
+            <li><strong>Shorten, reword, or structure</strong> claims for clarity (on submission)</li>
+            <li>Identify <strong>missing or implied source references</strong> in user content</li>
+            <li>Suggest or attach <strong>additional evidence</strong> from the selected canon</li>
+            <li>Auto-tag claims with <strong>topics, source types, or religious classification</strong></li>
+            <li>Detect and warn about <strong>duplicate claims</strong> to preserve accuracy</li>
+          </ul>
+        </div>
+        <div class="ai-purpose-block">
+          <h3>1.4 Challenge Processing</h3>
+          <div class="ai-purpose-block-desc">AI automatically re-runs challenged claims across:</div>
+          <ul>
+            <li>All relevant sources</li>
+            <li>All active validators</li>
+            <li>All evidence paths</li>
+          </ul>
+          <div class="ai-purpose-block-desc">Results are shown transparently with color-coded source outcomes (<span class="ai-icon valid">✅</span>, <span class="ai-icon invalid">❌</span>, <span class="ai-icon neutral">⚠️</span>).</div>
+        </div>
+      </div>
+      <div class="ai-purpose-col ai-purpose-right">
+        <div class="ai-purpose-block">
+          <h3>1.2 Original Language Translation &amp; Explanation</h3>
+          <ul>
+            <li>VeriFaith's AI systems are trained and authorized to:
+              <ul>
+                <li>Translate verses, terms, or references into their <strong>original canonical languages</strong></li>
+                <li>Explain word-level meaning, grammar, and <strong>semantic context</strong> for validation</li>
+                <li>Highlight <strong>discrepancies</strong> across manuscripts or traditional translations</li>
+              </ul>
+            </li>
+            <li>Languages supported as part of core functionality include:
+              <ul>
+                <li><strong>Hebrew</strong> – Tanakh, Torah, Dead Sea Scrolls</li>
+                <li><strong>Koine Greek</strong> – New Testament, Septuagint</li>
+                <li><strong>Classical Arabic</strong> – Quran, Hadith</li>
+                <li><strong>Sanskrit</strong> – Hindu scriptures (Vedas, Upanishads, Bhagavad Gita)</li>
+                <li><strong>Pali</strong> – Theravāda Buddhist Canon</li>
+                <li><strong>Classical Chinese</strong> – Mahāyāna Buddhist Sutras</li>
+                <li><strong>Ge'ez</strong> – Ethiopian Orthodox texts (e.g., Book of Enoch, Jubilees)</li>
+                <li><strong>Syriac &amp; Coptic</strong> – Early Christian &amp; Apocryphal texts</li>
+                <li><strong>Aramaic</strong> – Spoken language of Jesus, portions of Daniel, Ezra</li>
+                <li><strong>Avestan</strong> – Zoroastrian Avesta</li>
+              </ul>
+            </li>
+          </ul>
+          <div class="ai-purpose-block-desc">All translation and explanation is <strong>non-theological and source-constrained</strong>.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ai-data-section ai-models-section">
+    <h2 class="ai-section-title">2. AI MODELS USED</h2>
+    <div class="ai-models-intro">
+      VeriFaith uses multiple AI providers and reserves the right to adopt any model that meets our performance, neutrality, and compliance standards.
+    </div>
+    <div class="ai-models-providers">
+      Current and Future Providers May Include:
+      <ul>
+        <li><strong>OpenAI</strong> (e.g., GPT-4, GPT-4o)</li>
+        <li><strong>Anthropic</strong> (Claude models)</li>
+        <li><strong>xAI</strong> (Grok models)</li>
+        <li><strong>Custom LLMs</strong> built and trained by VeriFaith</li>
+        <li><strong>Specialized models</strong> for linguistic, semantic, or canon-specific analysis</li>
+      </ul>
+    </div>
+    <div class="ai-models-instructions">
+      All models are instructed to:
+      <ul>
+        <li>Adhere to <strong>Literal Source Verification</strong></li>
+        <li><strong>Exclude theology</strong>, personal belief, or doctrinal reasoning</li>
+        <li>Operate in a <strong>source-limited, fact-bound</strong> scope</li>
+      </ul>
+      <div class="ai-models-note">
+        AI is not used for personalization, faith modeling, or user profiling.
+      </div>
+    </div>
+  </div>
+
+  <div class="ai-data-section ai-data-shared-section">
+    <h2 class="ai-section-title">3. DATA SHARED WITH AI</h2>
+    <div class="ai-data-shared-columns">
+      <div class="ai-data-shared-col ai-data-shared-left">
+        <h3>3.1 What Is Sent to AI</h3>
+        <div class="ai-data-shared-desc">AI systems may receive:</div>
+        <ul>
+          <li>The full text of a user-submitted <strong>claim, theory, evidence, or challenge</strong></li>
+          <li>Specific <strong>source instructions</strong> (e.g., "Validate using Quran only")</li>
+          <li>Contextual data used to perform <strong>original-language translation</strong> or explanation</li>
+          <li>Prompts to tag, classify, or format the above</li>
+        </ul>
+      </div>
+      <div class="ai-data-shared-col ai-data-shared-right">
+        <h3>3.2 What Is Never Sent</h3>
+        <div class="ai-data-shared-desc">VeriFaith does not send the following to any AI model:</div>
+        <ul>
+          <li>Names, email addresses, or account identifiers</li>
+          <li>User preferences, behaviors, IP addresses, or device information</li>
+          <li>Inferred religious affiliation</li>
+          <li>Session or advertising data</li>
+        </ul>
+        <div class="ai-data-shared-note">
+          All prompts are anonymized before being sent to any AI system.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ai-data-section ai-output-section">
+    <h2 class="ai-section-title">4. AI OUTPUT HANDLING</h2>
+    <div class="ai-output-desc">
+      <div class="ai-output-desc-head">All AI output is:</div>
+      <ul>
+        <li><strong>Logged</strong> with a timestamp and source attribution (e.g., "Grok Validator")</li>
+        <li><strong>Stored securely</strong> for challenge resolution, audit, and transparency</li>
+        <li>Displayed <strong>side-by-side</strong> with human or peer feedback where applicable</li>
+        <li>Open to <strong>user challenge or dispute</strong></li>
+      </ul>
+      <div class="ai-output-note">
+        No AI outputs are modified unless flagged for policy violation or error correction.
+      </div>
+    </div>
+  </div>
+
+  <div class="ai-data-section ai-retention-section">
+    <h2 class="ai-section-title">5. RETENTION & MODEL TRAINING</h2>
+    <div class="ai-retention-desc">
+      <div class="ai-retention-desc-head">VeriFaith retains anonymized AI logs to:</div>
+      <ul>
+        <li>Audit past validator decisions</li>
+        <li>Support future challenge handling</li>
+        <li>Improve prompt tuning or internal model training</li>
+      </ul>
+      <div class="ai-retention-note">
+        VeriFaith does not train third-party AI models on user data.<br>
+        No AI outputs are sold, licensed, or used outside of VeriFaith.<br>
+        <strong>Only aggregated, de-identified trend data</strong> (e.g., "Top challenged Hindu claims") may be published or monetized.
+      </div>
+    </div>
+  </div>
+
+  <div class="ai-data-section ai-theology-section">
+    <h2 class="ai-section-title">6. THEOLOGICAL NEUTRALITY & SAFEGUARDS</h2>
+    <div class="ai-theology-desc">
+      <div class="ai-theology-desc-head">AI is <strong>explicitly prevented</strong> from:</div>
+      <ul>
+        <li>Drawing conclusions based on religious opinion or theology</li>
+        <li>Recommending belief systems, practices, or traditions</li>
+        <li>Adjusting validation based on user behavior or belief inference</li>
+      </ul>
+      <div class="ai-theology-note">
+        All outputs are based strictly on canonical source text using <strong>LSV methodology</strong>.<br>
+        Disagreements between AI validators are shown clearly and resolved through user challenges and peer validation — never silent overrides.
+      </div>
+    </div>
+  </div>
+
+  <div class="ai-data-section ai-limitations-section">
+    <h2 class="ai-section-title">7. LIMITATIONS</h2>
+    <div class="ai-limitations-desc">
+      <div class="ai-limitations-desc-head">Despite LSV rule enforcement, AI may:</div>
+      <ul>
+        <li>Misclassify claims with vague language</li>
+        <li>Miss implied references without sufficient context</li>
+        <li>Return divergent outputs across models (e.g., GPT vs Grok)</li>
+      </ul>
+      <div class="ai-limitations-mitigation">
+        <div class="ai-limitations-desc-head">VeriFaith mitigates this through:</div>
+        <ul>
+          <li>Multi-model validation</li>
+          <li>Required peer confirmation</li>
+          <li>Transparent source scoring on every claim</li>
+        </ul>
+      </div>
+      <div class="ai-limitations-note">
+        Users are encouraged to engage with AI outputs critically and challenge when needed.
+      </div>
+    </div>
+  </div>
+
+  <div class="ai-data-section ai-compliance-section">
+    <h2 class="ai-section-title">8. COMPLIANCE</h2>
+    <div class="ai-compliance-desc">
+      <div class="ai-compliance-desc-head">VeriFaith complies with:</div>
+      <ul>
+        <li><strong>General Data Protection Regulation (GDPR)</strong></li>
+        <li><strong>California Consumer Privacy Act (CCPA)</strong></li>
+        <li><strong>EU AI Act (Draft 2024+)</strong></li>
+        <li>U.S. AI safety guidelines under the White House Blueprint for AI Rights</li>
+      </ul>
+      <div class="ai-compliance-usage">
+        <div class="ai-compliance-desc-head">AI is used only for:</div>
+        <ul>
+          <li>Claim validation</li>
+          <li>Source analysis</li>
+          <li>Evidence structuring</li>
+          <li>Translation & semantic accuracy</li>
+        </ul>
+      </div>
+      <div class="ai-compliance-not-used">
+        <div class="ai-compliance-desc-head">We do not use AI for: </div>
+        <ul>
+          <li>Personal targeting or advertising</li>
+          <li>Behavior modeling</li>
+          <li>Profiling based on religion or geography</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="ai-data-section ai-policy-changes-section">
+    <h2 class="ai-section-title">9. CHANGES TO THIS POLICY</h2>
+    <div class="ai-policy-changes-desc">
+      <div class="ai-policy-changes-desc-head">We will update this policy if:</div>
+      <ul>
+        <li>New models are adopted</li>
+        <li>Core validator logic is expanded</li>
+        <li>Regulatory standards change</li>
+      </ul>
+      <div class="ai-policy-changes-note">
+        Material updates will be posted in-platform or emailed directly.
+      </div>
+    </div>
+  </div>
+
+  <div class="ai-data-section ai-contact-section">
+    <h2 class="ai-section-title">10. Contact Us</h2>
+    <div class="ai-contact-intro">
+      Questions about AI use or data processing?
+    </div>
+    <div class="ai-contact-team">
+      <strong>VeriFaith AI Oversight Team</strong>
+    </div>
+    <div class="ai-contact-cards">
+      <div class="ai-contact-card">
+        <div class="ai-contact-label">Email</div>
+        <div class="ai-contact-value"><a href="mailto:ai@verifaith.org">ai@verifaith.org</a></div>
+        <div class="ai-contact-icon">
+          <svg width="32" height="32" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="32" height="32" rx="8" fill="none"/><path d="M7 10.5A2.5 2.5 0 0 1 9.5 8h13A2.5 2.5 0 0 1 25 10.5v11A2.5 2.5 0 0 1 22.5 24h-13A2.5 2.5 0 0 1 7 21.5v-11Zm2.75.25 6.25 5.25 6.25-5.25" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+      </div>
+      <div class="ai-contact-card">
+        <div class="ai-contact-label">Mail</div>
+        <div class="ai-contact-value">Street 123 Florida, USA</div>
+        <div class="ai-contact-icon">
+          <svg width="32" height="32" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="32" height="32" rx="8" fill="none"/><path d="M16 23.5s6-5.686 6-9.5A6 6 0 1 0 10 14c0 3.814 6 9.5 6 9.5Z" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="16" cy="14" r="2" stroke="#2563eb" stroke-width="2"/></svg>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%= render 'shared/footer' %>

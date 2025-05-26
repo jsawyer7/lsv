@@ -23,4 +23,6 @@ Rails.application.routes.draw do
   end
 
   get '/privacy', to: 'static#privacy', as: :privacy
+  get '/ai-data', to: 'static#ai_data', as: :ai_data
+  get '/terms', to: 'static#terms', as: :terms
 end
