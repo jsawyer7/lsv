@@ -1,0 +1,118 @@
+ <%= render 'shared/header' %>
+<div class="mission-page">
+  <section class="mission-hero-section">
+    <div class="mission-hero-content">
+      <h1><span>VeriFaith Mission Statement</span></h1>
+      <h2>Religion Was Built on Limited Information.</h2>
+      <div class="mission-hero-desc">
+        We're Here to Rebuild it on Verified Truth.<br><br>
+        For centuries, theology was shaped by people who did the best they could — with very little.<br>
+        They worked from incomplete texts, translations of translations, and traditions passed down as unquestioned truth.<br>
+        They had almost no access to:
+        <ul>
+          <li>Other religious canons</li>
+          <li>Original manuscripts</li>
+          <li>Historical context outside their own region or sect</li>
+        </ul>
+        Yet these assumptions became doctrines.<br>
+        Those doctrines became institutions.<br>
+        And we inherited it all.
+      </div>
+    </div>
+    <div class="mission-hero-image">
+      <%= image_tag 'mission_first.png', alt: 'Mission Statement Illustration' %>
+    </div>
+  </section>
+
+  <section class="mission-era-section">
+    <div class="mission-era-content">
+      <h2>Today, That Era Is Over</h2>
+      <div class="mission-era-desc">
+        We now live in a world where:
+        <ul>
+          <li><strong>Every major sacred text</strong> is digitized and searchable</li>
+          <li><strong>Original languages</strong> like Hebrew, Greek, Arabic, Sanskrit, Pali, and Ge'ez are accessible and analyzable</li>
+          <li><strong>AI can process claims</strong> using logic, linguistic accuracy, and strict source boundaries</li>
+          <li><strong>Cross-religion comparison</strong> is instant and transparent</li>
+        </ul>
+        We have better tools than any generation before us.<br>
+        It's time to stop defending inherited belief and start testing it.
+      </div>
+    </div>
+    <div class="mission-era-image">
+      <%= image_tag 'mission_second.png', alt: 'Era Over Illustration' %>
+    </div>
+  </section>
+
+  <section class="mission-clear-section">
+    <div class="mission-clear-image">
+      <%= image_tag 'mission_third.png', alt: 'Mission Clear Illustration' %>
+    </div>
+    <div class="mission-clear-content">
+      <h2>Our Mission Is Clear</h2>
+      <div class="mission-clear-desc">
+        <strong>Let the Facts Build the Theology Not the Other Way Around</strong><br><br>
+        VeriFaith doesn't interpret. It validates.<br>
+        Using our Literal Source Verification (LSV) framework, every claim must:
+        <ul>
+          <li>Be worded with absolute clarity</li>
+          <li>Be testable against a specific source</li>
+          <li>Pass AI validation using original language analysis</li>
+          <li>Undergo peer and multi-model review</li>
+        </ul>
+        Only claims that survive this process become Facts.<br>
+        Only Facts can form the building blocks of Theories.
+      </div>
+    </div>
+  </section>
+
+  <section class="mission-living-section">
+    <div class="mission-living-content">
+      <h2>A Living System Where Truth Holds Power and Pressure</h2>
+      <div class="mission-living-desc">
+        Facts on VeriFaith aren't frozen.<br>
+        They can be challenged at any time.<br>
+        When a challenge is submitted, our system:
+        <ul>
+          <li><strong>Revalidates the original claim</strong></li>
+          <li>Filters all evidence through source-specific AI logic</li>
+          <li>Reassesses the outcome based on updated models or stronger input</li>
+        </ul>
+        If a better source disproves a Fact, it fails. If a Theory loses its foundation, it collapses.<br>
+        Because truth isn't what survives tradition. <strong>Truth is what survives pressure.</strong>
+      </div>
+    </div>
+    <div class="mission-living-image">
+      <%= image_tag 'mission_fourth.png', alt: 'Living System Illustration' %>
+    </div>
+  </section>
+
+  <section class="mission-rebuild-section">
+    <div class="mission-rebuild-content">
+      <h2>Rebuilding Faith from the Bottom Up</h2>
+      <div class="mission-rebuild-desc">
+        You don't need to inherit someone else's belief.<br>
+        You don't need to trust a chain of interpretations passed down through centuries of filtered understanding.<br>
+        You can test it yourself.<br>
+        And so can everyone else.<br><br>
+        <strong>Facts over Fame.<br>
+        Evidence over Emotion.<br>
+        Truth over Tradition.</strong>
+      </div>
+    </div>
+    <div class="mission-rebuild-image">
+      <%= image_tag 'mission_fifth.png', alt: 'Rebuilding Faith Illustration' %>
+    </div>
+  </section>
+
+  <section class="mission-cta-section">
+    <div class="mission-cta-content">
+      <h2>Welcome to VeriFaith</h2>
+      <div class="mission-cta-desc">
+        Where Faith Isn't Inherited. It's Verified.
+      </div>
+      <%= link_to "Get Started", new_user_registration_path, class: "mission-cta-btn" %>
+    </div>
+  </section>
+</div>
+<%= render 'shared/footer' %>

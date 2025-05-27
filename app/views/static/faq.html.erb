@@ -1,0 +1,154 @@
+<%= render 'shared/header' %>
+
+<div class="faq-page">
+  <div class="faq-hero">
+    <div class="faq-hero-content">
+      <h1>Frquently Asked Questions</h1>
+    </div>
+    <div class="faq-hero-image">
+      <%= image_tag 'faq.png', alt: 'FAQ Illustration' %>
+    </div>
+  </div>
+
+  <div class="faq-list-wrapper">
+    <div class="faq-list">
+      <div class="faq-item">
+        <button class="faq-question" aria-expanded="false">
+          Why does VeriFaith charge for submissions and memberships?
+          <span class="faq-toggle">+</span>
+        </button>
+        <div class="faq-answer">
+          VeriFaith charges for several reasons:<br><br>
+          <ul>
+            <li><strong>API usage:</strong> Each claim or challenge runs through multiple AI models, original-language tools, and validator logic — all of which incur real-time costs.</li>
+            <li><strong>Preventing abuse:</strong> Free accounts are often exploited by bots or trolls. Paid access ensures serious participation and protects the integrity of the validation process.</li>
+            <li><strong>Support for transparency and growth:</strong> Subscriptions help fund validator development, peer review tooling, global access initiatives, and free educational content from our nonprofit partner <a href="https://literalverification.org" target="_blank">LiteralVerification.org</a>.</li>
+          </ul>
+          We're not charging for truth — we're charging for the tools required to protect and verify it responsibly.
+        </div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-question" aria-expanded="false">
+          What qualifies as a Fact on VeriFaith?
+          <span class="faq-toggle">+</span>
+        </button>
+        <div class="faq-answer">
+          A Fact is a claim that:<br><br>
+          <ol>
+            <li>Is clear, absolute, and testable</li>
+            <li>Is supported by literal source evidence (e.g., scripture, history)</li>
+            <li>Is validated by AI using LSV logic</li>
+            <li>Is confirmed by at least 2 peer validators</li>
+            <li>Has no unresolved challenges</li>
+          </ol>
+          Facts are always open to re-validation if new evidence or a legitimate challenge is submitted.
+        </div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-question" aria-expanded="false">
+          What is Literal Source Verification (LSV)?
+          <span class="faq-toggle">+</span>
+        </button>
+        <div class="faq-answer">
+          LSV is the framework we use to test claims. It requires:<br><br>
+          <ul>
+            <li><strong>Validation from original language sources</strong></li>
+            <li><strong>No interpretation, tradition, or theology</strong></li>
+            <li><strong>AI analysis + peer review agreement</strong></li>
+          </ul>
+          It's maintained by the nonprofit <a href="https://literalverification.org" target="_blank">LiteralVerification.org</a> and used by VeriFaith to ensure every claim is evidence-based, not belief-driven.<br>
+          More here — <a href="#">What is LSV?</a>
+        </div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-question" aria-expanded="false">
+          Can anyone be a peer validator?
+          <span class="faq-toggle">+</span>
+        </button>
+        <div class="faq-answer">
+          Yes — but only after passing a basic validator onboarding process that tests:<br><br>
+          <ul>
+            <li>Familiarity with LSV rules</li>
+            <li>Commitment to neutral, source-based reasoning</li>
+            <li>Willingness to engage constructively</li>
+          </ul>
+          Peer validators do not vote based on belief — they confirm whether the claim meets LSV standards. Validators from all religions (or none) are welcome if they follow the logic.
+        </div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-question" aria-expanded="false">
+          Can Facts or Theories change?
+          <span class="faq-toggle">+</span>
+        </button>
+        <div class="faq-answer">
+          Yes. If:<br><br>
+          <ul>
+            <li><strong>A new source is submitted</strong></li>
+            <li><strong>A valid challenge is raised</strong></li>
+            <li><strong>Or a peer validator flags a contradiction</strong></li>
+          </ul>
+          ...then the claim or theory is revalidated. If it fails, it's downgraded or removed.<br>
+          Truth on VeriFaith is not fixed — it's living, and constantly pressure-tested.
+        </div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-question" aria-expanded="false">
+          Can I submit claims from any religion?
+          <span class="faq-toggle">+</span>
+        </button>
+        <div class="faq-answer">
+          Yes. VeriFaith is cross-religious and supports claims from:<br><br>
+          <ul>
+            <li>Judaism</li>
+            <li>Christianity</li>
+            <li>Islam</li>
+            <li>Hinduism</li>
+            <li>Buddhism</li>
+            <li>Sikhism</li>
+            <li>Zoroastrianism</li>
+            <li>And more...</li>
+          </ul>
+          You can submit from any recognized canon, so long as the claim is verifiable under LSV rules.
+        </div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-question" aria-expanded="false">
+          Why are some Theories marked as "Under Review"?
+          <span class="faq-toggle">+</span>
+        </button>
+        <div class="faq-answer">
+          Theories are built from multiple validated Facts. If:<br><br>
+          <ul>
+            <li>A Fact is challenged</li>
+            <li>A Theory includes ambiguous reasoning</li>
+            <li>Or it hasn't yet passed minimum review thresholds</li>
+          </ul>
+          ...it will remain marked as "Under Review" until all components are validated.<br>
+          Theories must be built on facts, not stacked assumptions.
+        </div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-question" aria-expanded="false">
+          Will VeriFaith ever push one religion or interpretation?
+          <span class="faq-toggle">+</span>
+        </button>
+        <div class="faq-answer">
+          Verifaith will never push any religion or interpretation.<br><br>
+          Premium users / Leaders can create and publicate theories.<br><br>
+          Users can then filter based on the sources being used, % of facts being used, and Trending theories. But it must always be user defined filtering to find what they want, never software promotion.
+        </div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-question" aria-expanded="false">
+          Can I share a Theory publicly?
+          <span class="faq-toggle">+</span>
+        </button>
+        <div class="faq-answer">[Answer will appear here]</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%= render 'shared/faq_js' %>
+
+<%= render 'shared/footer' %>

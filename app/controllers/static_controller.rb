@@ -5,4 +5,6 @@ class StaticController < ApplicationController
   def ai_data; end
   def terms; end
   def lsv; end
+  def faq; end
+  def mission; end
 end

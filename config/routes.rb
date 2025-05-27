@@ -26,4 +26,6 @@ Rails.application.routes.draw do
   get '/ai-data', to: 'static#ai_data', as: :ai_data
   get '/terms', to: 'static#terms', as: :terms
   get 'lsv', to: 'static#lsv'
+  get 'faq', to: 'static#faq'
+  get '/mission', to: 'static#mission'
 end
