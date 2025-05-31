@@ -26,7 +26,6 @@
 
 .dashboard-header {
   text-align: center;
-  margin-bottom: 2rem;
 }
 
 .dashboard-header h1 {
@@ -76,11 +75,12 @@
 
 // Sidebar/Navigation
 .dashboard-nav {
-  width: 250px;
-  background-color: white;
-  border-right: 1px solid #edf2f7;
-  padding: 15px 0;
+  width: 240px;
+  background-color: #181c23;
+  border-right: none;
+  padding: 20px 0;
   flex-shrink: 0;
+  min-height: 100vh;
 
   @media (max-width: 768px) {
     width: 60px;
@@ -93,54 +93,78 @@
 .i-nav-logo {
   display: flex;
   justify-content: center;
-  padding-bottom: 11px;
-  border-bottom: 1px solid #edf2f7;
+  padding: 0 20px 20px;
+  border-bottom: 1px solid #23263b;
+  background: #181c23;
   img {
-    height: 45px;
+    height: 32px;
   }
 }
 
-.new-claim-button {
-  display: flex !important;
+.nav-section-title {
+  color: #a7aabc;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin: 18px 0 6px 32px;
+  opacity: 0.7;
+}
+
+.nav-text {
+  color: white;
 }
 
 .nav-items {
-  padding: 20px 0;
+  padding: 10px 0;
   display: flex;
   flex-direction: column;
-  gap: 13px;
-  margin: 10px;
+  gap: 4px;
+
+  &.nav-sources {
+    margin-bottom: 12px;
+  }
+  &.nav-settings {
+    margin-top: 18px;
+  }
 
   .nav-item {
     display: flex;
-    padding: 12px 40px;
-    color: #64748b;
+    align-items: center;
+    gap: 12px;
+    margin: 0 12px;
+    padding: 8px 16px;
+    color: #fff;
     text-decoration: none;
-    transition: all 0.2s;
+    transition: all 0.2s ease;
+    border-radius: 8px;
+    font-weight: 500;
+    background: none;
 
     &:hover {
-      background-color: #f8f9fe;
-      color: #3b82f6;
+      background-color: #23263b;
+      color: #fff;
     }
 
     &.active {
-      color: #3b82f6;
-      background-color: #eff6ff;
-      border-radius: 1rem;
-      .nav-text {
-        color: #1c64f2;
+      background-color: #2563eb;
+      color: #fff;
+      font-weight: 700;
+      .nav-icon {
+        color: #fff;
       }
     }
-
-    .nav-icon {
-      width: 20px;
-      height: 20px;
-      margin-right: 12px;
+    &.upcoming {
+      opacity: 0.7;
+      cursor: not-allowed;
     }
-
+    .nav-icon {
+      font-size: 18px;
+      color: #a7aabc;
+      transition: color 0.2s ease;
+    }
     .nav-text {
-      font-size: 14px;
-      font-weight: 500;
+      font-size: 15px;
     }
   }
 }
@@ -322,5 +346,199 @@
   .plus-icon {
     font-size: 20px;
   }
+}
+
+.feed-main {
+  display: flex;
+  gap: 0;
+  align-items: flex-start;
+  background: #fff;
+  min-height: 100vh;
+}
+.feed-center {
+  flex: 1 1 0;
+  max-width: none;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: #fff;
+  padding-top: 1rem;
+}
+.feed-header {
+  padding: 24px 32px 12px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+  h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #23263b;
+  }
+}
+.feed-search-bar {
+  display: flex;
+  align-items: center;
+  background: #fff;
+  border-radius: 24px;
+  box-shadow: 0 2px 8px rgba(30,41,59,0.04);
+  padding: 4px 12px;
+  input {
+    border: none;
+    outline: none;
+    font-size: 1rem;
+    background: transparent;
+    padding: 8px 0 8px 8px;
+    width: 180px;
+  }
+  .feed-search-btn {
+    background: #2563eb;
+    color: #fff;
+    border: none;
+    border-radius: 18px;
+    padding: 6px 18px;
+    margin-left: 8px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background 0.2s;
+    &:hover { background: #1746a2; }
+  }
+}
+.feed-list {
+  flex: 1 1 0;
+  overflow-y: auto;
+  max-height: calc(100vh - 120px);
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding-bottom: 40px;
+  background: #fff;
+}
+.feed-loader {
+  text-align: center;
+  color: #64748b;
+  font-size: 1.1rem;
+  margin: 18px 0;
+}
+.feed-rightbar {
+  width: 320px;
+  min-width: 260px;
+  max-width: 340px;
+  padding: 32px 0 0 0;
+  position: sticky;
+  top: 0;
+  align-self: flex-start;
+  background: #fff;
+  border-left: 1.5px solid #e5e7eb;
+  min-height: 100vh;
+}
+.feed-top-picks, .feed-who-to-follow {
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 2px 8px rgba(30,41,59,0.04);
+  padding: 18px 18px 18px 18px;
+  margin-bottom: 22px;
+  h3 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #23263b;
+    margin-bottom: 12px;
+  }
+}
+// Feed card style
+.feed-card {
+  background: none;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 24px 32px 12px 32px;
+  border-bottom: 1px solid #e5e7eb;
+  margin: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  .feed-card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 2px;
+    .feed-card-badge {
+      font-size: 0.85rem;
+      font-weight: 600;
+      border-radius: 8px;
+      padding: 2px 10px;
+      &.theory { background: #fef3c7; color: #f59e42; }
+      &.fact { background: #dcfce7; color: #16a34a; }
+    }
+    .feed-card-user {
+      padding-top: 6px;
+      font-size: 0.97rem;
+      font-weight: 600;
+      color: #23263b;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      .verified-badge {
+        color: #2563eb;
+        font-size: 1.1em;
+      }
+    }
+    .feed-card-meta {
+      font-size: 0.93rem;
+      color: #64748b;
+      margin-left: 8px;
+    }
+  }
+  .feed-card-title {
+    font-size: 1.13rem;
+    font-weight: 700;
+    color: #23263b;
+    margin-bottom: 2px;
+  }
+  .feed-card-content {
+    font-size: 1.01rem;
+    color: #23263b;
+    margin-bottom: 2px;
+  }
+  .feed-card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 8px;
+    .feed-card-actions {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      .feed-like {
+        color: #2563eb;
+        font-size: 1.1rem;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        cursor: pointer;
+      }
+    }
+    .feed-card-date {
+      color: #64748b;
+      font-size: 0.97rem;
+    }
+    .feed-card-link {
+      color: #2563eb;
+      font-size: 0.97rem;
+      text-decoration: underline;
+      margin-left: 12px;
+      cursor: pointer;
+    }
+  }
+}
+
+.feed-card-badge-user {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
 } 
+  
   

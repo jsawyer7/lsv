@@ -1,0 +1,26 @@
+<div class="feed-main">
+  <div class="feed-center">
+    <div class="feed-header">
+      <h2>Feeds</h2>
+      <div class="feed-search-bar">
+        <input type="text" placeholder="Search" />
+        <button class="feed-search-btn"><i class="fas fa-search"></i></button>
+      </div>
+    </div>
+    <div id="feed-list" class="feed-list">
+      <!-- Feed items will be loaded here by JS -->
+    </div>
+    <div id="feed-loader" class="feed-loader">Loading...</div>
+  </div>
+  <aside class="feed-rightbar">
+    <div class="feed-top-picks">
+      <h3>Top Picks</h3>
+      <!-- Placeholder for now -->
+    </div>
+    <div class="feed-who-to-follow">
+      <h3>Who to Follow</h3>
+      <!-- Placeholder for now -->
+    </div>
+  </aside>
+</div>
+<%= render 'shared/feeds_js' %>

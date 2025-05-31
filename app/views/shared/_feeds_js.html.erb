@@ -1,0 +1,67 @@
+<script>
+
+document.body.style.overflow = 'hidden';
+document.documentElement.style.overflow = 'hidden';
+window.addEventListener('beforeunload', function() {
+  document.body.style.overflow = '';
+  document.documentElement.style.overflow = '';
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+  const feedList = document.getElementById('feed-list');
+  const feedLoader = document.getElementById('feed-loader');
+  let page = 1;
+  let loading = false;
+  let hasMore = true;
+
+  function renderClaim(claim) {
+    // Show full_name, then email, then fallback to User #id
+    let userDisplay = claim.user && claim.user.full_name ? claim.user.full_name :
+                      (claim.user && claim.user.email ? claim.user.email : `User #${claim.user_id}`);
+    return `
+      <div class="feed-card">
+        <div class="feed-card-header">
+          <div class="feed-card-badge-user">
+            <span class="feed-card-badge fact">Fact</span>
+            <span class="feed-card-user">${userDisplay}</span>
+          </div>
+        </div>
+        <div class="feed-card-title">${claim.content.substring(0, 80)}${claim.content.length > 80 ? '...' : ''}</div>
+        <div class="feed-card-content">${claim.content}</div>
+        <div class="feed-card-footer">
+          <div class="feed-card-actions">
+            <span class="feed-like"><i class="fas fa-thumbs-up"></i> 1.1k</span>
+          </div>
+          <span class="feed-card-date">${new Date(claim.created_at).toLocaleDateString()}</span>
+          <a class="feed-card-link" href="/claims/${claim.id}">View Details</a>
+        </div>
+      </div>
+    `;
+  }
+
+  async function fetchClaims() {
+    if (loading || !hasMore) return;
+    loading = true;
+    feedLoader.style.display = 'block';
+    const res = await fetch(`/feeds/infinite?page=${page}`);
+    const data = await res.json();
+    data.claims.forEach(claim => {
+      feedList.insertAdjacentHTML('beforeend', renderClaim(claim));
+    });
+    hasMore = data.has_more;
+    loading = false;
+    feedLoader.style.display = hasMore ? 'block' : 'none';
+    page++;
+  }
+
+  // Infinite scroll on feed-list only
+  function onFeedScroll() {
+    if (feedList.scrollTop + feedList.clientHeight >= feedList.scrollHeight - 200) {
+      fetchClaims();
+    }
+  }
+
+  feedList.addEventListener('scroll', onFeedScroll);
+  fetchClaims();
+});
+</script> 
