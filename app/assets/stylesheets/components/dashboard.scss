@@ -8,6 +8,10 @@
 }
 
 .logout-button {
+  position: fixed;
+  top: 24px;
+  right: 32px;
+  z-index: 1001;
   background-color: #f44336;
   color: white;
   padding: 8px 14px;
