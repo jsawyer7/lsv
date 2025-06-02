@@ -1,75 +1,100 @@
-<div class="validator-container">
-  <div class="validator-box">
-    <div class="validator-header">
-      <div class="logo logo--large">LV</div>
-      <h1>Claim Result<br><span><%= @claim.result %></span></h1>
+<div class="claim-main">
+  <div class="claim-center">
+    <div class="claim-header">
+      <h2>Facts Details</h2>
     </div>
-
-    <div class="result-body">
-      <p><strong>Claim:</strong><br><%= @claim.content %></p>
-      <p><strong>Evidence:</strong><br><%= simple_format(@claim.evidence) %></p>
-      
-      <% @claim.reasonings.each do |reasoning| %>
-        <div class="reasoning-section">
-          <h3><%= reasoning.source %> Analysis</h3>
-          <h3>Result:<br><span><%= reasoning.result %></span></h3>
-          <p><strong>AI Reasoning:</strong><br><%= simple_format(reasoning.response) %></p>
+    <div class="claim-details-list">
+      <div class="claim-details-card">
+        <div class="claim-details-title">
+          <div class="claim-section-heading">
+            <%= image_tag 'claim-icon.png', alt: 'Claim Icon', class: 'claim-section-icon' %>
+            <span class="claim-details-label">Claim</span>
+            <span class="claim-details-date"><%= @claim.created_at.strftime('%d %b, %Y') %></span>
+          </div>
+          <div class="claim-details-content"><%= @claim.content %></div>
         </div>
+        <div class="claim-section-divider"></div>
+        <div class="claim-details-section">
+          <div class="claim-section-heading">
+            <%= image_tag 'evidence-icon.png', alt: 'Evidence Icon', class: 'claim-section-icon' %>
+            <span class="claim-details-label">Evidence</span>
+          </div>
+          <div class="claim-details-evidence"><%= simple_format(@claim.evidence) %></div>
+        </div>
+        <div class="claim-section-divider"></div>
+        <div class="claim-details-section">
+          <div class="claim-section-heading">
+            <%= image_tag 'ai-icon.png', alt: 'AI Icon', class: 'claim-section-icon' %>
+            <span class="claim-details-label">AI Validator Response</span>
+          </div>
+          <% @claim.reasonings.each do |reasoning| %>
+            <div class="claim-details-reasoning">
+              <div class="claim-details-reasoning-header">
+                <span class="claim-details-source"><%= reasoning.source %></span>
+                <span class="claim-details-result"><%= reasoning.result %></span>
+              </div>
+              <div class="claim-details-reasoning-body"><%= simple_format(reasoning.response) %></div>
+            </div>
+          <% end %>
+        </div>
+        <div class="claim-section-divider"></div>
+        <div class="claim-peer-insight">
+          <div class="claim-section-heading">
+            <%= image_tag 'peer-icon.png', alt: 'Peer Icon', class: 'claim-section-icon' %>
+            <h3>Peer Insight</h3>
+          </div>
+          <div class="peer-insight-text">N/A</div>
+        </div>
+      </div>
+      <div class="claim-details-card claim-challenges">
+        <span class="claim-details-label">Challenge</span>
+        <div id="challenges">
+          <%= render partial: 'challenges/challenge', collection: @claim.challenges %>
+        </div>
+        <% if user_signed_in? %>
+          <div id="challenge_form">
+            <%= render 'challenges/form', claim: @claim, challenge: @claim.challenges.new %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+  <aside class="claim-rightbar">
+    <div class="claim-verified-by">
+      <h3>Verified by</h3>
+      <!-- Leave blank for now -->
+    </div>
+    <div class="claim-posted-by">
+      <h3>Posted by</h3>
+      <div class="claim-posted-by-user">
+        <%= @claim.user.full_name.presence || @claim.user.email %>
+      </div>
+    </div>
+    <div class="claim-primary-source">
+      <h3>Primary Source</h3>
+      <% @claim.reasonings.where(primary_source: true).each do |reasoning| %>
+        <% badge_class = case reasoning.result
+          when '✅ True' then 'badge-true'
+          when '❌ False' then 'badge-false'
+          when '⚠️ Unverifiable' then 'badge-unverifiable'
+          else 'badge-default'
+        end %>
+        <span class="claim-details-source-badge <%= badge_class %>"><%= reasoning.source %></span>
       <% end %>
-
-      <div class="sources-columns" style="display: flex; gap: 2rem; margin-top: 2rem;">
-        <div class="primary-sources" style="flex: 1;">
-          <h3>Primary Sources</h3>
-          <% @claim.reasonings.where(primary_source: true).each do |reasoning| %>
-            <% color = case reasoning.result
-              when '✅ True' then '#d1fae5' # green
-              when '❌ False' then '#fee2e2' # red
-              when '⚠️ Unverifiable' then '#fef9c3' # yellow
-              else '#f3f4f6' # gray
-            end %>
-            <div style="background: <%= color %>; padding: 0.75rem 1rem; border-radius: 6px; margin-bottom: 0.5rem; font-weight: 500;">
-              <%= reasoning.source %>
-            </div>
-          <% end %>
-        </div>
-        <div class="secondary-sources" style="flex: 1;">
-          <h3>Secondary Sources</h3>
-          <% @claim.reasonings.where(primary_source: false).each do |reasoning| %>
-            <% color = case reasoning.result
-              when '✅ True' then '#d1fae5' # green
-              when '❌ False' then '#fee2e2' # red
-              when '⚠️ Unverifiable' then '#fef9c3' # yellow
-              else '#f3f4f6' # gray
-            end %>
-            <div style="background: <%= color %>; padding: 0.75rem 1rem; border-radius: 6px; margin-bottom: 0.5rem; font-weight: 500;">
-              <%= reasoning.source %>
-            </div>
-          <% end %>
-        </div>
-      </div>
     </div>
-
-    <div class="actions">
-      <%= link_to "Submit Another Claim", new_claim_path, class: "validator-button" %>
-      <%= link_to "← Back to Dashboard", root_path, class: "back-button" %>
+    <div class="claim-secondary-source">
+      <h3>Secondary Source</h3>
+      <% @claim.reasonings.where(primary_source: false).each do |reasoning| %>
+        <% badge_class = case reasoning.result
+          when '✅ True' then 'badge-true'
+          when '❌ False' then 'badge-false'
+          when '⚠️ Unverifiable' then 'badge-unverifiable'
+          else 'badge-default'
+        end %>
+        <span class="claim-details-source-badge secondary <%= badge_class %>"><%= reasoning.source %></span>
+      <% end %>
     </div>
-  </div>
-</div>
-
-<div class="claim-container">
-  <div class="challenges-section">
-    <h2>Challenges</h2>
-    
-    <div id="challenges">
-      <%= render partial: 'challenges/challenge', collection: @claim.challenges %>
-    </div>
-
-    <% if user_signed_in? %>
-      <div id="challenge_form">
-        <%= render 'challenges/form', claim: @claim, challenge: @claim.challenges.new %>
-      </div>
-    <% end %>
-  </div>
+  </aside>
 </div>
 
 <div class="processing-overlay">
