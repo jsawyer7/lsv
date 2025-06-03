@@ -1,0 +1,77 @@
+<div id="cookie-banner" class="cookie-banner" style="display:none;">
+  <div class="cookie-banner-content">
+    <div class="cookie-banner-message">
+      <strong>Cookies</strong><br>
+      We use essential cookies to keep VeriFaith secure and functional. With your consent, we also use minimal analytics to improve the platform.
+    </div>
+    <div class="cookie-banner-actions">
+      <button id="cookie-accept" class="cookie-btn cookie-accept">Accept All</button>
+      <button id="cookie-customize" class="cookie-btn cookie-customize">Customize</button>
+      <button id="cookie-close" class="cookie-btn cookie-close" aria-label="Close">&times;</button>
+    </div>
+  </div>
+  <div id="cookie-customize-panel" class="cookie-customize-panel" style="display:none;">
+    <div class="cookie-banner-message">
+      <strong>Cookies</strong><br>
+      We use essential cookies to keep VeriFaith secure and functional. With your consent, we also use minimal analytics to improve the platform.
+    </div>
+    <div class="cookie-customize-toggles">
+      <label class="cookie-toggle-label">
+        Essential cookies
+        <input type="checkbox" checked disabled class="cookie-toggle" />
+        <span class="cookie-switch"></span>
+      </label>
+      <label class="cookie-toggle-label">
+        Analytics cookies
+        <input type="checkbox" id="analytics-toggle" class="cookie-toggle" checked />
+        <span class="cookie-switch"></span>
+      </label>
+    </div>
+    <div class="cookie-banner-actions">
+      <button id="cookie-accept-custom" class="cookie-btn cookie-accept">Accept All</button>
+      <button id="cookie-cancel" class="cookie-btn cookie-customize">Cancel</button>
+      <button id="cookie-close-custom" class="cookie-btn cookie-close" aria-label="Close">&times;</button>
+    </div>
+  </div>
+</div>
+<script>
+(function() {
+  function showBanner() {
+    document.getElementById('cookie-banner').style.display = 'block';
+  }
+  function hideBanner() {
+    document.getElementById('cookie-banner').style.display = 'none';
+  }
+  function showCustomize() {
+    document.querySelector('.cookie-banner-content').style.display = 'none';
+    document.getElementById('cookie-customize-panel').style.display = 'block';
+  }
+  function hideCustomize() {
+    document.querySelector('.cookie-banner-content').style.display = 'flex';
+    document.getElementById('cookie-customize-panel').style.display = 'none';
+  }
+  function setConsent(consent) {
+    localStorage.setItem('verifaith_cookie_consent', JSON.stringify(consent));
+    hideBanner();
+  }
+  function getConsent() {
+    try {
+      return JSON.parse(localStorage.getItem('verifaith_cookie_consent'));
+    } catch { return null; }
+  }
+  document.addEventListener('DOMContentLoaded', function() {
+    if (!getConsent()) showBanner();
+    document.getElementById('cookie-accept').onclick = function() {
+      setConsent({ essential: true, analytics: true });
+    };
+    document.getElementById('cookie-customize').onclick = showCustomize;
+    document.getElementById('cookie-close').onclick = hideBanner;
+    document.getElementById('cookie-accept-custom').onclick = function() {
+      var analytics = document.getElementById('analytics-toggle').checked;
+      setConsent({ essential: true, analytics: analytics });
+    };
+    document.getElementById('cookie-cancel').onclick = hideCustomize;
+    document.getElementById('cookie-close-custom').onclick = hideBanner;
+  });
+})();
+</script> 
