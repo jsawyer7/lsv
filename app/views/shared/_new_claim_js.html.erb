@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const addSourceDropdown = document.getElementById('add-source-dropdown');
   const claimInput = document.querySelector('textarea[name="claim[content]"]');
   const charCount = document.getElementById('claim-char-count');
+  const claimSourceImgPath = document.getElementById('claim-source-img-path').value;
 
   function getCurrentSources() {
     return Array.from(sourcesList.querySelectorAll('li')).map(li => li.getAttribute('data-source'));
@@ -18,7 +19,7 @@ document.addEventListener('DOMContentLoaded', function() {
       addSourceDropdown.innerHTML = '<div class="dropdown-empty">No more sources</div>';
       return;
     }
-    addSourceDropdown.innerHTML = available.map(src => `<div class="dropdown-item" data-source="${src}"><span class="source-icon"></span>${src}</div>`).join('');
+    addSourceDropdown.innerHTML = available.map(src => `<div class="dropdown-item" data-source="${src}"><img src='${claimSourceImgPath}' class='source-icon' alt=''/>${src}</div>`).join('');
   }
 
   addSourceBtn.addEventListener('click', function() {
@@ -32,7 +33,7 @@ document.addEventListener('DOMContentLoaded', function() {
       const src = item.getAttribute('data-source');
       const li = document.createElement('li');
       li.setAttribute('data-source', src);
-      li.innerHTML = `<span class='source-icon'></span>${src} <a href='#' class='remove-source'>Remove</a>`;
+      li.innerHTML = `<img src='${claimSourceImgPath}' class='source-icon' alt=''/>${src} <a href='#' class='remove-source'>Remove</a>`;
       sourcesList.appendChild(li);
       addSourceDropdown.style.display = 'none';
     }

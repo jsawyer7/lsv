@@ -1,6 +1,8 @@
 <%= render 'shared/claim_js' %>
 <%= render 'shared/new_claim_js' %>
 
+<input type="hidden" id="claim-source-img-path" value="<%= asset_path('claim-source.png') %>">
+
 <div class="new-claim-main">
   <div class="new-claim-form-section">
     <h2 class="new-claim-title">New Claim</h2>
@@ -27,9 +29,9 @@
         <div class="new-claim-sources-section">
           <div class="new-claim-sources-label">Sources</div>
           <ul id="sources-list" class="new-claim-sources-list">
-            <li data-source="Quran"><span class="source-icon"></span>Quran <a href="#" class="remove-source">Remove</a></li>
-            <li data-source="Tanakh"><span class="source-icon"></span>Tanakh <a href="#" class="remove-source">Remove</a></li>
-            <li data-source="Historical"><span class="source-icon"></span>Historical <a href="#" class="remove-source">Remove</a></li>
+            <li data-source="Quran"><%= image_tag 'claim-source.png', alt: '', class: 'source-icon' %>Quran <a href="#" class="remove-source">Remove</a></li>
+            <li data-source="Tanakh"><%= image_tag 'claim-source.png', alt: '', class: 'source-icon' %>Tanakh <a href="#" class="remove-source">Remove</a></li>
+            <li data-source="Historical"><%= image_tag 'claim-source.png', alt: '', class: 'source-icon' %>Historical <a href="#" class="remove-source">Remove</a></li>
           </ul>
           <div class="new-claim-add-source">
             <button type="button" id="add-source-btn" class="add-source-btn"><i class="fa fa-plus-circle"></i> Add New Source</button>
