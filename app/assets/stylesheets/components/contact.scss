@@ -1,0 +1,198 @@
+.contact-hero {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #fff;
+    padding: 100px;
+    border-radius: 0 0 48px 0;
+  }
+  .contact-hero-left {
+    flex: 1 1 0;
+    padding-left: 48px;
+  }
+  .contact-hero-left h1 {
+    font-size: 2.4rem;
+    font-weight: 800;
+    color: #23263b;
+    margin-bottom: 18px;
+  }
+  .contact-hero-left p {
+    font-size: 1.13rem;
+    color: #64748b;
+    max-width: 520px;
+  }
+  .contact-hero-right {
+    flex: 0 0 340px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-right: 48px;
+  }
+  .contact-hero-img {
+    width: 320px;
+    max-width: 100%;
+    height: auto;
+  }
+  .contact-section {
+    padding: 0 48px 48px 48px;
+    background: #fff;
+    margin: 0;
+  }
+  .contact-title {
+    text-align: center;
+    font-size: 2rem;
+    font-weight: 700;
+    color: #23263b;
+    margin-bottom: 8px;
+  }
+  .contact-subtitle {
+    text-align: center;
+    color: #64748b;
+    font-size: 1.13rem;
+    margin-bottom: 32px;
+  }
+  .contact-info-cards {
+    display: flex;
+    gap: 32px;
+    justify-content: center;
+    margin-bottom: 36px;
+  }
+  .contact-info-card {
+    background: #f3f4f6;
+    border-radius: 18px;
+    padding: 32px 36px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 220px;
+    box-shadow: 0 2px 8px rgba(30,41,59,0.04);
+  }
+  .contact-info-icon {
+    width: 38px;
+    height: 38px;
+    margin-bottom: 14px;
+  }
+  .contact-info-label {
+    font-size: 1.13rem;
+    font-weight: 700;
+    color: #23263b;
+    margin-bottom: 4px;
+  }
+  .contact-info-value {
+    color: #64748b;
+    font-size: 1.08rem;
+  }
+  .contact-flash {
+    text-align: center;
+    color: #16a34a;
+    font-size: 1.13rem;
+    margin-bottom: 18px;
+    font-weight: 600;
+  }
+  .contact-form-map-row {
+    display: flex;
+    gap: 32px;
+    margin-top: 18px;
+    align-items: flex-start;
+    justify-content: center;
+  }
+  .contact-form-col {
+    flex: 1 1 0;
+    max-width: 420px;
+  }
+  .contact-form {
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 2px 8px rgba(30,41,59,0.04);
+    padding: 32px 28px 28px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  .contact-form-group label {
+    font-size: 1.08rem;
+    color: #23263b;
+    font-weight: 600;
+    margin-bottom: 6px;
+    display: block;
+  }
+  .contact-form-group input,
+  .contact-form-group textarea {
+    width: 100%;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 1.08rem;
+    background: #fafbfc;
+    color: #23263b;
+    margin-top: 4px;
+    resize: none;
+    transition: border 0.2s;
+  }
+  .contact-form-group input:focus,
+  .contact-form-group textarea:focus {
+    border-color: #2563eb;
+    outline: none;
+  }
+  .contact-form-actions {
+    margin-top: 8px;
+  }
+  .contact-send-btn {
+    background: #2196f3;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 32px;
+    font-size: 1.13rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .contact-send-btn:hover {
+    background: #1976d2;
+  }
+  .contact-map-col {
+    flex: 1 1 0;
+    max-width: 420px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 4rem;
+  }
+  .contact-map-img {
+    width: 100%;
+    max-width: 420px;
+    border-radius: 18px;
+    box-shadow: 0 2px 8px rgba(30,41,59,0.04);
+  }
+  @media (max-width: 1100px) {
+    .contact-hero {
+      flex-direction: column;
+      gap: 18px;
+      padding: 32px 0 18px 0;
+    }
+    .contact-hero-left {
+      padding-left: 18px;
+    }
+    .contact-hero-right {
+      padding-right: 18px;
+    }
+    .contact-section {
+      padding: 0 8px 32px 8px;
+      margin: 0;
+    }
+    .contact-info-cards {
+      flex-direction: column;
+      gap: 18px;
+      align-items: center;
+    }
+    .contact-form-map-row {
+      flex-direction: column;
+      gap: 18px;
+    }
+    .contact-form-col, .contact-map-col {
+      max-width: 100%;
+      width: 100%;
+    }
+  }
+  

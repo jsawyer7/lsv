@@ -1,0 +1,61 @@
+<%= render 'shared/header' %>
+<div class="contact-hero">
+  <div class="contact-hero-left">
+    <h1>We're Available For You 24/7</h1>
+    <p>No matter the time of day, our support team is always here to assist you. Whether you have questions, need help with an issue, or just want to reach out, we're available around the clock to provide fast, reliable support—anytime you need it.</p>
+  </div>
+  <div class="contact-hero-right">
+    <%= image_tag 'contact-first.png', alt: 'Contact Illustration', class: 'contact-hero-img' %>
+  </div>
+</div>
+
+<div class="contact-section">
+  <h2 class="contact-title">Contact Us</h2>
+  <p class="contact-subtitle">Have a question in mind? Reach out we'd love to hear from you.</p>
+  <div class="contact-info-cards">
+    <div class="contact-info-card">
+      <%= image_tag 'contact-email.png', alt: 'Email', class: 'contact-info-icon' %>
+      <div class="contact-info-label">Email Address</div>
+      <div class="contact-info-value">legal@verifaith.org</div>
+    </div>
+    <div class="contact-info-card">
+      <%= image_tag 'contact-phone.png', alt: 'Phone', class: 'contact-info-icon' %>
+      <div class="contact-info-label">Phone Number</div>
+      <div class="contact-info-value">+1-23456789</div>
+    </div>
+    <div class="contact-info-card">
+      <%= image_tag 'contact-address.png', alt: 'Address', class: 'contact-info-icon' %>
+      <div class="contact-info-label">Address</div>
+      <div class="contact-info-value">Street 123 Florida, United States</div>
+    </div>
+  </div>
+  <% if flash[:notice] %>
+    <div class="contact-flash"><%= flash[:notice] %></div>
+  <% end %>
+  <div class="contact-form-map-row">
+    <div class="contact-form-col">
+      <%= form_with url: contact_path, method: :post, local: true, class: 'contact-form' do |f| %>
+        <div class="contact-form-group">
+          <%= f.label :full_name, 'Full Name' %>
+          <%= f.text_field :full_name, placeholder: 'Enter full name', required: true %>
+        </div>
+        <div class="contact-form-group">
+          <%= f.label :email, 'Email Address' %>
+          <%= f.email_field :email, placeholder: 'Enter email', required: true %>
+        </div>
+        <div class="contact-form-group">
+          <%= f.label :message, 'Message' %>
+          <%= f.text_area :message, placeholder: 'Write message here...', rows: 5, required: true %>
+        </div>
+        <div class="contact-form-actions">
+          <%= f.submit 'Send Message', class: 'contact-send-btn' %>
+        </div>
+      <% end %>
+    </div>
+    <div class="contact-map-col">
+      <%= image_tag 'contact-map.png', alt: 'Map', class: 'contact-map-img' %>
+    </div>
+  </div>
+</div> 
+
+<%= render 'shared/footer' %>

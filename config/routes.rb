@@ -30,4 +30,6 @@ Rails.application.routes.draw do
   get '/mission', to: 'static#mission'
   get 'feeds', to: 'feeds#index'
   get 'feeds/infinite', to: 'feeds#infinite'
+  get 'contact', to: 'static#contact'
+  post 'contact', to: 'static#send_contact_message'
 end
