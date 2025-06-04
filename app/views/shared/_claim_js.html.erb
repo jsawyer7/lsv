@@ -11,6 +11,10 @@
     console.log('Showing evidence step');
     document.getElementById('claim-step').style.display = 'none';
     document.getElementById('evidence-step').style.display = 'block';
+    var validatedClaimDisplay = document.getElementById('validated-claim-display');
+    if (validatedClaimDisplay && window.validatedClaim) {
+      validatedClaimDisplay.value = window.validatedClaim;
+    }
   }
 
   document.addEventListener('DOMContentLoaded', function() {

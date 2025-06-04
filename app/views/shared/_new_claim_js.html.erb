@@ -1,0 +1,63 @@
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const allSources = ['Quran', 'Tanakh', 'Historical'];
+  const sourcesList = document.getElementById('sources-list');
+  const addSourceBtn = document.getElementById('add-source-btn');
+  const addSourceDropdown = document.getElementById('add-source-dropdown');
+  const claimInput = document.querySelector('textarea[name="claim[content]"]');
+  const charCount = document.getElementById('claim-char-count');
+
+  function getCurrentSources() {
+    return Array.from(sourcesList.querySelectorAll('li')).map(li => li.getAttribute('data-source'));
+  }
+
+  function updateDropdown() {
+    const current = getCurrentSources();
+    const available = allSources.filter(src => !current.includes(src));
+    if (available.length === 0) {
+      addSourceDropdown.innerHTML = '<div class="dropdown-empty">No more sources</div>';
+      return;
+    }
+    addSourceDropdown.innerHTML = available.map(src => `<div class="dropdown-item" data-source="${src}"><span class="source-icon"></span>${src}</div>`).join('');
+  }
+
+  addSourceBtn.addEventListener('click', function() {
+    updateDropdown();
+    addSourceDropdown.style.display = addSourceDropdown.style.display === 'block' ? 'none' : 'block';
+  });
+
+  addSourceDropdown.addEventListener('click', function(e) {
+    if (e.target.classList.contains('dropdown-item') || e.target.closest('.dropdown-item')) {
+      const item = e.target.closest('.dropdown-item');
+      const src = item.getAttribute('data-source');
+      const li = document.createElement('li');
+      li.setAttribute('data-source', src);
+      li.innerHTML = `<span class='source-icon'></span>${src} <a href='#' class='remove-source'>Remove</a>`;
+      sourcesList.appendChild(li);
+      addSourceDropdown.style.display = 'none';
+    }
+  });
+
+  sourcesList.addEventListener('click', function(e) {
+    if (e.target.classList.contains('remove-source')) {
+      e.preventDefault();
+      e.target.closest('li').remove();
+    }
+  });
+
+  // Character count for claim
+  if (claimInput && charCount) {
+    claimInput.addEventListener('input', function() {
+      charCount.textContent = claimInput.value.length;
+    });
+    charCount.textContent = claimInput.value.length;
+  }
+
+  // Hide dropdown if clicking outside
+  document.addEventListener('click', function(e) {
+    if (!addSourceBtn.contains(e.target) && !addSourceDropdown.contains(e.target)) {
+      addSourceDropdown.style.display = 'none';
+    }
+  });
+});
+</script> 

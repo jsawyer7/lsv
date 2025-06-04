@@ -1,32 +1,49 @@
 <%= render 'shared/claim_js' %>
+<%= render 'shared/new_claim_js' %>
 
-<div class="validator-container">
-  <div class="validator-box">
-    <div class="validator-header">
-      <div class="logo logo--large">LV</div>
-      <h1>Literal Source Verifier<br><span>Claim Validator</span></h1>
-    </div>
-
+<div class="new-claim-main">
+  <div class="new-claim-form-section">
+    <h2 class="new-claim-title">New Claim</h2>
     <%= form_with(model: @claim, local: true, html: { id: 'claim-form' }) do |f| %>
-      <div class="field" id="claim-step">
-        <h2>🧾 Step 1: Enter Your Claim</h2>
-        <%= f.text_area :content, class: "input-field", placeholder: "Claim: Jesus is not God..." %>
-        <div class="error-message" style="display: none; color: red; margin-top: 10px;"></div>
-        <div class="actions">
-          <button type="button" id="validate-claim" class="validator-button">Continue</button>
-          <%= link_to "← Back to Dashboard", root_path, class: "back-button" %>
+      <div class="new-claim-field" id="claim-step">
+        <label for="claim_content">Your Claim</label>
+        <%= f.text_area :content, class: "new-claim-input", placeholder: "Write your claim...", maxlength: 100, rows: 2 %>
+        <div class="new-claim-char-count"><span id="claim-char-count">0</span>/100</div>
+        <div class="error-message" style="display: none; color: #ef4444; margin-top: 10px;"></div>
+        <div class="new-claim-actions">
+          <button type="button" id="validate-claim" class="new-claim-submit"><i class="fa fa-arrow-right"></i> Continue</button>
         </div>
       </div>
-
-      <div class="field" id="evidence-step" style="display: none;">
-        <h2>📜 Step 2: Enter Your Evidence</h2>
-        <%= f.text_area :evidence, class: "input-field", placeholder: "- 1 Timothy 2:5 — 'One mediator...'" %>
-        <div class="error-message evidence-error" style="display: none; color: red; margin-top: 10px;"></div>
-        <div class="actions">
-          <button type="submit" class="validator-button" id="submit-claim">Run LSV Validation</button>
-          <button type="button" class="back-button" onclick="showClaimStep()">← Back to Claim</button>
+      <div id="evidence-step" style="display: none;">
+        <div class="new-claim-field">
+          <label>Your Claim</label>
+          <textarea class="new-claim-input" id="validated-claim-display" readonly style="background:#f3f4f6; color:#23263b;"></textarea>
+        </div>
+        <div class="new-claim-field">
+          <label for="claim_evidence">Your Evidence</label>
+          <%= f.text_area :evidence, class: "new-claim-input", placeholder: "Write your evidence...", rows: 4 %>
+          <div class="evidence-error error-message" style="display: none; color: #ef4444; margin-top: 10px;"></div>
+        </div>
+        <div class="new-claim-sources-section">
+          <div class="new-claim-sources-label">Sources</div>
+          <ul id="sources-list" class="new-claim-sources-list">
+            <li data-source="Quran"><span class="source-icon"></span>Quran <a href="#" class="remove-source">Remove</a></li>
+            <li data-source="Tanakh"><span class="source-icon"></span>Tanakh <a href="#" class="remove-source">Remove</a></li>
+            <li data-source="Historical"><span class="source-icon"></span>Historical <a href="#" class="remove-source">Remove</a></li>
+          </ul>
+          <div class="new-claim-add-source">
+            <button type="button" id="add-source-btn" class="add-source-btn"><i class="fa fa-plus-circle"></i> Add New Source</button>
+            <div id="add-source-dropdown" class="add-source-dropdown" style="display:none;"></div>
+          </div>
+        </div>
+        <div class="new-claim-actions">
+          <button type="button" class="new-claim-cancel" onclick="showClaimStep()">Cancel</button>
+          <button type="submit" class="new-claim-submit" id="submit-claim"><i class="fa fa-paper-plane"></i> Submit</button>
         </div>
       </div>
     <% end %>
+  </div>
+  <div class="new-claim-illustration">
+    <%= image_tag 'new-claim.png', alt: 'New Claim Illustration', class: 'new-claim-image' %>
   </div>
 </div>
