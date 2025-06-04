@@ -996,6 +996,10 @@
     justify-content: flex-start;
   }
 }
+
+.new-claim-field textarea[name='claim[evidence]'] {
+  min-height: 180px;
+}
   
   
   
