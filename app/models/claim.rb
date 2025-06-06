@@ -6,6 +6,16 @@ class Claim < ApplicationRecord
   validates :content, presence: true
   validates :evidence, presence: true
 
+  enum state: {
+    draft: 'draft',
+    ai_validated: 'ai_validated',
+    verified: 'verified'
+  }, _default: 'draft'
+
+  scope :drafts, -> { where(state: 'draft') }
+  scope :ai_validated, -> { where(state: 'ai_validated') }
+  scope :verified, -> { where(state: 'verified') }
+
   def reasoning_for(source)
     reasonings.find_by(source: source)&.response
   end

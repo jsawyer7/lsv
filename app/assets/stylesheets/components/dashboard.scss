@@ -5,6 +5,7 @@
   display: flex;
   min-height: 100vh;
   background-color: #f8f9fe;
+  padding-left: 240px;
 }
 
 .logout-button {
@@ -79,12 +80,18 @@
 
 // Sidebar/Navigation
 .dashboard-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  z-index: 1000;
   width: 240px;
   background-color: #181c23;
   border-right: none;
   padding: 20px 0;
   flex-shrink: 0;
   min-height: 100vh;
+  overflow-y: auto;
 
   @media (max-width: 768px) {
     width: 60px;
@@ -999,6 +1006,12 @@
 
 .new-claim-field textarea[name='claim[evidence]'] {
   min-height: 180px;
+}
+
+@media (max-width: 768px) {
+  .dashboard-container {
+    padding-left: 60px;
+  }
 }
   
   

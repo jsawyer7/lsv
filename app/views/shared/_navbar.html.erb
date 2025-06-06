@@ -11,16 +11,17 @@
       <span class="nav-text">Browse Facts</span>
     <% end %>
 
-    <%= link_to claims_path, class: "nav-item #{'active' if request.path.start_with?('/claims')}" do %>
-      <%= image_tag 'claims-icon.png', alt: '', class: 'nav-icon', size: '22x22' %>
-      <span class="nav-text">Claims</span>
-    <% end %>
     <%= link_to feeds_path, class: "nav-item #{'active' if current_page?(feeds_path)}" do %>
       <%= image_tag 'feed-icon.png', alt: '', class: 'nav-icon', size: '22x22' %>
       <span class="nav-text">Feed</span>
     <% end %>
+
+    <%= link_to claims_path, class: "nav-item #{'active' if request.path.start_with?('/claims')}" do %>
+      <%= image_tag 'claims-icon.png', alt: '', class: 'nav-icon', size: '22x22' %>
+      <span class="nav-text">My Claims</span>
+    <% end %>
+    
     <a href="#" class="nav-item upcoming"><%= image_tag 'fact-icon.png', alt: '', class: 'nav-icon', size: '22x22' %><span class="nav-text">Facts</span></a>
-    <a href="#" class="nav-item upcoming"><%= image_tag 'my-claim-icon.png', alt: '', class: 'nav-icon', size: '22x22' %><span class="nav-text">My Claims</span></a>
     <a href="#" class="nav-item upcoming"><%= image_tag 'thoeries-icon.png', alt: '', class: 'nav-icon', size: '22x22' %><span class="nav-text">Theories</span></a>
     <a href="#" class="nav-item upcoming"><%= image_tag 'my-theories-icon.png', alt: '', class: 'nav-icon', size: '22x22' %><span class="nav-text">My Theories</span></a>
     <a href="#" class="nav-item upcoming"><%= image_tag 'groups-icon.png', alt: '', class: 'nav-icon', size: '22x22' %><span class="nav-text">Groups</span></a>

@@ -116,4 +116,25 @@
       form.submit();
     });
   });
+
+  function openDeleteClaimModal(claimId) {
+    var modal = document.getElementById('delete-claim-modal');
+    var form = document.getElementById('delete-claim-form');
+    form.action = '/claims/' + claimId;
+    modal.style.display = 'flex';
+    document.body.classList.add('modal-open');
+  }
+  function closeDeleteClaimModal() {
+    var modal = document.getElementById('delete-claim-modal');
+    modal.style.display = 'none';
+    document.body.classList.remove('modal-open');
+  }
+  document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.my-claim-delete-link').forEach(function(link) {
+      link.addEventListener('click', function(e) {
+        e.preventDefault();
+        openDeleteClaimModal(this.getAttribute('data-claim-id'));
+      });
+    });
+  });
 <% end %>

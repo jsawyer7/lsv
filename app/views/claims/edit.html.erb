@@ -5,7 +5,7 @@
 
 <div class="new-claim-main">
   <div class="new-claim-form-section">
-    <h2 class="new-claim-title">New Claim</h2>
+    <h2 class="new-claim-title">Edit Claim</h2>
     <%= form_with(model: @claim, local: true, html: { id: 'claim-form' }) do |f| %>
       <div class="new-claim-field" id="claim-step">
         <label for="claim_content">Your Claim</label>
@@ -39,13 +39,9 @@
           </div>
         </div>
         <div class="new-claim-actions">
-          <%= hidden_field_tag :save_as_draft, 'false', id: 'save-as-draft-field' %>
-          <button type="submit" class="new-claim-save-draft" onclick="document.getElementById('save-as-draft-field').value = 'true'">Save to Draft</button>
           <div class="new-claim-actions-right">
             <button type="button" class="new-claim-cancel" onclick="showClaimStep()">Cancel</button>
-            <button type="submit" class="new-claim-submit" id="submit-claim" onclick="document.getElementById('save-as-draft-field').value = 'false'">
-              <i class="fa fa-paper-plane"></i> Submit
-            </button>
+            <button type="submit" class="new-claim-submit" id="submit-claim"><i class="fa fa-paper-plane"></i> Submit</button>
           </div>
         </div>
       </div>
@@ -54,4 +50,4 @@
   <div class="new-claim-illustration">
     <%= image_tag 'new-claim.png', alt: 'New Claim Illustration', class: 'new-claim-image' %>
   </div>
-</div>
+</div> 
