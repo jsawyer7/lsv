@@ -57,10 +57,19 @@ class Users::SessionsController < Devise::SessionsController
   private
 
   def after_sign_in_path_for(resource)
-    stored_location_for(resource) || root_path
+    stored_location_for(resource) || feeds_path
   end
 
   def after_sign_out_path_for(resource_or_scope)
     root_path
+  end
+
+  # Override to prevent Devise from setting the unauthenticated flash message after logout
+  def respond_to_on_destroy
+    # We always want to show the signed out message, never the unauthenticated one
+    respond_to do |format|
+      format.all { head :no_content }
+      format.any(*navigational_formats) { redirect_to after_sign_out_path_for(resource_name), notice: I18n.t("devise.sessions.signed_out") }
+    end
   end
 end 

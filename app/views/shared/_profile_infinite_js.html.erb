@@ -1,0 +1,59 @@
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const claimsList = document.getElementById('profile-claims-list');
+  if (!claimsList) return;
+  let page = 1;
+  let loading = false;
+  let hasMore = true;
+
+  function renderClaim(claim) {
+    let userDisplay = claim.user && claim.user.full_name ? claim.user.full_name :
+      (claim.user && claim.user.email ? claim.user.email : `User #${claim.user_id}`);
+    return `
+      <div class="feed-card">
+        <div class="feed-card-header">
+          <div class="feed-card-badge-user">
+            <span class="feed-card-badge fact">Fact</span>
+            <span class="feed-card-user">${userDisplay}</span>
+          </div>
+        </div>
+        <div class="feed-card-title">${claim.content.substring(0, 80)}${claim.content.length > 80 ? '...' : ''}</div>
+        <div class="feed-card-content">${claim.content}</div>
+        <div class="feed-card-footer">
+          <div class="feed-card-actions">
+            <span class="feed-like"><i class="fas fa-thumbs-up"></i> 1.1k</span>
+          </div>
+          <span class="feed-card-date">${new Date(claim.created_at).toLocaleDateString()}</span>
+          <a class="feed-card-link" href="/claims/${claim.id}">View Details</a>
+        </div>
+      </div>
+    `;
+  }
+
+  async function fetchClaims() {
+    if (loading || !hasMore) return;
+    loading = true;
+    // Extract user id from URL
+    const match = window.location.pathname.match(/\/users\/(\d+)\/profile/);
+    const userId = match ? match[1] : null;
+    if (!userId) return;
+    const res = await fetch(`/users/${userId}/profile/infinite?page=${page}`);
+    const data = await res.json();
+    data.claims.forEach(claim => {
+      claimsList.insertAdjacentHTML('beforeend', renderClaim(claim));
+    });
+    hasMore = data.has_more;
+    loading = false;
+    page++;
+  }
+
+  function onProfileScroll() {
+    if (claimsList.scrollTop + claimsList.clientHeight >= claimsList.scrollHeight - 200) {
+      fetchClaims();
+    }
+  }
+
+  claimsList.addEventListener('scroll', onProfileScroll);
+  fetchClaims();
+});
+</script>

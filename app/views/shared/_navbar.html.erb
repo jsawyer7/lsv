@@ -6,24 +6,26 @@
   </div>
 
   <div class="nav-items">
-    <%= link_to dashboard_path, class: "nav-item #{'active' if current_page?(dashboard_path)}" do %>
-      <%= image_tag 'fact-icon.png', alt: '', class: 'nav-icon', size: '22x22' %>
-      <span class="nav-text">Browse Facts</span>
-    <% end %>
-
     <%= link_to feeds_path, class: "nav-item #{'active' if current_page?(feeds_path)}" do %>
       <%= image_tag 'feed-icon.png', alt: '', class: 'nav-icon', size: '22x22' %>
       <span class="nav-text">Feed</span>
     <% end %>
-
-    <%= link_to claims_path, class: "nav-item #{'active' if request.path.start_with?('/claims')}" do %>
-      <%= image_tag 'claims-icon.png', alt: '', class: 'nav-icon', size: '22x22' %>
-      <span class="nav-text">My Claims</span>
-    <% end %>
     
     <a href="#" class="nav-item upcoming"><%= image_tag 'fact-icon.png', alt: '', class: 'nav-icon', size: '22x22' %><span class="nav-text">Facts</span></a>
     <a href="#" class="nav-item upcoming"><%= image_tag 'thoeries-icon.png', alt: '', class: 'nav-icon', size: '22x22' %><span class="nav-text">Theories</span></a>
+
+    <%= link_to claims_path, class: "nav-item #{'active' if request.path.start_with?('/claims')}" do %>
+      <%= image_tag 'my-claims-icon.png', alt: '', class: 'nav-icon', size: '22x22' %>
+      <span class="nav-text">My Claims</span>
+    <% end %>
+
     <a href="#" class="nav-item upcoming"><%= image_tag 'my-theories-icon.png', alt: '', class: 'nav-icon', size: '22x22' %><span class="nav-text">My Theories</span></a>
+    
+    <%= link_to peers_path, class: "nav-item #{'active' if current_page?(peers_path) || request.path =~ %r{^/users/\d+/profile/?$}}" do %>
+      <%= image_tag 'peers-icon.png', alt: '', class: 'nav-icon', size: '22x22' %>
+      <span class="nav-text">Peers</span>
+    <% end %>
+
     <a href="#" class="nav-item upcoming"><%= image_tag 'groups-icon.png', alt: '', class: 'nav-icon', size: '22x22' %><span class="nav-text">Groups</span></a>
   </div>
 

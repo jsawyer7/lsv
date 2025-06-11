@@ -1,0 +1,63 @@
+<div class="profile-main">
+  <div class="profile-center">
+    <div class="profile-header">
+      <h2><%= (@user.full_name.presence&.titleize || @user.email) %> Profile</h2>
+    </div>
+    <div class="profile-tabs">
+      <%= link_to 'Facts', user_profile_path(@user, tab: 'facts'), class: "profile-tab#{params[:tab] != 'theories' ? ' active' : ''}" %>
+      <%= link_to 'Theories', user_profile_path(@user, tab: 'theories'), class: "profile-tab#{params[:tab] == 'theories' ? ' active' : ''}" %>
+    </div>
+    <div class="profile-content-list">
+      <% if params[:tab] == 'theories' %>
+        <div class="empty-state">
+          <p>No theories data yet.</p>
+        </div>
+      <% else %>
+        <div id="profile-claims-list" class="profile-content-list"></div>
+      <% end %>
+    </div>
+  </div>
+  <aside class="profile-sidebar">
+    <div class="profile-user-card">
+      <div class="profile-avatar-wrap">
+        <%= image_tag @user.avatar_url.presence || 'default-avatar.png', class: 'profile-avatar' %>
+      </div>
+      <div class="profile-user-name"><%= (@user.full_name.presence&.titleize || @user.email) %></div>
+      <div class="profile-user-rating">★ 4.7</div>
+      <div class="profile-user-about">
+        <h4>About</h4>
+        <p>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting.</p>
+      </div>
+      <div class="profile-user-following">
+        <h4>Following</h4>
+        <% if @following.any? %>
+          <% @following.each do |followed| %>
+            <div class="profile-follow-row">
+              <%= image_tag followed.avatar_url.presence || 'default-avatar.png', class: 'profile-follow-avatar' %>
+              <div class="profile-follow-info">
+                <span class="profile-follow-name"><%= (followed.full_name.presence&.titleize || followed.email) %></span>
+                <span class="profile-follow-verified"><i class="fa fa-check-circle"></i></span>
+                <span class="profile-follow-rating">★ 4.7</span>
+              </div>
+              <% if followed == current_user %>
+                <!-- Don't show follow button for self -->
+              <% elsif current_user.following.exists?(followed.id) %>
+                <span class="profile-following-label">Following</span>
+              <% else %>
+                <%= button_to 'Follow', follows_path(followed_user_id: followed.id), method: :post, class: 'profile-follow-btn' %>
+              <% end %>
+            </div>
+          <% end %>
+          <% if @following.size == 5 %>
+            <div class="profile-follow-show-more">Show more</div>
+          <% end %>
+        <% else %>
+          <div class="profile-follow-none">
+            <%= (@user.full_name.presence&.titleize || @user.email) %> has not followed anyone yet.
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </aside>
+</div>
+<%= render 'shared/profile_infinite_js' %>

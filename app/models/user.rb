@@ -7,6 +7,26 @@ class User < ApplicationRecord
 
   has_many :claims
 
+  has_many :added_peers, -> { where(status: 'accepted') }, class_name: 'Peer', foreign_key: 'user_id', dependent: :destroy
+  has_many :peers, through: :added_peers, source: :peer
+
+  has_many :peerings, -> { where(status: 'accepted') }, class_name: 'Peer', foreign_key: 'peer_id', dependent: :destroy
+  has_many :peer_users, through: :peerings, source: :user
+
+  # Peer requests sent by this user
+  has_many :sent_peer_requests, -> { where(status: 'pending') }, class_name: 'Peer', foreign_key: 'user_id', dependent: :destroy
+  has_many :pending_peers, through: :sent_peer_requests, source: :peer
+
+  # Peer requests received by this user
+  has_many :received_peer_requests, -> { where(status: 'pending') }, class_name: 'Peer', foreign_key: 'peer_id', dependent: :destroy
+  has_many :peer_requesters, through: :received_peer_requests, source: :user
+
+  # Follow associations
+  has_many :follows, dependent: :destroy
+  has_many :following, through: :follows, source: :followed_user
+  has_many :reverse_follows, class_name: 'Follow', foreign_key: 'followed_user', dependent: :destroy
+  has_many :followers, through: :reverse_follows, source: :user
+
   # Define roles
   enum role: {
     user: 0,

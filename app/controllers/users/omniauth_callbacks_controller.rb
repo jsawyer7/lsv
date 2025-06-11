@@ -7,7 +7,7 @@ class Users::OmniauthCallbacksController < Devise::OmniauthCallbacksController
     if @user.persisted?
       sign_in @user
       flash[:notice] = I18n.t "devise.omniauth_callbacks.success", kind: "Google"
-      redirect_to root_path
+      redirect_to feeds_path
     else
       session["devise.google_data"] = request.env["omniauth.auth"].except(:extra)
       flash[:alert] = @user.errors.full_messages.join(", ")

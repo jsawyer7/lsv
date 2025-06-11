@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2025_06_05_235821) do
+ActiveRecord::Schema[7.0].define(version: 2025_06_11_201350) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -38,6 +38,26 @@ ActiveRecord::Schema[7.0].define(version: 2025_06_05_235821) do
     t.string "state", default: "draft", null: false
     t.boolean "publish", default: false, null: false
     t.index ["user_id"], name: "index_claims_on_user_id"
+  end
+
+  create_table "follows", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "followed_user", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id", "followed_user"], name: "index_follows_on_user_id_and_followed_user", unique: true
+    t.index ["user_id"], name: "index_follows_on_user_id"
+  end
+
+  create_table "peers", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "peer_id", null: false
+    t.string "status", default: "pending", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["peer_id"], name: "index_peers_on_peer_id"
+    t.index ["user_id", "peer_id"], name: "index_peers_on_user_id_and_peer_id", unique: true
+    t.index ["user_id"], name: "index_peers_on_user_id"
   end
 
   create_table "reasonings", force: :cascade do |t|
@@ -77,4 +97,8 @@ ActiveRecord::Schema[7.0].define(version: 2025_06_05_235821) do
   add_foreign_key "challenges", "claims"
   add_foreign_key "challenges", "users"
   add_foreign_key "claims", "users"
+  add_foreign_key "follows", "users"
+  add_foreign_key "follows", "users", column: "followed_user"
+  add_foreign_key "peers", "users"
+  add_foreign_key "peers", "users", column: "peer_id"
 end

@@ -1,7 +1,7 @@
 Rails.application.routes.draw do
   ActiveAdmin.routes(self)
   
-  root to: "home#index"
+  root to: "feeds#index"
 
   devise_for :users, controllers: {
     sessions: 'users/sessions',
@@ -32,4 +32,17 @@ Rails.application.routes.draw do
   get 'feeds/infinite', to: 'feeds#infinite'
   get 'contact', to: 'static#contact'
   post 'contact', to: 'static#send_contact_message'
+
+  resources :peers, only: [:index] do
+    collection do
+      post :add
+      post :accept
+      delete :remove
+    end
+  end
+
+  resources :follows, only: [:create, :destroy]
+
+  get '/users/:id/profile', to: 'users#profile', as: :user_profile
+  get '/users/:id/profile/infinite', to: 'users#profile_infinite', as: :user_profile_infinite
 end

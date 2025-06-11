@@ -1,0 +1,132 @@
+<div class="peers-page">
+  <h2 class="my-claims-title">Peers</h2>
+  <div class="my-claims-filter-bar">
+    <%= link_to 'Suggestions', peers_path(tab: 'suggestions'), class: "my-claims-filter#{' active' if @tab == 'suggestions'}", style: 'cursor:pointer;' %>
+    <%= link_to 'Following', peers_path(tab: 'following'), class: "my-claims-filter#{' active' if @tab == 'following'}", style: 'cursor:pointer;' %>
+    <%= link_to 'Requests', peers_path(tab: 'requests'), class: "my-claims-filter#{' active' if @tab == 'requests'}", style: 'cursor:pointer;' %>
+  </div>
+  <div class="peers-main">
+    <% if @tab == 'requests' %>
+      <div class="peers-suggestions">
+        <h3 class="peers-section-title">Peer Requests</h3>
+        <div class="peers-suggestions-list">
+          <% if @requests.any? %>
+            <% @requests.each do |peer_request| %>
+              <div class="peer-card">
+                <div class="peer-avatar-wrap">
+                  <%= image_tag peer_request.user.avatar_url.presence || 'default-avatar.png', class: 'peer-avatar' %>
+                </div>
+                <div class="peer-name-row">
+                  <span class="peer-name truncate-text"><%= peer_request.user.full_name.presence || peer_request.user.email %></span>
+                  <span class="peer-verified"><i class="fa fa-check-circle"></i></span>
+                </div>
+                <div class="peer-rating">★ 4.7</div>
+                <%= button_to 'Accept Request', accept_peers_path(user_id: peer_request.user.id), method: :post, class: 'add-peer-btn' %>
+              </div>
+            <% end %>
+          <% else %>
+            <div class="no-requests-message">No Recent Requests</div>
+          <% end %>
+        </div>
+        <div class="pagination-container">
+          <%= paginate @requests %>
+        </div>
+      </div>
+    <% elsif @tab == 'following' %>
+      <div class="peers-suggestions">
+        <h3 class="peers-section-title">Peers You Follow</h3>
+        <div class="peers-suggestions-list">
+          <% if @following.any? %>
+            <% @following.each do |user| %>
+              <div class="peer-card">
+                <div class="peer-avatar-wrap">
+                  <%= image_tag user.avatar_url.presence || 'default-avatar.png', class: 'peer-avatar' %>
+                </div>
+                <div class="peer-name-row">
+                  <span class="peer-name truncate-text"><%= user.full_name.presence || user.email %></span>
+                  <span class="peer-verified"><i class="fa fa-check-circle"></i></span>
+                </div>
+                <div class="peer-rating">★ 4.7</div>
+                <%= button_to 'Unfollow', follow_path(user.id), method: :delete, class: 'add-peer-btn', data: { confirm: 'Are you sure you want to unfollow this user?' } %>
+              </div>
+            <% end %>
+          <% else %>
+            <div class="no-following-message">You have not Followed anyone yet.</div>
+          <% end %>
+        </div>
+        <div class="pagination-container">
+          <%= paginate @following %>
+        </div>
+      </div>
+    <% else %>
+      <div class="peers-suggestions">
+        <h3 class="peers-section-title">Peoples you may know</h3>
+        <div class="peers-suggestions-list">
+          <% @suggested_users.each do |user| %>
+            <div class="peer-card">
+              <div class="peer-avatar-wrap">
+                <%= image_tag user.avatar_url.presence || 'default-avatar.png', class: 'peer-avatar' %>
+              </div>
+              <div class="peer-name-row">
+                <span class="peer-name truncate-text"><%= user.full_name.presence || user.email %></span>
+                <span class="peer-verified"><i class="fa fa-check-circle"></i></span>
+              </div>
+              <div class="peer-rating">★ 4.7</div>
+              <% if Peer.exists?(user_id: current_user.id, peer_id: user.id, status: 'pending') %>
+                <span class="add-peer-btn request-sent-text">Request Sent</span>
+              <% elsif Peer.exists?(user_id: user.id, peer_id: current_user.id, status: 'pending') %>
+                <%= button_to 'Accept Request', accept_peers_path(user_id: user.id), method: :post, class: 'add-peer-btn' %>
+              <% else %>
+                <%= button_to 'Add Peer', add_peers_path(peer_id: user.id), method: :post, class: 'add-peer-btn' %>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+        <div class="pagination-container">
+          <%= paginate @suggested_users %>
+        </div>
+      </div>
+    <% end %>
+    <aside class="peers-sidebar with-divider">
+      <div class="my-peers-section">
+        <h4>My Peers</h4>
+        <% if @my_peers_count > 0 %>
+          <% @my_peers.each do |peer| %>
+            <div class="my-peer-row">
+              <%= image_tag peer.avatar_url.presence || 'default-avatar.png', class: 'my-peer-avatar' %>
+              <span class="my-peer-name"><%= truncate(peer.full_name.presence || peer.email, length: 8) %></span>
+              <span class="my-peer-verified"><i class="fa fa-check-circle"></i></span>
+              <span class="my-peer-rating">★ 4.7</span>
+              <%= link_to 'View Profile', user_profile_path(peer), class: 'my-peer-view-profile' %>
+            </div>
+          <% end %>
+          <% if @my_peers_count > 5 %>
+            <div class="my-peer-show-more">Show more</div>
+          <% end %>
+        <% else %>
+          <div class="no-peers-message">No Peers added.</div>
+        <% end %>
+      </div>
+      <div class="top-facts-section">
+        <h4>Top Facts</h4>
+        <div class="top-fact-row">
+          <span class="top-fact-badge">Fact</span>
+          <div class="top-fact-title">Submission and Obedience as Pathways to Divinity</div>
+          <div class="top-fact-meta">
+            <span class="top-fact-verified-by">Verified by: <%= image_tag 'default-avatar.png', class: 'top-fact-avatar' %> <%= image_tag 'default-avatar.png', class: 'top-fact-avatar' %></span>
+            <span class="top-fact-date">10 May, 2025</span>
+          </div>
+        </div>
+        <div class="top-fact-row">
+          <span class="top-fact-badge">Fact</span>
+          <div class="top-fact-title">Submission and Obedience as Pathways to Divinity</div>
+          <div class="top-fact-meta">
+            <span class="top-fact-verified-by">Verified by: <%= image_tag 'default-avatar.png', class: 'top-fact-avatar' %> <%= image_tag 'default-avatar.png', class: 'top-fact-avatar' %></span>
+            <span class="top-fact-date">10 May, 2025</span>
+          </div>
+        </div>
+        <div class="top-fact-show-more">Show more</div>
+      </div>
+    </aside>
+  </div>
+</div>

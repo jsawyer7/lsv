@@ -64,7 +64,7 @@ class ClaimsController < ApplicationController
   end
 
   def show
-    @claim = current_user.claims.find(params[:id])
+    @claim = Claim.find(params[:id])
   end
 
   def edit
