@@ -1,0 +1,107 @@
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Make the page static
+  document.body.style.overflow = 'hidden';
+  document.querySelector('.dashboard-main').style.overflow = 'hidden';
+
+  const theoryList = document.getElementById('theory-list');
+  const theoryLoader = document.getElementById('theory-loader');
+  const filters = document.querySelectorAll('.theories-filter');
+  const searchInput = document.querySelector('.theories-search-bar input');
+  let page = 1;
+  let loading = false;
+  let hasMore = true;
+  let currentStatus = '<%= @current_status %>';
+  let currentSearch = '<%= params[:search].to_s %>';
+
+  // Set fixed height for theory list container
+  theoryList.style.height = 'calc(100vh - 200px)';
+  theoryList.style.overflowY = 'auto';
+
+  function renderTheory(theory) {
+    return `
+      <div class="feed-card">
+        <div class="feed-card-header">
+          <div class="feed-card-badge-user">
+            <span class="feed-card-badge theory">Theory</span>
+            <span class="feed-card-user">Anonymous</span>
+          </div>
+        </div>
+        <div class="feed-card-title">${theory.title}</div>
+        <div class="feed-card-content">${theory.description || ''}</div>
+        <div class="feed-card-footer">
+          <div class="feed-card-actions">
+            <span class="feed-like"><i class="fas fa-thumbs-up"></i> 1.1k</span>
+          </div>
+          <span class="feed-card-date">${new Date(theory.created_at).toLocaleDateString()}</span>
+          <a class="feed-card-link" href="#">View Details</a>
+        </div>
+      </div>
+    `;
+  }
+
+  async function fetchTheories(reset = false) {
+    if (loading || !hasMore) return;
+    loading = true;
+    theoryLoader.style.display = 'block';
+    if (reset) {
+      theoryList.innerHTML = '';
+      page = 0;
+      hasMore = true;
+    }
+    if (page === 0) {
+      page = 1;
+      loading = false;
+      theoryLoader.style.display = 'none';
+      return;
+    }
+    const res = await fetch(`/theories/infinite?page=${page}&status=${currentStatus}&search=${encodeURIComponent(currentSearch)}`);
+    const data = await res.json();
+    data.theories.forEach(theory => {
+      theoryList.insertAdjacentHTML('beforeend', renderTheory(theory));
+    });
+    hasMore = data.has_more;
+    loading = false;
+    theoryLoader.style.display = hasMore ? 'block' : 'none';
+    page++;
+  }
+
+  function onTheoryScroll() {
+    if (theoryList.scrollTop + theoryList.clientHeight >= theoryList.scrollHeight - 200) {
+      fetchTheories();
+    }
+  }
+
+  theoryList.addEventListener('scroll', onTheoryScroll);
+
+  if (searchInput) {
+    searchInput.addEventListener('input', function() {
+      currentSearch = this.value;
+      theoryList.innerHTML = '';
+      page = 0;
+      hasMore = true;
+      fetchTheories(true);
+    });
+  }
+
+  // Delete modal logic for theories
+  function openDeleteTheoryModal(theoryId) {
+    var modal = document.getElementById('delete-theory-modal');
+    var form = document.getElementById('delete-theory-form');
+    form.action = '/theories/' + theoryId;
+    modal.style.display = 'flex';
+    document.body.classList.add('modal-open');
+  }
+  function closeDeleteTheoryModal() {
+    var modal = document.getElementById('delete-theory-modal');
+    modal.style.display = 'none';
+    document.body.classList.remove('modal-open');
+  }
+  document.querySelectorAll('.my-claim-delete-link').forEach(function(link) {
+    link.addEventListener('click', function(e) {
+      e.preventDefault();
+      openDeleteTheoryModal(this.getAttribute('data-theory-id'));
+    });
+  });
+});
+</script> 

@@ -1,0 +1,29 @@
+<div class="theory-new-main">
+  <div class="theory-new-form-section">
+    <h2 class="theory-new-title"><%= theory.persisted? ? 'Edit Theory' : 'Post New Theory' %></h2>
+    <%= form_with(model: theory, url: theory.persisted? ? theory_path(theory) : theories_path, local: true) do |f| %>
+      <div class="form-group">
+        <%= f.label :title, 'Title' %>
+        <%= f.text_field :title, placeholder: 'Theory title', class: 'theory-title-input', required: true %>
+      </div>
+      <div class="form-group">
+        <%= f.label :description, 'Description' %>
+        <%= f.text_area :description, placeholder: 'Write theory description', class: 'theory-description-input', required: true %>
+      </div>
+      <div class="theory-new-actions">
+        <div class="theory-draft-left">
+          <%= f.submit 'Save to Draft', name: 'commit_draft', class: 'theory-save-draft' %>
+        </div>
+        <div class="theory-actions-right">
+          <%= link_to 'Cancel', theories_path, class: 'theory-cancel-btn' %>
+          <%= f.submit nil, name: 'commit', class: 'theory-submit-btn', value: 'Submit' do %>
+            <span>Submit</span> <i class="fa fa-paper-plane"></i>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+  <div class="theory-new-image-section">
+    <%= image_tag 'new-theory-image.png', alt: 'New Theory', class: 'theory-new-image' %>
+  </div>
+</div> 

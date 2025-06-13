@@ -19,7 +19,10 @@
       <span class="nav-text">My Claims</span>
     <% end %>
 
-    <a href="#" class="nav-item upcoming"><%= image_tag 'my-theories-icon.png', alt: '', class: 'nav-icon', size: '22x22' %><span class="nav-text">My Theories</span></a>
+    <%= link_to theories_path, class: "nav-item #{'active' if current_page?(theories_path) || current_page?(new_theory_path)}" do %>
+      <%= image_tag 'my-theories-icon.png', alt: '', class: 'nav-icon', size: '22x22' %>
+      <span class="nav-text">My Theories</span>
+    <% end %>
     
     <%= link_to peers_path, class: "nav-item #{'active' if current_page?(peers_path) || request.path =~ %r{^/users/\d+/profile/?$}}" do %>
       <%= image_tag 'peers-icon.png', alt: '', class: 'nav-icon', size: '22x22' %>

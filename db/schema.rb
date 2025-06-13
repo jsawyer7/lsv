@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2025_06_11_201350) do
+ActiveRecord::Schema[7.0].define(version: 2025_06_13_221156) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -72,6 +72,16 @@ ActiveRecord::Schema[7.0].define(version: 2025_06_11_201350) do
     t.index ["reasonable_type", "reasonable_id", "source"], name: "index_reasonings_on_reasonable_and_source", unique: true
   end
 
+  create_table "theories", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "title", null: false
+    t.text "description"
+    t.string "status", default: "in_review", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id"], name: "index_theories_on_user_id"
+  end
+
   create_table "users", force: :cascade do |t|
     t.string "email", default: "", null: false
     t.string "encrypted_password", default: "", null: false
@@ -101,4 +111,5 @@ ActiveRecord::Schema[7.0].define(version: 2025_06_11_201350) do
   add_foreign_key "follows", "users", column: "followed_user"
   add_foreign_key "peers", "users"
   add_foreign_key "peers", "users", column: "peer_id"
+  add_foreign_key "theories", "users"
 end

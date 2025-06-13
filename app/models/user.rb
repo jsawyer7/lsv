@@ -23,6 +23,7 @@ class User < ApplicationRecord
 
   # Follow associations
   has_many :follows, dependent: :destroy
+  has_many :theories, dependent: :destroy
   has_many :following, through: :follows, source: :followed_user
   has_many :reverse_follows, class_name: 'Follow', foreign_key: 'followed_user', dependent: :destroy
   has_many :followers, through: :reverse_follows, source: :user

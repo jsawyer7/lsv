@@ -45,4 +45,10 @@ Rails.application.routes.draw do
 
   get '/users/:id/profile', to: 'users#profile', as: :user_profile
   get '/users/:id/profile/infinite', to: 'users#profile_infinite', as: :user_profile_infinite
+
+  resources :theories, only: [:index, :new, :create, :edit, :update, :destroy] do
+    collection do
+      get :infinite
+    end
+  end
 end
