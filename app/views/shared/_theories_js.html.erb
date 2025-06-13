@@ -103,5 +103,14 @@ document.addEventListener('DOMContentLoaded', function() {
       openDeleteTheoryModal(this.getAttribute('data-theory-id'));
     });
   });
+
+  // Add event listener for the delete modal close button
+  var closeBtn = document.querySelector('.delete-claim-modal-close');
+  if (closeBtn) {
+    closeBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      closeDeleteTheoryModal();
+    });
+  }
 });
 </script> 
