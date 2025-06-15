@@ -1,0 +1,23 @@
+<script>
+function showAvatarLoader() {
+  document.getElementById('avatar-loader').style.display = 'flex';
+}
+function hideAvatarLoader() {
+  document.getElementById('avatar-loader').style.display = 'none';
+}
+function removeAvatarAndPreviewAndSubmit() {
+  var preview = document.querySelector('.settings-avatar-img-lg');
+  if (preview) {
+    preview.src = '/assets/default-avatar.png';
+  }
+  document.getElementById('remove-avatar-field').value = 'true';
+  showAvatarLoader();
+  document.getElementById('avatar-upload-input').closest('form').submit();
+}
+document.getElementById('avatar-upload-input').addEventListener('change', function() {
+  document.getElementById('remove-avatar-field').value = 'false';
+  showAvatarLoader();
+  this.closest('form').submit();
+});
+document.addEventListener('DOMContentLoaded', hideAvatarLoader);
+</script> 

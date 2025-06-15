@@ -51,4 +51,8 @@ Rails.application.routes.draw do
       get :infinite
     end
   end
+
+  resource :settings, only: [:edit, :update] do
+    get :notifications, on: :collection
+  end
 end

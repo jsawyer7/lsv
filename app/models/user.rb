@@ -38,6 +38,10 @@ class User < ApplicationRecord
   # Set default role before creation
   before_create :set_default_role
 
+  has_one_attached :avatar
+  validates :about, length: { maximum: 1000 }
+  validate :avatar_type_and_size
+
   def active_for_authentication?
     super && (confirmed? || provider.present?)
   end
@@ -54,7 +58,7 @@ class User < ApplicationRecord
       user.update(
         provider: auth.provider,
         uid: auth.uid,
-        full_name: auth.info.name,
+        full_name: user.full_name.presence || auth.info.name,
         avatar_url: auth.info.image
       )
     else
@@ -99,5 +103,15 @@ class User < ApplicationRecord
 
   def set_default_role
     self.role ||= :user
+  end
+
+  def avatar_type_and_size
+    return unless avatar.attached?
+    if !avatar.content_type.in?(%w[image/png image/jpg image/jpeg])
+      errors.add(:avatar, 'must be a PNG or JPG')
+    end
+    if avatar.byte_size > 800.kilobytes
+      errors.add(:avatar, 'size must be less than 800KB')
+    end
   end
 end

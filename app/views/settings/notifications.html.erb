@@ -1,0 +1,52 @@
+<%= render 'settings/layout', active: 'notifications' do %>
+  <div class="settings-form-section">
+    <h2 class="settings-section-title">Notifications</h2>
+    <p class="settings-section-desc">You will get only notification what have enabled.</p>
+    <div class="settings-notification-section">
+      <div class="settings-notification-group">
+        <div class="settings-notification-group-title">Security Alerts</div>
+        <div class="settings-notification-group-desc">You will get only those email notification what you want.</div>
+        <div class="settings-notification-row">
+          <span>Email me whenever encounter unusual activity</span>
+          <label class="switch">
+            <input type="checkbox" checked>
+            <span class="slider round"></span>
+          </label>
+        </div>
+        <div class="settings-notification-row">
+          <span>Email me if new browser is used to sign in</span>
+          <label class="switch">
+            <input type="checkbox">
+            <span class="slider round"></span>
+          </label>
+        </div>
+      </div>
+      <div class="settings-notification-divider"></div>
+      <div class="settings-notification-group">
+        <div class="settings-notification-group-title">News</div>
+        <div class="settings-notification-group-desc">You will get only those email notification what you want.</div>
+        <div class="settings-notification-row">
+          <span>Notify me by email about sales and latest news</span>
+          <label class="switch">
+            <input type="checkbox" checked>
+            <span class="slider round"></span>
+          </label>
+        </div>
+        <div class="settings-notification-row">
+          <span>Email me about new features and updates</span>
+          <label class="switch">
+            <input type="checkbox">
+            <span class="slider round"></span>
+          </label>
+        </div>
+        <div class="settings-notification-row">
+          <span>Email me about tips on using account</span>
+          <label class="switch">
+            <input type="checkbox" checked>
+            <span class="slider round"></span>
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
+<% end %> 
