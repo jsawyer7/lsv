@@ -1,0 +1,37 @@
+<div class="feed-card">
+  <div class="feed-card-header">
+    <div class="feed-card-badge-user">
+      <% if theory.status == 'draft' %>
+        <span class="my-claim-badge draft">Draft</span>
+      <% else %>
+        <span class="feed-card-badge theory">Theory</span>
+      <% end %>
+      <% user = theory.user %>
+      <span class="feed-card-user">
+        <img src="<%= user&.avatar_url.presence || asset_path('default-avatar.png') %>" class="my-claim-avatar" />
+        <%= user&.full_name.presence || user&.email || 'Anonymous' %>
+      </span>
+    </div>
+  </div>
+  <div class="feed-card-title"><%= theory.title %></div>
+  <div class="feed-card-content"><%= theory.description %></div>
+  <div class="feed-card-footer">
+    <% if theory.status == 'draft' %>
+      <span class="feed-card-date"><%= theory.created_at.strftime('%d %b, %Y') %></span>
+      <div class="feed-card-actions" style="margin-left:auto;">
+        <%= link_to edit_theory_path(theory), class: 'my-claim-edit-link' do %>
+          <i class="fas fa-edit"></i> Edit
+        <% end %>
+        <%= link_to '#', class: 'my-claim-delete-link', data: { theory_id: theory.id } do %>
+          <i class="fas fa-trash"></i> Delete
+        <% end %>
+      </div>
+    <% else %>
+      <div class="feed-card-actions">
+        <span class="feed-like"><i class="fas fa-thumbs-up"></i> 1.1k</span>
+      </div>
+      <span class="feed-card-date"><%= theory.created_at.strftime('%d %b, %Y') %></span>
+      <a class="feed-card-link" href="#">View Details</a>
+    <% end %>
+  </div>
+</div> 

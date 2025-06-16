@@ -52,7 +52,16 @@ Rails.application.routes.draw do
     end
   end
 
+  get 'theories/public', to: 'theories#public_theories', as: :public_theories
+  get 'theories/public_infinite', to: 'theories#public_infinite', as: :public_infinite_theories
+
   resource :settings, only: [:edit, :update] do
     get :notifications, on: :collection
+  end
+
+  resources :facts, only: [:index] do
+    collection do
+      get :infinite
+    end
   end
 end

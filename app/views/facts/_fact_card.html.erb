@@ -1,0 +1,17 @@
+<div class="feed-card">
+  <div class="feed-card-header">
+    <div class="feed-card-badge-user">
+      <span class="feed-card-badge fact">Fact</span>
+      <span class="feed-card-user">
+        Verified by:
+        <img src="/assets/default-avatar.png" class="my-claim-avatar" />
+        <img src="/assets/default-avatar.png" class="my-claim-avatar" />
+      </span>
+    </div>
+  </div>
+  <div class="feed-card-content"><%= fact.content %></div>
+  <div class="feed-card-footer">
+    <span class="feed-card-date"><%= fact.created_at.strftime('%d %b, %Y') %></span>
+    <%= link_to 'View Details', claim_path(fact), class: 'feed-card-link' %>
+  </div>
+</div> 

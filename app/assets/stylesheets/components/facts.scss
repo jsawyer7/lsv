@@ -1,0 +1,140 @@
+.facts-main {
+  display: flex;
+  gap: 0;
+  align-items: flex-start;
+  background: #fff;
+  min-height: 100vh;
+}
+.facts-center {
+  flex: 1 1 0;
+  max-width: none;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: #fff;
+  padding-top: 1rem;
+}
+.facts-header {
+  padding: 24px 32px 12px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  margin-bottom: 18px;
+  h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #23263b;
+  }
+  .facts-search-bar {
+    display: flex;
+    align-items: center;
+    margin-left: 2rem;
+    input {
+      padding: 0.5rem 1rem;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      font-size: 1rem;
+      margin-right: 0.5rem;
+    }
+    .facts-search-btn {
+      background: #2196f3;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 0.5rem 1rem;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+  }
+  .facts-new-btn {
+    margin-left: auto;
+    background: #2196f3;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 0.5rem 1.2rem;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+  }
+  .facts-new-btn .btn-icon {
+    width: 22px;
+    height: 22px;
+    margin-right: 0.5rem;
+  }
+  .facts-new-btn .new-fact-label {
+    text-decoration: none;
+    color: #fff;
+  }
+}
+.facts-filters {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  background: #fff;
+  border-radius: 12px;
+  padding: 0.7rem 1.2rem;
+  border: 2px solid #e5e7eb;
+  max-width: 27rem;
+  margin-left: 2rem;
+}
+.facts-filter {
+  color: #888;
+  font-size: 1.08rem;
+  font-weight: 500;
+  text-decoration: none;
+  padding: 0.5rem 1.5rem;
+  border-radius: 10px;
+  transition: background 0.2s, color 0.2s;
+  background: transparent;
+  border: none;
+  margin: 0 0.1rem;
+}
+.facts-filter.active {
+  background: #e3f0ff;
+  color: #2196f3;
+  font-weight: 600;
+}
+.facts-filter:hover {
+  background: #f5faff;
+  color: #2196f3;
+}
+.facts-content-list {
+  flex: 1 1 0;
+  overflow-y: auto;
+  max-height: calc(100vh - 120px);
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding-bottom: 80px;
+  background: #fff;
+}
+.facts-rightbar {
+  width: 420px;
+  min-width: 260px;
+  max-width: 480px;
+  padding: 32px 24px 0 24px;
+  position: sticky;
+  top: 0;
+  align-self: flex-start;
+  background: #fff;
+  border-left: 1.5px solid #e5e7eb;
+  min-height: 100vh;
+}
+.facts-rightbar h4 {
+  font-size: 1.18rem;
+  font-weight: 700;
+  margin-bottom: 1.2rem;
+}
+.empty-state {
+  color: #888;
+  font-size: 1.05rem;
+  text-align: center;
+  margin: 18px 0 10px 0;
+} 

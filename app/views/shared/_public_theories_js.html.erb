@@ -1,0 +1,50 @@
+<script>
+  let publicTheoryPage = 1;
+  let publicTheoryLoading = false;
+  let publicTheoryEnd = false;
+
+  function renderPublicTheoryCard(html) {
+    const list = document.getElementById('theory-list');
+    const temp = document.createElement('div');
+    temp.innerHTML = html;
+    list.appendChild(temp.firstElementChild);
+  }
+
+  function fetchPublicTheories() {
+    if (publicTheoryLoading || publicTheoryEnd) return;
+    publicTheoryLoading = true;
+    document.getElementById('theory-loader').style.display = '';
+    fetch(`/theories/public_infinite?page=${publicTheoryPage}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.theories.length === 0) {
+          publicTheoryEnd = true;
+        } else {
+          data.theories.forEach(renderPublicTheoryCard);
+          publicTheoryPage = data.next_page || null;
+          if (!data.next_page) publicTheoryEnd = true;
+        }
+        publicTheoryLoading = false;
+        document.getElementById('theory-loader').style.display = 'none';
+      });
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    // Make the page static
+    document.body.style.overflow = 'hidden';
+    var dashboardMain = document.querySelector('.dashboard-main');
+    if (dashboardMain) dashboardMain.style.overflow = 'hidden';
+    var theoryList = document.getElementById('theory-list');
+    if (theoryList) {
+      theoryList.style.height = 'calc(100vh - 200px)';
+      theoryList.style.overflowY = 'auto';
+    }
+    fetchPublicTheories();
+    document.getElementById('theory-list').addEventListener('scroll', function() {
+      const el = this;
+      if (el.scrollTop + el.clientHeight >= el.scrollHeight - 100) {
+        fetchPublicTheories();
+      }
+    });
+  });
+</script> 

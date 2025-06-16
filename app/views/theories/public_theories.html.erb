@@ -1,0 +1,74 @@
+<div class="theories-main">
+  <div class="theories-center">
+    <div class="theories-header">
+      <h2>Theories</h2>
+      <%= link_to new_theory_path, class: 'theories-new-btn' do %>
+        <%= image_tag 'newclaim.png', class: 'btn-icon' %>
+        <span class="new-theory-label">New Theory</span>
+      <% end %>
+    </div>
+    <div id="theory-list" class="theories-content-list">
+      <!-- Theories will be loaded here by infinite scroll JS -->
+    </div>
+    <div id="theory-loader" class="feed-loader" style="display:none;">Loading...</div>
+  </div>
+  <aside class="theories-rightbar">
+    <div class="theories-top-picks">
+      <h4>Top Picks</h4>
+      <div class="tp-user">
+        <div class="tp-user-main">
+          <img src="/assets/default-avatar.png" class="tp-avatar" />
+          <span class="tp-name">Albert Flores <span class="tp-dot">•</span> <a class="tp-follow">Follow</a></span>
+        </div>
+        <div class="tp-title">Submission and Obedience as Pathways to Divinity</div>
+        <div class="tp-date">10 May, 2025</div>
+      </div>
+      <div class="tp-user">
+        <div class="tp-user-main">
+          <img src="/assets/default-avatar.png" class="tp-avatar" />
+          <span class="tp-name">Jacob Jones <i class="fa fa-check-circle tp-verified"></i></span>
+        </div>
+        <div class="tp-title">Submission and Obedience as Pathways to Divinity</div>
+        <div class="tp-date">10 May, 2025</div>
+      </div>
+      <div class="tp-user">
+        <div class="tp-user-main">
+          <img src="/assets/default-avatar.png" class="tp-avatar" />
+          <span class="tp-name">Savannah Nguyen <i class="fa fa-check-circle tp-verified"></i></span>
+        </div>
+        <div class="tp-title">Submission and Obedience as Pathways to Divinity</div>
+        <div class="tp-date">10 May, 2025</div>
+      </div>
+      <div class="tp-show-more">Show more</div>
+    </div>
+    <div class="theories-who-to-follow">
+      <h4>Who to Follow</h4>
+      <div class="wtf-user">
+        <img src="/assets/default-avatar.png" class="wtf-avatar" />
+        <div class="wtf-info">
+          <span class="wtf-name">Wade Warren <i class="fa fa-check-circle wtf-verified"></i></span>
+          <span class="wtf-meta">214 followers <span class="wtf-star">★ 4.7</span></span>
+        </div>
+        <button class="wtf-follow-btn">Follow</button>
+      </div>
+      <div class="wtf-user">
+        <img src="/assets/default-avatar.png" class="wtf-avatar" />
+        <div class="wtf-info">
+          <span class="wtf-name">Wade Warren <i class="fa fa-check-circle wtf-verified"></i></span>
+          <span class="wtf-meta">214 followers <span class="wtf-star">★ 4.7</span></span>
+        </div>
+        <button class="wtf-follow-btn">Follow</button>
+      </div>
+      <div class="wtf-user">
+        <img src="/assets/default-avatar.png" class="wtf-avatar" />
+        <div class="wtf-info">
+          <span class="wtf-name">Wade Warren <i class="fa fa-check-circle wtf-verified"></i></span>
+          <span class="wtf-meta">214 followers <span class="wtf-star">★ 4.7</span></span>
+        </div>
+        <button class="wtf-follow-btn">Follow</button>
+      </div>
+      <div class="wtf-show-more">Show more</div>
+    </div>
+  </aside>
+</div>
+<%= render 'shared/public_theories_js' %> 

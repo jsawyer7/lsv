@@ -1,0 +1,39 @@
+<div class="facts-main">
+  <div class="facts-center">
+    <div class="facts-header">
+      <h2>Facts</h2>
+      <div class="facts-search-bar">
+        <%= form_with url: facts_path, method: :get, local: true, class: 'facts-search-form' do |f| %>
+          <%= f.text_field :search, value: params[:search], placeholder: 'Search' %>
+          <button class="facts-search-btn"><i class="fas fa-search"></i></button>
+        <% end %>
+      </div>
+      <%= link_to new_claim_path, class: 'facts-new-btn' do %>
+        <%= image_tag 'newclaim.png', class: 'btn-icon' %>
+        <span class="new-fact-label">New Claim</span>
+      <% end %>
+    </div>
+    <div class="facts-filters">
+      <% @filters.each do |filter| %>
+        <%= link_to filter.titleize, facts_path(filter: filter, search: params[:search]), class: "facts-filter#{' active' if @current_filter == filter}", style: 'cursor:pointer;' %>
+      <% end %>
+    </div>
+    <div id="fact-list" class="facts-content-list">
+      <% if @facts.any? %>
+        <% @facts.each do |fact| %>
+          <%= render 'fact_card', fact: fact %>
+        <% end %>
+      <% else %>
+        <div class="empty-state">
+          <p>No facts data yet.</p>
+        </div>
+      <% end %>
+    </div>
+    <div id="fact-loader" class="feed-loader" style="display:none;">Loading...</div>
+  </div>
+  <aside class="facts-rightbar">
+    <%= render 'theories/top_picks' %>
+    <%= render 'theories/who_to_follow' %>
+  </aside>
+</div>
+<%= render 'shared/facts_js' %> 

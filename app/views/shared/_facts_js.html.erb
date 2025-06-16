@@ -1,0 +1,69 @@
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Make the page static
+  document.body.style.overflow = 'hidden';
+  var dashboardMain = document.querySelector('.dashboard-main');
+  if (dashboardMain) dashboardMain.style.overflow = 'hidden';
+  var factList = document.getElementById('fact-list');
+  var factLoader = document.getElementById('fact-loader');
+  let page = 1;
+  let loading = false;
+  let hasMore = true;
+  let currentSearch = '<%= params[:search].to_s %>';
+
+  // Set fixed height for fact list container
+  if (factList) {
+    factList.style.height = 'calc(100vh - 200px)';
+    factList.style.overflowY = 'auto';
+  }
+
+  async function fetchFacts(reset = false) {
+    if (loading || !hasMore) return;
+    loading = true;
+    factLoader.style.display = 'block';
+    if (reset) {
+      factList.innerHTML = '';
+      page = 0;
+      hasMore = true;
+    }
+    if (page === 0) {
+      page = 1;
+      loading = false;
+      factLoader.style.display = 'none';
+      return;
+    }
+    const res = await fetch(`/facts/infinite?page=${page}&search=${encodeURIComponent(currentSearch)}`);
+    const data = await res.json();
+    data.facts.forEach(html => {
+      const temp = document.createElement('div');
+      temp.innerHTML = html;
+      factList.appendChild(temp.firstElementChild);
+    });
+    hasMore = data.has_more;
+    loading = false;
+    factLoader.style.display = hasMore ? 'block' : 'none';
+    page++;
+  }
+
+  function onFactScroll() {
+    if (factList.scrollTop + factList.clientHeight >= factList.scrollHeight - 200) {
+      fetchFacts();
+    }
+  }
+
+  factList.addEventListener('scroll', onFactScroll);
+
+  var searchInput = document.querySelector('.facts-search-bar input');
+  if (searchInput) {
+    searchInput.addEventListener('input', function() {
+      currentSearch = this.value;
+      factList.innerHTML = '';
+      page = 0;
+      hasMore = true;
+      fetchFacts(true);
+    });
+  }
+
+  fetchFacts();
+});
+</script> 
