@@ -1,7 +1,7 @@
 Rails.application.routes.draw do
   ActiveAdmin.routes(self)
   
-  root to: redirect('/feeds')
+  root to: "home#index"
 
   devise_for :users, controllers: {
     sessions: 'users/sessions',
