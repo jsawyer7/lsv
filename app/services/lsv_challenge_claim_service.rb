@@ -1,5 +1,5 @@
 class LsvChallengeClaimService
-  VALIDATOR_SOURCES = %w[Quran Tanakh Historical].freeze
+  VALIDATOR_SOURCES = %w[Quran Tanakh Catholic Ethiopian(Orthodox) Protestant Historical].freeze
 
   def initialize(challenge)
     @challenge = challenge
