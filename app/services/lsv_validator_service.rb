@@ -3,7 +3,7 @@ require 'json'
 require 'yaml'
 
 class LsvValidatorService
-  VALIDATOR_SOURCES = %w[Quran Tanakh Catholic Ethiopian(Orthodox) Protestant Historical].freeze
+  VALIDATOR_SOURCES = %w[Quran Tanakh Catholic Ethiopian Protestant Historical].freeze
 
   def initialize(claim)
     @claim = claim

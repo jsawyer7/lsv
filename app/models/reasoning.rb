@@ -1,7 +1,7 @@
 class Reasoning < ApplicationRecord
   belongs_to :reasonable, polymorphic: true
 
-  SOURCES = %w[Quran Tanakh Catholic Ethiopian(Orthodox) Protestant Historical].freeze
+  SOURCES = %w[Quran Tanakh Catholic Ethiopian Protestant Historical].freeze
 
   validates :source, presence: true, inclusion: { in: SOURCES }
   validates :response, presence: true
