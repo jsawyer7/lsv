@@ -1,4 +1,7 @@
+# frozen_string_literal: true
+
 class ClaimsController < ApplicationController
+  before_action :set_claim, only: %i[show edit update destroy]
   before_action :authenticate_user!
   layout 'dashboard'
 
@@ -34,10 +37,24 @@ class ClaimsController < ApplicationController
     end
   end
 
+  def validate_evidence
+    evidence = params[:evidence]
+    sources = params[:sources]
+
+    result = LsvEvidenceValidatorService.new(evidence, sources).analyze_sources!
+
+    render json: result
+  rescue LsvEvidenceValidatorService::ValidationError => e
+    render json: { error: e.message }, status: :unprocessable_entity
+  rescue StandardError => e
+    Rails.logger.error "Evidence validation failed: #{e.message}"
+    render json: { error: 'An unexpected error occurred during evidence validation.' }, status: :internal_server_error
+  end
+
   def create
     if params[:claim][:content].blank? || params[:claim][:evidence].blank?
       flash[:alert] = 'Both claim and evidence are required.'
-      @claim = Claim.new(claim_params)
+      @claim = current_user.claims.new(claim_params)
       render :new, status: :unprocessable_entity
       return
     end
@@ -63,13 +80,9 @@ class ClaimsController < ApplicationController
     end
   end
 
-  def show
-    @claim = Claim.find(params[:id])
-  end
+  def show; end
 
-  def edit
-    @claim = current_user.claims.find(params[:id])
-  end
+  def edit; end
 
   def update
     if params[:claim][:content].blank? || params[:claim][:evidence].blank?
@@ -97,12 +110,15 @@ class ClaimsController < ApplicationController
   end
 
   def destroy
-    @claim = current_user.claims.find(params[:id])
     @claim.destroy
     redirect_to claims_path(filter: 'drafts'), notice: 'Claim deleted successfully.'
   end
 
   private
+
+  def set_claim
+    @claim = Claim.find(params[:id])
+  end
 
   def store_claim_result(claim)
     primary_reasonings = claim.reasonings.where(primary_source: true)
@@ -114,6 +130,16 @@ class ClaimsController < ApplicationController
   end
 
   def claim_params
-    params.require(:claim).permit(:content, :evidence)
+    parsed_params = params.require(:claim).permit(:content, :evidence, :primary_sources, :secondary_sources, :draft)
+    
+    if parsed_params[:primary_sources].is_a?(String)
+      parsed_params[:primary_sources] = JSON.parse(parsed_params[:primary_sources]) rescue []
+    end
+
+    if parsed_params[:secondary_sources].is_a?(String)
+      parsed_params[:secondary_sources] = JSON.parse(parsed_params[:secondary_sources]) rescue []
+    end
+    
+    parsed_params
   end
 end

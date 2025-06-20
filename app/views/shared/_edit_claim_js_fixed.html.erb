@@ -16,6 +16,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const secondarySourcesField = document.getElementById('secondary-sources-field');
   const overlay = document.querySelector('.processing-overlay');
   let processingTimeout;
+  const claimData = JSON.parse(document.getElementById('claim-data').value);
 
   function showLoader() {
     overlay.classList.add('active');
@@ -41,7 +42,7 @@ document.addEventListener('DOMContentLoaded', function() {
       clearTimeout(processingTimeout);
     }
   }
-
+  
   function createSourceElement(source) {
     const div = document.createElement('div');
     div.className = 'source-item';
@@ -64,7 +65,6 @@ document.addEventListener('DOMContentLoaded', function() {
     secondarySourcesField.value = JSON.stringify(secondarySources);
   }
 
-  // Drag and Drop functionality
   function addDragListeners(element) {
     element.addEventListener('dragstart', (e) => {
       e.dataTransfer.setData('text/plain', e.target.getAttribute('data-source'));
@@ -116,7 +116,7 @@ document.addEventListener('DOMContentLoaded', function() {
         },
         body: JSON.stringify({ 
           evidence,
-          sources: allSources // Send all available sources for analysis
+          sources: allSources
         })
       });
 
@@ -130,40 +130,32 @@ document.addEventListener('DOMContentLoaded', function() {
 
       const result = await response.json();
       
-      // Hide illustration and show sources columns
       claimIllustration.style.display = 'none';
       sourcesColumns.style.display = 'flex';
       
-      // Disable evidence textarea
       evidenceInput.readOnly = true;
       evidenceInput.style.background = '#f3f4f6';
       evidenceInput.style.color = '#23263b';
       
-      // Show edit evidence button
       editEvidenceBtn.style.display = 'inline-block';
       
-      // Clear existing sources
       primarySourcesList.innerHTML = '';
       secondarySourcesList.innerHTML = '';
       
-      // Add primary sources
       result.primary_sources.forEach(source => {
         const sourceElement = createSourceElement(source);
         addDragListeners(sourceElement);
         primarySourcesList.appendChild(sourceElement);
       });
       
-      // Add secondary sources
       result.secondary_sources.forEach(source => {
         const sourceElement = createSourceElement(source);
         addDragListeners(sourceElement);
         secondarySourcesList.appendChild(sourceElement);
       });
       
-      // Update hidden fields
       updateHiddenFields();
       
-      // Show submit button and hide validate button
       validateEvidenceBtn.style.display = 'none';
       submitBtn.style.display = 'inline-block';
       
@@ -175,7 +167,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
   editEvidenceBtn.addEventListener('click', showEvidenceStep);
 
-  // Character count for claim
   if (claimInput && charCount) {
     claimInput.addEventListener('input', function() {
       charCount.textContent = claimInput.value.length;
@@ -183,12 +174,68 @@ document.addEventListener('DOMContentLoaded', function() {
     charCount.textContent = claimInput.value.length;
   }
 
-  // Handle Escape key to cancel processing
   document.addEventListener('keydown', function(event) {
     if (event.key === 'Escape' && overlay.classList.contains('active')) {
       hideLoader();
       clearProcessingTimeout();
     }
   });
+
+  function initializeForm() {
+    // Populate form with existing data
+    claimInput.value = claimData.content || '';
+    evidenceInput.value = claimData.evidence || '';
+    if(claimInput.value) {
+      charCount.textContent = claimInput.value.length;
+    }
+    
+    // Set the validated claim so the generic submit handler works
+    window.validatedClaim = claimData.content;
+
+    const hasPrimary = claimData.primary_sources && claimData.primary_sources.length > 0;
+    const hasSecondary = claimData.secondary_sources && claimData.secondary_sources.length > 0;
+
+    if (hasPrimary || hasSecondary) {
+      // User has validated sources, show step 2 with sources
+      claimIllustration.style.display = 'none';
+      sourcesColumns.style.display = 'flex';
+      
+      evidenceInput.readOnly = true;
+      evidenceInput.style.background = '#f3f4f6';
+      evidenceInput.style.color = '#23263b';
+      
+      editEvidenceBtn.style.display = 'inline-block';
+      
+      claimData.primary_sources.forEach(source => {
+        const sourceElement = createSourceElement(source);
+        addDragListeners(sourceElement);
+        primarySourcesList.appendChild(sourceElement);
+      });
+      
+      if (claimData.secondary_sources) {
+        claimData.secondary_sources.forEach(source => {
+          const sourceElement = createSourceElement(source);
+          addDragListeners(sourceElement);
+          secondarySourcesList.appendChild(sourceElement);
+        });
+      }
+      
+      updateHiddenFields();
+      
+      validateEvidenceBtn.style.display = 'none';
+      submitBtn.style.display = 'inline-block';
+    } else if (claimData.content) {
+      // User is editing a claim that hasn't had sources validated yet, show step 2
+      claimIllustration.style.display = 'block';
+      sourcesColumns.style.display = 'none';
+    }
+
+    // Always start at step 2 in the edit flow
+    document.getElementById('claim-step').style.display = 'none';
+    document.getElementById('evidence-step').style.display = 'block';
+    document.getElementById('validated-claim-display').value = claimData.content;
+  }
+
+  initializeForm();
 });
 </script> 

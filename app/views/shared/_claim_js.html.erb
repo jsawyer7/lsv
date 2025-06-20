@@ -7,13 +7,46 @@
     document.getElementById('evidence-step').style.display = 'none';
   }
 
+  function showClaimStepAndResetIllustration() {
+    showClaimStep();
+    const claimIllustration = document.getElementById('claim-illustration');
+    const sourcesColumns = document.getElementById('sources-columns');
+    if (claimIllustration) claimIllustration.style.display = 'block';
+    if (sourcesColumns) sourcesColumns.style.display = 'none';
+  }
+
   function showEvidenceStep() {
     console.log('Showing evidence step');
     document.getElementById('claim-step').style.display = 'none';
     document.getElementById('evidence-step').style.display = 'block';
-    var validatedClaimDisplay = document.getElementById('validated-claim-display');
+    
+    const validatedClaimDisplay = document.getElementById('validated-claim-display');
     if (validatedClaimDisplay && window.validatedClaim) {
       validatedClaimDisplay.value = window.validatedClaim;
+    }
+    
+    // Reset the state of the evidence form to allow re-validation.
+    const evidenceInput = document.querySelector('textarea[name="claim[evidence]"]');
+    const validateEvidenceBtn = document.getElementById('validate-evidence');
+    const submitBtn = document.getElementById('submit-claim');
+    const editEvidenceBtn = document.getElementById('edit-evidence-btn');
+    const claimIllustration = document.getElementById('claim-illustration');
+    const sourcesColumns = document.getElementById('sources-columns');
+    const evidenceError = document.querySelector('.evidence-error');
+
+    if (evidenceInput) {
+      evidenceInput.readOnly = false;
+      evidenceInput.style.background = 'white';
+      evidenceInput.style.color = 'inherit';
+    }
+    if (validateEvidenceBtn) validateEvidenceBtn.style.display = 'inline-block';
+    if (submitBtn) submitBtn.style.display = 'none';
+    if (editEvidenceBtn) editEvidenceBtn.style.display = 'none';
+    if (claimIllustration) claimIllustration.style.display = 'block';
+    if (sourcesColumns) sourcesColumns.style.display = 'none';
+    if (evidenceError) {
+      evidenceError.style.display = 'none';
+      evidenceError.textContent = '';
     }
   }
 
@@ -27,6 +60,7 @@
     const evidenceInput = form.querySelector('[name="claim[evidence]"]');
     const errorMessage = document.querySelector('.error-message');
     const evidenceError = document.querySelector('.evidence-error');
+    const submitLoader = document.getElementById('submit-loader-overlay');
 
     // Validate claim button handler
     validateButton.addEventListener('click', function() {
@@ -108,6 +142,20 @@
         finalClaim: claimInput.value,
         finalEvidence: evidenceInput.value
       });
+
+      // Show loader before submitting
+      if(submitLoader) {
+        const saveAsDraftField = document.getElementById('save-as-draft-field');
+        const loaderText = submitLoader.querySelector('.loader-text');
+
+        if (loaderText && saveAsDraftField && saveAsDraftField.value === 'true') {
+          loaderText.textContent = 'Saving claim...';
+        } else if (loaderText) {
+          loaderText.textContent = 'Submitting claim...';
+        }
+        
+        submitLoader.classList.add('active');
+      }
 
       // Disable the submit button
       submitButton.disabled = true;

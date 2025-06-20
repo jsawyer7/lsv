@@ -18,32 +18,29 @@
       </div>
       <div id="evidence-step" style="display: none;">
         <div class="new-claim-field">
-          <label>Your Claim</label>
+          <label>Your Claim
+            <button type="button" class="edit-btn" onclick="showClaimStepAndResetIllustration()">Edit</button>
+          </label>
           <textarea class="new-claim-input" id="validated-claim-display" readonly style="background:#f3f4f6; color:#23263b;"></textarea>
         </div>
         <div class="new-claim-field">
-          <label for="claim_evidence">Your Evidence</label>
+          <label for="claim_evidence">Your Evidence
+            <button type="button" id="edit-evidence-btn" class="edit-btn" style="display: none;">Edit</button>
+          </label>
           <%= f.text_area :evidence, class: "new-claim-input", placeholder: "Write your evidence...", rows: 4 %>
           <div class="evidence-error error-message" style="display: none; color: #ef4444; margin-top: 10px;"></div>
         </div>
-        <div class="new-claim-sources-section">
-          <div class="new-claim-sources-label">Sources</div>
-          <ul id="sources-list" class="new-claim-sources-list">
-            <li data-source="Quran"><%= image_tag 'claim-source.png', alt: '', class: 'source-icon' %>Quran <a href="#" class="remove-source">Remove</a></li>
-            <li data-source="Tanakh"><%= image_tag 'claim-source.png', alt: '', class: 'source-icon' %>Tanakh <a href="#" class="remove-source">Remove</a></li>
-            <li data-source="Historical"><%= image_tag 'claim-source.png', alt: '', class: 'source-icon' %>Historical <a href="#" class="remove-source">Remove</a></li>
-          </ul>
-          <div class="new-claim-add-source">
-            <button type="button" id="add-source-btn" class="add-source-btn"><i class="fa fa-plus-circle"></i> Add New Source</button>
-            <div id="add-source-dropdown" class="add-source-dropdown" style="display:none;"></div>
-          </div>
-        </div>
         <div class="new-claim-actions">
           <%= hidden_field_tag :save_as_draft, 'false', id: 'save-as-draft-field' %>
+          <%= f.hidden_field :primary_sources, id: 'primary-sources-field' %>
+          <%= f.hidden_field :secondary_sources, id: 'secondary-sources-field' %>
           <button type="submit" class="new-claim-save-draft" onclick="document.getElementById('save-as-draft-field').value = 'true'">Save to Draft</button>
           <div class="new-claim-actions-right">
-            <button type="button" class="new-claim-cancel" onclick="showClaimStep()">Cancel</button>
-            <button type="submit" class="new-claim-submit" id="submit-claim" onclick="document.getElementById('save-as-draft-field').value = 'false'">
+            <button type="button" class="new-claim-cancel" onclick="window.location.href='<%= claims_path %>'">Cancel</button>
+            <button type="button" class="new-claim-validate" id="validate-evidence" style="display: inline-block;">
+              <i class="fa fa-check"></i> Validate Evidence
+            </button>
+            <button type="submit" class="new-claim-submit" id="submit-claim" style="display: none;" onclick="document.getElementById('save-as-draft-field').value = 'false'">
               <i class="fa fa-paper-plane"></i> Submit
             </button>
           </div>
@@ -51,7 +48,31 @@
       </div>
     <% end %>
   </div>
-  <div class="new-claim-illustration">
+  <div class="new-claim-illustration" id="claim-illustration">
     <%= image_tag 'new-claim.png', alt: 'New Claim Illustration', class: 'new-claim-image' %>
+  </div>
+  <div class="sources-columns" id="sources-columns" style="display: none;">
+    <div class="sources-column primary-sources">
+      <h3>Primary Sources</h3>
+      <div class="sources-list" id="primary-sources-list"></div>
+    </div>
+    <div class="sources-column secondary-sources">
+      <h3>Secondary Sources</h3>
+      <div class="sources-list" id="secondary-sources-list"></div>
+    </div>
+  </div>
+</div>
+
+<div class="processing-overlay">
+  <div class="loader-container">
+    <div class="loader"></div>
+    <p class="loader-text">Analyzing evidence and sources...</p>
+  </div>
+</div>
+
+<div class="processing-overlay" id="submit-loader-overlay">
+  <div class="loader-container">
+    <div class="loader"></div>
+    <p class="loader-text">Submitting claim...</p>
   </div>
 </div>

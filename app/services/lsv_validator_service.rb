@@ -17,7 +17,7 @@ class LsvValidatorService
       result = {
         badge: parse_badge(json),
         reasoning: parse_reasoning(response),
-        primary: parse_primary_source(json)
+        primary: parse_primary_source(source)
       }
 
       @claim.reasonings.create!(
@@ -108,13 +108,8 @@ class LsvValidatorService
     end
   end
 
-  def parse_primary_source(response)
-    case response["primary"]
-    when 'True'
-      true
-    else
-      false
-    end
+  def parse_primary_source(source)
+    @claim.primary_sources.include?(source)
   end
 
   def parse_reasoning(response)
