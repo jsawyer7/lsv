@@ -1,8 +1,13 @@
 require 'openai'
 require 'json'
 require 'yaml'
+require 'async'
+require 'async/http'
+require 'async/await'
 
 class LsvValidatorService
+  include Async::Await
+
   VALIDATOR_SOURCES = %w[Quran Tanakh Catholic Ethiopian Protestant Historical].freeze
 
   def initialize(claim)
@@ -10,24 +15,34 @@ class LsvValidatorService
   end
 
   def run_validation!
-    VALIDATOR_SOURCES.each do |source|
-      response = send_to_openai(@claim, source)
-      json = parse_response_json(response)
+    Async do
+      tasks = VALIDATOR_SOURCES.map do |source|
+        Async do
+          response = send_to_openai_async(@claim, source).wait
+          json = parse_response_json(response)
 
-      result = {
-        badge: parse_badge(json),
-        reasoning: parse_reasoning(response),
-        primary: parse_primary_source(source)
-      }
+          {
+            badge: parse_badge(json),
+            reasoning: parse_reasoning(response),
+            primary: parse_primary_source(source),
+            source: source
+          }
+        end
+      end
 
-      @claim.reasonings.create!(
-        source: source,
-        response: result[:reasoning],
-        result: result[:badge],
-        primary_source: result[:primary]
-      )
-    end
+      results = tasks.map(&:wait)
 
+      results.each do |result|
+        @claim.reasonings.create!(
+          source: result[:source],
+          response: result[:reasoning],
+          result: result[:badge],
+          primary_source: result[:primary]
+        )
+      end
+    end.wait
+    
+    store_claim_result(@claim)
     true
   rescue => e
     Rails.logger.error "OpenAI Error: #{e.message}"
@@ -35,6 +50,15 @@ class LsvValidatorService
   end
 
   private
+
+  def store_claim_result(claim)
+    primary_reasonings = claim.reasonings.where(primary_source: true)
+    if primary_reasonings.any? { |r| r.result == '❌ False' }
+      claim.update(result: '❌ False', state: 'ai_validated')
+    elsif primary_reasonings.all? { |r| r.result == '✅ True' } && primary_reasonings.any?
+      claim.update(result: '✅ True', state: 'ai_validated')
+    end
+  end
 
   def load_prompt_template(source)
     template_path = Rails.root.join('config', 'prompts', "#{source.downcase}_validator.yml")
@@ -58,7 +82,7 @@ class LsvValidatorService
     prompt
   end
 
-  def send_to_openai(claim, source)
+  async def send_to_openai_async(claim, source)
     client = OpenAI::Client.new(
       access_token: openai_api_key,
       organization_id: openai_organization_id,

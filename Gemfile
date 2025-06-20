@@ -66,3 +66,6 @@ gem 'sassc-rails'
 gem 'pundit'
 
 gem "kaminari", "~> 1.2"
+gem "async"
+gem "async-http"
+gem "async-await"
