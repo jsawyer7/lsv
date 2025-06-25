@@ -19,7 +19,7 @@ class LsvValidatorService
         t1 = Time.now
         Rails.logger.info "Starting OpenAI call for #{source} at #{t1}"
         begin
-          response = Timeout.timeout(30) { send_to_openai(@claim, source) }
+          response = Timeout.timeout(24) { send_to_openai(@claim, source) }
           t2 = Time.now
           Rails.logger.info "Finished OpenAI call for #{source} at #{t2} (duration: #{t2 - t1}s)"
           json = parse_response_json(response)
