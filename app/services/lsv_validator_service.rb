@@ -1,13 +1,9 @@
 require 'openai'
 require 'json'
 require 'yaml'
-require 'async'
-require 'async/http'
-require 'async/await'
+require 'timeout'
 
 class LsvValidatorService
-  include Async::Await
-
   VALIDATOR_SOURCES = %w[Quran Tanakh Catholic Ethiopian Protestant Historical].freeze
 
   def initialize(claim)
@@ -15,34 +11,47 @@ class LsvValidatorService
   end
 
   def run_validation!
-    Async do
-      tasks = VALIDATOR_SOURCES.map do |source|
-        Async do
-          response = send_to_openai_async(@claim, source).wait
-          json = parse_response_json(response)
+    start_time = Time.now
+    Rails.logger.info "Validation started at #{start_time}"
 
+    threads = VALIDATOR_SOURCES.map do |source|
+      Thread.new do
+        t1 = Time.now
+        Rails.logger.info "Starting OpenAI call for #{source} at #{t1}"
+        begin
+          response = Timeout.timeout(30) { send_to_openai(@claim, source) }
+          t2 = Time.now
+          Rails.logger.info "Finished OpenAI call for #{source} at #{t2} (duration: #{t2 - t1}s)"
+          json = parse_response_json(response)
           {
             badge: parse_badge(json),
             reasoning: parse_reasoning(response),
             primary: parse_primary_source(source),
             source: source
           }
+        rescue Timeout::Error
+          Rails.logger.error "OpenAI call for #{source} timed out!"
+          nil
+        rescue => e
+          Rails.logger.error "OpenAI call for #{source} failed: #{e.message}"
+          nil
         end
       end
+    end
 
-      results = tasks.map(&:wait)
+    results = threads.map(&:value).compact
 
-      results.each do |result|
-        @claim.reasonings.create!(
-          source: result[:source],
-          response: result[:reasoning],
-          result: result[:badge],
-          primary_source: result[:primary]
-        )
-      end
-    end.wait
-    
+    results.each do |result|
+      @claim.reasonings.create!(
+        source: result[:source],
+        response: result[:reasoning],
+        result: result[:badge],
+        primary_source: result[:primary]
+      )
+    end
+
     store_claim_result(@claim)
+    Rails.logger.info "Validation finished at #{Time.now} (total duration: #{Time.now - start_time}s)"
     true
   rescue => e
     Rails.logger.error "OpenAI Error: #{e.message}"
@@ -82,7 +91,7 @@ class LsvValidatorService
     prompt
   end
 
-  async def send_to_openai_async(claim, source)
+  def send_to_openai(claim, source)
     client = OpenAI::Client.new(
       access_token: openai_api_key,
       organization_id: openai_organization_id,
