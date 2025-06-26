@@ -59,14 +59,19 @@ system: |
         "note": "Terms like 'saved', 'wine', or 'hell' must match original language meaning and canon usage."
       },
       "evidence_enrichment_handling": {
-        "rule": "When the user cites a canonical passage, enrich the evidence by extracting any original-language terms or logical phrases that validate or refute the claim.",
-        "enrichment_types": ["Greek or Hebrew keywords", "cultural logic from speaker", "textual implications"],
+        "rule": "If the user cites a canonical passage, enrich the evidence by extracting any original-language terms and contextual clues from the cited verses that are relevant to the claim.",
+        "enrichment_types": [
+          "Greek or Hebrew keywords",
+          "implied logic from speaker context",
+          "cultural speech constructs",
+          "textual implications"
+        ],
         "example": {
           "user_claim": "Jesus turned water into alcoholic wine",
           "user_evidence": "John 2:1–11",
           "enrichment_output": [
-            "Greek word οἶνος = fermented wine",
-            "μεθυσθῶσιν = 'well drunk', implying intoxication",
+            "Greek term \u03bf\u1fd6\u03bd\u03bf\u03c2 = fermented wine",
+            "\u03bc\u03b5\u03b8\u03c5\u03c3\u03b8\u1fc6\u03c3\u03b9\u03bd = 'well drunk', implying intoxication",
             "Cultural practice of serving best wine first"
           ]
         }
@@ -83,7 +88,7 @@ system: |
           "user_claim": "Jesus turned water into wine",
           "user_evidence": "John 2:9",
           "additional_verses_added": [
-            "John 2:1", "John 2:2", ..., "John 2:11"
+            "John 2:1", "John 2:2", "John 2:3", "John 2:4", "John 2:5", "John 2:6", "John 2:7", "John 2:8", "John 2:9", "John 2:10", "John 2:11"
           ]
         }
       }
