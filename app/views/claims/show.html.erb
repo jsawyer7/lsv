@@ -27,7 +27,7 @@
             <%= image_tag 'ai-icon.png', alt: 'AI Icon', class: 'claim-section-icon' %>
             <span class="claim-details-label">AI Validator Response</span>
           </div>
-          <% @claim.reasonings.each do |reasoning| %>
+          <% @claim.reasonings.where(primary_source: true).each do |reasoning| %>
             <div class="claim-details-reasoning">
               <div class="claim-details-reasoning-header">
                 <span class="claim-details-source"><%= reasoning.source %></span>
@@ -79,7 +79,7 @@
           when '⚠️ Unverifiable' then 'badge-unverifiable'
           else 'badge-default'
         end %>
-        <span class="claim-details-source-badge <%= badge_class %>"><%= reasoning.source %></span>
+        <span class="claim-details-source-badge <%= badge_class %> clickable-source-badge" data-source="<%= reasoning.source %>"><%= reasoning.source %></span>
       <% end %>
     </div>
     <div class="claim-secondary-source">
@@ -91,9 +91,10 @@
           when '⚠️ Unverifiable' then 'badge-unverifiable'
           else 'badge-default'
         end %>
-        <span class="claim-details-source-badge secondary <%= badge_class %>"><%= reasoning.source %></span>
+        <span class="claim-details-source-badge secondary <%= badge_class %> clickable-source-badge" data-source="<%= reasoning.source %>"><%= reasoning.source %></span>
       <% end %>
     </div>
+    <div id="dynamic-ai-response-section"></div>
   </aside>
 </div>
 
@@ -103,3 +104,5 @@
     <p class="loader-text">Processing your challenge...</p>
   </div>
 </div>
+
+<%= render 'shared/claim_detail_js' %>

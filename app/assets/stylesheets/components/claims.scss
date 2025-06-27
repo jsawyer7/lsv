@@ -791,4 +791,22 @@ body {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
+
+.clickable-source-badge {
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.clickable-source-badge:hover {
+  background: #e0e7ff;
+  text-decoration: underline;
+}
+
+#dynamic-ai-response-section h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  padding: 0.25rem 0.75rem;
+  // margin-bottom: 0.5rem;
+  border-radius: 6px;
+  display: inline-block;
+}
   

@@ -1,0 +1,24 @@
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  var badges = document.querySelectorAll('.clickable-source-badge');
+  var responseSection = document.getElementById('dynamic-ai-response-section');
+  badges.forEach(function(badge) {
+    badge.addEventListener('click', function() {
+      var source = badge.getAttribute('data-source');
+      var claimId = document.body.dataset.claimId || badge.closest('[data-claim-id]')?.dataset.claimId || <%= @claim.id %>;
+      fetch(`/claims/${claimId}/reasoning_for_source?source=${encodeURIComponent(source)}`)
+        .then(function(response) {
+          if (response.ok) return response.text();
+          else throw new Error('No AI response found for this source.');
+        })
+        .then(function(html) {
+          responseSection.innerHTML = '<h3>AI Response</h3>' + html;
+          responseSection.scrollIntoView({ behavior: 'smooth' });
+        })
+        .catch(function() {
+          responseSection.innerHTML = '<h3>AI Response</h3><div class="no-ai-response">No AI response found for this source.</div>';
+        });
+    });
+  });
+});
+</script>

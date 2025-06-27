@@ -114,6 +114,16 @@ class ClaimsController < ApplicationController
     redirect_to claims_path(filter: 'drafts'), notice: 'Claim deleted successfully.'
   end
 
+  def reasoning_for_source
+    @claim = Claim.find(params[:id])
+    @reasoning = @claim.reasonings.find_by(source: params[:source])
+    if @reasoning
+      render partial: 'reasonings/reasoning_response', locals: { reasoning: @reasoning }
+    else
+      head :not_found
+    end
+  end
+
   private
 
   def set_claim
