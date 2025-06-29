@@ -8,31 +8,55 @@ class LsvChallengeClaimService
 
   def process
     @challenge.update(status: 'processing')
-    begin
-      VALIDATOR_SOURCES.each do |source|
-        response = send_to_openai(@challenge, source)
-        json = parse_response_json(response)
-        result = {
-          badge: parse_badge(json),
-          reasoning: parse_reasoning(response),
-          primary: parse_primary_source(json)
-        }
-        @challenge.reasonings.create!(
-          source: source,
-          response: result[:reasoning],
-          result: result[:badge],
-          primary_source: result[:primary]
-        )
-      end
+    start_time = Time.now
+    Rails.logger.info "Challenge validation started at \\#{start_time} for Challenge ID: \\#{@challenge.id}"
 
-      @challenge.update(status: 'completed')
-    rescue => e
-      Rails.logger.error("Challenge validation failed: #{e.message}")
-      @challenge.update(
-        ai_response: "Error processing challenge: #{e.message}",
-        status: 'failed'
+    threads = VALIDATOR_SOURCES.map do |source|
+      Thread.new do
+        t1 = Time.now
+        Rails.logger.info "Starting OpenAI call for \\#{source} at \\#{t1}"
+        begin
+          response = Timeout.timeout(24) { send_to_openai(@challenge, source) }
+          t2 = Time.now
+          Rails.logger.info "Finished OpenAI call for \\#{source} at \\#{t2} (duration: \\#{t2 - t1}s)"
+          json = parse_response_json(response)
+          {
+            badge: parse_badge(json),
+            reasoning: parse_reasoning(response),
+            primary: parse_primary_source(json),
+            source: source
+          }
+        rescue Timeout::Error
+          Rails.logger.error "OpenAI call for \\#{source} timed out!"
+          nil
+        rescue => e
+          Rails.logger.error "OpenAI call for \\#{source} failed: \\#{e.message}"
+          nil
+        end
+      end
+    end
+
+    results = threads.map(&:value).compact
+
+    results.each do |result|
+      @challenge.reasonings.create!(
+        source: result[:source],
+        response: result[:reasoning],
+        result: result[:badge],
+        primary_source: result[:primary]
       )
     end
+
+    @challenge.update(status: 'completed')
+    Rails.logger.info "Challenge validation finished at \\#{Time.now} (total duration: \\#{Time.now - start_time}s) for Challenge ID: \\#{@challenge.id}"
+    true
+  rescue => e
+    Rails.logger.error("Challenge validation failed: \\#{e.message}")
+    @challenge.update(
+      ai_response: "Error processing challenge: \\#{e.message}",
+      status: 'failed'
+    )
+    false
   end
 
   private
