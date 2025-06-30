@@ -108,8 +108,7 @@ class LsvValidatorService
           { role: "user", content: prompt["user"] },
           { role: "assistant", content: prompt["assistant"] }
         ],
-        temperature: 0.0,
-        max_tokens: 750
+        temperature: 0.0
       }
     )
   end
