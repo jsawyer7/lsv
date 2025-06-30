@@ -15,6 +15,8 @@ document.addEventListener('DOMContentLoaded', function() {
   const primarySourcesField = document.getElementById('primary-sources-field');
   const secondarySourcesField = document.getElementById('secondary-sources-field');
   const overlay = document.querySelector('.processing-overlay');
+  const evidencesContainer = document.getElementById('evidences-container');
+  const addEvidenceBtn = document.getElementById('add-evidence-btn');
   let processingTimeout;
 
   function showLoader() {
@@ -95,11 +97,62 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 
-  validateEvidenceBtn.addEventListener('click', async function() {
-    const evidence = evidenceInput.value;
+  // Helper to create evidence box with remove button
+  function createEvidenceBox(value = '') {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'evidence-box';
+    wrapper.style.position = 'relative';
+    const textarea = document.createElement('textarea');
+    textarea.className = 'new-claim-input evidence-textarea';
+    textarea.placeholder = 'Write your evidence...';
+    textarea.rows = 4;
+    textarea.value = value;
+    const removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.className = 'remove-evidence-btn';
+    removeBtn.innerHTML = '&minus;';
+    removeBtn.title = 'Remove evidence';
+    removeBtn.onclick = function() {
+      if (evidencesContainer.querySelectorAll('.evidence-box').length > 1) {
+        evidencesContainer.removeChild(wrapper);
+      }
+      updateRemoveButtonsState();
+    };
+    wrapper.appendChild(textarea);
+    wrapper.appendChild(removeBtn);
+    return wrapper;
+  }
 
-    if (!evidence) {
-      document.querySelector('.evidence-error').textContent = 'Please provide evidence before validating.';
+  function updateRemoveButtonsState() {
+    const boxes = evidencesContainer.querySelectorAll('.evidence-box');
+    boxes.forEach(box => {
+      const btn = box.querySelector('.remove-evidence-btn');
+      btn.disabled = boxes.length === 1 || addEvidenceBtn.disabled;
+    });
+  }
+
+  // Initialize with one evidence box
+  evidencesContainer.innerHTML = '';
+  evidencesContainer.appendChild(createEvidenceBox());
+  updateRemoveButtonsState();
+
+  // Add Evidence button handler
+  addEvidenceBtn.addEventListener('click', function() {
+    if (addEvidenceBtn.disabled) return;
+    evidencesContainer.appendChild(createEvidenceBox());
+    updateRemoveButtonsState();
+  });
+
+  // Update validate evidence logic to collect all evidence values
+  validateEvidenceBtn.addEventListener('click', async function() {
+    // Always disable add evidence button immediately
+    addEvidenceBtn.disabled = true;
+    addEvidenceBtn.style.display = 'none'; // Hide add evidence button after validation
+    const evidenceTextareas = evidencesContainer.querySelectorAll('.evidence-textarea');
+    const evidences = Array.from(evidenceTextareas).map(t => t.value.trim()).filter(Boolean);
+
+    if (evidences.length === 0) {
+      document.querySelector('.evidence-error').textContent = 'Please provide at least one evidence before validating.';
       document.querySelector('.evidence-error').style.display = 'block';
       return;
     }
@@ -115,7 +168,7 @@ document.addEventListener('DOMContentLoaded', function() {
           'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
         },
         body: JSON.stringify({ 
-          evidence,
+          evidence: evidences, // Send as array
           sources: allSources // Send all available sources for analysis
         })
       });
@@ -134,11 +187,18 @@ document.addEventListener('DOMContentLoaded', function() {
       claimIllustration.style.display = 'none';
       sourcesColumns.style.display = 'flex';
       
-      // Disable evidence textarea
-      evidenceInput.readOnly = true;
-      evidenceInput.style.background = '#f3f4f6';
-      evidenceInput.style.color = '#23263b';
-      
+      // Disable all evidence textareas
+      const evidenceTextareas = evidencesContainer.querySelectorAll('.evidence-textarea');
+      evidenceTextareas.forEach(textarea => {
+        textarea.readOnly = true;
+        textarea.style.background = '#f3f4f6';
+        textarea.style.color = '#23263b';
+      });
+      // Disable add evidence button
+      addEvidenceBtn.disabled = true;
+      // Disable all remove evidence buttons
+      const removeBtns = evidencesContainer.querySelectorAll('.remove-evidence-btn');
+      removeBtns.forEach(btn => btn.disabled = true);
       // Show edit evidence button
       editEvidenceBtn.style.display = 'inline-block';
       
@@ -173,7 +233,34 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
-  editEvidenceBtn.addEventListener('click', showEvidenceStep);
+  editEvidenceBtn.addEventListener('click', function() {
+    // Re-enable all evidence textareas
+    const evidenceTextareas = evidencesContainer.querySelectorAll('.evidence-textarea');
+    evidenceTextareas.forEach(textarea => {
+      textarea.readOnly = false;
+      textarea.style.background = 'white';
+      textarea.style.color = 'inherit';
+    });
+    // Enable add evidence button and show it
+    addEvidenceBtn.disabled = false;
+    addEvidenceBtn.style.display = 'inline-block';
+    // Enable all remove evidence buttons (except if only one evidence box)
+    const removeBtns = evidencesContainer.querySelectorAll('.remove-evidence-btn');
+    const boxes = evidencesContainer.querySelectorAll('.evidence-box');
+    removeBtns.forEach(btn => btn.disabled = boxes.length === 1);
+    // Hide sources columns, show illustration, hide submit, show validate
+    sourcesColumns.style.display = 'none';
+    claimIllustration.style.display = 'block';
+    submitBtn.style.display = 'none';
+    validateEvidenceBtn.style.display = 'inline-block';
+    editEvidenceBtn.style.display = 'none';
+    // Hide error
+    const evidenceError = document.querySelector('.evidence-error');
+    if (evidenceError) {
+      evidenceError.style.display = 'none';
+      evidenceError.textContent = '';
+    }
+  });
 
   // Character count for claim
   if (claimInput && charCount) {

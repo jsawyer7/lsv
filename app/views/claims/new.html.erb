@@ -27,7 +27,11 @@
           <label for="claim_evidence">Your Evidence
             <button type="button" id="edit-evidence-btn" class="edit-btn" style="display: none;">Edit</button>
           </label>
-          <%= f.text_area :evidence, class: "new-claim-input", placeholder: "Write your evidence...", rows: 4 %>
+          <div id="evidences-container">
+            <textarea class="new-claim-input evidence-textarea" placeholder="Write your evidence..." rows="4"></textarea>
+          </div>
+          <input type="hidden" name="claim[evidence]" id="combined-evidence-field" />
+          <button type="button" id="add-evidence-btn" class="add-evidence-btn" style="margin-top: 10px;">+ Add Evidence</button>
           <div class="evidence-error error-message" style="display: none; color: #ef4444; margin-top: 10px;"></div>
         </div>
         <div class="new-claim-actions">

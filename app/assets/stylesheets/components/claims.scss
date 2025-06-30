@@ -809,4 +809,53 @@ body {
   border-radius: 6px;
   display: inline-block;
 }
+
+.remove-evidence-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  border: 1.5px solid #ef4444;
+  background: transparent;
+  color: #ef4444;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  font-size: 1.3rem;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+  z-index: 2;
+}
+.remove-evidence-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.remove-evidence-btn:hover:not(:disabled) {
+  background: #fff0f0;
+  color: #fff;
+  border-color: #ef4444;
+  background: #ef4444;
+}
+
+.add-evidence-btn {
+  display: inline-block;
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 22px;
+  font-size: 1.08rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: background 0.2s, color 0.2s;
+}
+.add-evidence-btn:hover {
+  background: #1746b0;
+  color: #fff;
+}
+
+.evidence-box {
+  position: relative;
+  margin-bottom: 18px;
+}
   

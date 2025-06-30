@@ -33,15 +33,53 @@
     const claimIllustration = document.getElementById('claim-illustration');
     const sourcesColumns = document.getElementById('sources-columns');
     const evidenceError = document.querySelector('.evidence-error');
+    const addEvidenceBtn = document.getElementById('add-evidence-btn');
+    const evidencesContainer = document.getElementById('evidences-container');
 
-    if (evidenceInput) {
-      evidenceInput.readOnly = false;
-      evidenceInput.style.background = 'white';
-      evidenceInput.style.color = 'inherit';
+    // If sources columns are visible, evidence is validated
+    if (sourcesColumns && sourcesColumns.style.display === 'flex') {
+      // Evidence validated: show edit evidence button, disable add evidence
+      if (editEvidenceBtn) editEvidenceBtn.style.display = 'inline-block';
+      if (addEvidenceBtn) {
+        addEvidenceBtn.disabled = true;
+        addEvidenceBtn.style.display = 'none';
+      }
+      // Make all evidence textareas readOnly
+      if (evidencesContainer) {
+        const evidenceTextareas = evidencesContainer.querySelectorAll('.evidence-textarea');
+        evidenceTextareas.forEach(textarea => {
+          textarea.readOnly = true;
+          textarea.style.background = '#f3f4f6';
+          textarea.style.color = '#23263b';
+        });
+        // Disable all remove evidence buttons
+        const removeBtns = evidencesContainer.querySelectorAll('.remove-evidence-btn');
+        removeBtns.forEach(btn => btn.disabled = true);
+      }
+    } else {
+      // Not validated: hide edit evidence button, enable add evidence, make evidence editable
+      if (editEvidenceBtn) editEvidenceBtn.style.display = 'none';
+      if (addEvidenceBtn) {
+        addEvidenceBtn.disabled = false;
+        addEvidenceBtn.style.display = 'inline-block';
+      }
+      // Make all evidence textareas editable
+      if (evidencesContainer) {
+        const evidenceTextareas = evidencesContainer.querySelectorAll('.evidence-textarea');
+        evidenceTextareas.forEach(textarea => {
+          textarea.readOnly = false;
+          textarea.style.background = 'white';
+          textarea.style.color = 'inherit';
+        });
+        // Enable all remove evidence buttons (except if only one evidence box)
+        const removeBtns = evidencesContainer.querySelectorAll('.remove-evidence-btn');
+        const boxes = evidencesContainer.querySelectorAll('.evidence-box');
+        removeBtns.forEach(btn => btn.disabled = boxes.length === 1);
+      }
     }
+
     if (validateEvidenceBtn) validateEvidenceBtn.style.display = 'inline-block';
     if (submitBtn) submitBtn.style.display = 'none';
-    if (editEvidenceBtn) editEvidenceBtn.style.display = 'none';
     if (claimIllustration) claimIllustration.style.display = 'block';
     if (sourcesColumns) sourcesColumns.style.display = 'none';
     if (evidenceError) {
@@ -114,7 +152,14 @@
       console.log('Form submit triggered');
       e.preventDefault();
       
-      const evidence = evidenceInput.value;
+      // Combine all evidence textarea values into one string
+      const evidencesContainer = document.getElementById('evidences-container');
+      const evidenceTextareas = evidencesContainer ? evidencesContainer.querySelectorAll('.evidence-textarea') : [];
+      const combinedEvidence = Array.from(evidenceTextareas).map(t => t.value.trim()).filter(Boolean).join('\n');
+      const combinedEvidenceField = document.getElementById('combined-evidence-field');
+      if (combinedEvidenceField) combinedEvidenceField.value = combinedEvidence;
+
+      const evidence = combinedEvidence;
       console.log('Current values:', {
         claim: claimInput.value,
         validatedClaim: window.validatedClaim,
@@ -140,7 +185,7 @@
       
       console.log('Submitting form with:', {
         finalClaim: claimInput.value,
-        finalEvidence: evidenceInput.value
+        finalEvidence: evidence
       });
 
       // Show loader before submitting

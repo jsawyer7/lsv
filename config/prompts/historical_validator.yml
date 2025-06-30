@@ -112,4 +112,4 @@ assistant: |
       "reasoning_summary": "Explain verdict using only literal historical evidence and strict logic. Cite exact source matches, authenticity audits if relevant, and explain why the claim is True, False, or Inconclusive.",
       "primary": "True / False"
     }
-  Do not include anything outside this JSON block.
+  Do not include anything outside this JSON block. End your response with a closing curly brace.

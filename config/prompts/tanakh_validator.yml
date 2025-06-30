@@ -146,4 +146,4 @@ assistant: |
       "reasoning_summary": "Explain verdict using only Tanakh evidence and strict logic. Cite exact verse matches, keyword audits, and explain True, False, or Inconclusive determination clearly.",
       "primary": "True / False"
     }
-  Do not include anything outside this JSON block.
+  Do not include anything outside this JSON block. End your response with a closing curly brace.
