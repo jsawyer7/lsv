@@ -130,10 +130,16 @@
           window.validatedClaim = data.cleaned_claim;
           claimInput.value = data.cleaned_claim;
           errorMessage.style.display = 'none';
+          // Hide chatbot, show illustration if previously hidden
+          document.getElementById('ai-chatbot-container').style.display = 'none';
+          document.getElementById('claim-illustration').style.display = 'block';
           showEvidenceStep();
         } else {
-          errorMessage.textContent = data.error;
-          errorMessage.style.display = 'block';
+          // Hide illustration, show chatbot
+          document.getElementById('claim-illustration').style.display = 'none';
+          document.getElementById('ai-chatbot-container').style.display = 'flex';
+          // Start chatbot with failed claim and error message
+          startAIChatbot(content, data.error);
         }
       })
       .catch(error => {
@@ -207,6 +213,87 @@
       
       // Submit the form
       form.submit();
+    });
+
+    // --- AI Chatbot logic ---
+    function appendChatMessage(role, text) {
+      const messagesDiv = document.getElementById('ai-chatbot-messages');
+      const msg = document.createElement('div');
+      msg.className = 'ai-chatbot-message ' + (role === 'user' ? 'user' : 'ai');
+      msg.textContent = text;
+      messagesDiv.appendChild(msg);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+
+    function startAIChatbot(failedClaim, errorMsg) {
+      const messagesDiv = document.getElementById('ai-chatbot-messages');
+      messagesDiv.innerHTML = '';
+      appendChatMessage('user', failedClaim);
+      // Start streaming AI response
+      streamAIResponse(failedClaim, errorMsg);
+    }
+
+    function streamAIResponse(failedClaim, errorMsg) {
+      // Show AI is typing...
+      appendChatMessage('ai', 'Thinking...');
+      // Replace with your backend endpoint for streaming AI (e.g. /ai/claim_suggestion)
+      const messagesDiv = document.getElementById('ai-chatbot-messages');
+      fetch('/ai/claim_suggestion', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': document.querySelector("[name='csrf-token']").content
+        },
+        body: JSON.stringify({ claim: failedClaim, error: errorMsg })
+      })
+      .then(async response => {
+        if (!response.body) throw new Error('No response body');
+        // Remove 'Thinking...' message
+        messagesDiv.removeChild(messagesDiv.lastChild);
+        const reader = response.body.getReader();
+        let aiMsg = '';
+        let done = false;
+        const aiDiv = document.createElement('div');
+        aiDiv.className = 'ai-chatbot-message ai';
+        messagesDiv.appendChild(aiDiv);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        let buffer = '';
+        while (!done) {
+          const { value, done: doneReading } = await reader.read();
+          done = doneReading;
+          if (value) {
+            const chunk = new TextDecoder().decode(value);
+            buffer += chunk;
+            // Show letter by letter
+            while (buffer.length > 0) {
+              aiMsg += buffer[0];
+              aiDiv.textContent = aiMsg;
+              messagesDiv.scrollTop = messagesDiv.scrollHeight;
+              buffer = buffer.slice(1);
+              await new Promise(r => setTimeout(r, 12)); // Typing speed (ms per char)
+            }
+          }
+        }
+      })
+      .catch(err => {
+        appendChatMessage('ai', 'Sorry, there was a problem getting suggestions.');
+      });
+    }
+
+    // Chatbot input handler
+    document.getElementById('ai-chatbot-send').addEventListener('click', function() {
+      const input = document.getElementById('ai-chatbot-input');
+      const text = input.value.trim();
+      if (!text) return;
+      appendChatMessage('user', text);
+      input.value = '';
+      // Stream AI response to user message
+      streamAIResponse(text, '');
+    });
+    document.getElementById('ai-chatbot-input').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        document.getElementById('ai-chatbot-send').click();
+      }
     });
   });
 

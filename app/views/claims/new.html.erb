@@ -55,6 +55,14 @@
   <div class="new-claim-illustration" id="claim-illustration">
     <%= image_tag 'new-claim.png', alt: 'New Claim Illustration', class: 'new-claim-image' %>
   </div>
+  <div class="ai-chatbot-container" id="ai-chatbot-container" style="display: none;">
+    <div class="ai-chatbot-header">AI Claim Assistant</div>
+    <div class="ai-chatbot-messages" id="ai-chatbot-messages"></div>
+    <div class="ai-chatbot-input-row">
+      <input type="text" id="ai-chatbot-input" class="ai-chatbot-input" placeholder="Ask for help or clarification..." autocomplete="off" />
+      <button type="button" id="ai-chatbot-send" class="ai-chatbot-send">Send</button>
+    </div>
+  </div>
   <div class="sources-columns" id="sources-columns" style="display: none;">
     <div class="sources-column primary-sources">
       <h3>Primary Sources</h3>
