@@ -27,6 +27,7 @@ Rails.application.routes.draw do
   end
 
   post '/ai/claim_suggestion', to: 'ai#claim_suggestion'
+  post '/ai/evidence_suggestion', to: 'ai#evidence_suggestion'
   get '/privacy', to: 'static#privacy', as: :privacy
   get '/ai-data', to: 'static#ai_data', as: :ai_data
   get '/terms', to: 'static#terms', as: :terms

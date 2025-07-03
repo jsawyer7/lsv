@@ -5,14 +5,29 @@
     console.log('Showing claim step');
     document.getElementById('claim-step').style.display = 'block';
     document.getElementById('evidence-step').style.display = 'none';
+    const errorMessage = document.querySelector('.error-message');
+    if (errorMessage) {
+      errorMessage.style.display = 'none';
+      errorMessage.textContent = '';
+    }
+    // Show the AI claim assistant greeting
+    startAIChatbotGreeting();
   }
 
   function showClaimStepAndResetIllustration() {
     showClaimStep();
-    const claimIllustration = document.getElementById('claim-illustration');
+    // Show AI Claim Assistant, hide AI Evidence Assistant
+    document.getElementById('ai-chatbot-container').style.display = 'flex';
+    document.getElementById('ai-evidence-chatbot-container').style.display = 'none';
     const sourcesColumns = document.getElementById('sources-columns');
-    if (claimIllustration) claimIllustration.style.display = 'block';
     if (sourcesColumns) sourcesColumns.style.display = 'none';
+    const errorMessage = document.querySelector('.error-message');
+    if (errorMessage) {
+      errorMessage.style.display = 'none';
+      errorMessage.textContent = '';
+    }
+    // Show the AI Claim Assistant greeting only on initial load or when returning to claim step
+    startAIChatbotGreeting();
   }
 
   function showEvidenceStep() {
@@ -24,72 +39,178 @@
     if (validatedClaimDisplay && window.validatedClaim) {
       validatedClaimDisplay.value = window.validatedClaim;
     }
-    
-    // Reset the state of the evidence form to allow re-validation.
-    const evidenceInput = document.querySelector('textarea[name="claim[evidence]"]');
-    const validateEvidenceBtn = document.getElementById('validate-evidence');
-    const submitBtn = document.getElementById('submit-claim');
-    const editEvidenceBtn = document.getElementById('edit-evidence-btn');
-    const claimIllustration = document.getElementById('claim-illustration');
-    const sourcesColumns = document.getElementById('sources-columns');
-    const evidenceError = document.querySelector('.evidence-error');
-    const addEvidenceBtn = document.getElementById('add-evidence-btn');
+    // Only show evidence assistant
+    document.getElementById('ai-evidence-chatbot-container').style.display = 'flex';
+    document.getElementById('ai-chatbot-container').style.display = 'none';
+    // Reset evidence assistant chat
+    startAIEvidenceChatbot();
+
+    // Make evidence section editable and show Add Evidence button
     const evidencesContainer = document.getElementById('evidences-container');
-
-    // If sources columns are visible, evidence is validated
-    if (sourcesColumns && sourcesColumns.style.display === 'flex') {
-      // Evidence validated: show edit evidence button, disable add evidence
-      if (editEvidenceBtn) editEvidenceBtn.style.display = 'inline-block';
-      if (addEvidenceBtn) {
-        addEvidenceBtn.disabled = true;
-        addEvidenceBtn.style.display = 'none';
-      }
-      // Make all evidence textareas readOnly
-      if (evidencesContainer) {
-        const evidenceTextareas = evidencesContainer.querySelectorAll('.evidence-textarea');
-        evidenceTextareas.forEach(textarea => {
-          textarea.readOnly = true;
-          textarea.style.background = '#f3f4f6';
-          textarea.style.color = '#23263b';
-        });
-        // Disable all remove evidence buttons
-        const removeBtns = evidencesContainer.querySelectorAll('.remove-evidence-btn');
-        removeBtns.forEach(btn => btn.disabled = true);
-      }
-    } else {
-      // Not validated: hide edit evidence button, enable add evidence, make evidence editable
-      if (editEvidenceBtn) editEvidenceBtn.style.display = 'none';
-      if (addEvidenceBtn) {
-        addEvidenceBtn.disabled = false;
-        addEvidenceBtn.style.display = 'inline-block';
-      }
-      // Make all evidence textareas editable
-      if (evidencesContainer) {
-        const evidenceTextareas = evidencesContainer.querySelectorAll('.evidence-textarea');
-        evidenceTextareas.forEach(textarea => {
-          textarea.readOnly = false;
-          textarea.style.background = 'white';
-          textarea.style.color = 'inherit';
-        });
-        // Enable all remove evidence buttons (except if only one evidence box)
-        const removeBtns = evidencesContainer.querySelectorAll('.remove-evidence-btn');
-        const boxes = evidencesContainer.querySelectorAll('.evidence-box');
-        removeBtns.forEach(btn => btn.disabled = boxes.length === 1);
-      }
+    const addEvidenceBtn = document.getElementById('add-evidence-btn');
+    const editEvidenceBtn = document.getElementById('edit-evidence-btn');
+    if (addEvidenceBtn) {
+      addEvidenceBtn.disabled = false;
+      addEvidenceBtn.style.display = 'inline-block';
     }
-
-    if (validateEvidenceBtn) validateEvidenceBtn.style.display = 'inline-block';
-    if (submitBtn) submitBtn.style.display = 'none';
-    if (claimIllustration) claimIllustration.style.display = 'block';
+    if (editEvidenceBtn) {
+      editEvidenceBtn.style.display = 'none';
+    }
+    if (evidencesContainer) {
+      const evidenceTextareas = evidencesContainer.querySelectorAll('.evidence-textarea');
+      evidenceTextareas.forEach(textarea => {
+        textarea.readOnly = false;
+        textarea.style.background = 'white';
+        textarea.style.color = 'inherit';
+      });
+      // Enable all remove evidence buttons (except if only one evidence box)
+      const removeBtns = evidencesContainer.querySelectorAll('.remove-evidence-btn');
+      const boxes = evidencesContainer.querySelectorAll('.evidence-box');
+      removeBtns.forEach(btn => btn.disabled = boxes.length === 1);
+    }
+    // Hide sources columns
+    const sourcesColumns = document.getElementById('sources-columns');
     if (sourcesColumns) sourcesColumns.style.display = 'none';
-    if (evidenceError) {
-      evidenceError.style.display = 'none';
-      evidenceError.textContent = '';
-    }
+  }
+
+  // --- AI Evidence Assistant logic ---
+  function appendEvidenceChatMessage(role, text) {
+    const messagesDiv = document.getElementById('ai-evidence-chatbot-messages');
+    const msg = document.createElement('div');
+    msg.className = 'ai-chatbot-message ' + (role === 'user' ? 'user' : 'ai');
+    msg.textContent = text;
+    messagesDiv.appendChild(msg);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+  }
+
+  let lastEvidenceSuggestion = '';
+
+  function startAIEvidenceChatbot() {
+    const messagesDiv = document.getElementById('ai-evidence-chatbot-messages');
+    messagesDiv.innerHTML = '';
+    appendEvidenceChatMessage('ai', 'Hi! I am your AI Evidence Assistant. Ask me anything about the evidence you want to add.');
+    lastEvidenceSuggestion = '';
+  }
+
+  function streamAIEvidenceResponse(userMsg) {
+    appendEvidenceChatMessage('ai', 'Thinking...');
+    const messagesDiv = document.getElementById('ai-evidence-chatbot-messages');
+    fetch('/ai/evidence_suggestion', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': document.querySelector("[name='csrf-token']").content
+      },
+      body: JSON.stringify({ question: userMsg })
+    })
+    .then(async response => {
+      if (!response.body) throw new Error('No response body');
+      messagesDiv.removeChild(messagesDiv.lastChild);
+      const reader = response.body.getReader();
+      let aiMsg = '';
+      let done = false;
+      const aiDiv = document.createElement('div');
+      aiDiv.className = 'ai-chatbot-message ai';
+      messagesDiv.appendChild(aiDiv);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      let buffer = '';
+      while (!done) {
+        const { value, done: doneReading } = await reader.read();
+        done = doneReading;
+        if (value) {
+          const chunk = new TextDecoder().decode(value);
+          buffer += chunk;
+          while (buffer.length > 0) {
+            aiMsg += buffer[0];
+            aiDiv.textContent = aiMsg;
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            buffer = buffer.slice(1);
+            await new Promise(r => setTimeout(r, 12));
+          }
+        }
+      }
+      // After streaming, ask if user wants to add as evidence (only if not already present)
+      lastEvidenceSuggestion = aiMsg;
+      const prompt = 'Do you want me to add this as evidence? (Yes/No)';
+      if (!aiMsg.trim().toLowerCase().endsWith(prompt.toLowerCase())) {
+        appendEvidenceChatMessage('ai', prompt);
+      }
+    })
+    .catch(err => {
+      appendEvidenceChatMessage('ai', 'Sorry, there was a problem getting suggestions.');
+    });
+  }
+
+  // --- AI Chatbot logic ---
+  function appendChatMessage(role, text) {
+    const messagesDiv = document.getElementById('ai-chatbot-messages');
+    const msg = document.createElement('div');
+    msg.className = 'ai-chatbot-message ' + (role === 'user' ? 'user' : 'ai');
+    msg.textContent = text;
+    messagesDiv.appendChild(msg);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+  }
+
+  function startAIChatbotGreeting() {
+    const userName = document.getElementById('claim-form-wrapper')?.dataset.userName || 'there';
+    const messagesDiv = document.getElementById('ai-chatbot-messages');
+    messagesDiv.innerHTML = '';
+    appendChatMessage('ai', `Hi ${userName}, please enter your claim in the claim box and let me help you building the claim.`);
   }
 
   document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM loaded, setting up form handlers');
+    showClaimStepAndResetIllustration();
+    
+    // Set up AI Evidence Assistant event listeners
+    const aiEvidenceChatbotSend = document.getElementById('ai-evidence-chatbot-send');
+    if (aiEvidenceChatbotSend) {
+      aiEvidenceChatbotSend.addEventListener('click', function() {
+        const input = document.getElementById('ai-evidence-chatbot-input');
+        const text = input.value.trim();
+        if (!text) return;
+        appendEvidenceChatMessage('user', text);
+        input.value = '';
+        // If last message was Yes/No prompt, handle accordingly
+        if (lastEvidenceSuggestion && /^yes$/i.test(text)) {
+          // Only add the main suggestion (not the trailing prompt)
+          let suggestion = lastEvidenceSuggestion.split('Do you want me to add this as evidence?')[0].trim();
+          // Find the first empty evidence box, or add a new one if all are filled
+          const evidencesContainer = document.getElementById('evidences-container');
+          let textarea = Array.from(evidencesContainer.querySelectorAll('.evidence-textarea')).find(t => !t.value.trim());
+          if (!textarea) {
+            // Simulate Add Evidence button click to create a new box
+            const addEvidenceBtn = document.getElementById('add-evidence-btn');
+            if (addEvidenceBtn && !addEvidenceBtn.disabled) {
+              addEvidenceBtn.click();
+              // Wait a moment for the new textarea to be created
+              setTimeout(() => {
+                textarea = Array.from(evidencesContainer.querySelectorAll('.evidence-textarea')).find(t => !t.value.trim());
+                if (textarea) textarea.value = suggestion;
+              }, 100);
+            }
+          } else {
+            textarea.value = suggestion;
+          }
+          appendEvidenceChatMessage('ai', 'Added as evidence! You can edit it before submitting.');
+          lastEvidenceSuggestion = '';
+        } else if (lastEvidenceSuggestion && /^no$/i.test(text)) {
+          appendEvidenceChatMessage('ai', 'Okay, let me know if you want to ask about something else.');
+          lastEvidenceSuggestion = '';
+        } else {
+          streamAIEvidenceResponse(text);
+        }
+      });
+    }
+    const aiEvidenceChatbotInput = document.getElementById('ai-evidence-chatbot-input');
+    if (aiEvidenceChatbotInput) {
+      aiEvidenceChatbotInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+          const sendBtn = document.getElementById('ai-evidence-chatbot-send');
+          if (sendBtn) sendBtn.click();
+        }
+      });
+    }
     
     const form = document.getElementById('claim-form');
     const validateButton = document.getElementById('validate-claim');
@@ -132,11 +253,9 @@
           errorMessage.style.display = 'none';
           // Hide chatbot, show illustration if previously hidden
           document.getElementById('ai-chatbot-container').style.display = 'none';
-          document.getElementById('claim-illustration').style.display = 'block';
           showEvidenceStep();
         } else {
           // Hide illustration, show chatbot
-          document.getElementById('claim-illustration').style.display = 'none';
           document.getElementById('ai-chatbot-container').style.display = 'flex';
           // Start chatbot with failed claim and error message
           startAIChatbot(content, data.error);
@@ -215,85 +334,61 @@
       form.submit();
     });
 
-    // --- AI Chatbot logic ---
-    function appendChatMessage(role, text) {
-      const messagesDiv = document.getElementById('ai-chatbot-messages');
-      const msg = document.createElement('div');
-      msg.className = 'ai-chatbot-message ' + (role === 'user' ? 'user' : 'ai');
-      msg.textContent = text;
-      messagesDiv.appendChild(msg);
-      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    // Chatbot input handler
+    const aiChatbotSend = document.getElementById('ai-chatbot-send');
+    if (aiChatbotSend) {
+      aiChatbotSend.addEventListener('click', function() {
+        const input = document.getElementById('ai-chatbot-input');
+        const text = input.value.trim();
+        if (!text) return;
+        appendChatMessage('user', text);
+        input.value = '';
+        // Stream AI response to user message
+        streamAIResponse(text, '');
+      });
     }
-
-    function startAIChatbot(failedClaim, errorMsg) {
-      const messagesDiv = document.getElementById('ai-chatbot-messages');
-      messagesDiv.innerHTML = '';
-      appendChatMessage('user', failedClaim);
-      // Start streaming AI response
-      streamAIResponse(failedClaim, errorMsg);
-    }
-
-    function streamAIResponse(failedClaim, errorMsg) {
-      // Show AI is typing...
-      appendChatMessage('ai', 'Thinking...');
-      // Replace with your backend endpoint for streaming AI (e.g. /ai/claim_suggestion)
-      const messagesDiv = document.getElementById('ai-chatbot-messages');
-      fetch('/ai/claim_suggestion', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-Token': document.querySelector("[name='csrf-token']").content
-        },
-        body: JSON.stringify({ claim: failedClaim, error: errorMsg })
-      })
-      .then(async response => {
-        if (!response.body) throw new Error('No response body');
-        // Remove 'Thinking...' message
-        messagesDiv.removeChild(messagesDiv.lastChild);
-        const reader = response.body.getReader();
-        let aiMsg = '';
-        let done = false;
-        const aiDiv = document.createElement('div');
-        aiDiv.className = 'ai-chatbot-message ai';
-        messagesDiv.appendChild(aiDiv);
-        messagesDiv.scrollTop = messagesDiv.scrollHeight;
-        let buffer = '';
-        while (!done) {
-          const { value, done: doneReading } = await reader.read();
-          done = doneReading;
-          if (value) {
-            const chunk = new TextDecoder().decode(value);
-            buffer += chunk;
-            // Show letter by letter
-            while (buffer.length > 0) {
-              aiMsg += buffer[0];
-              aiDiv.textContent = aiMsg;
-              messagesDiv.scrollTop = messagesDiv.scrollHeight;
-              buffer = buffer.slice(1);
-              await new Promise(r => setTimeout(r, 12)); // Typing speed (ms per char)
-            }
-          }
+    const aiChatbotInput = document.getElementById('ai-chatbot-input');
+    if (aiChatbotInput) {
+      aiChatbotInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+          const sendBtn = document.getElementById('ai-chatbot-send');
+          if (sendBtn) sendBtn.click();
         }
-      })
-      .catch(err => {
-        appendChatMessage('ai', 'Sorry, there was a problem getting suggestions.');
       });
     }
 
-    // Chatbot input handler
-    document.getElementById('ai-chatbot-send').addEventListener('click', function() {
-      const input = document.getElementById('ai-chatbot-input');
-      const text = input.value.trim();
-      if (!text) return;
-      appendChatMessage('user', text);
-      input.value = '';
-      // Stream AI response to user message
-      streamAIResponse(text, '');
-    });
-    document.getElementById('ai-chatbot-input').addEventListener('keydown', function(e) {
-      if (e.key === 'Enter') {
-        document.getElementById('ai-chatbot-send').click();
-      }
+    // Update validate evidence logic to collect all evidence values
+    const validateEvidenceBtn = document.getElementById('validate-evidence');
+    const addEvidenceBtn = document.getElementById('add-evidence-btn');
+    if (validateEvidenceBtn) {
+      validateEvidenceBtn.addEventListener('click', async function() {
+        // Always disable add evidence button immediately
+        if (addEvidenceBtn) {
+          addEvidenceBtn.disabled = true;
+          addEvidenceBtn.style.display = 'none'; // Hide add evidence button after validation
+        }
+        // Hide AI Evidence Assistant
+        const aiEvidenceContainer = document.getElementById('ai-evidence-chatbot-container');
+        if (aiEvidenceContainer) aiEvidenceContainer.style.display = 'none';
+        // ... rest unchanged ...
+      });
+    }
+
+    // When editing evidences, show the AI Evidence Assistant again
+    const editEvidenceBtn = document.getElementById('edit-evidence-btn');
+    if (editEvidenceBtn) {
+      editEvidenceBtn.addEventListener('click', function() {
+        const aiEvidenceContainer = document.getElementById('ai-evidence-chatbot-container');
+        const aiChatbotContainer = document.getElementById('ai-chatbot-container');
+        if (aiEvidenceContainer) aiEvidenceContainer.style.display = 'flex';
+        if (aiChatbotContainer) aiChatbotContainer.style.display = 'none';
+      });
+    }
+
+    // Also hide AI Evidence Assistant on form submit
+    form.addEventListener('submit', function(e) {
+      const aiEvidenceContainer = document.getElementById('ai-evidence-chatbot-container');
+      if (aiEvidenceContainer) aiEvidenceContainer.style.display = 'none';
     });
   });
 
@@ -317,4 +412,59 @@
       });
     });
   });
+
+  function startAIChatbot(failedClaim, errorMsg) {
+    const messagesDiv = document.getElementById('ai-chatbot-messages');
+    messagesDiv.innerHTML = '';
+    appendChatMessage('user', failedClaim);
+    // Start streaming AI response
+    streamAIResponse(failedClaim, errorMsg);
+  }
+
+  function streamAIResponse(failedClaim, errorMsg) {
+    // Show AI is typing...
+    appendChatMessage('ai', 'Thinking...');
+    // Replace with your backend endpoint for streaming AI (e.g. /ai/claim_suggestion)
+    const messagesDiv = document.getElementById('ai-chatbot-messages');
+    fetch('/ai/claim_suggestion', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': document.querySelector("[name='csrf-token']").content
+      },
+      body: JSON.stringify({ claim: failedClaim, error: errorMsg })
+    })
+    .then(async response => {
+      if (!response.body) throw new Error('No response body');
+      // Remove 'Thinking...' message
+      messagesDiv.removeChild(messagesDiv.lastChild);
+      const reader = response.body.getReader();
+      let aiMsg = '';
+      let done = false;
+      const aiDiv = document.createElement('div');
+      aiDiv.className = 'ai-chatbot-message ai';
+      messagesDiv.appendChild(aiDiv);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      let buffer = '';
+      while (!done) {
+        const { value, done: doneReading } = await reader.read();
+        done = doneReading;
+        if (value) {
+          const chunk = new TextDecoder().decode(value);
+          buffer += chunk;
+          // Show letter by letter
+          while (buffer.length > 0) {
+            aiMsg += buffer[0];
+            aiDiv.textContent = aiMsg;
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            buffer = buffer.slice(1);
+            await new Promise(r => setTimeout(r, 12)); // Typing speed (ms per char)
+          }
+        }
+      }
+    })
+    .catch(err => {
+      appendChatMessage('ai', 'Sorry, there was a problem getting suggestions.');
+    });
+  }
 <% end %>

@@ -10,4 +10,4 @@ class CreateReasonings < ActiveRecord::Migration[7.0]
 
     add_index :reasonings, [:claim_id, :source], unique: true
   end
-end 
+end

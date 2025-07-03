@@ -935,4 +935,19 @@ body {
 .ai-chatbot-send:hover {
   background: #1746b0;
 }
+
+.ai-evidence-chatbot-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: stretch;
+  background: #f8fafc;
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+  padding: 24px 18px 12px 18px;
+  min-height: 600px;
+  max-width: 520px;
+  width: 100%;
+  margin: 0 auto;
+}
   
