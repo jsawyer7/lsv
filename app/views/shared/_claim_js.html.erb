@@ -155,7 +155,54 @@
     const userName = document.getElementById('claim-form-wrapper')?.dataset.userName || 'there';
     const messagesDiv = document.getElementById('ai-chatbot-messages');
     messagesDiv.innerHTML = '';
-    appendChatMessage('ai', `Hi ${userName}, please enter your claim in the claim box and let me help you building the claim.`);
+    appendChatMessage('ai', `Hi ${userName}, I am your AI Claim Assistant. You can enter your claim in the claim box, or ask me for help or clarification about how to build a strong claim.`);
+  }
+
+  function isHelpRequest(text) {
+    return /\b(how|what|help|guide|advice|should|can|could|\?)\b/i.test(text);
+  }
+
+  function streamAIClaimGuidance(userMsg) {
+    appendChatMessage('ai', 'Let me help you...');
+    const messagesDiv = document.getElementById('ai-chatbot-messages');
+    fetch('/ai/claim_guidance', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': document.querySelector("[name='csrf-token']").content
+      },
+      body: JSON.stringify({ question: userMsg })
+    })
+    .then(async response => {
+      if (!response.body) throw new Error('No response body');
+      messagesDiv.removeChild(messagesDiv.lastChild);
+      const reader = response.body.getReader();
+      let aiMsg = '';
+      let done = false;
+      const aiDiv = document.createElement('div');
+      aiDiv.className = 'ai-chatbot-message ai';
+      messagesDiv.appendChild(aiDiv);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      let buffer = '';
+      while (!done) {
+        const { value, done: doneReading } = await reader.read();
+        done = doneReading;
+        if (value) {
+          const chunk = new TextDecoder().decode(value);
+          buffer += chunk;
+          while (buffer.length > 0) {
+            aiMsg += buffer[0];
+            aiDiv.textContent = aiMsg;
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            buffer = buffer.slice(1);
+            await new Promise(r => setTimeout(r, 12));
+          }
+        }
+      }
+    })
+    .catch(err => {
+      appendChatMessage('ai', 'Sorry, there was a problem getting guidance.');
+    });
   }
 
   document.addEventListener('DOMContentLoaded', function() {
@@ -343,8 +390,11 @@
         if (!text) return;
         appendChatMessage('user', text);
         input.value = '';
-        // Stream AI response to user message
-        streamAIResponse(text, '');
+        if (isHelpRequest(text)) {
+          streamAIClaimGuidance(text);
+        } else {
+          streamAIResponse(text, '');
+        }
       });
     }
     const aiChatbotInput = document.getElementById('ai-chatbot-input');
