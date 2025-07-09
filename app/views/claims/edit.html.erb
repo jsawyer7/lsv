@@ -2,7 +2,7 @@
 <%= render 'shared/edit_claim_js_fixed' %>
 
 <input type="hidden" id="claim-source-img-path" value="<%= asset_path('claim-source.png') %>">
-<input type="hidden" id="claim-data" value="<%= @claim.to_json(only: [:content, :evidence, :primary_sources, :secondary_sources]) %>">
+<input type="hidden" id="claim-data" value="<%= @claim.to_json(only: [:content, :primary_sources, :secondary_sources]) %>">
 
 <div class="new-claim-main">
   <div class="new-claim-form-section">
@@ -28,7 +28,16 @@
           <label for="claim_evidence">Your Evidence
             <button type="button" id="edit-evidence-btn" class="edit-btn" style="display: none;">Edit</button>
           </label>
-          <%= f.text_area :evidence, class: "new-claim-input", placeholder: "Write your evidence...", rows: 4 %>
+          <div id="evidences-container">
+            <% @claim.evidences.each do |evidence| %>
+              <textarea class="new-claim-input evidence-textarea" placeholder="Write your evidence..." rows="4"><%= evidence.content %></textarea>
+            <% end %>
+            <% if @claim.evidences.empty? %>
+              <textarea class="new-claim-input evidence-textarea" placeholder="Write your evidence..." rows="4"></textarea>
+            <% end %>
+          </div>
+          <input type="hidden" name="claim[evidences]" id="combined-evidence-field" />
+          <button type="button" id="add-evidence-btn" class="add-evidence-btn" style="margin-top: 10px;">+ Add Evidence</button>
           <div class="evidence-error error-message" style="display: none; color: #ef4444; margin-top: 10px;"></div>
         </div>
         <div class="new-claim-actions">

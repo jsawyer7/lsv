@@ -2,9 +2,9 @@ class Claim < ApplicationRecord
   belongs_to :user
   has_many :challenges, dependent: :destroy
   has_many :reasonings, as: :reasonable, dependent: :destroy
+  has_many :evidences, dependent: :destroy
 
   validates :content, presence: true
-  validates :evidence, presence: true
 
   enum state: {
     draft: 'draft',
@@ -25,7 +25,6 @@ class Claim < ApplicationRecord
     %w[
       id
       content
-      evidence
       created_at
       updated_at
       user_id
@@ -34,6 +33,6 @@ class Claim < ApplicationRecord
 
   # Define ransackable associations
   def self.ransackable_associations(auth_object = nil)
-    %w[user reasonings]
+    %w[user reasonings evidences]
   end
 end

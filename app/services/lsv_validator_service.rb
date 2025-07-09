@@ -81,9 +81,11 @@ class LsvValidatorService
     prompt = template.transform_values do |content|
       next content unless content.is_a?(String)
       
+      evidence_content = claim.evidences.map(&:content).join("\n\n")
+      
       content
         .gsub('{{claim}}', claim.content.to_s)
-        .gsub('{{evidence}}', claim.evidence.to_s)
+        .gsub('{{evidence}}', evidence_content)
         .gsub('{{reasoning}}', '{{REASONING_PLACEHOLDER}}') # Will be filled by OpenAI
         .gsub('{{result}}', '{{RESULT_PLACEHOLDER}}') # Will be filled by OpenAI
     end

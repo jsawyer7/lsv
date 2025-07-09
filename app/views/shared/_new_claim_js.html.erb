@@ -2,7 +2,6 @@
 document.addEventListener('DOMContentLoaded', function() {
   const allSources = ['Quran', 'Tanakh', 'Catholic', 'Ethiopian', 'Protestant', 'Historical'];
   const claimInput = document.querySelector('textarea[name="claim[content]"]');
-  const evidenceInput = document.querySelector('textarea[name="claim[evidence]"]');
   const charCount = document.getElementById('claim-char-count');
   const claimSourceImgPath = document.getElementById('claim-source-img-path').value;
   const validateEvidenceBtn = document.getElementById('validate-evidence');
@@ -181,6 +180,9 @@ document.addEventListener('DOMContentLoaded', function() {
       }
 
       const result = await response.json();
+      
+      // Store the validated evidence sources for form submission
+      window.validatedEvidences = result.evidences || [];
       
       // Hide illustration and show sources columns
       sourcesColumns.style.display = 'flex';

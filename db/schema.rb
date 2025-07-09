@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2025_06_19_221914) do
+ActiveRecord::Schema[7.0].define(version: 2025_07_09_012805) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -58,7 +58,6 @@ ActiveRecord::Schema[7.0].define(version: 2025_06_19_221914) do
   create_table "claims", force: :cascade do |t|
     t.bigint "user_id", null: false
     t.text "content"
-    t.text "evidence"
     t.string "result"
     t.text "reasoning"
     t.datetime "created_at", null: false
@@ -68,6 +67,15 @@ ActiveRecord::Schema[7.0].define(version: 2025_06_19_221914) do
     t.string "primary_sources", default: [], array: true
     t.string "secondary_sources", default: [], array: true
     t.index ["user_id"], name: "index_claims_on_user_id"
+  end
+
+  create_table "evidences", force: :cascade do |t|
+    t.bigint "claim_id", null: false
+    t.text "content"
+    t.integer "source"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["claim_id"], name: "index_evidences_on_claim_id"
   end
 
   create_table "follows", force: :cascade do |t|
@@ -141,6 +149,7 @@ ActiveRecord::Schema[7.0].define(version: 2025_06_19_221914) do
   add_foreign_key "challenges", "claims"
   add_foreign_key "challenges", "users"
   add_foreign_key "claims", "users"
+  add_foreign_key "evidences", "claims"
   add_foreign_key "follows", "users"
   add_foreign_key "follows", "users", column: "followed_user"
   add_foreign_key "peers", "users"

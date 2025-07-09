@@ -950,4 +950,27 @@ body {
   width: 100%;
   margin: 0 auto;
 }
+
+.claim-evidence-block {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+.claim-evidence-block:last-child {
+  margin-bottom: 0;
+}
+
+.claim-evidence-block div {
+  margin-bottom: 0.25rem;
+}
+
+.claim-evidence-block div:last-child {
+  margin-bottom: 0;
+}
   

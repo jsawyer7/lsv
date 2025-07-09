@@ -5,6 +5,15 @@ class ClaimsController < ApplicationController
   before_action :authenticate_user!
   layout 'dashboard'
 
+  SOURCE_ENUM_MAP = {
+    "Quran" => :quran,
+    "Tanakh" => :tanakh,
+    "Catholic" => :catholic,
+    "Ethiopian" => :ethiopian,
+    "Protestant" => :protestant,
+    "Historical" => :historical
+  }
+
   def index
     filter = params[:filter] || 'all'
     @filter = filter
@@ -52,25 +61,87 @@ class ClaimsController < ApplicationController
   end
 
   def create
-    if params[:claim][:content].blank? || params[:claim][:evidence].blank?
-      flash[:alert] = 'Both claim and evidence are required.'
+    if params[:claim][:content].blank?
+      flash[:alert] = 'Claim content is required.'
+      @claim = current_user.claims.new(claim_params)
+      render :new, status: :unprocessable_entity
+      return
+    end
+
+    evidences_param = params[:claim][:evidences]
+    evidences = if evidences_param.is_a?(String)
+      begin
+        JSON.parse(evidences_param)
+      rescue
+        []
+      end
+    elsif evidences_param.is_a?(Array)
+      evidences_param
+    else
+      []
+    end
+    # Normalize: handle array of stringified hashes or hashes
+    evidences = evidences.map do |ev|
+      if ev.is_a?(String)
+        begin
+          JSON.parse(ev).deep_symbolize_keys
+        rescue
+          {}
+        end
+      elsif ev.is_a?(Hash)
+        ev.deep_symbolize_keys
+      else
+        {}
+      end
+    end
+
+    if evidences.empty? || evidences.all? { |ev| ev[:evidence].blank? }
+      flash[:alert] = 'At least one evidence is required.'
       @claim = current_user.claims.new(claim_params)
       render :new, status: :unprocessable_entity
       return
     end
 
     if params[:save_as_draft] == 'true'
-      @claim = current_user.claims.new(claim_params.merge(state: 'draft'))
-
+      @claim = current_user.claims.new(claim_params.except(:evidences).merge(state: 'draft'))
       if @claim.save
+        evidences.each do |evidence_hash|
+          next if evidence_hash[:evidence].blank?
+          begin
+            @claim.evidences.create!(
+              content: evidence_hash[:evidence],
+              source: SOURCE_ENUM_MAP[evidence_hash[:source]] || :historical
+            )
+          rescue ArgumentError => e
+            Rails.logger.warn "Invalid source for evidence: #{evidence_hash[:source].inspect} (#{e.message})"
+            @claim.evidences.create!(
+              content: evidence_hash[:evidence],
+              source: :historical
+            )
+          end
+        end
         redirect_to claims_path(filter: 'drafts'), notice: 'Claim saved as draft.'
       else
         render :new, status: :unprocessable_entity
       end
     else
-      @claim = current_user.claims.new(claim_params)
-
+      @claim = current_user.claims.new(claim_params.except(:evidences))
       if @claim.save
+        evidences.each do |evidence_hash|
+          next if evidence_hash[:evidence].blank?
+          begin
+            @claim.evidences.create!(
+              content: evidence_hash[:evidence],
+              source: SOURCE_ENUM_MAP[evidence_hash[:source]] || :historical
+            )
+          rescue ArgumentError => e
+            Rails.logger.warn "Invalid source for evidence: #{evidence_hash[:source].inspect} (#{e.message})"
+            @claim.evidences.create!(
+              content: evidence_hash[:evidence],
+              source: :historical
+            )
+          end
+        end
         response = LsvValidatorService.new(@claim).run_validation!
         store_claim_result(@claim) if response
         redirect_to @claim, notice: "Claim validated successfully."
@@ -85,21 +156,85 @@ class ClaimsController < ApplicationController
   def edit; end
 
   def update
-    if params[:claim][:content].blank? || params[:claim][:evidence].blank?
-      flash.now[:alert] = 'Both claim and evidence are required.'
-      @claim = current_user.claims.find(params[:id])
+    if params[:claim][:content].blank?
+      flash.now[:alert] = 'Claim content is required.'
       render :edit, status: :unprocessable_entity
       return
     end
-    @claim = current_user.claims.find(params[:id])
+
+    evidences_param = params[:claim][:evidences]
+    evidences = if evidences_param.is_a?(String)
+      begin
+        JSON.parse(evidences_param)
+      rescue
+        []
+      end
+    elsif evidences_param.is_a?(Array)
+      evidences_param
+    else
+      []
+    end
+    # Normalize: handle array of stringified hashes or hashes
+    evidences = evidences.map do |ev|
+      if ev.is_a?(String)
+        begin
+          JSON.parse(ev).deep_symbolize_keys
+        rescue
+          {}
+        end
+      elsif ev.is_a?(Hash)
+        ev.deep_symbolize_keys
+      else
+        {}
+      end
+    end
+
+    if evidences.empty? || evidences.all? { |ev| ev[:evidence].blank? }
+      flash.now[:alert] = 'At least one evidence is required.'
+      render :edit, status: :unprocessable_entity
+      return
+    end
+
     if params[:save_as_draft] == 'true'
-      if @claim.update(claim_params.merge(state: 'draft'))
+      if @claim.update(claim_params.except(:evidences).merge(state: 'draft'))
+        @claim.evidences.destroy_all
+        evidences.each do |evidence_hash|
+          next if evidence_hash[:evidence].blank?
+          begin
+            @claim.evidences.create!(
+              content: evidence_hash[:evidence],
+              source: SOURCE_ENUM_MAP[evidence_hash[:source]] || :historical
+            )
+          rescue ArgumentError => e
+            Rails.logger.warn "Invalid source for evidence: #{evidence_hash[:source].inspect} (#{e.message})"
+            @claim.evidences.create!(
+              content: evidence_hash[:evidence],
+              source: :historical
+            )
+          end
+        end
         redirect_to claims_path(filter: 'drafts'), notice: 'Claim saved as draft.'
       else
         render :edit, status: :unprocessable_entity
       end
     else
-      if @claim.update(claim_params)
+      if @claim.update(claim_params.except(:evidences))
+        @claim.evidences.destroy_all
+        evidences.each do |evidence_hash|
+          next if evidence_hash[:evidence].blank?
+          begin
+            @claim.evidences.create!(
+              content: evidence_hash[:evidence],
+              source: SOURCE_ENUM_MAP[evidence_hash[:source]] || :historical
+            )
+          rescue ArgumentError => e
+            Rails.logger.warn "Invalid source for evidence: #{evidence_hash[:source].inspect} (#{e.message})"
+            @claim.evidences.create!(
+              content: evidence_hash[:evidence],
+              source: :historical
+            )
+          end
+        end
         response = LsvValidatorService.new(@claim).run_validation!
         store_claim_result(@claim) if response
         redirect_to @claim, notice: 'Claim updated and validated successfully.'
@@ -140,7 +275,7 @@ class ClaimsController < ApplicationController
   end
 
   def claim_params
-    parsed_params = params.require(:claim).permit(:content, :evidence, :primary_sources, :secondary_sources, :draft)
+    parsed_params = params.require(:claim).permit(:content, :primary_sources, :secondary_sources, :draft, :evidences)
     
     if parsed_params[:primary_sources].is_a?(String)
       parsed_params[:primary_sources] = JSON.parse(parsed_params[:primary_sources]) rescue []

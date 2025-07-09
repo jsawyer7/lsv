@@ -1,18 +1,16 @@
 ActiveAdmin.register Claim do
-  permit_params :content, :evidence, :user_id
+  permit_params :content, :user_id
 
   index do
     selectable_column
     id_column
     column :content
-    column :evidence
     column :user
     column :created_at
     actions
   end
 
   filter :content
-  filter :evidence
   filter :user
   filter :created_at
 
@@ -20,7 +18,6 @@ ActiveAdmin.register Claim do
     f.inputs do
       f.input :user
       f.input :content
-      f.input :evidence
     end
     f.actions
   end
@@ -29,7 +26,6 @@ ActiveAdmin.register Claim do
     attributes_table do
       row :id
       row :content
-      row :evidence
       row :user
       row :created_at
       row :updated_at
@@ -44,7 +40,7 @@ ActiveAdmin.register Claim do
               active = idx == 0
               span reasoning.source,
                 class: "reasoning-source-tab#{' active' if active}",
-                style: "cursor:pointer; padding: 0.5rem 1rem; border-radius: 6px; font-weight: 500; border: 1px solid #e0e0e0; background: #{active ? '#2563eb' : '#f5f5f5'}; color: #{active ? '#fff' : '#222'};",
+                style: "cursor:pointer; padding: 0.5rem 1rem; border-radius: 6px; font-weight: 500; border: 1px solid #e0e0e0; background: #{active ? '#2563eb' : '#f5f5'}; color: #{active ? '#fff' : '#222'};",
                 data: { source: reasoning.source }
             end
           end

@@ -2,7 +2,7 @@
 document.addEventListener('DOMContentLoaded', function() {
   const allSources = ['Quran', 'Tanakh', 'Catholic', 'Ethiopian', 'Protestant', 'Historical'];
   const claimInput = document.querySelector('textarea[name="claim[content]"]');
-  const evidenceInput = document.querySelector('textarea[name="claim[evidence]"]');
+  const evidenceTextareas = document.querySelectorAll('.evidence-textarea');
   const charCount = document.getElementById('claim-char-count');
   const claimSourceImgPath = document.getElementById('claim-source-img-path').value;
   const validateEvidenceBtn = document.getElementById('validate-evidence');
@@ -95,9 +95,10 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   validateEvidenceBtn.addEventListener('click', async function() {
-    const evidence = evidenceInput.value;
+    const evidenceTextareas = document.querySelectorAll('.evidence-textarea');
+    const evidences = Array.from(evidenceTextareas).map(textarea => textarea.value.trim()).filter(text => text.length > 0);
 
-    if (!evidence) {
+    if (evidences.length === 0) {
       document.querySelector('.evidence-error').textContent = 'Please provide evidence before validating.';
       document.querySelector('.evidence-error').style.display = 'block';
       return;
@@ -114,7 +115,7 @@ document.addEventListener('DOMContentLoaded', function() {
           'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
         },
         body: JSON.stringify({ 
-          evidence,
+          evidence: evidences,
           sources: allSources
         })
       });
@@ -129,11 +130,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
       const result = await response.json();
       
+      // Store the validated evidence sources for form submission
+      window.validatedEvidences = result.evidences || [];
+      
       sourcesColumns.style.display = 'flex';
       
-      evidenceInput.readOnly = true;
-      evidenceInput.style.background = '#f3f4f6';
-      evidenceInput.style.color = '#23263b';
+      evidenceTextareas.forEach(textarea => {
+        textarea.readOnly = true;
+        textarea.style.background = '#f3f4f6';
+        textarea.style.color = '#23263b';
+      });
       
       editEvidenceBtn.style.display = 'inline-block';
       
@@ -182,7 +188,7 @@ document.addEventListener('DOMContentLoaded', function() {
   function initializeForm() {
     // Populate form with existing data
     claimInput.value = claimData.content || '';
-    evidenceInput.value = claimData.evidence || '';
+    
     if(claimInput.value) {
       charCount.textContent = claimInput.value.length;
     }
@@ -197,9 +203,11 @@ document.addEventListener('DOMContentLoaded', function() {
       // User has validated sources, show step 2 with sources
       sourcesColumns.style.display = 'flex';
       
-      evidenceInput.readOnly = true;
-      evidenceInput.style.background = '#f3f4f6';
-      evidenceInput.style.color = '#23263b';
+      evidenceTextareas.forEach(textarea => {
+        textarea.readOnly = true;
+        textarea.style.background = '#f3f4f6';
+        textarea.style.color = '#23263b';
+      });
       
       editEvidenceBtn.style.display = 'inline-block';
       

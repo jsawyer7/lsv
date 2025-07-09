@@ -299,7 +299,6 @@
     const validateButton = document.getElementById('validate-claim');
     const submitButton = document.getElementById('submit-claim');
     const claimInput = form.querySelector('[name="claim[content]"]');
-    const evidenceInput = form.querySelector('[name="claim[evidence]"]');
     const errorMessage = document.querySelector('.error-message');
     const evidenceError = document.querySelector('.evidence-error');
     const submitLoader = document.getElementById('submit-loader-overlay');
@@ -360,21 +359,21 @@
       console.log('Form submit triggered');
       e.preventDefault();
       
-      // Combine all evidence textarea values into one string
-      const evidencesContainer = document.getElementById('evidences-container');
-      const evidenceTextareas = evidencesContainer ? evidencesContainer.querySelectorAll('.evidence-textarea') : [];
-      const combinedEvidence = Array.from(evidenceTextareas).map(t => t.value.trim()).filter(Boolean).join('\n');
-      const combinedEvidenceField = document.getElementById('combined-evidence-field');
-      if (combinedEvidenceField) combinedEvidenceField.value = combinedEvidence;
+      let evidences = [];
+      if (window.validatedEvidences && window.validatedEvidences.length > 0) {
+        // Use the validated evidence sources from LSV service
+        evidences = window.validatedEvidences;
+      } else {
+        // Fallback: combine all evidence textarea values
+        const evidencesContainer = document.getElementById('evidences-container');
+        const evidenceTextareas = evidencesContainer ? evidencesContainer.querySelectorAll('.evidence-textarea') : [];
+        evidences = Array.from(evidenceTextareas).map(t => t.value.trim()).filter(Boolean).map(text => ({
+          evidence: text,
+          source: 'historical' // Default source if not validated
+        }));
+      }
 
-      const evidence = combinedEvidence;
-      console.log('Current values:', {
-        claim: claimInput.value,
-        validatedClaim: window.validatedClaim,
-        evidence: evidence
-      });
-
-      if (!evidence.trim()) {
+      if (evidences.length === 0) {
         console.log('Evidence missing');
         evidenceError.textContent = 'Please enter evidence';
         evidenceError.style.display = 'block';
@@ -391,9 +390,14 @@
       // Set the final values
       claimInput.value = window.validatedClaim;
       
+      const evidencesField = document.getElementById('combined-evidence-field');
+      if (evidencesField) {
+        evidencesField.value = JSON.stringify(evidences);
+      }
+      
       console.log('Submitting form with:', {
         finalClaim: claimInput.value,
-        finalEvidence: evidence
+        finalEvidences: evidences
       });
 
       // Show loader before submitting
