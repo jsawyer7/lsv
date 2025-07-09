@@ -74,6 +74,10 @@
   }
 
   // --- AI Evidence Assistant logic ---
+  let aiEvidenceChatHistory = [
+    { role: "system", content: "You are an expert assistant for evidence suggestion. Help users find a single, clear, and relevant piece of evidence for their claim. Respond conversationally, and always end with: 'Do you want me to add this as evidence? (Yes/No)'" }
+  ];
+
   function appendEvidenceChatMessage(role, text) {
     const messagesDiv = document.getElementById('ai-evidence-chatbot-messages');
     const msg = document.createElement('div');
@@ -90,10 +94,14 @@
     messagesDiv.innerHTML = '';
     appendEvidenceChatMessage('ai', 'Hi! I am your AI Evidence Assistant. Ask me anything about the evidence you want to add.');
     lastEvidenceSuggestion = '';
+    aiEvidenceChatHistory = [
+      { role: "system", content: "You are an expert assistant for evidence suggestion. Help users find a single, clear, and relevant piece of evidence for their claim. Respond conversationally, and always end with: 'Do you want me to add this as evidence? (Yes/No)'" }
+    ];
   }
 
   function streamAIEvidenceResponse(userMsg) {
     appendEvidenceChatMessage('ai', 'Thinking...');
+    aiEvidenceChatHistory.push({ role: 'user', content: userMsg });
     const messagesDiv = document.getElementById('ai-evidence-chatbot-messages');
     fetch('/ai/evidence_suggestion', {
       method: 'POST',
@@ -101,7 +109,7 @@
         'Content-Type': 'application/json',
         'X-CSRF-Token': document.querySelector("[name='csrf-token']").content
       },
-      body: JSON.stringify({ question: userMsg })
+      body: JSON.stringify({ messages: aiEvidenceChatHistory })
     })
     .then(async response => {
       if (!response.body) throw new Error('No response body');
@@ -109,10 +117,6 @@
       const reader = response.body.getReader();
       let aiMsg = '';
       let done = false;
-      const aiDiv = document.createElement('div');
-      aiDiv.className = 'ai-chatbot-message ai';
-      messagesDiv.appendChild(aiDiv);
-      messagesDiv.scrollTop = messagesDiv.scrollHeight;
       let buffer = '';
       while (!done) {
         const { value, done: doneReading } = await reader.read();
@@ -120,21 +124,51 @@
         if (value) {
           const chunk = new TextDecoder().decode(value);
           buffer += chunk;
-          while (buffer.length > 0) {
-            aiMsg += buffer[0];
-            aiDiv.textContent = aiMsg;
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
-            buffer = buffer.slice(1);
-            await new Promise(r => setTimeout(r, 12));
-          }
         }
       }
-      // After streaming, ask if user wants to add as evidence (only if not already present)
-      lastEvidenceSuggestion = aiMsg;
-      const prompt = 'Do you want me to add this as evidence? (Yes/No)';
-      if (!aiMsg.trim().toLowerCase().endsWith(prompt.toLowerCase())) {
-        appendEvidenceChatMessage('ai', prompt);
+      // Try to parse the buffered response as JSON
+      let evidenceObj = null;
+      try {
+        // Replace smart quotes with standard quotes
+        buffer = buffer.replace(/[""]/g, '"').replace(/['']/g, "'");
+        // Try to extract the first {...} block from the buffer
+        const match = buffer.match(/{[\s\S]*}/);
+        if (match) {
+          evidenceObj = JSON.parse(match[0]);
+        } else {
+          throw new Error('No JSON found');
+        }
+      } catch (e) {
+        appendEvidenceChatMessage('ai', 'Sorry, I could not understand the evidence response.');
+        return;
       }
+      let formatted = '';
+      if (evidenceObj.reference) formatted += 'Reference: ' + evidenceObj.reference + '\n';
+      if (evidenceObj.original) formatted += 'Original: ' + evidenceObj.original + '\n';
+      if (evidenceObj.translation) formatted += 'Translation: ' + evidenceObj.translation + '\n';
+      if (evidenceObj.explanation) formatted += '\n' + evidenceObj.explanation + '\n';
+      formatted = formatted.trim() + '\n\nDo you want me to add this as evidence? (Yes/No)';
+      // Stream the formatted string character by character into a single chat message
+      const aiDiv = document.createElement('div');
+      aiDiv.className = 'ai-chatbot-message ai';
+      messagesDiv.appendChild(aiDiv);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      let i = 0;
+      function streamChar() {
+        if (i <= formatted.length) {
+          aiDiv.innerHTML = formatted.slice(0, i).replace(/\n/g, '<br>');
+          messagesDiv.scrollTop = messagesDiv.scrollHeight;
+          i++;
+          setTimeout(streamChar, 12);
+        }
+      }
+      streamChar();
+      lastEvidenceSuggestion = JSON.stringify({
+        reference: evidenceObj.reference || '',
+        original: evidenceObj.original || '',
+        translation: evidenceObj.translation || ''
+      });
+      aiEvidenceChatHistory.push({ role: 'assistant', content: buffer });
     })
     .catch(err => {
       appendEvidenceChatMessage('ai', 'Sorry, there was a problem getting suggestions.');
@@ -220,24 +254,26 @@
         input.value = '';
         // If last message was Yes/No prompt, handle accordingly
         if (lastEvidenceSuggestion && /^yes$/i.test(text)) {
-          // Only add the main suggestion (not the trailing prompt)
-          let suggestion = lastEvidenceSuggestion.split('Do you want me to add this as evidence?')[0].trim();
+          let suggestionObj = {};
+          try {
+            suggestionObj = JSON.parse(lastEvidenceSuggestion);
+          } catch (e) {
+            suggestionObj = { reference: '', original: '', translation: '' };
+          }
           // Find the first empty evidence box, or add a new one if all are filled
           const evidencesContainer = document.getElementById('evidences-container');
           let textarea = Array.from(evidencesContainer.querySelectorAll('.evidence-textarea')).find(t => !t.value.trim());
           if (!textarea) {
-            // Simulate Add Evidence button click to create a new box
             const addEvidenceBtn = document.getElementById('add-evidence-btn');
             if (addEvidenceBtn && !addEvidenceBtn.disabled) {
               addEvidenceBtn.click();
-              // Wait a moment for the new textarea to be created
               setTimeout(() => {
                 textarea = Array.from(evidencesContainer.querySelectorAll('.evidence-textarea')).find(t => !t.value.trim());
-                if (textarea) textarea.value = suggestion;
+                if (textarea) textarea.value = formatEvidenceBox(suggestionObj);
               }, 100);
             }
           } else {
-            textarea.value = suggestion;
+            textarea.value = formatEvidenceBox(suggestionObj);
           }
           appendEvidenceChatMessage('ai', 'Added as evidence! You can edit it before submitting.');
           lastEvidenceSuggestion = '';
@@ -516,5 +552,13 @@
     .catch(err => {
       appendChatMessage('ai', 'Sorry, there was a problem getting suggestions.');
     });
+  }
+
+  function formatEvidenceBox(obj) {
+    let out = '';
+    if (obj.reference) out += 'Reference: ' + obj.reference + '\n';
+    if (obj.original) out += 'Original: ' + obj.original + '\n';
+    if (obj.translation) out += 'Translation: ' + obj.translation;
+    return out.trim();
   }
 <% end %>
