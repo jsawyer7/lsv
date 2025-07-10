@@ -9,6 +9,18 @@ body {
     padding: 2rem;
     min-height: 70vh;
   }
+
+  .evidence-source-badge {
+    display: inline-block;
+    background: #e0e7ff;
+    color: black;
+    font-weight: 600;
+    border-radius: 16px;
+    padding: 0.2em 1em;
+    font-size: 1.05em;
+    margin-bottom: 0.5em;
+    margin-right: 0.5em;
+  }
   
   .validator-box {
     background-color: white;
@@ -810,10 +822,17 @@ body {
   display: inline-block;
 }
 
+.evidence-box {
+  position: relative;
+  margin-bottom: 18px;
+  padding-top: 0;
+}
+
 .remove-evidence-btn {
   position: absolute;
-  top: 10px;
-  right: 10px;
+  top: 50%;
+  right: 16px;
+  transform: translateY(-50%);
   border: 1.5px solid #ef4444;
   background: transparent;
   color: #ef4444;
@@ -836,6 +855,11 @@ body {
   background: #ef4444;
 }
 
+.evidence-box-top {
+  display: block;
+  min-height: 0;
+}
+
 .add-evidence-btn {
   display: inline-block;
   background: #2563eb;
@@ -852,11 +876,6 @@ body {
 .add-evidence-btn:hover {
   background: #1746b0;
   color: #fff;
-}
-
-.evidence-box {
-  position: relative;
-  margin-bottom: 18px;
 }
 
 .ai-chatbot-container {

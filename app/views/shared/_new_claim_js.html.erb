@@ -33,7 +33,7 @@ document.addEventListener('DOMContentLoaded', function() {
       const errorDiv = document.querySelector('.evidence-error');
       errorDiv.textContent = 'The request is taking longer than expected. Please try again.';
       errorDiv.style.display = 'block';
-    }, 80000); // 80 seconds timeout
+    }, 40000); // 80 seconds timeout
   }
 
   function clearProcessingTimeout() {
@@ -99,12 +99,23 @@ document.addEventListener('DOMContentLoaded', function() {
   function createEvidenceBox(value = '') {
     const wrapper = document.createElement('div');
     wrapper.className = 'evidence-box';
-    wrapper.style.position = 'relative';
+    // Create top flex container for badge only
+    const top = document.createElement('div');
+    top.className = 'evidence-box-top';
+    // Badge placeholder (will be filled later)
+    const badge = document.createElement('span');
+    badge.className = 'evidence-source-badge';
+    badge.style.display = 'none'; // Hide initially
+    top.appendChild(badge);
+    wrapper.appendChild(top);
+    // Textarea
     const textarea = document.createElement('textarea');
     textarea.className = 'new-claim-input evidence-textarea';
     textarea.placeholder = 'Write your evidence...';
     textarea.rows = 4;
     textarea.value = value;
+    wrapper.appendChild(textarea);
+    // Remove button (now at right side of box)
     const removeBtn = document.createElement('button');
     removeBtn.type = 'button';
     removeBtn.className = 'remove-evidence-btn';
@@ -116,7 +127,6 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       updateRemoveButtonsState();
     };
-    wrapper.appendChild(textarea);
     wrapper.appendChild(removeBtn);
     return wrapper;
   }
@@ -183,6 +193,18 @@ document.addEventListener('DOMContentLoaded', function() {
       
       // Store the validated evidence sources for form submission
       window.validatedEvidences = result.evidences || [];
+      
+      // Insert source badge at the top of each evidence box
+      const evidenceBoxes = evidencesContainer.querySelectorAll('.evidence-box');
+      window.validatedEvidences.forEach((ev, idx) => {
+        const box = evidenceBoxes[idx];
+        if (!box) return;
+        // Find the badge in the .evidence-box-top
+        const top = box.querySelector('.evidence-box-top');
+        const badge = top.querySelector('.evidence-source-badge');
+        badge.textContent = ev.source ? ev.source.charAt(0).toUpperCase() + ev.source.slice(1) : '-';
+        badge.style.display = 'inline-block';
+      });
       
       // Hide illustration and show sources columns
       sourcesColumns.style.display = 'flex';
