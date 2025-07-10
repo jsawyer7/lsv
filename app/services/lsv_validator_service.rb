@@ -77,11 +77,15 @@ class LsvValidatorService
   def build_prompt(claim, source)
     template = load_prompt_template(source)
     
+    # Group evidences by their sources and format them
+    evidence_content = claim.evidences.map do |evidence|
+      source_names = evidence.source_names.join(', ')
+      "Sources: #{source_names}\n#{evidence.content}"
+    end.join("\n\n---\n\n")
+    
     # Replace placeholders in the template
     prompt = template.transform_values do |content|
       next content unless content.is_a?(String)
-      
-      evidence_content = claim.evidences.map(&:content).join("\n\n")
       
       content
         .gsub('{{claim}}', claim.content.to_s)

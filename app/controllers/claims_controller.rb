@@ -80,17 +80,17 @@ class ClaimsController < ApplicationController
     else
       []
     end
-    # Treat each evidence as a plain string or a hash with evidence and source
+    # Treat each evidence as a plain string or a hash with evidence and sources
     evidences = evidences.map do |ev|
       if ev.is_a?(String)
-        { evidence: ev, source: nil }
+        { evidence: ev, sources: ['historical'] }
       elsif ev.is_a?(Hash) && (ev[:evidence] || ev['evidence'])
         {
           evidence: ev[:evidence] || ev['evidence'],
-          source: ev[:source] || ev['source']
+          sources: ev[:sources] || ev['sources'] || ev[:source] || ev['source'] || ['historical']
         }
       else
-        { evidence: ev.to_s, source: nil }
+        { evidence: ev.to_s, sources: ['historical'] }
       end
     end
 
@@ -106,11 +106,19 @@ class ClaimsController < ApplicationController
       if @claim.save
         evidences.each do |evidence_hash|
           next if evidence_hash[:evidence].blank?
-          source_enum = SOURCE_ENUM_MAP[evidence_hash[:source].to_s.strip] || :historical
-          @claim.evidences.create!(
-            content: evidence_hash[:evidence],
-            source: source_enum
-          )
+          
+          # Handle multiple sources
+          sources = Array(evidence_hash[:sources]).compact
+          sources = ['historical'] if sources.empty?
+          
+          evidence = @claim.evidences.create!(content: evidence_hash[:evidence])
+          
+          # Add all sources to the evidence
+          sources.each do |source_name|
+            source_enum = SOURCE_ENUM_MAP[source_name.to_s.strip]
+            evidence.add_source(source_enum) if source_enum
+          end
+          evidence.save!
         end
         redirect_to claims_path(filter: 'drafts'), notice: 'Claim saved as draft.'
       else
@@ -121,11 +129,19 @@ class ClaimsController < ApplicationController
       if @claim.save
         evidences.each do |evidence_hash|
           next if evidence_hash[:evidence].blank?
-          source_enum = SOURCE_ENUM_MAP[evidence_hash[:source].to_s.strip] || :historical
-          @claim.evidences.create!(
-            content: evidence_hash[:evidence],
-            source: source_enum
-          )
+          
+          # Handle multiple sources
+          sources = Array(evidence_hash[:sources]).compact
+          sources = ['historical'] if sources.empty?
+          
+          evidence = @claim.evidences.create!(content: evidence_hash[:evidence])
+          
+          # Add all sources to the evidence
+          sources.each do |source_name|
+            source_enum = SOURCE_ENUM_MAP[source_name.to_s.strip]
+            evidence.add_source(source_enum) if source_enum
+          end
+          evidence.save!
         end
         response = LsvValidatorService.new(@claim).run_validation!
         store_claim_result(@claim) if response
@@ -159,17 +175,17 @@ class ClaimsController < ApplicationController
     else
       []
     end
-    # Treat each evidence as a plain string or a hash with evidence and source
+    # Treat each evidence as a plain string or a hash with evidence and sources
     evidences = evidences.map do |ev|
       if ev.is_a?(String)
-        { evidence: ev, source: nil }
+        { evidence: ev, sources: ['historical'] }
       elsif ev.is_a?(Hash) && (ev[:evidence] || ev['evidence'])
         {
           evidence: ev[:evidence] || ev['evidence'],
-          source: ev[:source] || ev['source']
+          sources: ev[:sources] || ev['sources'] || ev[:source] || ev['source'] || ['historical']
         }
       else
-        { evidence: ev.to_s, source: nil }
+        { evidence: ev.to_s, sources: ['historical'] }
       end
     end
 
@@ -184,11 +200,19 @@ class ClaimsController < ApplicationController
         @claim.evidences.destroy_all
         evidences.each do |evidence_hash|
           next if evidence_hash[:evidence].blank?
-          source_enum = SOURCE_ENUM_MAP[evidence_hash[:source].to_s.strip] || :historical
-          @claim.evidences.create!(
-            content: evidence_hash[:evidence],
-            source: source_enum
-          )
+          
+          # Handle multiple sources
+          sources = Array(evidence_hash[:sources]).compact
+          sources = ['historical'] if sources.empty?
+          
+          evidence = @claim.evidences.create!(content: evidence_hash[:evidence])
+          
+          # Add all sources to the evidence
+          sources.each do |source_name|
+            source_enum = SOURCE_ENUM_MAP[source_name.to_s.strip]
+            evidence.add_source(source_enum) if source_enum
+          end
+          evidence.save!
         end
         redirect_to claims_path(filter: 'drafts'), notice: 'Claim saved as draft.'
       else
@@ -199,11 +223,19 @@ class ClaimsController < ApplicationController
         @claim.evidences.destroy_all
         evidences.each do |evidence_hash|
           next if evidence_hash[:evidence].blank?
-          source_enum = SOURCE_ENUM_MAP[evidence_hash[:source].to_s.strip] || :historical
-          @claim.evidences.create!(
-            content: evidence_hash[:evidence],
-            source: source_enum
-          )
+          
+          # Handle multiple sources
+          sources = Array(evidence_hash[:sources]).compact
+          sources = ['historical'] if sources.empty?
+          
+          evidence = @claim.evidences.create!(content: evidence_hash[:evidence])
+          
+          # Add all sources to the evidence
+          sources.each do |source_name|
+            source_enum = SOURCE_ENUM_MAP[source_name.to_s.strip]
+            evidence.add_source(source_enum) if source_enum
+          end
+          evidence.save!
         end
         response = LsvValidatorService.new(@claim).run_validation!
         store_claim_result(@claim) if response

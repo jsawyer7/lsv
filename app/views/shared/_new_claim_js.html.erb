@@ -203,22 +203,23 @@ document.addEventListener('DOMContentLoaded', function() {
       // Store the validated evidence sources for form submission
       window.validatedEvidences = (result.evidences || []).map((ev, idx) => ({
         evidence: typeof ev === 'string' ? ev : (ev.evidence || ''),
-        source: ev.source || 'historical'
+        sources: ev.sources || [ev.source || 'historical']
       }));
       
-      // Insert source badge at the top of each evidence box
+      // Insert source badges for each evidence box
       const evidenceBoxes = evidencesContainer.querySelectorAll('.evidence-box');
       window.validatedEvidences.forEach((ev, idx) => {
         const box = evidenceBoxes[idx];
         if (!box) return;
-        // Find the badge in the .evidence-box-top
+        
+        // Update the badge with multiple sources
         const top = box.querySelector('.evidence-box-top');
         const badge = top.querySelector('.evidence-source-badge');
-        if (ev.source) {
-          badge.textContent = ev.source.charAt(0).toUpperCase() + ev.source.slice(1);
+        if (ev.sources && ev.sources.length > 0) {
+          badge.textContent = ev.sources.map(source => source.charAt(0).toUpperCase() + source.slice(1)).join(', ');
           badge.style.display = 'inline-block';
         } else {
-          badge.textContent = '-';
+          badge.textContent = 'Historical';
           badge.style.display = 'inline-block';
         }
       });

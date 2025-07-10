@@ -22,7 +22,11 @@
           <div class="claim-details-evidence">
             <% @claim.evidences.each do |evidence| %>
               <div class="claim-evidence-block">
-                <div><strong>Source:</strong> <%= evidence.source.present? ? evidence.source.humanize : '-' %></div>
+                <div><strong>Sources:</strong> 
+                  <% evidence.source_names.each do |source_name| %>
+                    <span class="source-badge"><%= source_name.humanize %></span>
+                  <% end %>
+                </div>
                 <div><%= evidence.content %></div>
               </div>
             <% end %>

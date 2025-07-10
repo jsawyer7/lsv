@@ -26,6 +26,7 @@ class LsvEvidenceValidatorService
       }
     )
 
+    byebug
     begin
       result = JSON.parse(response.dig("choices", 0, "message", "content"))
       {
@@ -78,59 +79,34 @@ class LsvEvidenceValidatorService
 
   def system_prompt
     <<~PROMPT
-      You are an expert in analysing religious and historical texts.  
-      Your task is to inspect the user-supplied evidence list and decide which of the
-      #{AVAILABLE_SOURCES.join(", ")} are directly referenced.
+      You are an expert in analysing religious and historical texts.
+      You will receive an array of evidence items. Each item in the array is a separate evidence box from the user.
+      For each evidence item, determine ALL applicable sources (from: #{AVAILABLE_SOURCES.join(", ")}).
+      DO NOT split or merge evidence items. If a single evidence item contains references to multiple sources, return it as a single evidence object with all applicable sources in the `sources` array.
+      Only return as many evidence objects as you received in the input array, and in the same order.
 
-      Definitions
-      -----------
-      • "Referenced" means the evidence explicitly cites a book / chapter / verse
-        (e.g. "John 1:1") **or** cites a recognisable non-canonical historical source
-        (e.g. an ancient historian, inscription, manuscript, archaeological find).
+      For each evidence item:
+        - The `evidence` field must contain the EXACT ORIGINAL evidence text as provided by the user.
+        - The `sources` field should contain an array of ALL applicable sources for this evidence.
+        - DO NOT modify, format, or change the evidence text in any way.
 
-      • A "canonical source" is one of the scriptural canons in
-        #{AVAILABLE_SOURCES.join(", ")}
-
-      • **Historical** is a catch-all label:  
-        - Mark "Historical" **primary** if the evidence references **any** source
-          that is **not** one of the scriptural canons listed in AVAILABLE_SOURCES  
-          (e.g. Josephus, Tacitus, Dead Sea Scrolls, an ossuary, a stele inscription).
-
-      • Do **not** infer meaning or theological support.  
-        Only decide whether each evidence item belongs inside a source's canon.
-
-      Instructions
-      ------------
-      1. Examine every evidence reference.  
-      2. For each reference, add every canon it appears in to **primary_sources**.  
-      3. If a reference is not found in any listed canon, add **Historical**
-        to **primary_sources** (once only, no duplications).  
-      4. All other sources become **secondary_sources**.
-      5. For each evidence item, determine its primary source and include it in the **evidences** array.
-         - The `evidence` field must contain the full formatted evidence string, e.g.:
-           "Reference: John 1:1, Original: , Translation: "
-         - If Original or Translation are not available, leave them blank but include the labels.
-
-      Evidence Provided:
-      #{@evidence.join("\n\n")}
-
-      Available sources: #{AVAILABLE_SOURCES.join(", ")}
+      For the overall response:
+        - `primary_sources`: The union of all sources referenced by any evidence item (no duplicates).
+        - `secondary_sources`: All other sources from the available list that are NOT referenced by any evidence item.
 
       Respond in pure JSON:
-
       {
-        "primary_sources": ["..."],
-        "secondary_sources": ["..."],
+        "primary_sources": [...],
+        "secondary_sources": [...],
         "evidences": [
-          {"evidence": "Reference: John 1:1, Original: , Translation: ", "source": "Protestant"},
-          {"evidence": "Reference: Surah 4:157, Original: , Translation: ", "source": "Quran"},
-          {"evidence": "Reference: Tacitus Annals 15.44, Original: , Translation: ", "source": "Historical"}
+          {"evidence": "EXACT ORIGINAL EVIDENCE TEXT", "sources": ["Source1", "Source2"]},
+          ...
         ]
       }
     PROMPT
   end
 
   def user_prompt
-    "Please analyze this evidence and categorize the sources:\n\n#{@evidence.join("\n\n")}"
+    "Please analyze each evidence item in the array separately. Do not split or merge them. If a single evidence item contains references to multiple sources, return it as a single evidence object with all applicable sources. Return the sources for each evidence item in the same order as received. Evidence array:\n\n#{@evidence.to_json}"
   end
 end 

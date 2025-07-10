@@ -364,13 +364,8 @@
         // Use the validated evidence sources from LSV service
         evidences = window.validatedEvidences;
       } else {
-        // Fallback: combine all evidence textarea values
-        const evidencesContainer = document.getElementById('evidences-container');
-        const evidenceTextareas = evidencesContainer ? evidencesContainer.querySelectorAll('.evidence-textarea') : [];
-        evidences = Array.from(evidenceTextareas).map(t => t.value.trim()).filter(Boolean).map(text => ({
-          evidence: text,
-          source: 'historical' // Default source if not validated
-        }));
+        // Fallback: combine all evidence textarea values with their sources
+        evidences = collectEvidencesWithSources();
       }
 
       if (evidences.length === 0) {
@@ -420,6 +415,20 @@
       // Submit the form
       form.submit();
     });
+
+    // Function to collect evidences with their sources
+    function collectEvidencesWithSources() {
+      const evidencesContainer = document.getElementById('evidences-container');
+      const evidenceTextareas = evidencesContainer ? evidencesContainer.querySelectorAll('.evidence-textarea') : [];
+      
+      return Array.from(evidenceTextareas).map(textarea => {
+        const content = textarea ? textarea.value.trim() : '';
+        return {
+          evidence: content,
+          sources: ['Historical'] // Default source, will be updated by validation
+        };
+      }).filter(ev => ev.evidence);
+    }
 
     // Chatbot input handler
     const aiChatbotSend = document.getElementById('ai-chatbot-send');

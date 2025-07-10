@@ -992,4 +992,16 @@ body {
 .claim-evidence-block div:last-child {
   margin-bottom: 0;
 }
+
+.source-badge {
+  display: inline-block;
+  background: #e0e7ff;
+  color: #374151;
+  font-weight: 500;
+  border-radius: 12px;
+  padding: 0.25em 0.75em;
+  font-size: 0.875rem;
+  margin-right: 0.5em;
+  margin-bottom: 0.25em;
+}
   
