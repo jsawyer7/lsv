@@ -80,18 +80,17 @@ class ClaimsController < ApplicationController
     else
       []
     end
-    # Normalize: handle array of stringified hashes or hashes
+    # Treat each evidence as a plain string or a hash with evidence and source
     evidences = evidences.map do |ev|
       if ev.is_a?(String)
-        begin
-          JSON.parse(ev).deep_symbolize_keys
-        rescue
-          {}
-        end
-      elsif ev.is_a?(Hash)
-        ev.deep_symbolize_keys
+        { evidence: ev, source: nil }
+      elsif ev.is_a?(Hash) && (ev[:evidence] || ev['evidence'])
+        {
+          evidence: ev[:evidence] || ev['evidence'],
+          source: ev[:source] || ev['source']
+        }
       else
-        {}
+        { evidence: ev.to_s, source: nil }
       end
     end
 
@@ -107,18 +106,11 @@ class ClaimsController < ApplicationController
       if @claim.save
         evidences.each do |evidence_hash|
           next if evidence_hash[:evidence].blank?
-          begin
-            @claim.evidences.create!(
-              content: evidence_hash[:evidence],
-              source: SOURCE_ENUM_MAP[evidence_hash[:source]] || :historical
-            )
-          rescue ArgumentError => e
-            Rails.logger.warn "Invalid source for evidence: #{evidence_hash[:source].inspect} (#{e.message})"
-            @claim.evidences.create!(
-              content: evidence_hash[:evidence],
-              source: :historical
-            )
-          end
+          source_enum = SOURCE_ENUM_MAP[evidence_hash[:source].to_s.strip] || :historical
+          @claim.evidences.create!(
+            content: evidence_hash[:evidence],
+            source: source_enum
+          )
         end
         redirect_to claims_path(filter: 'drafts'), notice: 'Claim saved as draft.'
       else
@@ -129,18 +121,11 @@ class ClaimsController < ApplicationController
       if @claim.save
         evidences.each do |evidence_hash|
           next if evidence_hash[:evidence].blank?
-          begin
-            @claim.evidences.create!(
-              content: evidence_hash[:evidence],
-              source: SOURCE_ENUM_MAP[evidence_hash[:source]] || :historical
-            )
-          rescue ArgumentError => e
-            Rails.logger.warn "Invalid source for evidence: #{evidence_hash[:source].inspect} (#{e.message})"
-            @claim.evidences.create!(
-              content: evidence_hash[:evidence],
-              source: :historical
-            )
-          end
+          source_enum = SOURCE_ENUM_MAP[evidence_hash[:source].to_s.strip] || :historical
+          @claim.evidences.create!(
+            content: evidence_hash[:evidence],
+            source: source_enum
+          )
         end
         response = LsvValidatorService.new(@claim).run_validation!
         store_claim_result(@claim) if response
@@ -174,18 +159,17 @@ class ClaimsController < ApplicationController
     else
       []
     end
-    # Normalize: handle array of stringified hashes or hashes
+    # Treat each evidence as a plain string or a hash with evidence and source
     evidences = evidences.map do |ev|
       if ev.is_a?(String)
-        begin
-          JSON.parse(ev).deep_symbolize_keys
-        rescue
-          {}
-        end
-      elsif ev.is_a?(Hash)
-        ev.deep_symbolize_keys
+        { evidence: ev, source: nil }
+      elsif ev.is_a?(Hash) && (ev[:evidence] || ev['evidence'])
+        {
+          evidence: ev[:evidence] || ev['evidence'],
+          source: ev[:source] || ev['source']
+        }
       else
-        {}
+        { evidence: ev.to_s, source: nil }
       end
     end
 
@@ -200,18 +184,11 @@ class ClaimsController < ApplicationController
         @claim.evidences.destroy_all
         evidences.each do |evidence_hash|
           next if evidence_hash[:evidence].blank?
-          begin
-            @claim.evidences.create!(
-              content: evidence_hash[:evidence],
-              source: SOURCE_ENUM_MAP[evidence_hash[:source]] || :historical
-            )
-          rescue ArgumentError => e
-            Rails.logger.warn "Invalid source for evidence: #{evidence_hash[:source].inspect} (#{e.message})"
-            @claim.evidences.create!(
-              content: evidence_hash[:evidence],
-              source: :historical
-            )
-          end
+          source_enum = SOURCE_ENUM_MAP[evidence_hash[:source].to_s.strip] || :historical
+          @claim.evidences.create!(
+            content: evidence_hash[:evidence],
+            source: source_enum
+          )
         end
         redirect_to claims_path(filter: 'drafts'), notice: 'Claim saved as draft.'
       else
@@ -222,18 +199,11 @@ class ClaimsController < ApplicationController
         @claim.evidences.destroy_all
         evidences.each do |evidence_hash|
           next if evidence_hash[:evidence].blank?
-          begin
-            @claim.evidences.create!(
-              content: evidence_hash[:evidence],
-              source: SOURCE_ENUM_MAP[evidence_hash[:source]] || :historical
-            )
-          rescue ArgumentError => e
-            Rails.logger.warn "Invalid source for evidence: #{evidence_hash[:source].inspect} (#{e.message})"
-            @claim.evidences.create!(
-              content: evidence_hash[:evidence],
-              source: :historical
-            )
-          end
+          source_enum = SOURCE_ENUM_MAP[evidence_hash[:source].to_s.strip] || :historical
+          @claim.evidences.create!(
+            content: evidence_hash[:evidence],
+            source: source_enum
+          )
         end
         response = LsvValidatorService.new(@claim).run_validation!
         store_claim_result(@claim) if response

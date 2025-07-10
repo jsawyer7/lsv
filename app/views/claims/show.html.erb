@@ -23,12 +23,7 @@
             <% @claim.evidences.each do |evidence| %>
               <div class="claim-evidence-block">
                 <div><strong>Source:</strong> <%= evidence.source.present? ? evidence.source.humanize : '-' %></div>
-                <% reference = evidence.content[/Reference:\s*([^,\n]*)/, 1] %>
-                <% original = evidence.content[/Original:\s*([^,\n]*)/, 1] %>
-                <% translation = evidence.content[/Translation:\s*(.*)/m, 1] %>
-                <div><strong>Reference:</strong> <%= reference.presence || '-' %></div>
-                <div><strong>Original:</strong> <%= original.presence || '-' %></div>
-                <div><strong>Translation:</strong> <%= translation.presence || '-' %></div>
+                <div><%= evidence.content %></div>
               </div>
             <% end %>
           </div>
