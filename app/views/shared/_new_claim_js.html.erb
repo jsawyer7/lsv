@@ -191,6 +191,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
       const result = await response.json();
       
+      // If backend returned a warning, show it and allow user to proceed
+      if (result.warning) {
+        document.querySelector('.evidence-error').textContent = result.warning;
+        document.querySelector('.evidence-error').style.display = 'block';
+      } else {
+        document.querySelector('.evidence-error').style.display = 'none';
+      }
+      
       // Store the validated evidence sources for form submission
       window.validatedEvidences = result.evidences || [];
       

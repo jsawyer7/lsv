@@ -26,19 +26,26 @@ class LsvEvidenceValidatorService
       }
     )
 
-    result = JSON.parse(response.dig("choices", 0, "message", "content"))
-    
-    {
-      primary_sources: result["primary_sources"] || [],
-      secondary_sources: result["secondary_sources"] || [],
-      evidences: result["evidences"] || []
-    }
+    begin
+      result = JSON.parse(response.dig("choices", 0, "message", "content"))
+      {
+        primary_sources: result["primary_sources"] || [],
+        secondary_sources: result["secondary_sources"] || [],
+        evidences: result["evidences"] || [],
+        warning: nil
+      }
+    rescue JSON::ParserError => e
+      Rails.logger.error("JSON Parse Error: #{e.message}")
+      {
+        primary_sources: [],
+        secondary_sources: [],
+        evidences: [],
+        warning: "The AI service is down. Please try again in a while"
+      }
+    end
   rescue OpenAI::Error => e
     Rails.logger.error("OpenAI API Error: #{e.message}")
     raise ValidationError, "Failed to analyze evidence. Please try again."
-  rescue JSON::ParserError => e
-    Rails.logger.error("JSON Parse Error: #{e.message}")
-    raise ValidationError, "Failed to process the analysis results. Please try again."
   end
 
   private
