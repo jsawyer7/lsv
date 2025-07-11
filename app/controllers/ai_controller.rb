@@ -47,7 +47,7 @@ class AiController < ApplicationController
 
         {
           "explanation": "A short explanation of why this evidence is relevant.",
-          "reference": "Reference name and number (e.g., Surah Al-Fath 48:29, John 3:16, etc.)",
+          "reference": "Reference name and number ONLY (e.g., Surah Al-Fath 48:29, John 3:16, etc.). DO NOT include the word 'Reference:' or any heading before the reference. Output the reference directly.",
           "original": "The original verse or passage in its original language.",
           "translation": "A clear English translation of the verse or passage."
         }

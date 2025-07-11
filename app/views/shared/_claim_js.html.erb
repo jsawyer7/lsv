@@ -143,7 +143,7 @@
         return;
       }
       let formatted = '';
-      if (evidenceObj.reference) formatted += 'Reference: ' + evidenceObj.reference + '\n';
+      if (evidenceObj.reference) formatted += evidenceObj.reference + '\n';
       if (evidenceObj.original) formatted += 'Original: ' + evidenceObj.original + '\n';
       if (evidenceObj.translation) formatted += 'Translation: ' + evidenceObj.translation + '\n';
       if (evidenceObj.explanation) formatted += '\n' + evidenceObj.explanation + '\n';
@@ -569,7 +569,7 @@
 
   function formatEvidenceBox(obj) {
     let out = '';
-    if (obj.reference) out += 'Reference: ' + obj.reference + '\n';
+    if (obj.reference) out += obj.reference + '\n';
     if (obj.original) out += 'Original: ' + obj.original + '\n';
     if (obj.translation) out += 'Translation: ' + obj.translation;
     return out.trim();

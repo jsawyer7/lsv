@@ -26,7 +26,6 @@ class LsvEvidenceValidatorService
       }
     )
 
-    byebug
     begin
       result = JSON.parse(response.dig("choices", 0, "message", "content"))
       {
