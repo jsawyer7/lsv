@@ -27,7 +27,7 @@ class LsvInitialClaimValidatorService
 
   def build_prompt
     template = load_prompt_template
-    
+
     # Replace placeholders in the template
     prompt = template.transform_values do |content|
       next content unless content.is_a?(String)
@@ -40,7 +40,6 @@ class LsvInitialClaimValidatorService
   def send_to_openai
     client = OpenAI::Client.new(
       access_token: openai_api_key,
-      organization_id: openai_organization_id,
       log_errors: true
     )
 

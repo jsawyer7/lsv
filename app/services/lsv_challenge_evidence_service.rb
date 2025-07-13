@@ -1,17 +1,16 @@
-class LsvChallengeClaimService
-  VALIDATOR_SOURCES = %w[Quran Tanakh Catholic Ethiopian Protestant Historical].freeze
-
+class LsvChallengeEvidenceService
   def initialize(challenge)
     @challenge = challenge
-    @claim = challenge.claim
+    @evidence = challenge.evidence
   end
 
   def process
     @challenge.update(status: 'processing')
     start_time = Time.now
-    Rails.logger.info "Challenge validation started at \\#{start_time} for Challenge ID: \\#{@challenge.id}"
+    Rails.logger.info "Evidence Challenge validation started at \\#{start_time} for Challenge ID: \\#{@challenge.id}"
 
-    threads = VALIDATOR_SOURCES.map do |source|
+    sources = evidence_sources
+    threads = sources.map do |source|
       Thread.new do
         t1 = Time.now
         Rails.logger.info "Starting OpenAI call for \\#{source} at \\#{t1}"
@@ -48,12 +47,12 @@ class LsvChallengeClaimService
     end
 
     @challenge.update(status: 'completed')
-    Rails.logger.info "Challenge validation finished at \\#{Time.now} (total duration: \\#{Time.now - start_time}s) for Challenge ID: \\#{@challenge.id}"
+    Rails.logger.info "Evidence Challenge validation finished at \\#{Time.now} (total duration: \\#{Time.now - start_time}s) for Challenge ID: \\#{@challenge.id}"
     true
   rescue => e
-    Rails.logger.error("Challenge validation failed: \\#{e.message}")
+    Rails.logger.error("Evidence Challenge validation failed: \\#{e.message}")
     @challenge.update(
-      ai_response: "Error processing challenge: \\#{e.message}",
+      ai_response: "Error processing evidence challenge: \\#{e.message}",
       status: 'failed'
     )
     false
@@ -61,8 +60,13 @@ class LsvChallengeClaimService
 
   private
 
+  def evidence_sources
+    # Evidence model stores sources as integer array, map to string names
+    @evidence.source_names.map { |s| s.to_s.capitalize }
+  end
+
   def load_prompt_template(source)
-    template_path = Rails.root.join('config', 'prompts', "#{source.downcase}_challenge_validator.yml")
+    template_path = Rails.root.join('config', 'prompts', "#{source.downcase}_evidence_challenge_validator.yml")
     YAML.load_file(template_path)
   end
 
@@ -71,7 +75,7 @@ class LsvChallengeClaimService
     prompt = template.transform_values do |content|
       next content unless content.is_a?(String)
       content
-        .gsub('{{claim_text}}', challenge.claim.content.to_s)
+        .gsub('{{evidence_text}}', challenge.evidence.content.to_s)
         .gsub('{{challenge_text}}', challenge.text.to_s)
         .gsub('{{reasoning}}', '{{REASONING_PLACEHOLDER}}')
         .gsub('{{result}}', '{{RESULT_PLACEHOLDER}}')
@@ -79,7 +83,7 @@ class LsvChallengeClaimService
     prompt
   end
 
-  def send_to_openai(challenge, source)
+    def send_to_openai(challenge, source)
     client = OpenAI::Client.new(
       access_token: openai_api_key,
       log_errors: true
@@ -103,7 +107,7 @@ class LsvChallengeClaimService
     json_str = raw_message.gsub(/```json|```/, '').strip
     JSON.parse(json_str)
   rescue JSON::ParserError => e
-    Rails.logger.error "Failed to parse OpenAI response JSON: #{e.message}"
+    Rails.logger.error "Failed to parse OpenAI response JSON: \\#{e.message}"
     {
       "valid" => false,
       "reasoning" => "The response was not in valid JSON format.",

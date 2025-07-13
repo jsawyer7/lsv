@@ -1,5 +1,6 @@
 class Challenge < ApplicationRecord
-  belongs_to :claim
+  belongs_to :claim, optional: true
+  belongs_to :evidence, optional: true
   belongs_to :user
   has_many :reasonings, as: :reasonable, dependent: :destroy
 

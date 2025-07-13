@@ -1,6 +1,6 @@
 Rails.application.routes.draw do
   ActiveAdmin.routes(self)
-  
+
   root to: "home#index"
 
   devise_for :users, controllers: {
@@ -10,8 +10,8 @@ Rails.application.routes.draw do
     omniauth_callbacks: 'users/omniauth_callbacks'
   }
 
-  devise_scope :user do  
-    get '/users/sign_out' => 'devise/sessions#destroy'     
+  devise_scope :user do
+    get '/users/sign_out' => 'devise/sessions#destroy'
   end
 
   get 'dashboard', to: 'dashboard#index'
@@ -24,6 +24,12 @@ Rails.application.routes.draw do
     member do
       get :reasoning_for_source
     end
+  end
+
+  post '/evidences/:evidence_id/challenges', to: 'challenges#create_for_evidence', as: :evidence_challenges
+
+  resources :evidences, only: [] do
+    resources :challenges, only: [:create]
   end
 
   post '/ai/claim_suggestion', to: 'ai#claim_suggestion'

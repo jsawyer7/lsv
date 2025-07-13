@@ -1,0 +1,111 @@
+<script>
+function setupEvidenceChallengeModal() {
+  console.log('Evidence challenge JS loaded');
+  // Open modal on button click
+  document.querySelectorAll('.btn-challenge-evidence').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var evidenceId = btn.getAttribute('data-evidence-id');
+      console.log('Challenge Evidence button clicked', evidenceId);
+      document.getElementById('evidence-challenge-evidence-id').value = evidenceId;
+      document.getElementById('evidence-challenge-text').value = '';
+      document.getElementById('evidence-challenge-error').style.display = 'none';
+      // Get evidence text from the evidence block
+      var evidenceBlock = document.getElementById('evidence-' + evidenceId);
+      var evidenceText = '';
+      if (evidenceBlock) {
+        // Find the first div that is not the sources div
+        var divs = evidenceBlock.querySelectorAll('div');
+        if (divs.length > 1) {
+          evidenceText = divs[1].innerText.trim();
+        }
+      }
+      document.getElementById('evidence-challenge-evidence-text').value = evidenceText;
+      var modal = document.getElementById('evidence-challenge-modal');
+      modal.style.display = 'flex';
+      document.body.classList.add('modal-open');
+    });
+  });
+
+  // Close modal
+  document.getElementById('close-evidence-challenge-modal').onclick = function() {
+    var modal = document.getElementById('evidence-challenge-modal');
+    modal.style.display = 'none';
+    document.body.classList.remove('modal-open');
+  };
+
+  var evidenceLoader = document.getElementById('evidence-challenge-loader');
+
+  // Submit evidence challenge form via AJAX
+  document.getElementById('evidence-challenge-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    var evidenceId = document.getElementById('evidence-challenge-evidence-id').value;
+    var text = document.getElementById('evidence-challenge-text').value.trim();
+    var errorDiv = document.getElementById('evidence-challenge-error');
+    errorDiv.style.display = 'none';
+    errorDiv.textContent = '';
+    if (!text) {
+      errorDiv.textContent = 'Please enter your challenge.';
+      errorDiv.style.display = 'block';
+      return;
+    }
+    // Show loader
+    if (evidenceLoader) {
+      evidenceLoader.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+      var modal = document.getElementById('evidence-challenge-modal');
+      if (modal) modal.style.display = 'none';
+    }
+    var formData = new FormData();
+    formData.append('challenge[text]', text);
+    var csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+    fetch('/evidences/' + evidenceId + '/challenges', {
+      method: 'POST',
+      headers: {
+        'X-CSRF-Token': csrfToken,
+        'Accept': 'application/json'
+      },
+      body: formData
+    })
+    .then(function(response) { return response.json(); })
+    .then(function(data) {
+      // Hide loader
+      if (evidenceLoader) {
+        evidenceLoader.style.display = 'none';
+        document.body.style.overflow = '';
+      }
+      if (data.status === 'success') {
+        // Update the evidence's challenge list
+        var list = document.getElementById('evidence-challenges-' + evidenceId);
+        if (list) list.innerHTML = data.html;
+        var modal = document.getElementById('evidence-challenge-modal');
+        modal.style.display = 'none';
+        document.body.classList.remove('modal-open');
+      } else {
+        errorDiv.textContent = (data.errors && data.errors.join(', ')) || 'Failed to submit challenge.';
+        errorDiv.style.display = 'block';
+      }
+    })
+    .catch(function() {
+      // Hide loader
+      if (evidenceLoader) {
+        evidenceLoader.style.display = 'none';
+        document.body.style.overflow = '';
+      }
+      errorDiv.textContent = 'An error occurred. Please try again.';
+      errorDiv.style.display = 'block';
+    });
+  });
+
+  // Close modal on outside click
+  window.onclick = function(event) {
+    var modal = document.getElementById('evidence-challenge-modal');
+    if (event.target == modal) {
+      modal.style.display = 'none';
+      document.body.classList.remove('modal-open');
+    }
+  };
+}
+
+document.addEventListener('DOMContentLoaded', setupEvidenceChallengeModal);
+document.addEventListener('turbo:load', setupEvidenceChallengeModal);
+</script> 

@@ -1,5 +1,6 @@
 class Evidence < ApplicationRecord
   belongs_to :claim
+  has_many :challenges, dependent: :destroy
 
   enum source: {
     quran: 0,

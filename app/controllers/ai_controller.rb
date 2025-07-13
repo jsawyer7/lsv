@@ -9,8 +9,7 @@ class AiController < ApplicationController
 
     prompt = build_prompt(claim, error)
     client = OpenAI::Client.new(
-      access_token: Rails.application.secrets.dig(:openai, :api_key),
-      organization_id: Rails.application.secrets.dig(:openai, :organization_id),
+      access_token: openai_api_key,
       log_errors: true
     )
 
@@ -59,8 +58,7 @@ class AiController < ApplicationController
     messages.unshift(system_prompt)
 
     client = OpenAI::Client.new(
-      access_token: Rails.application.secrets.dig(:openai, :api_key),
-      organization_id: Rails.application.secrets.dig(:openai, :organization_id),
+      access_token: openai_api_key,
       log_errors: true
     )
 
@@ -86,8 +84,7 @@ class AiController < ApplicationController
   def claim_guidance
     question = params[:question]
     client = OpenAI::Client.new(
-      access_token: Rails.application.secrets.dig(:openai, :api_key),
-      organization_id: Rails.application.secrets.dig(:openai, :organization_id),
+      access_token: openai_api_key,
       log_errors: true
     )
 
@@ -136,4 +133,8 @@ class AiController < ApplicationController
       user: "A user submitted the following claim, which failed validation.\n\nClaim: #{claim}\n\nValidation Error: #{error}\n\nPlease explain why this claim failed and provide clear, actionable suggestions to improve it so it will pass the validator. Respond conversationally as an AI assistant."
     }
   end
-end 
+
+  def openai_api_key
+    Rails.application.secrets.dig(:openai, :api_key)
+  end
+end

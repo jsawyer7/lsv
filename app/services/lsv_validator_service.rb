@@ -19,6 +19,7 @@ class LsvValidatorService
         t1 = Time.now
         Rails.logger.info "Starting OpenAI call for #{source} at #{t1}"
         begin
+          Rails.logger.info "About to call OpenAI for #{source} with API key: #{openai_api_key[0..10]}... and org: #{openai_organization_id}"
           response = Timeout.timeout(24) { send_to_openai(@claim, source) }
           t2 = Time.now
           Rails.logger.info "Finished OpenAI call for #{source} at #{t2} (duration: #{t2 - t1}s)"
@@ -76,17 +77,17 @@ class LsvValidatorService
 
   def build_prompt(claim, source)
     template = load_prompt_template(source)
-    
+
     # Group evidences by their sources and format them
     evidence_content = claim.evidences.map do |evidence|
       source_names = evidence.source_names.join(', ')
       "Sources: #{source_names}\n#{evidence.content}"
     end.join("\n\n---\n\n")
-    
+
     # Replace placeholders in the template
     prompt = template.transform_values do |content|
       next content unless content.is_a?(String)
-      
+
       content
         .gsub('{{claim}}', claim.content.to_s)
         .gsub('{{evidence}}', evidence_content)
@@ -97,12 +98,11 @@ class LsvValidatorService
     prompt
   end
 
-  def send_to_openai(claim, source)
-    client = OpenAI::Client.new(
-      access_token: openai_api_key,
-      organization_id: openai_organization_id,
-      log_errors: true
-    )
+    def send_to_openai(claim, source)
+      client = OpenAI::Client.new(
+        access_token: openai_api_key,
+        log_errors: true
+      )
 
     prompt = build_prompt(claim, source)
 

@@ -21,13 +21,19 @@
           </div>
           <div class="claim-details-evidence">
             <% @claim.evidences.each do |evidence| %>
-              <div class="claim-evidence-block">
+              <div class="claim-evidence-block" id="evidence-<%= evidence.id %>">
                 <div><strong>Sources:</strong> 
                   <% evidence.source_names.each do |source_name| %>
                     <span class="source-badge"><%= source_name.humanize %></span>
                   <% end %>
                 </div>
                 <div><%= evidence.content %></div>
+                <% if user_signed_in? %>
+                  <button class="btn btn-challenge-evidence" data-evidence-id="<%= evidence.id %>">Challenge Evidence</button>
+                <% end %>
+                <div class="evidence-challenges-list" id="evidence-challenges-<%= evidence.id %>">
+                  <%= render partial: 'challenges/challenge', collection: evidence.challenges.order(created_at: :desc) %>
+                </div>
               </div>
             <% end %>
           </div>
@@ -116,4 +122,31 @@
   </div>
 </div>
 
+<div class="processing-overlay" id="evidence-challenge-loader" style="display:none;">
+  <div class="loader-container">
+    <div class="loader"></div>
+    <p class="loader-text">Submitting your challenge...</p>
+  </div>
+</div>
+
+<%# Modal for evidence challenge %>
+<div id="evidence-challenge-modal" class="modal" style="display:none;">
+  <div class="modal-content">
+    <span class="close" id="close-evidence-challenge-modal">&times;</span>
+    <h3>Challenge Evidence</h3>
+    <form id="evidence-challenge-form">
+      <label for="evidence-challenge-evidence-text" class="evidence-modal-label">Evidence</label>
+      <textarea id="evidence-challenge-evidence-text" class="form-control evidence-modal-evidence-text" readonly style="min-height:65px;"></textarea>
+      <label for="evidence-challenge-text" class="evidence-modal-label">Challenge</label>
+      <textarea name="challenge[text]" id="evidence-challenge-text" rows="4" placeholder="Enter your challenge here..." class="form-control"></textarea>
+      <input type="hidden" id="evidence-challenge-evidence-id" name="evidence_id" />
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Submit Challenge</button>
+      </div>
+      <div class="error-message" id="evidence-challenge-error" style="color:#ef4444;display:none;"></div>
+    </form>
+  </div>
+</div>
+
 <%= render 'shared/claim_detail_js' %>
+<%= render 'shared/evidence_challenge_js' %>
