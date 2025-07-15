@@ -11,7 +11,7 @@
       <span class="nav-text">Feed</span>
     <% end %>
     
-    <%= link_to facts_path, class: "nav-item #{'active' if request.path.start_with?('/facts')}" do %>
+    <%= link_to facts_path, class: "nav-item #{'active' if request.path.start_with?('/facts') || (controller_name == 'claims' && action_name == 'show' && defined?(@claim) && @claim.fact? && @claim.user != current_user)}" do %>
       <%= image_tag 'fact-icon.png', alt: '', class: 'nav-icon', size: '22x22' %>
       <span class="nav-text">Facts</span>
     <% end %>
@@ -20,7 +20,7 @@
       <span class="nav-text">Theories</span>
     <% end %>
 
-    <%= link_to claims_path, class: "nav-item #{'active' if request.path.start_with?('/claims')}" do %>
+    <%= link_to claims_path, class: "nav-item #{'active' if request.path.start_with?('/claims') && !(controller_name == 'claims' && action_name == 'show' && defined?(@claim) && @claim.fact? && @claim.user != current_user)}" do %>
       <%= image_tag 'my-claims-icon.png', alt: '', class: 'nav-icon', size: '22x22' %>
       <span class="nav-text">My Claims</span>
     <% end %>

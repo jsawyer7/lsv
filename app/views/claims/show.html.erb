@@ -1,7 +1,7 @@
 <div class="claim-main">
   <div class="claim-center">
     <div class="claim-header">
-      <h2>Facts Details</h2>
+      <h2><%= @claim.fact? ? 'Fact Details' : 'Claim Details' %></h2>
     </div>
     <div class="claim-details-list">
       <div class="claim-details-card">
@@ -62,7 +62,7 @@
           </div>
           <div class="peer-insight-text">N/A</div>
         </div>
-        <% if @claim.fact? && user_signed_in? %>
+        <% if @claim.fact? && user_signed_in? && @claim.user == current_user %>
           <div class="claim-section-divider"></div>
           <div class="claim-publish-section">
             <div class="claim-section-heading">
