@@ -5,7 +5,7 @@ class FactsController < ApplicationController
     @filters = %w[all my_facts]
     @current_filter = params[:filter] || 'all'
     @search = params[:search]
-    @facts = Claim.where.not(state: 'draft')
+    @facts = Claim.published_facts.includes(:user)
     @facts = @facts.where('content ILIKE ?', "%#{@search}%") if @search.present?
     @facts = @facts.order(created_at: :desc).limit(10)
   end
@@ -21,4 +21,4 @@ class FactsController < ApplicationController
       has_more: facts.size == 10
     }
   end
-end 
+end
