@@ -1,0 +1,79 @@
+<%= javascript_tag do %>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Handle publish/unpublish fact button
+    document.querySelectorAll('.btn-publish-fact, .btn-unpublish-fact').forEach(function(btn) {
+      btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        const claimId = this.getAttribute('data-claim-id');
+        const button = this;
+        const isPublishing = button.classList.contains('btn-publish-fact');
+        const endpoint = isPublishing ? 'publish_fact' : 'unpublish_fact';
+        
+        // Disable button and show loading state
+        button.disabled = true;
+        button.innerHTML = '<i class="fa fa-spinner fa-spin"></i> ' + (isPublishing ? 'Publishing...' : 'Unpublishing...');
+        
+        fetch(`/claims/${claimId}/${endpoint}`, {
+          method: 'POST',
+          headers: {
+            'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content,
+            'Accept': 'application/json'
+          }
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.status === 'success') {
+            // Update button to show opposite state
+            if (isPublishing) {
+              // Change to unpublish button
+              button.classList.remove('btn-publish-fact');
+              button.classList.add('btn-unpublish-fact');
+              button.innerHTML = '<i class="fa fa-check"></i> Published!';
+              button.style.background = '#059669';
+              
+              // After delay, change to unpublish button
+              setTimeout(() => {
+                button.innerHTML = '<i class="fa fa-eye-slash"></i> Unpublish Fact';
+                button.style.background = '#dc2626';
+                button.disabled = false;
+              }, 2000);
+            } else {
+              // Change to publish button
+              button.classList.remove('btn-unpublish-fact');
+              button.classList.add('btn-publish-fact');
+              button.innerHTML = '<i class="fa fa-check"></i> Unpublished!';
+              button.style.background = '#dc2626';
+              
+              // After delay, change to publish button
+              setTimeout(() => {
+                button.innerHTML = '<i class="fa fa-globe"></i> Publish Fact';
+                button.style.background = '#3b82f6';
+                button.disabled = false;
+              }, 2000);
+            }
+          } else {
+            // Show error and re-enable button
+            button.disabled = false;
+            if (isPublishing) {
+              button.innerHTML = '<i class="fa fa-globe"></i> Publish Fact';
+            } else {
+              button.innerHTML = '<i class="fa fa-eye-slash"></i> Unpublish Fact';
+            }
+            alert(data.message || 'Failed to ' + (isPublishing ? 'publish' : 'unpublish') + ' fact.');
+          }
+        })
+        .catch(error => {
+          // Show error and re-enable button
+          button.disabled = false;
+          if (isPublishing) {
+            button.innerHTML = '<i class="fa fa-globe"></i> Publish Fact';
+          } else {
+            button.innerHTML = '<i class="fa fa-eye-slash"></i> Unpublish Fact';
+          }
+          alert('An error occurred while ' + (isPublishing ? 'publishing' : 'unpublishing') + ' the fact.');
+        });
+      });
+    });
+  });
+<% end %> 

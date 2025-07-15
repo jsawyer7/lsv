@@ -23,6 +23,8 @@ Rails.application.routes.draw do
     post :validate_evidence, on: :collection
     member do
       get :reasoning_for_source
+      post :publish_fact
+      post :unpublish_fact
     end
   end
 

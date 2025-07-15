@@ -15,6 +15,8 @@ class Claim < ApplicationRecord
   scope :drafts, -> { where(state: 'draft') }
   scope :ai_validated, -> { where(state: 'ai_validated') }
   scope :verified, -> { where(state: 'verified') }
+  scope :published_facts, -> { where(fact: true, published: true) }
+  scope :facts, -> { where(fact: true) }
 
   def reasoning_for(source)
     reasonings.find_by(source: source)&.response

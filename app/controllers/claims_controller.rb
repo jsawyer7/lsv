@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class ClaimsController < ApplicationController
-  before_action :set_claim, only: %i[show edit update destroy]
+  before_action :set_claim, only: %i[show edit update destroy publish_fact unpublish_fact]
   before_action :authenticate_user!
   layout 'dashboard'
 
@@ -37,7 +37,7 @@ class ClaimsController < ApplicationController
 
   def validate_claim
     result = LsvInitialClaimValidatorService.new(params[:claim][:content]).run_validation!
-    
+
     if result[:valid]
       cleaned_claim = result[:reason].presence || params[:claim][:content]
       render json: { valid: true, cleaned_claim: cleaned_claim }
@@ -106,13 +106,13 @@ class ClaimsController < ApplicationController
       if @claim.save
         evidences.each do |evidence_hash|
           next if evidence_hash[:evidence].blank?
-          
+
           # Handle multiple sources
           sources = Array(evidence_hash[:sources]).compact
           sources = ['historical'] if sources.empty?
-          
+
           evidence = @claim.evidences.create!(content: evidence_hash[:evidence])
-          
+
           # Add all sources to the evidence
           sources.each do |source_name|
             source_enum = SOURCE_ENUM_MAP[source_name.to_s.strip]
@@ -129,13 +129,13 @@ class ClaimsController < ApplicationController
       if @claim.save
         evidences.each do |evidence_hash|
           next if evidence_hash[:evidence].blank?
-          
+
           # Handle multiple sources
           sources = Array(evidence_hash[:sources]).compact
           sources = ['historical'] if sources.empty?
-          
+
           evidence = @claim.evidences.create!(content: evidence_hash[:evidence])
-          
+
           # Add all sources to the evidence
           sources.each do |source_name|
             source_enum = SOURCE_ENUM_MAP[source_name.to_s.strip]
@@ -200,13 +200,13 @@ class ClaimsController < ApplicationController
         @claim.evidences.destroy_all
         evidences.each do |evidence_hash|
           next if evidence_hash[:evidence].blank?
-          
+
           # Handle multiple sources
           sources = Array(evidence_hash[:sources]).compact
           sources = ['historical'] if sources.empty?
-          
+
           evidence = @claim.evidences.create!(content: evidence_hash[:evidence])
-          
+
           # Add all sources to the evidence
           sources.each do |source_name|
             source_enum = SOURCE_ENUM_MAP[source_name.to_s.strip]
@@ -223,13 +223,13 @@ class ClaimsController < ApplicationController
         @claim.evidences.destroy_all
         evidences.each do |evidence_hash|
           next if evidence_hash[:evidence].blank?
-          
+
           # Handle multiple sources
           sources = Array(evidence_hash[:sources]).compact
           sources = ['historical'] if sources.empty?
-          
+
           evidence = @claim.evidences.create!(content: evidence_hash[:evidence])
-          
+
           # Add all sources to the evidence
           sources.each do |source_name|
             source_enum = SOURCE_ENUM_MAP[source_name.to_s.strip]
@@ -248,7 +248,37 @@ class ClaimsController < ApplicationController
 
   def destroy
     @claim.destroy
-    redirect_to claims_path(filter: 'drafts'), notice: 'Claim deleted successfully.'
+    redirect_to claims_path, notice: 'Claim was successfully deleted.'
+  end
+
+  def publish_fact
+    if @claim.fact?
+      @claim.update(published: true)
+      respond_to do |format|
+        format.html { redirect_to @claim, notice: 'Fact published successfully!' }
+        format.json { render json: { status: 'success', message: 'Fact published successfully!' } }
+      end
+    else
+      respond_to do |format|
+        format.html { redirect_to @claim, alert: 'Only facts can be published.' }
+        format.json { render json: { status: 'error', message: 'Only facts can be published.' }, status: :unprocessable_entity }
+      end
+    end
+  end
+
+  def unpublish_fact
+    if @claim.fact?
+      @claim.update(published: false)
+      respond_to do |format|
+        format.html { redirect_to @claim, notice: 'Fact unpublished successfully!' }
+        format.json { render json: { status: 'success', message: 'Fact unpublished successfully!' } }
+      end
+    else
+      respond_to do |format|
+        format.html { redirect_to @claim, alert: 'Only facts can be unpublished.' }
+        format.json { render json: { status: 'error', message: 'Only facts can be unpublished.' }, status: :unprocessable_entity }
+      end
+    end
   end
 
   def reasoning_for_source
@@ -278,7 +308,7 @@ class ClaimsController < ApplicationController
 
   def claim_params
     parsed_params = params.require(:claim).permit(:content, :primary_sources, :secondary_sources, :draft, :evidences)
-    
+
     if parsed_params[:primary_sources].is_a?(String)
       parsed_params[:primary_sources] = JSON.parse(parsed_params[:primary_sources]) rescue []
     end
@@ -286,7 +316,7 @@ class ClaimsController < ApplicationController
     if parsed_params[:secondary_sources].is_a?(String)
       parsed_params[:secondary_sources] = JSON.parse(parsed_params[:secondary_sources]) rescue []
     end
-    
+
     parsed_params
   end
 end

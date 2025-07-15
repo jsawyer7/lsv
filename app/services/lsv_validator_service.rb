@@ -66,7 +66,7 @@ class LsvValidatorService
     if primary_reasonings.any? { |r| r.result == '❌ False' }
       claim.update(result: '❌ False', state: 'ai_validated')
     elsif primary_reasonings.all? { |r| r.result == '✅ True' } && primary_reasonings.any?
-      claim.update(result: '✅ True', state: 'ai_validated')
+      claim.update(result: '✅ True', state: 'ai_validated', fact: true)
     end
   end
 

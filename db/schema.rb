@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2025_07_13_000619) do
+ActiveRecord::Schema[7.0].define(version: 2025_07_15_210424) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -68,6 +68,8 @@ ActiveRecord::Schema[7.0].define(version: 2025_07_13_000619) do
     t.boolean "publish", default: false, null: false
     t.string "primary_sources", default: [], array: true
     t.string "secondary_sources", default: [], array: true
+    t.boolean "fact", default: false
+    t.boolean "published", default: false
     t.index ["user_id"], name: "index_claims_on_user_id"
   end
 
