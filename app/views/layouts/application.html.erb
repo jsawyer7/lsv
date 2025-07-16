@@ -6,6 +6,10 @@
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
 
+    <%# Apple Sign In meta tags %>
+    <meta name="apple-client-id" content="<%= ENV['APPLE_CLIENT_ID'] %>">
+    <meta name="apple-signin-redirect-uri" content="<%= request.base_url %>/users/auth/apple/callback">
+
     <%# SF Pro Font %>
     <link rel="stylesheet" href="https://fonts.cdnfonts.com/css/sf-pro-display">
     
@@ -13,6 +17,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
     <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
+
+    <%# Apple Sign In JavaScript SDK %>
+    <script type="text/javascript" src="https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js"></script>
 
     <%# Force reload styles in development %>
     <% if Rails.env.development? %>

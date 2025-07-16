@@ -1,0 +1,96 @@
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    initializeAppleSignIn();
+  });
+
+  document.addEventListener('turbo:load', function() {
+    initializeAppleSignIn();
+  });
+
+  function initializeAppleSignIn() {
+    // Initialize Apple Sign In if the SDK is available
+    if (typeof AppleID !== 'undefined') {
+      AppleID.auth.init({
+        clientId: document.querySelector('meta[name="apple-client-id"]')?.content || '',
+        scope: 'email name',
+        redirectURI: window.location.origin + '/users/auth/apple/callback',
+        state: 'origin:web',
+        usePopup: false
+      });
+    }
+
+    // Handle Apple Sign In button clicks
+    const appleSignInButtons = document.querySelectorAll('.apple-login');
+    appleSignInButtons.forEach(button => {
+      // Remove existing event listeners to prevent duplicates
+      button.removeEventListener('click', handleAppleSignIn);
+      button.addEventListener('click', handleAppleSignIn);
+    });
+  }
+
+  function handleAppleSignIn(e) {
+    e.preventDefault();
+    
+    if (typeof AppleID !== 'undefined') {
+      AppleID.auth.signIn().then(function(response) {
+        // Send the authorization code to the server
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/users/auth/apple/callback';
+        
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+        if (csrfToken) {
+          const csrfInput = document.createElement('input');
+          csrfInput.type = 'hidden';
+          csrfInput.name = 'authenticity_token';
+          csrfInput.value = csrfToken;
+          form.appendChild(csrfInput);
+        }
+
+        const codeInput = document.createElement('input');
+        codeInput.type = 'hidden';
+        codeInput.name = 'code';
+        codeInput.value = response.authorization.code;
+        form.appendChild(codeInput);
+
+        const stateInput = document.createElement('input');
+        stateInput.type = 'hidden';
+        stateInput.name = 'state';
+        stateInput.value = response.authorization.state;
+        form.appendChild(stateInput);
+
+        const userInput = document.createElement('input');
+        userInput.type = 'hidden';
+        userInput.name = 'user';
+        userInput.value = JSON.stringify(response.user);
+        form.appendChild(userInput);
+
+        document.body.appendChild(form);
+        form.submit();
+      }).catch(function(error) {
+        console.error('Apple Sign In Error:', error);
+        showAppleSignInError('Apple Sign In failed. Please try again.');
+      });
+    } else {
+      // Fallback to redirect method
+      window.location.href = '/users/auth/apple';
+    }
+  }
+
+  function showAppleSignInError(message) {
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'alert alert-danger';
+    errorDiv.textContent = message;
+    
+    const container = document.querySelector('.login-form-container') || 
+                     document.querySelector('.devise-sessions-new') || 
+                     document.querySelector('.devise-registrations-new') ||
+                     document.body;
+    
+    container.insertBefore(errorDiv, container.firstChild);
+    
+    setTimeout(() => {
+      errorDiv.remove();
+    }, 5000);
+  }
+</script> 

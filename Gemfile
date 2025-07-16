@@ -62,6 +62,9 @@ gem 'tzinfo-data', platforms: [:mingw, :mswin, :x64_mingw, :jruby]
 gem 'omniauth-google-oauth2'
 gem 'omniauth-rails_csrf_protection'
 
+# Apple OAuth2
+gem 'omniauth-apple'
+
 # Admin Interface
 gem 'activeadmin'
 gem 'sassc-rails'
