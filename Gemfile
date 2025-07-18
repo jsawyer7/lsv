@@ -61,6 +61,9 @@ gem 'omniauth-rails_csrf_protection'
 # Apple OAuth2
 gem 'omniauth-apple'
 
+# Facebook OAuth2
+gem 'omniauth-facebook'
+
 # Admin Interface
 gem 'activeadmin'
 gem 'sassc-rails'

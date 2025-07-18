@@ -10,6 +10,13 @@
     <meta name="apple-client-id" content="<%= ENV['APPLE_CLIENT_ID'] %>">
     <meta name="apple-signin-redirect-uri" content="<%= request.base_url %>/users/auth/apple/callback">
 
+    <%# Facebook Sign In meta tags %>
+    <meta name="facebook-app-id" content="<%= ENV['FACEBOOK_APP_ID'] %>">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="VeriFaith">
+    <meta property="og:description" content="Truth You Can Test">
+    <meta property="og:url" content="<%= request.original_url %>">
+
     <%# SF Pro Font %>
     <link rel="stylesheet" href="https://fonts.cdnfonts.com/css/sf-pro-display">
     
