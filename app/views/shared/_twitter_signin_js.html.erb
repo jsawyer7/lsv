@@ -1,0 +1,43 @@
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    initializeTwitterSignIn();
+  });
+
+  document.addEventListener('turbo:load', function() {
+    initializeTwitterSignIn();
+  });
+
+  function initializeTwitterSignIn() {
+    // Handle X (Twitter) Sign In button clicks
+    const twitterSignInButtons = document.querySelectorAll('.twitter-login');
+    twitterSignInButtons.forEach(button => {
+      // Remove existing event listeners to prevent duplicates
+      button.removeEventListener('click', handleTwitterSignIn);
+      button.addEventListener('click', handleTwitterSignIn);
+    });
+  }
+
+  function handleTwitterSignIn(e) {
+    e.preventDefault();
+    
+    // Redirect to Twitter OAuth
+    window.location.href = '/users/auth/twitter';
+  }
+
+  function showTwitterSignInError(message) {
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'alert alert-danger';
+    errorDiv.textContent = message;
+
+    const container = document.querySelector('.login-form-container') ||
+                     document.querySelector('.devise-sessions-new') ||
+                     document.querySelector('.devise-registrations-new') ||
+                     document.body;
+
+    container.insertBefore(errorDiv, container.firstChild);
+
+    setTimeout(() => {
+      errorDiv.remove();
+    }, 5000);
+  }
+</script> 

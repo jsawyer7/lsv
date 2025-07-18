@@ -284,14 +284,30 @@ Devise.setup do |config|
       callback_path: '/users/auth/google_oauth2/callback'
     }
 
-  # Add X (Twitter) OAuth configuration
-  config.omniauth :twitter,
-    ENV['TWITTER_API_KEY'],
-    ENV['TWITTER_API_SECRET'],
+  # Add Apple OAuth2 configuration
+  config.omniauth :apple,
+    ENV['APPLE_CLIENT_ID'],
+    ENV['APPLE_CLIENT_SECRET'],
     {
-      callback_path: '/users/auth/twitter/callback',
-      secure_image_url: true,
-      image_size: 'normal'
+      scope: 'email name',
+      response_mode: 'form_post',
+      response_type: 'code',
+      provider_ignores_state: true,
+      origin_param: 'return_to',
+      callback_path: '/users/auth/apple/callback'
+    }
+
+  # Add Facebook OAuth2 configuration
+  config.omniauth :facebook,
+    ENV['FACEBOOK_APP_ID'],
+    ENV['FACEBOOK_APP_SECRET'],
+    {
+      scope: 'email,public_profile',
+      info_fields: 'name,email',
+      image_size: 'large',
+      provider_ignores_state: true,
+      origin_param: 'return_to',
+      callback_path: '/users/auth/facebook/callback'
     }
 
   # Configure OmniAuth to accept both GET and POST requests

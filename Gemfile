@@ -27,10 +27,6 @@ gem 'jbuilder', '~> 2.7'
 # Reduces boot times through caching; required in config/boot.rb
 gem 'bootsnap', '>= 1.4.2', require: false
 
-# Vector similarity search
-gem 'pgvector'
-gem 'neighbor'
-
 group :development, :test do
   # Call 'byebug' anywhere in the code to stop execution and get a debugger console
   gem 'byebug', platforms: [:mri, :mingw, :x64_mingw]
@@ -64,6 +60,11 @@ gem 'omniauth-rails_csrf_protection'
 
 # X (Twitter) OAuth
 gem 'omniauth-twitter'
+# Apple OAuth2
+gem 'omniauth-apple'
+
+# Facebook OAuth2
+gem 'omniauth-facebook'
 
 # Admin Interface
 gem 'activeadmin'
