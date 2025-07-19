@@ -6,90 +6,11 @@
   document.addEventListener('turbo:load', function() {
     initializeFacebookSignIn();
   });
-
+  
   function initializeFacebookSignIn() {
-    // Initialize Facebook SDK if not already loaded
-    if (typeof FB === 'undefined') {
-      loadFacebookSDK();
-    } else {
-      setupFacebookSignIn();
-    }
-  }
-
-  function loadFacebookSDK() {
-    // Load Facebook SDK
-    window.fbAsyncInit = function() {
-      FB.init({
-        appId: document.querySelector('meta[name="facebook-app-id"]')?.content || '',
-        cookie: true,
-        xfbml: true,
-        version: 'v18.0'
-      });
-      setupFacebookSignIn();
-    };
-
-    // Load Facebook SDK script
-    (function(d, s, id) {
-      var js, fjs = d.getElementsByTagName(s)[0];
-      if (d.getElementById(id)) return;
-      js = d.createElement(s); js.id = id;
-      js.src = "https://connect.facebook.net/en_US/sdk.js";
-      fjs.parentNode.insertBefore(js, fjs);
-    }(document, 'script', 'facebook-jssdk'));
-  }
-
-  function setupFacebookSignIn() {
-    // Handle Facebook Sign In button clicks
-    const facebookSignInButtons = document.querySelectorAll('.facebook-login');
-    facebookSignInButtons.forEach(button => {
-      // Remove existing event listeners to prevent duplicates
-      button.removeEventListener('click', handleFacebookSignIn);
-      button.addEventListener('click', handleFacebookSignIn);
-    });
-  }
-
-  function handleFacebookSignIn(e) {
-    e.preventDefault();
-    
-    if (typeof FB !== 'undefined') {
-      FB.login(function(response) {
-        if (response.authResponse) {
-          // User authorized the app
-          const accessToken = response.authResponse.accessToken;
-          
-          // Send the access token to the server
-          const form = document.createElement('form');
-          form.method = 'POST';
-          form.action = '/users/auth/facebook/callback';
-          
-          const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
-          if (csrfToken) {
-            const csrfInput = document.createElement('input');
-            csrfInput.type = 'hidden';
-            csrfInput.name = 'authenticity_token';
-            csrfInput.value = csrfToken;
-            form.appendChild(csrfInput);
-          }
-
-          const tokenInput = document.createElement('input');
-          tokenInput.type = 'hidden';
-          tokenInput.name = 'access_token';
-          tokenInput.value = accessToken;
-          form.appendChild(tokenInput);
-
-          document.body.appendChild(form);
-          form.submit();
-        } else {
-          // User cancelled the login
-          showFacebookSignInError('Facebook Sign In was cancelled.');
-        }
-      }, {
-        scope: 'email,public_profile'
-      });
-    } else {
-      // Fallback to redirect method
-      window.location.href = '/users/auth/facebook';
-    }
+    // The button_to helper creates a form that should work with OAuth automatically
+    // We don't need to override the default behavior
+    console.log('Facebook Sign In initialized');
   }
 
   function showFacebookSignInError(message) {
