@@ -6,9 +6,7 @@
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
 
-    <%# Apple Sign In meta tags %>
-    <meta name="apple-client-id" content="<%= ENV['APPLE_CLIENT_ID'] %>">
-    <meta name="apple-signin-redirect-uri" content="<%= request.base_url %>/users/auth/apple/callback">
+
 
     <%# Facebook Sign In meta tags %>
     <meta name="facebook-app-id" content="<%= ENV['FACEBOOK_APP_ID'] %>">
@@ -25,8 +23,7 @@
 
     <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
 
-    <%# Apple Sign In JavaScript SDK %>
-    <script type="text/javascript" src="https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js"></script>
+
 
     <%# Force reload styles in development %>
     <% if Rails.env.development? %>

@@ -280,31 +280,47 @@
   }
 }
 
-.twitter-login {
+
+
+.facebook-login {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.75rem;
   width: 100%;
   padding: 0.875rem;
-  background: white;
-  border: 1px solid #e5e7eb;
+  background: #1877f2;
+  border: 1px solid #1877f2;
   border-radius: 8px;
-  color: #1d2430;
+  color: #fff;
   font-size: 1rem;
   font-weight: 500;
   text-decoration: none;
-  transition: background-color 0.2s;
+  transition: all 0.2s;
   cursor: pointer;
-  margin-top: 0.75rem;
+  margin-top: 0.5rem;
 
   &:hover {
-    background: #f9fafb;
+    background: #166fe5;
+    border-color: #166fe5;
+    color: #fff;
+    text-decoration: none;
   }
 
-  .twitter-icon {
+  &:active {
+    background: #1877f2;
+    transform: translateY(1px);
+  }
+
+  &:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(24, 119, 242, 0.1);
+  }
+
+  .facebook-icon {
     width: 20px;
     height: 20px;
+    flex-shrink: 0;
   }
 }
 

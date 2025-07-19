@@ -58,10 +58,6 @@ gem 'tzinfo-data', platforms: [:mingw, :mswin, :x64_mingw, :jruby]
 gem 'omniauth-google-oauth2'
 gem 'omniauth-rails_csrf_protection'
 
-# X (Twitter) OAuth
-gem 'omniauth-twitter'
-# Apple OAuth2
-gem 'omniauth-apple'
 
 # Facebook OAuth2
 gem 'omniauth-facebook'
