@@ -1,0 +1,43 @@
+<div id="duplicate-claims-modal" class="modal" style="display: none;">
+  <div class="modal-content duplicate-claims-modal">
+    <span class="close" id="close-duplicate-claims-modal">&times;</span>
+    <h3 id="duplicate-modal-title">Similar Claims Found</h3>
+    <p class="duplicate-warning">
+      <i class="fa fa-exclamation-triangle" style="color: #ef4444;"></i>
+      We found similar claims that already exist. Please choose a different claim or review the existing ones.
+    </p>
+    
+    <div id="exact-matches-section" style="display: none;">
+      <h4 class="duplicate-section-title">
+        <i class="fa fa-exclamation-triangle" style="color: #ef4444;"></i>
+        Exact Matches
+      </h4>
+      <div id="exact-matches-list" class="duplicate-claims-list"></div>
+    </div>
+    
+    <div id="strong-matches-section" style="display: none;">
+      <h4 class="duplicate-section-title">
+        <i class="fa fa-exclamation-circle" style="color: #f59e0b;"></i>
+        Very Similar Claims
+      </h4>
+      <div id="strong-matches-list" class="duplicate-claims-list"></div>
+    </div>
+    
+    <div id="possible-matches-section" style="display: none;">
+      <h4 class="duplicate-section-title">
+        <i class="fa fa-info-circle" style="color: #3b82f6;"></i>
+        Related Claims
+      </h4>
+      <div id="possible-matches-list" class="duplicate-claims-list"></div>
+    </div>
+    
+    <div class="duplicate-actions">
+      <button type="button" id="continue-with-another-claim" class="btn btn-primary">
+        Continue with Another Claim
+      </button>
+      <button type="button" id="cancel-claim" class="btn btn-secondary">
+        Cancel
+      </button>
+    </div>
+  </div>
+</div> 

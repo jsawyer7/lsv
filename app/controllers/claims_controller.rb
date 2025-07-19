@@ -40,7 +40,16 @@ class ClaimsController < ApplicationController
 
     if result[:valid]
       cleaned_claim = result[:reason].presence || params[:claim][:content]
-      render json: { valid: true, cleaned_claim: cleaned_claim }
+
+      # Check for duplicates
+      detector = DuplicateClaimDetectorService.new(cleaned_claim)
+      duplicates = detector.detect_duplicates
+
+      render json: {
+        valid: true,
+        cleaned_claim: cleaned_claim,
+        duplicates: duplicates
+      }
     else
       render json: { valid: false, error: result[:reason] }, status: :unprocessable_entity
     end
@@ -251,9 +260,29 @@ class ClaimsController < ApplicationController
     redirect_to claims_path, notice: 'Claim was successfully deleted.'
   end
 
-  def publish_fact
+    def publish_fact
     if @claim.fact?
       @claim.update(published: true)
+
+      # Generate embedding for the published fact
+      begin
+        embedding_service = ClaimEmbeddingService.new(@claim.content)
+        embedding = embedding_service.generate_embedding
+        normalized_hash = embedding_service.generate_hash
+
+        if embedding.present? && normalized_hash.present?
+          @claim.update_columns(
+            content_embedding: embedding,
+            normalized_content_hash: normalized_hash
+          )
+          Rails.logger.info "Generated embedding for published fact #{@claim.id}"
+        else
+          Rails.logger.error "Failed to generate embedding for published fact #{@claim.id}"
+        end
+      rescue => e
+        Rails.logger.error "Error generating embedding for published fact #{@claim.id}: #{e.message}"
+      end
+
       respond_to do |format|
         format.html { redirect_to @claim, notice: 'Fact published successfully!' }
         format.json { render json: { status: 'success', message: 'Fact published successfully!' } }
@@ -269,6 +298,10 @@ class ClaimsController < ApplicationController
   def unpublish_fact
     if @claim.fact?
       @claim.update(published: false)
+
+      # Remove embeddings when fact is unpublished
+      @claim.update_columns(content_embedding: nil, normalized_content_hash: nil)
+
       respond_to do |format|
         format.html { redirect_to @claim, notice: 'Fact unpublished successfully!' }
         format.json { render json: { status: 'success', message: 'Fact unpublished successfully!' } }

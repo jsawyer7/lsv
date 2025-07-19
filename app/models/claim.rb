@@ -6,6 +6,8 @@ class Claim < ApplicationRecord
 
   validates :content, presence: true
 
+  # Embedding generation will be handled in the publish action
+
   enum state: {
     draft: 'draft',
     ai_validated: 'ai_validated',
@@ -17,6 +19,8 @@ class Claim < ApplicationRecord
   scope :verified, -> { where(state: 'verified') }
   scope :published_facts, -> { where(fact: true, published: true) }
   scope :facts, -> { where(fact: true) }
+  scope :with_embeddings, -> { where.not(content_embedding: nil) }
+  scope :published_facts_without_embeddings, -> { where(published: true, fact: true, content_embedding: nil).where.not(content: [nil, '']) }
 
   def reasoning_for(source)
     reasonings.find_by(source: source)&.response
@@ -36,5 +40,24 @@ class Claim < ApplicationRecord
   # Define ransackable associations
   def self.ransackable_associations(auth_object = nil)
     %w[user reasonings evidences]
+  end
+
+  private
+
+    def generate_embedding
+    return unless content.present?
+
+    embedding_service = ClaimEmbeddingService.new(content)
+    embedding = embedding_service.generate_embedding
+    normalized_hash = embedding_service.generate_hash
+
+    if embedding.present? && normalized_hash.present?
+      update_columns(
+        content_embedding: embedding,
+        normalized_content_hash: normalized_hash
+      )
+    end
+  rescue => e
+    Rails.logger.error "Failed to generate embedding for claim #{id}: #{e.message}"
   end
 end

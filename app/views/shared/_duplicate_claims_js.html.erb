@@ -1,0 +1,196 @@
+<%= javascript_tag do %>
+  let duplicateClaimsData = null;
+
+  function handleDuplicateDetection(data) {
+    if (data.duplicates && data.duplicates.has_duplicates) {
+      duplicateClaimsData = data.duplicates;
+      showDuplicateModal(data.duplicates);
+      return true; // Return true to indicate duplicates were found
+    }
+    return false; // Return false if no duplicates
+  }
+
+  function showDuplicateModal(duplicates) {
+    const modal = document.getElementById('duplicate-claims-modal');
+    const title = document.getElementById('duplicate-modal-title');
+    
+    // Clear previous content
+    document.getElementById('exact-matches-list').innerHTML = '';
+    document.getElementById('strong-matches-list').innerHTML = '';
+    document.getElementById('possible-matches-list').innerHTML = '';
+    
+    // Hide all sections initially
+    document.getElementById('exact-matches-section').style.display = 'none';
+    document.getElementById('strong-matches-section').style.display = 'none';
+    document.getElementById('possible-matches-section').style.display = 'none';
+    
+    let hasAnyMatches = false;
+    
+    // Handle exact matches
+    if (duplicates.exact_matches && duplicates.exact_matches.length > 0) {
+      document.getElementById('exact-matches-section').style.display = 'block';
+      const exactList = document.getElementById('exact-matches-list');
+      
+      duplicates.exact_matches.forEach(claim => {
+        const claimElement = createDuplicateClaimElement(claim, 'exact');
+        exactList.appendChild(claimElement);
+      });
+      
+      title.textContent = 'Exact Match Found';
+      hasAnyMatches = true;
+    }
+    
+    // Handle strong matches
+    if (duplicates.strong_matches && duplicates.strong_matches.length > 0) {
+      document.getElementById('strong-matches-section').style.display = 'block';
+      const strongList = document.getElementById('strong-matches-list');
+      
+      duplicates.strong_matches.forEach(match => {
+        const claimElement = createDuplicateClaimElement(match.claim, 'strong', match.similarity_percentage);
+        strongList.appendChild(claimElement);
+      });
+      
+      if (!hasAnyMatches) {
+        title.textContent = 'Very Similar Claims Found';
+        hasAnyMatches = true;
+      }
+    }
+    
+    // Handle possible matches
+    if (duplicates.possible_matches && duplicates.possible_matches.length > 0) {
+      document.getElementById('possible-matches-section').style.display = 'block';
+      const possibleList = document.getElementById('possible-matches-list');
+      
+      duplicates.possible_matches.forEach(match => {
+        const claimElement = createDuplicateClaimElement(match.claim, 'possible', match.similarity_percentage);
+        possibleList.appendChild(claimElement);
+      });
+      
+      if (!hasAnyMatches) {
+        title.textContent = 'Related Claims Found';
+      }
+    }
+    
+    // Show modal
+    modal.style.display = 'flex';
+    document.body.classList.add('modal-open');
+  }
+
+  function createDuplicateClaimElement(claim, matchType, similarityPercentage = null) {
+    const div = document.createElement('div');
+    div.className = 'duplicate-claim-item';
+    
+    // Get user information
+    let userName = 'Unknown User';
+    if (claim.user && claim.user.full_name) {
+      userName = claim.user.full_name;
+    } else if (claim.user && claim.user.email) {
+      userName = claim.user.email;
+    }
+    
+    div.innerHTML = `
+      <div class="duplicate-claim-header">
+        <div class="duplicate-claim-user">
+          <strong>${userName}</strong>
+          <span class="duplicate-claim-date">${new Date(claim.created_at).toLocaleDateString()}</span>
+        </div>
+        ${similarityPercentage ? `<div class="duplicate-claim-similarity">
+          <span class="similarity-badge">${similarityPercentage}% similar</span>
+        </div>` : ''}
+      </div>
+      
+      <div class="duplicate-claim-content">
+        ${claim.content}
+      </div>
+      
+      ${claim.evidences && claim.evidences.length > 0 ? `
+        <div class="duplicate-claim-evidence">
+          <strong>Evidence:</strong>
+          ${claim.evidences.map(evidence => `
+            <div class="evidence-item">
+              <span class="evidence-sources">
+                ${evidence.source_names ? evidence.source_names.map(source => 
+                  `<span class="source-badge">${source}</span>`
+                ).join('') : ''}
+              </span>
+              <div class="evidence-content">${evidence.content}</div>
+            </div>
+          `).join('')}
+        </div>
+      ` : ''}
+      
+      <div class="duplicate-claim-actions">
+        <a href="/claims/${claim.id}" class="btn btn-sm btn-outline" target="_blank">View Claim</a>
+      </div>
+    `;
+    
+    return div;
+  }
+
+  function closeDuplicateModal() {
+    const modal = document.getElementById('duplicate-claims-modal');
+    modal.style.display = 'none';
+    document.body.classList.remove('modal-open');
+  }
+
+  function continueWithAnotherClaim() {
+    closeDuplicateModal();
+    
+    // Clear the claim input field
+    const claimInput = document.querySelector('textarea[name="claim[content]"]');
+    if (claimInput) {
+      claimInput.value = '';
+    }
+    
+    // Reset the validated claim
+    window.validatedClaim = null;
+    
+    // Hide the evidence step and show the claim input step
+    if (typeof hideEvidenceStep === 'function') {
+      hideEvidenceStep();
+    }
+    if (typeof showClaimStep === 'function') {
+      showClaimStep();
+    }
+    
+    // Focus on the claim input
+    if (claimInput) {
+      claimInput.focus();
+    }
+  }
+
+  function cancelClaim() {
+    closeDuplicateModal();
+    // Redirect back to claims index
+    window.location.href = '/claims';
+  }
+
+  // Event listeners
+  document.addEventListener('DOMContentLoaded', function() {
+    // Close modal on X click
+    const closeBtn = document.getElementById('close-duplicate-claims-modal');
+    if (closeBtn) {
+      closeBtn.onclick = closeDuplicateModal;
+    }
+    
+    // Continue with another claim button
+    const continueBtn = document.getElementById('continue-with-another-claim');
+    if (continueBtn) {
+      continueBtn.onclick = continueWithAnotherClaim;
+    }
+    
+    // Cancel button
+    const cancelBtn = document.getElementById('cancel-claim');
+    if (cancelBtn) {
+      cancelBtn.onclick = cancelClaim;
+    }
+    
+    // Close modal on outside click
+    window.onclick = function(event) {
+      const modal = document.getElementById('duplicate-claims-modal');
+      if (event.target == modal) {
+        closeDuplicateModal();
+      }
+    };
+  });
+<% end %> 

@@ -10,9 +10,10 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2025_07_15_210424) do
+ActiveRecord::Schema[7.0].define(version: 2025_07_18_224837) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
+  enable_extension "vector"
 
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
@@ -70,6 +71,10 @@ ActiveRecord::Schema[7.0].define(version: 2025_07_15_210424) do
     t.string "secondary_sources", default: [], array: true
     t.boolean "fact", default: false
     t.boolean "published", default: false
+    t.vector "content_embedding", limit: 3072
+    t.string "normalized_content_hash"
+    t.index ["normalized_content_hash", "user_id"], name: "index_claims_on_normalized_content_hash_and_user_id"
+    t.index ["normalized_content_hash"], name: "index_claims_on_normalized_content_hash"
     t.index ["user_id"], name: "index_claims_on_user_id"
   end
 

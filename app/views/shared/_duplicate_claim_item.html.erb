@@ -1,0 +1,37 @@
+<div class="duplicate-claim-item">
+  <div class="duplicate-claim-header">
+    <div class="duplicate-claim-user">
+      <strong><%= claim.user.full_name.presence || claim.user.email %></strong>
+      <span class="duplicate-claim-date"><%= claim.created_at.strftime('%d %b, %Y') %></span>
+    </div>
+    <div class="duplicate-claim-similarity">
+      <% if defined?(similarity_percentage) %>
+        <span class="similarity-badge"><%= similarity_percentage %>% similar</span>
+      <% end %>
+    </div>
+  </div>
+  
+  <div class="duplicate-claim-content">
+    <%= claim.content %>
+  </div>
+  
+  <% if claim.evidences.any? %>
+    <div class="duplicate-claim-evidence">
+      <strong>Evidence:</strong>
+      <% claim.evidences.each do |evidence| %>
+        <div class="evidence-item">
+          <span class="evidence-sources">
+            <% evidence.source_names.each do |source| %>
+              <span class="source-badge"><%= source.humanize %></span>
+            <% end %>
+          </span>
+          <div class="evidence-content"><%= evidence.content %></div>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+  
+  <div class="duplicate-claim-actions">
+    <%= link_to "View Claim", claim_path(claim), class: "btn btn-sm btn-outline", target: "_blank" %>
+  </div>
+</div> 

@@ -333,6 +333,16 @@
           window.validatedClaim = data.cleaned_claim;
           claimInput.value = data.cleaned_claim;
           errorMessage.style.display = 'none';
+          
+          // Handle duplicate detection
+          if (typeof handleDuplicateDetection === 'function') {
+            const hasDuplicates = handleDuplicateDetection(data);
+            // If duplicates are found, don't proceed to evidence step
+            if (hasDuplicates) {
+              return;
+            }
+          }
+          
           // Hide chatbot, show illustration if previously hidden
           document.getElementById('ai-chatbot-container').style.display = 'none';
           showEvidenceStep();
