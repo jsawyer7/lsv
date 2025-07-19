@@ -47,6 +47,9 @@ Rails.application.routes.draw do
   get 'feeds/infinite', to: 'feeds#infinite'
   get 'contact', to: 'static#contact'
   post 'contact', to: 'static#send_contact_message'
+  
+  # Data deletion URL for Facebook app requirements
+  get '/users/data_deletion', to: 'static#data_deletion'
 
   resources :peers, only: [:index] do
     collection do

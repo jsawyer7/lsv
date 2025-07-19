@@ -1,0 +1,51 @@
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // X (Twitter) sign-in button functionality
+    const twitterLoginButtons = document.querySelectorAll('.twitter-login');
+    
+    twitterLoginButtons.forEach(button => {
+      button.addEventListener('click', function(e) {
+        // Add loading state
+        const originalText = this.innerHTML;
+        this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Connecting to X...';
+        this.disabled = true;
+        
+        // Re-enable button after a short delay if there's an error
+        setTimeout(() => {
+          if (this.disabled) {
+            this.innerHTML = originalText;
+            this.disabled = false;
+          }
+        }, 5000);
+      });
+    });
+
+    // Handle X sign-in success/error messages
+    const flashMessages = document.querySelectorAll('.flash-message');
+    flashMessages.forEach(message => {
+      if (message.textContent.includes('X') || message.textContent.includes('Twitter')) {
+        // Add specific styling for X-related messages
+        message.classList.add('twitter-message');
+      }
+    });
+  });
+
+  // Handle X OAuth callback errors
+  document.addEventListener('turbo:load', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const error = urlParams.get('error');
+    
+    if (error && error.includes('twitter') || error.includes('x')) {
+      // Show error message for X sign-in failures
+      const errorMessage = document.createElement('div');
+      errorMessage.className = 'flash-message alert';
+      errorMessage.textContent = 'X sign-in failed. Please try again.';
+      document.body.appendChild(errorMessage);
+      
+      // Remove error message after 5 seconds
+      setTimeout(() => {
+        errorMessage.remove();
+      }, 5000);
+    }
+  });
+</script> 
