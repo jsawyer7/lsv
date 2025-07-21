@@ -50,8 +50,10 @@ class User < ApplicationRecord
     # Try to find by provider/uid first
     user = User.find_by(provider: auth.provider, uid: auth.uid)
     
-    # If not found by provider/uid, try to find by email
-    user ||= User.find_by(email: auth.info.email)
+    # If not found by provider/uid, try to find by email (if email exists)
+    if auth.info.email.present?
+      user ||= User.find_by(email: auth.info.email)
+    end
     
     if user
       # Update existing user's OAuth credentials
@@ -63,8 +65,11 @@ class User < ApplicationRecord
       )
     else
       # Create new user if none exists
+      # Generate a unique email if Twitter doesn't provide one
+      email = auth.info.email.presence || "twitter_#{auth.uid}@example.com"
+      
       user = User.new(
-        email: auth.info.email,
+        email: email,
         password: Devise.friendly_token[0, 20],
         full_name: auth.info.name,
         avatar_url: auth.info.image,
@@ -77,6 +82,9 @@ class User < ApplicationRecord
     end
 
     user
+  rescue => e
+    Rails.logger.error "OAuth Error in from_omniauth: #{e.message}\n#{e.backtrace.join("\n")}"
+    raise e
   end
 
   # Define ransackable attributes
