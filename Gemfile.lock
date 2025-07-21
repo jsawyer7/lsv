@@ -197,6 +197,8 @@ GEM
     multi_xml (0.7.1)
       bigdecimal (~> 3.1)
     multipart-post (2.4.1)
+    neighbor (0.5.2)
+      activerecord (>= 7)
     net-http (0.6.0)
       uri
     net-imap (0.5.9)
@@ -266,6 +268,7 @@ GEM
       rack
     orm_adapter (0.5.0)
     pg (1.5.9)
+    pgvector (0.3.2)
     public_suffix (6.0.2)
     puma (4.3.12)
       nio4r (~> 2.0)
@@ -398,11 +401,13 @@ DEPENDENCIES
   kaminari (~> 1.2)
   letter_opener
   listen (~> 3.2)
+  neighbor
   omniauth-facebook
   omniauth-google-oauth2
   omniauth-rails_csrf_protection
   omniauth-twitter
   pg (>= 0.18, < 2.0)
+  pgvector
   puma (~> 4.1)
   pundit
   rails (~> 7.0.8)
