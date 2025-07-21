@@ -1,6 +1,6 @@
 .login-container {
   display: flex;
-  min-height: 120vh;
+  min-height: 100vh;
   background: white;
 }
 
@@ -14,7 +14,7 @@
   color: white;
   position: relative;
   overflow: hidden;
-  height:120vh;
+  height:inherit;
   padding-bottom: 15rem;
 
   &::after {
