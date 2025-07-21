@@ -33,7 +33,24 @@ class Users::OmniauthCallbacksController < Devise::OmniauthCallbacksController
     end
   rescue StandardError => e
     Rails.logger.error "Apple OAuth Error: #{e.message}\n#{e.backtrace.join("\n")}"
-    flash[:alert] = "An error occurred while authenticating with Apple. Please try again."
+    
+    # Provide more specific error messages for Apple OAuth
+    error_message = case e.message
+    when /invalid_client/
+      "Apple Sign In configuration error. Please contact support."
+    when /invalid_grant/
+      "Apple Sign In session expired. Please try again."
+    when /invalid_request/
+      "Invalid Apple Sign In request. Please try again."
+    when /invalid_scope/
+      "Apple Sign In permissions error. Please try again."
+    when /server_error/
+      "Apple Sign In server error. Please try again later."
+    else
+      "An error occurred while authenticating with Apple. Please try again."
+    end
+    
+    flash[:alert] = error_message
     redirect_to new_user_session_path
   end
 
