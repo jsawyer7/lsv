@@ -3,7 +3,7 @@ class User < ApplicationRecord
   # :lockable, :timeoutable, :trackable and :omniauthable
   devise :database_authenticatable, :registerable,
          :recoverable, :rememberable, :validatable,
-         :confirmable, :omniauthable, omniauth_providers: [:google_oauth2]
+         :confirmable, :omniauthable, omniauth_providers: [:google_oauth2, :twitter]
 
   has_many :claims
 
@@ -50,8 +50,10 @@ class User < ApplicationRecord
     # Try to find by provider/uid first
     user = User.find_by(provider: auth.provider, uid: auth.uid)
     
-    # If not found by provider/uid, try to find by email
-    user ||= User.find_by(email: auth.info.email)
+    # If not found by provider/uid, try to find by email (if available)
+    if auth.info.email.present?
+      user ||= User.find_by(email: auth.info.email)
+    end
     
     if user
       # Update existing user's OAuth credentials
@@ -63,8 +65,11 @@ class User < ApplicationRecord
       )
     else
       # Create new user if none exists
+      # For X OAuth, email might not be available, so we'll use a placeholder
+      email = auth.info.email.presence || "#{auth.info.screen_name}@twitter.com"
+      
       user = User.new(
-        email: auth.info.email,
+        email: email,
         password: Devise.friendly_token[0, 20],
         full_name: auth.info.name,
         avatar_url: auth.info.image,

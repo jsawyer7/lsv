@@ -53,6 +53,11 @@
         Continue with Google
       <% end %>
 
+      <%= button_to user_twitter_omniauth_authorize_path, data: { turbo: false }, class: "twitter-login" do %>
+        <%= image_tag "https://abs.twimg.com/favicons/twitter.ico", alt: "X", class: "twitter-icon" %>
+        Continue with X
+      <% end %>
+
       <div class="signup-prompt">
         Already have an account? <%= link_to "Login", new_session_path(resource_name) %>
       </div>

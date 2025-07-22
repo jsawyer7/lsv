@@ -19,6 +19,24 @@ class Users::OmniauthCallbacksController < Devise::OmniauthCallbacksController
     redirect_to new_user_session_path
   end
 
+  def twitter
+    @user = User.from_omniauth(request.env["omniauth.auth"])
+
+    if @user.persisted?
+      sign_in @user
+      flash[:notice] = I18n.t "devise.omniauth_callbacks.success", kind: "X"
+      redirect_to feeds_path
+    else
+      session["devise.twitter_data"] = request.env["omniauth.auth"].except(:extra)
+      flash[:alert] = @user.errors.full_messages.join(", ")
+      redirect_to new_user_registration_url
+    end
+  rescue StandardError => e
+    Rails.logger.error "X OAuth Error: #{e.message}\n#{e.backtrace.join("\n")}"
+    flash[:alert] = "An error occurred while authenticating with X. Please try again."
+    redirect_to new_user_session_path
+  end
+
   def failure
     error_message = error_message_for_failure
     flash[:alert] = error_message
