@@ -381,7 +381,7 @@ DEPENDENCIES
   neighbor
   omniauth-google-oauth2
   omniauth-rails_csrf_protection
-  omniauth-twitter
+  omniauth-twitter (~> 1.4.0)
   pg (>= 0.18, < 2.0)
   pgvector
   puma (~> 4.1)

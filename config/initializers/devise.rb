@@ -102,6 +102,9 @@ Devise.setup do |config|
   # requests for sign in and sign up, you need to get a new CSRF token
   # from the server. You can disable this option at your own risk.
   config.clean_up_csrf_token_on_authentication = true
+  
+  # Fix session handling for OAuth callbacks
+  config.skip_session_storage = [:http_auth, :params_auth]
 
   # When false, Devise will not attempt to reload routes on eager load.
   # This can reduce the time taken to boot the app but if your application
@@ -291,12 +294,24 @@ Devise.setup do |config|
     {
       callback_path: '/users/auth/twitter/callback',
       provider_ignores_state: true,
-      origin_param: 'return_to'
+      origin_param: 'return_to',
+      secure_image_url: true,
+      authorize_params: {
+        force_login: 'true',
+        lang: 'en'
+      },
+      # Fix session handling
+      setup: ->(env) {
+        env['omniauth.strategy'].options[:client_options][:site] = 'https://api.twitter.com'
+      }
     }
 
   # Configure OmniAuth to accept both GET and POST requests
   OmniAuth.config.allowed_request_methods = [:get, :post]
   OmniAuth.config.silence_get_warning = true
+  
+  # Fix session handling for OAuth
+  OmniAuth.config.full_host = Rails.env.production? ? 'https://yourdomain.com' : 'http://localhost:3000'
 
   # ==> OmniAuth CSRF Protection
   # OmniAuth.config.allowed_request_methods = [:post]

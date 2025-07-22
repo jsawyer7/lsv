@@ -1,5 +1,8 @@
 class Users::OmniauthCallbacksController < Devise::OmniauthCallbacksController
   skip_before_action :verify_authenticity_token
+  
+  # Fix session handling for OAuth
+  before_action :ensure_omniauth_session
 
   def google_oauth2
     @user = User.from_omniauth(request.env["omniauth.auth"])
@@ -33,6 +36,7 @@ class Users::OmniauthCallbacksController < Devise::OmniauthCallbacksController
     end
   rescue StandardError => e
     Rails.logger.error "X OAuth Error: #{e.message}\n#{e.backtrace.join("\n")}"
+    Rails.logger.error "OAuth Auth Hash: #{request.env["omniauth.auth"]&.inspect}"
     flash[:alert] = "An error occurred while authenticating with X. Please try again."
     redirect_to new_user_session_path
   end
@@ -50,6 +54,14 @@ class Users::OmniauthCallbacksController < Devise::OmniauthCallbacksController
   end
 
   private
+
+  def ensure_omniauth_session
+    unless request.env['omniauth.auth']
+      Rails.logger.error "No OAuth auth data found in request"
+      flash[:alert] = "OAuth session expired. Please try again."
+      redirect_to new_user_session_path
+    end
+  end
 
   def error_message_for_failure
     error_type = request.env["omniauth.error.type"]

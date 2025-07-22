@@ -63,7 +63,7 @@ gem 'omniauth-google-oauth2'
 gem 'omniauth-rails_csrf_protection'
 
 # X (Twitter) OAuth2
-gem 'omniauth-twitter'
+gem 'omniauth-twitter', '~> 1.4.0'
 
 # Admin Interface
 gem 'activeadmin'
