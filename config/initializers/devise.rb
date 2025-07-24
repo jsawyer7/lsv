@@ -284,6 +284,16 @@ Devise.setup do |config|
       callback_path: '/users/auth/google_oauth2/callback'
     }
 
+  # Add X (Twitter) OAuth configuration
+  config.omniauth :twitter,
+    ENV['TWITTER_API_KEY'],
+    ENV['TWITTER_API_SECRET'],
+    {
+      callback_path: '/users/auth/twitter/callback',
+      secure_image_url: true,
+      image_size: 'normal'
+    }
+
   # Configure OmniAuth to accept both GET and POST requests
   OmniAuth.config.allowed_request_methods = [:get, :post]
   OmniAuth.config.silence_get_warning = true
