@@ -6,6 +6,15 @@
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
 
+
+
+    <%# Facebook Sign In meta tags %>
+    <meta name="facebook-app-id" content="<%= ENV['FACEBOOK_APP_ID'] %>">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="VeriFaith">
+    <meta property="og:description" content="Truth You Can Test">
+    <meta property="og:url" content="<%= request.original_url %>">
+
     <%# SF Pro Font %>
     <link rel="stylesheet" href="https://fonts.cdnfonts.com/css/sf-pro-display">
     
@@ -31,6 +40,7 @@
   </head>
 
   <body>
+    <%= render 'shared/omniauth_facebook_js' %>
     <div class="flash-container">
       <% flash.each do |key, message| %>
         <div class="flash-message <%= key %>">

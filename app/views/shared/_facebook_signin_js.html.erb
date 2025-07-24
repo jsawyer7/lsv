@@ -1,0 +1,32 @@
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    initializeFacebookSignIn();
+  });
+
+  document.addEventListener('turbo:load', function() {
+    initializeFacebookSignIn();
+  });
+
+  function initializeFacebookSignIn() {
+    // The button_to helper creates a form that should work with OAuth automatically
+    // We don't need to override the default behavior
+    console.log('Facebook Sign In initialized');
+  }
+
+  function showFacebookSignInError(message) {
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'alert alert-danger';
+    errorDiv.textContent = message;
+
+    const container = document.querySelector('.login-form-container') || 
+                     document.querySelector('.devise-sessions-new') || 
+                     document.querySelector('.devise-registrations-new') ||
+                     document.body;
+
+    container.insertBefore(errorDiv, container.firstChild);
+
+    setTimeout(() => {
+      errorDiv.remove();
+    }, 5000);
+  }
+</script> 

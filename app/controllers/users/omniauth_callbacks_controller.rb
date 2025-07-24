@@ -42,6 +42,23 @@ class Users::OmniauthCallbacksController < Devise::OmniauthCallbacksController
     flash[:alert] = error_message
     redirect_to new_user_session_path
   end
+   def facebook
+    @user = User.from_omniauth(request.env["omniauth.auth"])
+
+    if @user.persisted?
+      sign_in @user
+      flash[:notice] = I18n.t "devise.omniauth_callbacks.success", kind: "Facebook"
+      redirect_to feeds_path
+    else
+      session["devise.facebook_data"] = request.env["omniauth.auth"].except(:extra)
+      flash[:alert] = @user.errors.full_messages.join(", ")
+      redirect_to new_user_registration_url
+    end
+  rescue StandardError => e
+    Rails.logger.error "Facebook OAuth Error: #{e.message}\n#{e.backtrace.join("\n")}"
+    flash[:alert] = "An error occurred while authenticating with Facebook. Please try again."
+    redirect_to new_user_session_path
+  end
 
   protected
 
