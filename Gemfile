@@ -65,6 +65,8 @@ gem 'omniauth-rails_csrf_protection'
 # X (Twitter) OAuth
 gem 'omniauth-twitter'
 
+# Facebook OAuth2
+gem 'omniauth-facebook'
 # Admin Interface
 gem 'activeadmin'
 gem 'sassc-rails'

@@ -293,7 +293,18 @@ Devise.setup do |config|
       secure_image_url: true,
       image_size: 'normal'
     }
-
+  # Add Facebook OAuth2 configuration
+  config.omniauth :facebook,
+    ENV['FACEBOOK_APP_ID'],
+    ENV['FACEBOOK_APP_SECRET'],
+    {
+      scope: 'email,public_profile',
+      info_fields: 'name,email',
+      image_size: 'large',
+      provider_ignores_state: true,
+      origin_param: 'return_to',
+      callback_path: '/users/auth/facebook/callback'
+    }
   # Configure OmniAuth to accept both GET and POST requests
   OmniAuth.config.allowed_request_methods = [:get, :post]
   OmniAuth.config.silence_get_warning = true
