@@ -782,15 +782,43 @@
 
 .new-claim-main {
   display: flex;
+  gap: 0;
   align-items: flex-start;
-  gap: 48px;
-  padding: 32px 48px 0 48px;
   background: #fff;
   min-height: 100vh;
 }
-.new-claim-form-section {
+.new-claim-center {
+  flex: 0 1 900px;
+  max-width: 900px;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: #fff;
+  padding-top: 1rem;
+}
+.new-claim-header {
+  padding: 24px 32px 12px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+  h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #23263b;
+  }
+}
+.new-claim-content {
   flex: 1 1 0;
-  max-width: 600px;
+  overflow-y: auto;
+  max-height: calc(100vh - 120px);
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 0 32px 80px 32px;
+  background: #fff;
 }
 .new-claim-title {
   font-size: 1.6rem;
@@ -927,6 +955,7 @@
   align-items: center;
   gap: 18px;
   margin-top: 32px;
+  margin-bottom: 32px;
 }
 .new-claim-cancel {
   background: #f3f4f6;
@@ -960,6 +989,16 @@
 .new-claim-submit:hover {
   background: #1746a2;
 }
+.new-claim-rightbar {
+  max-width: 600px;
+  padding: 32px 0 0 0;
+  position: sticky;
+  top: 0;
+  align-self: flex-start;
+  background: #fff;
+  border-left: 1.5px solid #e5e7eb;
+  min-height: 100vh;
+}
 .new-claim-illustration {
   flex: 0 0 420px;
   display: flex;
@@ -977,8 +1016,23 @@
 @media (max-width: 1100px) {
   .new-claim-main {
     flex-direction: column;
-    gap: 32px;
-    padding: 24px 8px 0 8px;
+    gap: 0;
+    padding: 0;
+  }
+  .new-claim-center {
+    height: auto;
+    min-height: 60vh;
+  }
+  .new-claim-content {
+    max-height: none;
+    padding: 0 24px 40px 24px;
+  }
+  .new-claim-rightbar {
+    width: 100%;
+    max-width: none;
+    min-height: auto;
+    border-left: none;
+    border-top: 1.5px solid #e5e7eb;
   }
   .new-claim-illustration {
     margin-top: 0;
@@ -990,11 +1044,23 @@
 @media (max-width: 700px) {
   .new-claim-main {
     flex-direction: column;
-    gap: 18px;
-    padding: 12px 2px 0 2px;
+    gap: 0;
+    padding: 0;
   }
-  .new-claim-form-section {
-    max-width: 100%;
+  .new-claim-center {
+    height: auto;
+    min-height: 50vh;
+  }
+  .new-claim-content {
+    max-height: none;
+    padding: 0 16px 32px 16px;
+  }
+  .new-claim-rightbar {
+    width: 100%;
+    max-width: none;
+    min-height: auto;
+    border-left: none;
+    border-top: 1.5px solid #e5e7eb;
   }
   .new-claim-illustration {
     margin-top: 0;

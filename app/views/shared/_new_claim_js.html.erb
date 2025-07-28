@@ -14,7 +14,6 @@ document.addEventListener('DOMContentLoaded', function() {
   const secondarySourcesField = document.getElementById('secondary-sources-field');
   const overlay = document.querySelector('.processing-overlay');
   const evidencesContainer = document.getElementById('evidences-container');
-  const addEvidenceBtn = document.getElementById('add-evidence-btn');
   let processingTimeout;
 
   function showLoader() {
@@ -95,199 +94,103 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 
-  // Helper to create evidence box with remove button
-  function createEvidenceBox(value = '') {
-    const wrapper = document.createElement('div');
-    wrapper.className = 'evidence-box';
-    // Create top flex container for badge only
-    const top = document.createElement('div');
-    top.className = 'evidence-box-top';
-    // Badge placeholder (will be filled later)
-    const badge = document.createElement('span');
-    badge.className = 'evidence-source-badge';
-    badge.style.display = 'none'; // Hide initially
-    top.appendChild(badge);
-    wrapper.appendChild(top);
-    // Textarea
-    const textarea = document.createElement('textarea');
-    textarea.className = 'new-claim-input evidence-textarea';
-    textarea.placeholder = 'Write your evidence...';
-    textarea.rows = 4;
-    textarea.value = value;
-    wrapper.appendChild(textarea);
-    // Remove button (now at right side of box)
-    const removeBtn = document.createElement('button');
-    removeBtn.type = 'button';
-    removeBtn.className = 'remove-evidence-btn';
-    removeBtn.innerHTML = '&minus;';
-    removeBtn.title = 'Remove evidence';
-    removeBtn.onclick = function() {
-      if (evidencesContainer.querySelectorAll('.evidence-box').length > 1) {
-        evidencesContainer.removeChild(wrapper);
-      }
-      updateRemoveButtonsState();
-    };
-    wrapper.appendChild(removeBtn);
-    return wrapper;
-  }
+  // Evidence handling - New AI-assisted system
+  // The old evidence creation logic has been removed
+  // Evidence units are now handled by _evidence_units_js.html.erb
 
-  function updateRemoveButtonsState() {
-    const boxes = evidencesContainer.querySelectorAll('.evidence-box');
-    boxes.forEach(box => {
-      const btn = box.querySelector('.remove-evidence-btn');
-      btn.disabled = boxes.length === 1 || addEvidenceBtn.disabled;
-    });
-  }
-
-  // Initialize with one evidence box
-  evidencesContainer.innerHTML = '';
-  evidencesContainer.appendChild(createEvidenceBox());
-  updateRemoveButtonsState();
-
-  // Add Evidence button handler
-  addEvidenceBtn.addEventListener('click', function() {
-    if (addEvidenceBtn.disabled) return;
-    evidencesContainer.appendChild(createEvidenceBox());
-    updateRemoveButtonsState();
-  });
-
-  // Update validate evidence logic to collect all evidence values
-  validateEvidenceBtn.addEventListener('click', async function() {
-    // Always disable add evidence button immediately
-    addEvidenceBtn.disabled = true;
-    addEvidenceBtn.style.display = 'none'; // Hide add evidence button after validation
-    const evidenceTextareas = evidencesContainer.querySelectorAll('.evidence-textarea');
-    // Collect all evidence as plain strings
-    const evidences = Array.from(evidenceTextareas).map(t => t.value.trim()).filter(Boolean);
-
-    if (evidences.length === 0) {
-      document.querySelector('.evidence-error').textContent = 'Please provide at least one evidence before validating.';
-      document.querySelector('.evidence-error').style.display = 'block';
-      return;
-    }
-
-    showLoader();
-    startProcessingTimeout();
-
-    try {
-      const response = await fetch('/claims/validate_evidence', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
-        },
-        body: JSON.stringify({ 
-          evidence: evidences, // Send as array of strings
-          sources: allSources // Send all available sources for analysis
-        })
-      });
-
-      clearProcessingTimeout();
-      hideLoader();
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Validation failed');
-      }
-
-      const result = await response.json();
+  // Update validate evidence logic to work with new evidence units
+  if (validateEvidenceBtn) {
+    validateEvidenceBtn.addEventListener('click', async function() {
+      console.log('Validate evidence button clicked');
       
-      // If backend returned a warning, show it and allow user to proceed
-      if (result.warning) {
-        document.querySelector('.evidence-error').textContent = result.warning;
+      // Check if we have any evidence units
+      const evidenceUnits = document.querySelectorAll('.evidence-unit');
+      
+      if (evidenceUnits.length === 0) {
+        document.querySelector('.evidence-error').textContent = 'Please add at least one evidence before validating.';
         document.querySelector('.evidence-error').style.display = 'block';
-      } else {
-        document.querySelector('.evidence-error').style.display = 'none';
+        return;
       }
-      
-      // Store the validated evidence sources for form submission
-      window.validatedEvidences = (result.evidences || []).map((ev, idx) => ({
-        evidence: typeof ev === 'string' ? ev : (ev.evidence || ''),
-        sources: ev.sources || [ev.source || 'historical']
-      }));
-      
-      // Insert source badges for each evidence box
-      const evidenceBoxes = evidencesContainer.querySelectorAll('.evidence-box');
-      window.validatedEvidences.forEach((ev, idx) => {
-        const box = evidenceBoxes[idx];
-        if (!box) return;
-        
-        // Update the badge with multiple sources
-        const top = box.querySelector('.evidence-box-top');
-        const badge = top.querySelector('.evidence-source-badge');
-        if (ev.sources && ev.sources.length > 0) {
-          badge.textContent = ev.sources.map(source => source.charAt(0).toUpperCase() + source.slice(1)).join(', ');
-          badge.style.display = 'inline-block';
-        } else {
-          badge.textContent = 'Historical';
-          badge.style.display = 'inline-block';
-        }
-      });
-      
-      // Hide illustration and show sources columns
-      sourcesColumns.style.display = 'flex';
-      
-      // Disable all evidence textareas
-      const evidenceTextareas = evidencesContainer.querySelectorAll('.evidence-textarea');
-      evidenceTextareas.forEach(textarea => {
-        textarea.readOnly = true;
-        textarea.style.background = '#f3f4f6';
-        textarea.style.color = '#23263b';
-      });
-      // Disable add evidence button
-      addEvidenceBtn.disabled = true;
-      // Disable all remove evidence buttons
-      const removeBtns = evidencesContainer.querySelectorAll('.remove-evidence-btn');
-      removeBtns.forEach(btn => btn.disabled = true);
-      // Show edit evidence button
-      editEvidenceBtn.style.display = 'inline-block';
-      
-      // Clear existing sources
-      primarySourcesList.innerHTML = '';
-      secondarySourcesList.innerHTML = '';
-      
-      // Add primary sources
-      result.primary_sources.forEach(source => {
-        const sourceElement = createSourceElement(source);
-        addDragListeners(sourceElement);
-        primarySourcesList.appendChild(sourceElement);
-      });
-      
-      // Add secondary sources
-      result.secondary_sources.forEach(source => {
-        const sourceElement = createSourceElement(source);
-        addDragListeners(sourceElement);
-        secondarySourcesList.appendChild(sourceElement);
-      });
-      
-      // Update hidden fields
-      updateHiddenFields();
-      
-      // Show submit button and hide validate button
-      validateEvidenceBtn.style.display = 'none';
-      submitBtn.style.display = 'inline-block';
-      
-    } catch (error) {
-      document.querySelector('.evidence-error').textContent = error.message || 'Failed to validate evidence. Please try again.';
-      document.querySelector('.evidence-error').style.display = 'block';
-    }
-  });
 
-  editEvidenceBtn.addEventListener('click', function() {
-    // Re-enable all evidence textareas
-    const evidenceTextareas = evidencesContainer.querySelectorAll('.evidence-textarea');
-    evidenceTextareas.forEach(textarea => {
-      textarea.readOnly = false;
-      textarea.style.background = 'white';
-      textarea.style.color = 'inherit';
+      // Collect evidence from the combined field (set by evidence units JS)
+      const combinedEvidenceField = document.getElementById('combined-evidence-field');
+      const evidenceData = combinedEvidenceField.value ? JSON.parse(combinedEvidenceField.value) : [];
+      
+      if (evidenceData.length === 0) {
+        document.querySelector('.evidence-error').textContent = 'Please add at least one evidence before validating.';
+        document.querySelector('.evidence-error').style.display = 'block';
+        return;
+      }
+
+      showLoader();
+      startProcessingTimeout();
+
+      try {
+        console.log('Updating evidence sources hash...');
+        // Update evidence sources hash from current evidence units
+        updateEvidenceSourcesHash();
+        
+        console.log('Determining primary and secondary sources...');
+        // Use frontend source management instead of backend validation
+        const sources = determinePrimaryAndSecondarySources();
+        
+        console.log('Sources determined:', sources);
+        
+        clearProcessingTimeout();
+        hideLoader();
+
+        // Hide error if any
+        document.querySelector('.evidence-error').style.display = 'none';
+        
+        // Store the evidence data for form submission
+        window.validatedEvidences = evidenceData.map(unit => ({
+          evidence: unit,
+          sources: sources.primary.concat(sources.secondary)
+        }));
+        
+        // Hide illustration and show sources columns
+        const sourcesColumns = document.getElementById('sources-columns');
+        if (sourcesColumns) {
+          console.log('Showing sources columns...');
+          sourcesColumns.style.display = 'flex';
+        }
+        
+        // Disable evidence units (make them read-only)
+        const evidenceUnits = document.querySelectorAll('.evidence-unit');
+        evidenceUnits.forEach(unit => {
+          unit.style.opacity = '0.7';
+          unit.style.pointerEvents = 'none';
+        });
+        
+        // Update sources UI using frontend logic
+        console.log('Updating sources UI...');
+        updateSourcesUI();
+        
+        // Show submit button and hide validate button
+        validateEvidenceBtn.style.display = 'none';
+        const submitBtn = document.getElementById('submit-claim');
+        if (submitBtn) submitBtn.style.display = 'inline-block';
+        
+        console.log('Evidence validation completed successfully');
+        
+      } catch (error) {
+        console.error('Error during evidence validation:', error);
+        clearProcessingTimeout();
+        hideLoader();
+        document.querySelector('.evidence-error').textContent = error.message || 'Failed to validate evidence. Please try again.';
+        document.querySelector('.evidence-error').style.display = 'block';
+      }
     });
-    // Enable add evidence button and show it
-    addEvidenceBtn.disabled = false;
-    addEvidenceBtn.style.display = 'inline-block';
-    // Enable all remove evidence buttons (except if only one evidence box)
-    const removeBtns = evidencesContainer.querySelectorAll('.remove-evidence-btn');
-    const boxes = evidencesContainer.querySelectorAll('.evidence-box');
-    removeBtns.forEach(btn => btn.disabled = boxes.length === 1);
+  }
+
+  if (editEvidenceBtn) {
+    editEvidenceBtn.addEventListener('click', function() {
+    // Re-enable all evidence units
+    const evidenceUnits = document.querySelectorAll('.evidence-unit');
+    evidenceUnits.forEach(unit => {
+      unit.style.opacity = '1';
+      unit.style.pointerEvents = 'auto';
+    });
     // Hide sources columns, show illustration, hide submit, show validate
     sourcesColumns.style.display = 'none';
     submitBtn.style.display = 'none';
@@ -300,6 +203,7 @@ document.addEventListener('DOMContentLoaded', function() {
       evidenceError.textContent = '';
     }
   });
+  }
 
   // Character count for claim
   if (claimInput && charCount) {

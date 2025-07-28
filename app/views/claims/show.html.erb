@@ -27,7 +27,76 @@
                     <span class="source-badge"><%= source_name.humanize %></span>
                   <% end %>
                 </div>
-                <div><%= evidence.content %></div>
+                <div class="evidence-content">
+                  <% evidence.evidence_sections.each do |section_type, section_data| %>
+                    <div class="evidence-section">
+                      <h4><%= section_type.humanize %></h4>
+                      <% case section_type %>
+                      <% when 'verse' %>
+                        <div class="evidence-detail">
+                          <strong>Reference:</strong> <%= section_data['verse_reference'] || evidence.verse_reference %>
+                        </div>
+                        <div class="evidence-detail">
+                          <strong>Source:</strong> <%= section_data['source'] || evidence.source_names.first %>
+                        </div>
+                        <div class="evidence-detail">
+                          <strong>Original Text:</strong> <%= section_data['original_text'] || evidence.original_text %>
+                        </div>
+                        <div class="evidence-detail">
+                          <strong>Translation:</strong> <%= section_data['translation'] || evidence.translation %>
+                        </div>
+                        <div class="evidence-detail">
+                          <strong>Explanation:</strong> <%= section_data['explanation'] || evidence.explanation %>
+                        </div>
+                      <% when 'historical' %>
+                        <div class="evidence-detail">
+                          <strong>Historical Event:</strong> <%= section_data['historical_event'] || evidence.historical_event %>
+                        </div>
+                        <div class="evidence-detail">
+                          <strong>Source:</strong> <%= section_data['source'] || evidence.source_names.first %>
+                        </div>
+                        <div class="evidence-detail">
+                          <strong>Description:</strong> <%= section_data['description'] || evidence.description %>
+                        </div>
+                        <div class="evidence-detail">
+                          <strong>Relevance:</strong> <%= section_data['relevance'] || evidence.relevance %>
+                        </div>
+                      <% when 'definition' %>
+                        <div class="evidence-detail">
+                          <strong>Term:</strong> <%= section_data['term'] || evidence.term %>
+                        </div>
+                        <div class="evidence-detail">
+                          <strong>Source:</strong> <%= section_data['source'] || evidence.source_names.first %>
+                        </div>
+                        <div class="evidence-detail">
+                          <strong>Definition:</strong> <%= section_data['definition'] || evidence.definition %>
+                        </div>
+                        <div class="evidence-detail">
+                          <strong>Etymology:</strong> <%= section_data['etymology'] || evidence.etymology %>
+                        </div>
+                        <div class="evidence-detail">
+                          <strong>Usage Context:</strong> <%= section_data['usage_context'] || evidence.usage_context %>
+                        </div>
+                      <% when 'logic' %>
+                        <div class="evidence-detail">
+                          <strong>Premise:</strong> <%= section_data['premise'] || evidence.premise %>
+                        </div>
+                        <div class="evidence-detail">
+                          <strong>Source:</strong> <%= section_data['source'] || evidence.source_names.first %>
+                        </div>
+                        <div class="evidence-detail">
+                          <strong>Reasoning:</strong> <%= section_data['reasoning'] || evidence.reasoning %>
+                        </div>
+                        <div class="evidence-detail">
+                          <strong>Conclusion:</strong> <%= section_data['conclusion'] || evidence.conclusion %>
+                        </div>
+                        <div class="evidence-detail">
+                          <strong>Logical Form:</strong> <%= section_data['logical_form'] || evidence.logical_form %>
+                        </div>
+                      <% end %>
+                    </div>
+                  <% end %>
+                </div>
                 <% if user_signed_in? %>
                   <button class="btn btn-challenge-evidence" data-evidence-id="<%= evidence.id %>">Challenge Evidence</button>
                 <% end %>

@@ -1,86 +1,112 @@
 <%= render 'shared/claim_js' %>
 <%= render 'shared/new_claim_js' %>
+<%= render 'shared/new_claim_static_js' %>
 <%= render 'shared/duplicate_claims_modal' %>
 <%= render 'shared/duplicate_claims_js' %>
+
 
 <input type="hidden" id="claim-source-img-path" value="<%= asset_path('claim-source.png') %>">
 
 <div id="claim-form-wrapper" data-user-name="<%= current_user.full_name&.titleize || current_user.email %>">
   <div class="new-claim-main">
-    <div class="new-claim-form-section">
-      <h2 class="new-claim-title">New Claim</h2>
-      <%= form_with(model: @claim, local: true, html: { id: 'claim-form' }) do |f| %>
-        <div class="new-claim-field" id="claim-step">
-          <label for="claim_content">Your Claim</label>
-          <%= f.text_area :content, class: "new-claim-input", placeholder: "Write your claim...", maxlength: 100, rows: 2 %>
-          <div class="new-claim-char-count"><span id="claim-char-count">0</span>/100</div>
-          <div class="error-message" style="display: none; color: #ef4444; margin-top: 10px;"></div>
-          <div class="new-claim-actions">
-            <button type="button" id="validate-claim" class="new-claim-submit"><i class="fa fa-arrow-right"></i> Continue</button>
-          </div>
-        </div>
-        <div id="evidence-step" style="display: none;">
-          <div class="new-claim-field">
-            <label>Your Claim
-              <button type="button" class="edit-btn" onclick="showClaimStepAndResetIllustration()">Edit</button>
-            </label>
-            <textarea class="new-claim-input" id="validated-claim-display" readonly style="background:#f3f4f6; color:#23263b;"></textarea>
-          </div>
-          <div class="new-claim-field">
-            <label for="claim_evidence">Your Evidence
-              <button type="button" id="edit-evidence-btn" class="edit-btn" style="display: none;">Edit</button>
-            </label>
-            <div id="evidences-container">
-              <textarea class="new-claim-input evidence-textarea" placeholder="Write your evidence..." rows="4"></textarea>
-            </div>
-            <input type="hidden" name="claim[evidences]" id="combined-evidence-field" />
-            <button type="button" id="add-evidence-btn" class="add-evidence-btn" style="margin-top: 10px;">+ Add Evidence</button>
-            <div class="evidence-error error-message" style="display: none; color: #ef4444; margin-top: 10px;"></div>
-          </div>
-          <div class="new-claim-actions">
-            <%= hidden_field_tag :save_as_draft, 'false', id: 'save-as-draft-field' %>
-            <%= f.hidden_field :primary_sources, id: 'primary-sources-field' %>
-            <%= f.hidden_field :secondary_sources, id: 'secondary-sources-field' %>
-            <button type="submit" class="new-claim-save-draft" onclick="document.getElementById('save-as-draft-field').value = 'true'">Save to Draft</button>
-            <div class="new-claim-actions-right">
-              <button type="button" class="new-claim-cancel" onclick="window.location.href='<%= claims_path %>'">Cancel</button>
-              <button type="button" class="new-claim-validate" id="validate-evidence" style="display: inline-block;">
-                <i class="fa fa-check"></i> Validate Evidence
-              </button>
-              <button type="submit" class="new-claim-submit" id="submit-claim" style="display: none;" onclick="document.getElementById('save-as-draft-field').value = 'false'">
-                <i class="fa fa-paper-plane"></i> Submit
-              </button>
+    <div class="new-claim-center">
+      <div class="new-claim-header">
+        <h2 class="new-claim-title">New Claim</h2>
+      </div>
+      <div class="new-claim-content">
+        <%= form_with(model: @claim, local: true, html: { id: 'claim-form' }) do |f| %>
+          <div class="new-claim-field" id="claim-step">
+            <label for="claim_content">Your Claim</label>
+            <%= f.text_area :content, class: "new-claim-input", placeholder: "Write your claim...", maxlength: 100, rows: 2 %>
+            <div class="new-claim-char-count"><span id="claim-char-count">0</span>/100</div>
+            <div class="error-message" style="display: none; color: #ef4444; margin-top: 10px;"></div>
+            <div class="new-claim-actions">
+              <button type="button" id="validate-claim" class="new-claim-submit"><i class="fa fa-arrow-right"></i> Continue</button>
             </div>
           </div>
+          <div id="evidence-step" style="display: none;">
+            <div class="new-claim-field">
+              <label>Your Claim
+                <button type="button" class="edit-btn" onclick="showClaimStepAndResetIllustration()">Edit</button>
+              </label>
+              <textarea class="new-claim-input" id="validated-claim-display" readonly style="background:#f3f4f6; color:#23263b;"></textarea>
+            </div>
+            <div class="new-claim-field">
+              <label for="claim_evidence">Your Evidence</label>
+              <div id="evidence-controls">
+                <button type="button" id="add-evidence-btn" class="add-evidence-btn">
+                  <i class="fa fa-plus"></i> Add Evidence
+                </button>
+              </div>
+              <div id="evidence-type-selector" style="display: none;">
+                <div class="evidence-type-options">
+                  <button type="button" class="evidence-type-option" data-type="verse">
+                    <i class="fa fa-book"></i> Verse
+                  </button>
+                  <button type="button" class="evidence-type-option" data-type="historical">
+                    <i class="fa fa-history"></i> Historical
+                  </button>
+                  <button type="button" class="evidence-type-option" data-type="definition">
+                    <i class="fa fa-dictionary"></i> Definition
+                  </button>
+                  <button type="button" class="evidence-type-option" data-type="logic">
+                    <i class="fa fa-brain"></i> Logic
+                  </button>
+                </div>
+              </div>
+              <div id="evidences-container">
+                <!-- Evidence units will be added here dynamically -->
+              </div>
+              <input type="hidden" name="claim[combined_evidence_field]" id="combined-evidence-field" />
+              <div class="evidence-error error-message" style="display: none; color: #ef4444; margin-top: 10px;"></div>
+            </div>
+            <div class="new-claim-actions">
+              <%= hidden_field_tag :save_as_draft, 'false', id: 'save-as-draft-field' %>
+              <%= f.hidden_field :primary_sources, id: 'primary-sources-field' %>
+              <%= f.hidden_field :secondary_sources, id: 'secondary-sources-field' %>
+              <button type="submit" class="new-claim-save-draft" onclick="document.getElementById('save-as-draft-field').value = 'true'">Save to Draft</button>
+              <div class="new-claim-actions-right">
+                <button type="button" class="new-claim-cancel" onclick="window.location.href='<%= claims_path %>'">Cancel</button>
+                <button type="button" class="new-claim-validate" id="validate-evidence" style="display: inline-block;">
+                  <i class="fa fa-check"></i> Validate Evidence
+                </button>
+                <button type="submit" class="new-claim-submit" id="submit-claim" style="display: none;" onclick="document.getElementById('save-as-draft-field').value = 'false'">
+                  <i class="fa fa-paper-plane"></i> Submit
+                </button>
+              </div>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+    <aside class="new-claim-rightbar">
+      <div class="ai-chatbot-container" id="ai-chatbot-container" style="display: none;">
+        <div class="ai-chatbot-header">AI Claim Assistant</div>
+        <div class="ai-chatbot-messages" id="ai-chatbot-messages"></div>
+        <div class="ai-chatbot-input-row">
+          <input type="text" id="ai-chatbot-input" class="ai-chatbot-input" placeholder="Ask for help or clarification..." autocomplete="off" />
+          <button type="button" id="ai-chatbot-send" class="ai-chatbot-send">Send</button>
         </div>
-      <% end %>
-    </div>
-    <div class="ai-chatbot-container" id="ai-chatbot-container" style="display: none;">
-      <div class="ai-chatbot-header">AI Claim Assistant</div>
-      <div class="ai-chatbot-messages" id="ai-chatbot-messages"></div>
-      <div class="ai-chatbot-input-row">
-        <input type="text" id="ai-chatbot-input" class="ai-chatbot-input" placeholder="Ask for help or clarification..." autocomplete="off" />
-        <button type="button" id="ai-chatbot-send" class="ai-chatbot-send">Send</button>
       </div>
-    </div>
-    <div class="ai-evidence-chatbot-container" id="ai-evidence-chatbot-container" style="display: none;">
-      <div class="ai-chatbot-header">AI Evidence Assistant</div>
-      <div class="ai-chatbot-messages" id="ai-evidence-chatbot-messages"></div>
-      <div class="ai-chatbot-input-row">
-        <input type="text" id="ai-evidence-chatbot-input" class="ai-chatbot-input" placeholder="Ask about evidence..." autocomplete="off" />
-        <button type="button" id="ai-evidence-chatbot-send" class="ai-chatbot-send">Send</button>
+      <div class="ai-evidence-chatbot-container" id="ai-evidence-chatbot-container" style="display: none;">
+        <div class="ai-chatbot-header" id="ai-evidence-chatbot-header">AI Evidence Assistant</div>
+        <div class="ai-chatbot-messages" id="ai-evidence-chatbot-messages"></div>
+        <div class="ai-chatbot-input-row">
+          <input type="text" id="ai-evidence-chatbot-input" class="ai-chatbot-input" placeholder="Ask about evidence..." autocomplete="off" />
+          <button type="button" id="ai-evidence-chatbot-send" class="ai-chatbot-send">Send</button>
+        </div>
       </div>
-    </div>
-    <div class="sources-columns" id="sources-columns" style="display: none;">
-      <div class="sources-column primary-sources">
-        <h3>Primary Sources</h3>
-        <div class="sources-list" id="primary-sources-list"></div>
+      <div class="sources-columns" id="sources-columns" style="display: none;">
+        <div class="sources-column primary-sources">
+          <h3>Primary Sources</h3>
+          <div class="sources-list" id="primary-sources-list"></div>
+        </div>
+        <div class="sources-column secondary-sources">
+          <h3>Secondary Sources</h3>
+          <div class="sources-list" id="secondary-sources-list"></div>
+        </div>
       </div>
-      <div class="sources-column secondary-sources">
-        <h3>Secondary Sources</h3>
-        <div class="sources-list" id="secondary-sources-list"></div>
-      </div>
-    </div>
+    </aside>
   </div>
 </div>
 

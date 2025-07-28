@@ -55,21 +55,50 @@ class ClaimsController < ApplicationController
     end
   end
 
-  def validate_evidence
-    evidence = params[:evidence]
-    sources = params[:sources]
+  # Remove validate_evidence endpoint - source validation is now handled on frontend
+  def generate_ai_evidence
+    claim_content = params[:claim_content]
+    evidence_type = params[:evidence_type]
+    user_query = params[:user_query]
 
-    result = LsvEvidenceValidatorService.new(evidence, sources).analyze_sources!
+    unless claim_content.present?
+      render json: { error: 'Claim content is required' }, status: :bad_request
+      return
+    end
 
-    render json: result
-  rescue LsvEvidenceValidatorService::ValidationError => e
-    render json: { error: e.message }, status: :unprocessable_entity
-  rescue StandardError => e
-    Rails.logger.error "Evidence validation failed: #{e.message}"
-    render json: { error: 'An unexpected error occurred during evidence validation.' }, status: :internal_server_error
+    begin
+      case evidence_type
+      when 'verse'
+        service = AiVerseEvidenceService.new(claim_content)
+        result = service.generate_verse_evidence(user_query)
+      when 'historical'
+        service = AiHistoricalEvidenceService.new(claim_content)
+        result = service.generate_historical_evidence(user_query)
+      when 'definition'
+        service = AiDefinitionEvidenceService.new(claim_content)
+        result = service.generate_definition_evidence(user_query)
+      when 'logic'
+        service = AiLogicEvidenceService.new(claim_content)
+        result = service.generate_logic_evidence(user_query)
+      else
+        render json: { error: 'Invalid evidence type' }, status: :bad_request
+        return
+      end
+
+      if result[:success]
+        render json: { success: true, evidence: result }
+      else
+        render json: { success: false, error: result[:error] }, status: :unprocessable_entity
+      end
+    rescue => e
+      Rails.logger.error "AI Evidence generation failed: #{e.message}"
+      render json: { success: false, error: 'Failed to generate evidence' }, status: :internal_server_error
+    end
   end
 
   def create
+    Rails.logger.info "Create action params: #{params.inspect}"
+
     if params[:claim][:content].blank?
       flash[:alert] = 'Claim content is required.'
       @claim = current_user.claims.new(claim_params)
@@ -77,33 +106,23 @@ class ClaimsController < ApplicationController
       return
     end
 
-    evidences_param = params[:claim][:evidences]
-    evidences = if evidences_param.is_a?(String)
+    # Parse evidence units from the combined field
+    combined_evidence_field = params[:claim][:combined_evidence_field]
+    Rails.logger.info "Combined evidence field: #{combined_evidence_field}"
+
+    evidence_units = if combined_evidence_field.present?
       begin
-        JSON.parse(evidences_param)
-      rescue
+        JSON.parse(combined_evidence_field)
+      rescue JSON::ParserError
         []
       end
-    elsif evidences_param.is_a?(Array)
-      evidences_param
     else
       []
     end
-    # Treat each evidence as a plain string or a hash with evidence and sources
-    evidences = evidences.map do |ev|
-      if ev.is_a?(String)
-        { evidence: ev, sources: ['historical'] }
-      elsif ev.is_a?(Hash) && (ev[:evidence] || ev['evidence'])
-        {
-          evidence: ev[:evidence] || ev['evidence'],
-          sources: ev[:sources] || ev['sources'] || ev[:source] || ev['source'] || ['historical']
-        }
-      else
-        { evidence: ev.to_s, sources: ['historical'] }
-      end
-    end
 
-    if evidences.empty? || evidences.all? { |ev| ev[:evidence].blank? }
+    Rails.logger.info "Parsed evidence units: #{evidence_units.inspect}"
+
+    if evidence_units.empty?
       flash[:alert] = 'At least one evidence is required.'
       @claim = current_user.claims.new(claim_params)
       render :new, status: :unprocessable_entity
@@ -111,47 +130,17 @@ class ClaimsController < ApplicationController
     end
 
     if params[:save_as_draft] == 'true'
-      @claim = current_user.claims.new(claim_params.except(:evidences).merge(state: 'draft'))
+      @claim = current_user.claims.new(claim_params.except(:combined_evidence_field).merge(state: 'draft'))
       if @claim.save
-        evidences.each do |evidence_hash|
-          next if evidence_hash[:evidence].blank?
-
-          # Handle multiple sources
-          sources = Array(evidence_hash[:sources]).compact
-          sources = ['historical'] if sources.empty?
-
-          evidence = @claim.evidences.create!(content: evidence_hash[:evidence])
-
-          # Add all sources to the evidence
-          sources.each do |source_name|
-            source_enum = SOURCE_ENUM_MAP[source_name.to_s.strip]
-            evidence.add_source(source_enum) if source_enum
-          end
-          evidence.save!
-        end
+        create_evidence_from_units(@claim, evidence_units)
         redirect_to claims_path(filter: 'drafts'), notice: 'Claim saved as draft.'
       else
         render :new, status: :unprocessable_entity
       end
     else
-      @claim = current_user.claims.new(claim_params.except(:evidences))
+      @claim = current_user.claims.new(claim_params.except(:combined_evidence_field))
       if @claim.save
-        evidences.each do |evidence_hash|
-          next if evidence_hash[:evidence].blank?
-
-          # Handle multiple sources
-          sources = Array(evidence_hash[:sources]).compact
-          sources = ['historical'] if sources.empty?
-
-          evidence = @claim.evidences.create!(content: evidence_hash[:evidence])
-
-          # Add all sources to the evidence
-          sources.each do |source_name|
-            source_enum = SOURCE_ENUM_MAP[source_name.to_s.strip]
-            evidence.add_source(source_enum) if source_enum
-          end
-          evidence.save!
-        end
+        create_evidence_from_units(@claim, evidence_units)
         response = LsvValidatorService.new(@claim).run_validation!
         store_claim_result(@claim) if response
         redirect_to @claim, notice: "Claim validated successfully."
@@ -172,83 +161,39 @@ class ClaimsController < ApplicationController
       return
     end
 
-    evidences_param = params[:claim][:evidences]
-    evidences = if evidences_param.is_a?(String)
+    # Parse evidence units from the combined field
+    combined_evidence_field = params[:claim][:combined_evidence_field]
+    evidence_units = if combined_evidence_field.present?
       begin
-        JSON.parse(evidences_param)
-      rescue
+        JSON.parse(combined_evidence_field)
+      rescue JSON::ParserError
         []
       end
-    elsif evidences_param.is_a?(Array)
-      evidences_param
     else
       []
     end
-    # Treat each evidence as a plain string or a hash with evidence and sources
-    evidences = evidences.map do |ev|
-      if ev.is_a?(String)
-        { evidence: ev, sources: ['historical'] }
-      elsif ev.is_a?(Hash) && (ev[:evidence] || ev['evidence'])
-        {
-          evidence: ev[:evidence] || ev['evidence'],
-          sources: ev[:sources] || ev['sources'] || ev[:source] || ev['source'] || ['historical']
-        }
-      else
-        { evidence: ev.to_s, sources: ['historical'] }
-      end
-    end
 
-    if evidences.empty? || evidences.all? { |ev| ev[:evidence].blank? }
+    if evidence_units.empty?
       flash.now[:alert] = 'At least one evidence is required.'
       render :edit, status: :unprocessable_entity
       return
     end
 
     if params[:save_as_draft] == 'true'
-      if @claim.update(claim_params.except(:evidences).merge(state: 'draft'))
+      if @claim.update(claim_params.except(:combined_evidence_field).merge(state: 'draft'))
         @claim.evidences.destroy_all
-        evidences.each do |evidence_hash|
-          next if evidence_hash[:evidence].blank?
-
-          # Handle multiple sources
-          sources = Array(evidence_hash[:sources]).compact
-          sources = ['historical'] if sources.empty?
-
-          evidence = @claim.evidences.create!(content: evidence_hash[:evidence])
-
-          # Add all sources to the evidence
-          sources.each do |source_name|
-            source_enum = SOURCE_ENUM_MAP[source_name.to_s.strip]
-            evidence.add_source(source_enum) if source_enum
-          end
-          evidence.save!
-        end
+        create_evidence_from_units(@claim, evidence_units)
         redirect_to claims_path(filter: 'drafts'), notice: 'Claim saved as draft.'
       else
         render :edit, status: :unprocessable_entity
       end
     else
-      if @claim.update(claim_params.except(:evidences))
+      if @claim.update(claim_params.except(:combined_evidence_field))
         @claim.evidences.destroy_all
-        evidences.each do |evidence_hash|
-          next if evidence_hash[:evidence].blank?
-
-          # Handle multiple sources
-          sources = Array(evidence_hash[:sources]).compact
-          sources = ['historical'] if sources.empty?
-
-          evidence = @claim.evidences.create!(content: evidence_hash[:evidence])
-
-          # Add all sources to the evidence
-          sources.each do |source_name|
-            source_enum = SOURCE_ENUM_MAP[source_name.to_s.strip]
-            evidence.add_source(source_enum) if source_enum
-          end
-          evidence.save!
-        end
+        create_evidence_from_units(@claim, evidence_units)
         response = LsvValidatorService.new(@claim).run_validation!
         store_claim_result(@claim) if response
-        redirect_to @claim, notice: 'Claim updated and validated successfully.'
+        redirect_to @claim, notice: "Claim updated successfully."
       else
         render :edit, status: :unprocessable_entity
       end
@@ -260,7 +205,7 @@ class ClaimsController < ApplicationController
     redirect_to claims_path, notice: 'Claim was successfully deleted.'
   end
 
-    def publish_fact
+  def publish_fact
     if @claim.fact?
       @claim.update(published: true)
 
@@ -299,10 +244,10 @@ class ClaimsController < ApplicationController
     if @claim.fact?
       @claim.update(published: false)
 
-      # Remove embeddings when fact is unpublished
-      @claim.update_columns(content_embedding: nil, normalized_content_hash: nil)
+    # Remove embeddings when fact is unpublished
+    @claim.update_columns(content_embedding: nil, normalized_content_hash: nil)
 
-      respond_to do |format|
+    respond_to do |format|
         format.html { redirect_to @claim, notice: 'Fact unpublished successfully!' }
         format.json { render json: { status: 'success', message: 'Fact unpublished successfully!' } }
       end
@@ -318,7 +263,7 @@ class ClaimsController < ApplicationController
     @claim = Claim.find(params[:id])
     @reasoning = @claim.reasonings.find_by(source: params[:source])
     if @reasoning
-      render partial: 'reasonings/reasoning_response', locals: { reasoning: @reasoning }
+    render partial: 'reasonings/reasoning_response', locals: { reasoning: @reasoning }
     else
       head :not_found
     end
@@ -340,16 +285,48 @@ class ClaimsController < ApplicationController
   end
 
   def claim_params
-    parsed_params = params.require(:claim).permit(:content, :primary_sources, :secondary_sources, :draft, :evidences)
+    parsed_params = params.require(:claim).permit(:content, :primary_sources, :secondary_sources, :draft, :combined_evidence_field)
 
-    if parsed_params[:primary_sources].is_a?(String)
-      parsed_params[:primary_sources] = JSON.parse(parsed_params[:primary_sources]) rescue []
+    # Parse primary_sources and secondary_sources from JSON strings to arrays
+    if parsed_params[:primary_sources].present?
+      begin
+        parsed_params[:primary_sources] = JSON.parse(parsed_params[:primary_sources])
+      rescue JSON::ParserError
+        parsed_params[:primary_sources] = []
+      end
+    else
+      parsed_params[:primary_sources] = []
     end
 
-    if parsed_params[:secondary_sources].is_a?(String)
-      parsed_params[:secondary_sources] = JSON.parse(parsed_params[:secondary_sources]) rescue []
+    if parsed_params[:secondary_sources].present?
+      begin
+        parsed_params[:secondary_sources] = JSON.parse(parsed_params[:secondary_sources])
+      rescue JSON::ParserError
+        parsed_params[:secondary_sources] = []
+      end
+    else
+      parsed_params[:secondary_sources] = []
     end
 
     parsed_params
+  end
+
+  # New method to create evidence from evidence units
+  def create_evidence_from_units(claim, evidence_units)
+    evidence_units.each do |unit|
+      next unless unit['sections'] && unit['sections'].any?
+      # Create evidence
+      evidence = claim.evidences.create!
+      # Store all sections as JSON in content
+      evidence.set_evidence_sections(unit['sections'])
+      # Save the evidence to persist the content
+      evidence.save!
+      # Extract and populate individual fields from the sections
+      evidence.populate_structured_fields
+
+      # Determine source from sections and update sources
+      evidence.update_sources_from_sections
+      evidence.save!
+    end
   end
 end

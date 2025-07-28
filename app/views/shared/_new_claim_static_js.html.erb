@@ -1,0 +1,17 @@
+<script>
+// Make the page static (non-scrollable)
+document.body.style.overflow = 'hidden';
+document.documentElement.style.overflow = 'hidden';
+
+// Restore overflow when leaving the page
+window.addEventListener('beforeunload', function() {
+  document.body.style.overflow = '';
+  document.documentElement.style.overflow = '';
+});
+
+// Also restore overflow when navigating away
+window.addEventListener('pagehide', function() {
+  document.body.style.overflow = '';
+  document.documentElement.style.overflow = '';
+});
+</script> 

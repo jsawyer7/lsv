@@ -21,6 +21,7 @@ Rails.application.routes.draw do
     resources :challenges, only: [:create, :show]
     post :validate_claim, on: :collection
     post :validate_evidence, on: :collection
+    post :generate_ai_evidence, on: :collection
     member do
       get :reasoning_for_source
       post :publish_fact

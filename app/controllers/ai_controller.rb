@@ -7,6 +7,8 @@ class AiController < ApplicationController
     claim = params[:claim]
     error = params[:error]
 
+    Rails.logger.info "Claim suggestion called with claim: #{claim}, error: #{error}"
+
     prompt = build_prompt(claim, error)
     client = OpenAI::Client.new(
       access_token: openai_api_key,
@@ -24,11 +26,15 @@ class AiController < ApplicationController
           temperature: 0.2,
           stream: proc { |chunk, _bytesize|
             content = chunk.dig("choices", 0, "delta", "content")
-            response.stream.write(content) if content
+            if content
+              Rails.logger.info "Streaming content: #{content}"
+              response.stream.write(content)
+            end
           }
         }
       )
     rescue => e
+      Rails.logger.error "AI service error: #{e.message}"
       response.stream.write("Sorry, there was a problem with the AI service.")
     ensure
       response.stream.close

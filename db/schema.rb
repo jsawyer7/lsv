@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2025_07_18_224837) do
+ActiveRecord::Schema[7.0].define(version: 2025_07_26_054712) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
   enable_extension "vector"
@@ -80,10 +80,25 @@ ActiveRecord::Schema[7.0].define(version: 2025_07_18_224837) do
 
   create_table "evidences", force: :cascade do |t|
     t.bigint "claim_id", null: false
-    t.text "content"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "sources", default: [], array: true
+    t.text "content"
+    t.string "verse_reference"
+    t.text "original_text"
+    t.text "translation"
+    t.text "explanation"
+    t.string "historical_event"
+    t.text "description"
+    t.text "relevance"
+    t.string "term"
+    t.text "definition"
+    t.text "etymology"
+    t.text "usage_context"
+    t.text "premise"
+    t.text "reasoning"
+    t.text "conclusion"
+    t.string "logical_form"
     t.index ["claim_id"], name: "index_evidences_on_claim_id"
     t.index ["sources"], name: "index_evidences_on_sources", using: :gin
   end
