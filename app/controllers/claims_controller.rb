@@ -323,9 +323,6 @@ class ClaimsController < ApplicationController
       evidence.save!
       # Extract and populate individual fields from the sections
       evidence.populate_structured_fields
-
-      # Determine source from sections and update sources
-      evidence.update_sources_from_sections
       evidence.save!
     end
   end

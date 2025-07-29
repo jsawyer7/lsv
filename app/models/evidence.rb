@@ -178,10 +178,23 @@ class Evidence < ApplicationRecord
           end
         end
 
-        # Store source in the sources array
-        if section_data['source']
+        # Store sources in the sources array
+        if section_data['sources']
+          source_enums = section_data['sources'].map { |s| AVAILABLE_SOURCES[s.downcase] }.compact
+          self.sources = source_enums if source_enums.any?
+        elsif section_data['source']
           source_enum = AVAILABLE_SOURCES[section_data['source'].downcase]
           self.sources = [source_enum] if source_enum
+        elsif section_data['details']
+          # Extract sources from HTML details
+          details_html = section_data['details']
+          if details_html.match(/Source:<\/span>\s*<span[^>]*>([^<]+)</)
+            source_text = $1.strip
+            # Split by comma and clean up
+            source_names = source_text.split(',').map(&:strip)
+            source_enums = source_names.map { |s| AVAILABLE_SOURCES[s.downcase] }.compact
+            self.sources = source_enums if source_enums.any?
+          end
         end
       when 'historical'
         self.historical_event = section_data['historical_event']
@@ -205,10 +218,23 @@ class Evidence < ApplicationRecord
           end
         end
 
-        # Store source in the sources array
-        if section_data['source']
+        # Store sources in the sources array
+        if section_data['sources']
+          source_enums = section_data['sources'].map { |s| AVAILABLE_SOURCES[s.downcase] }.compact
+          self.sources = source_enums if source_enums.any?
+        elsif section_data['source']
           source_enum = AVAILABLE_SOURCES[section_data['source'].downcase]
           self.sources = [source_enum] if source_enum
+        elsif section_data['details']
+          # Extract sources from HTML details
+          details_html = section_data['details']
+          if details_html.match(/Source:<\/span>\s*<span[^>]*>([^<]+)</)
+            source_text = $1.strip
+            # Split by comma and clean up
+            source_names = source_text.split(',').map(&:strip)
+            source_enums = source_names.map { |s| AVAILABLE_SOURCES[s.downcase] }.compact
+            self.sources = source_enums if source_enums.any?
+          end
         end
       when 'definition'
         self.term = section_data['term']
@@ -237,10 +263,23 @@ class Evidence < ApplicationRecord
           end
         end
 
-        # Store source in the sources array
-        if section_data['source']
+        # Store sources in the sources array
+        if section_data['sources']
+          source_enums = section_data['sources'].map { |s| AVAILABLE_SOURCES[s.downcase] }.compact
+          self.sources = source_enums if source_enums.any?
+        elsif section_data['source']
           source_enum = AVAILABLE_SOURCES[section_data['source'].downcase]
           self.sources = [source_enum] if source_enum
+        elsif section_data['details']
+          # Extract sources from HTML details
+          details_html = section_data['details']
+          if details_html.match(/Source:<\/span>\s*<span[^>]*>([^<]+)</)
+            source_text = $1.strip
+            # Split by comma and clean up
+            source_names = source_text.split(',').map(&:strip)
+            source_enums = source_names.map { |s| AVAILABLE_SOURCES[s.downcase] }.compact
+            self.sources = source_enums if source_enums.any?
+          end
         end
       when 'logic'
         self.premise = section_data['premise']
@@ -269,10 +308,23 @@ class Evidence < ApplicationRecord
           end
         end
 
-        # Store source in the sources array
-        if section_data['source']
+        # Store sources in the sources array
+        if section_data['sources']
+          source_enums = section_data['sources'].map { |s| AVAILABLE_SOURCES[s.downcase] }.compact
+          self.sources = source_enums if source_enums.any?
+        elsif section_data['source']
           source_enum = AVAILABLE_SOURCES[section_data['source'].downcase]
           self.sources = [source_enum] if source_enum
+        elsif section_data['details']
+          # Extract sources from HTML details
+          details_html = section_data['details']
+          if details_html.match(/Source:<\/span>\s*<span[^>]*>([^<]+)</)
+            source_text = $1.strip
+            # Split by comma and clean up
+            source_names = source_text.split(',').map(&:strip)
+            source_enums = source_names.map { |s| AVAILABLE_SOURCES[s.downcase] }.compact
+            self.sources = source_enums if source_enums.any?
+          end
         end
       end
     end

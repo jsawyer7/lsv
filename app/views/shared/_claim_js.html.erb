@@ -247,10 +247,20 @@
   // --- Evidence Units State ---
   let evidenceUnits = [];
   let currentEvidenceUnit = null;
-  let evidenceSourcesHash = new Set(); // Track unique sources from evidence units
+  // Global variables for source management
+  let primarySourcesHash = new Set();
+  let secondarySourcesHash = new Set();
+  let evidenceSourcesHash = new Set();
+  let isDragging = false; // Flag to prevent UI updates during drag operations
+  let draggedFromList = null; // Track which list the drag started from
+  window.evidenceSourcesHash = evidenceSourcesHash; // Make it globally accessible
 
   // Available sources for validation
   const AVAILABLE_SOURCES = ['Quran', 'Tanakh', 'Catholic', 'Ethiopian', 'Protestant', 'Historical'];
+
+  // Unique hash to maintain state of primary and secondary sources
+  // let primarySourcesHash = new Set();
+  // let secondarySourcesHash = new Set();
 
   function setupEvidenceControls() {
     const addEvidenceBtn = document.getElementById('add-evidence-btn');
@@ -440,8 +450,21 @@
     
     evidenceUnits.forEach(unit => {
       Object.values(unit.sections).forEach(section => {
-        if (section.source && AVAILABLE_SOURCES.includes(section.source)) {
-          evidenceSourcesHash.add(section.source);
+        if (section.sources && Array.isArray(section.sources)) {
+          // Handle new sources array format
+          section.sources.forEach(source => {
+            if (AVAILABLE_SOURCES.includes(source)) {
+              evidenceSourcesHash.add(source);
+            }
+          });
+        } else if (section.source) {
+          // Fallback to old comma-separated sources format
+          const sources = section.source.split(',').map(s => s.trim());
+          sources.forEach(source => {
+            if (AVAILABLE_SOURCES.includes(source)) {
+              evidenceSourcesHash.add(source);
+            }
+          });
         }
       });
     });
@@ -453,20 +476,43 @@
     const allSources = Array.from(evidenceSourcesHash);
     console.log('All sources from hash:', allSources);
     
-    // Define primary sources (religious sources)
-    const primarySourceTypes = ['Quran', 'Tanakh', 'Catholic', 'Ethiopian', 'Protestant'];
+    // Check if user has already made drag and drop modifications
+    const hasUserModifications = primarySourcesHash.size > 0 || secondarySourcesHash.size > 0;
     
-    // Categorize sources
-    const primarySources = allSources.filter(source => 
-      primarySourceTypes.includes(source)
+    if (hasUserModifications) {
+      console.log('User has already made drag and drop modifications, preserving them');
+      console.log('Current primary sources hash:', Array.from(primarySourcesHash));
+      console.log('Current secondary sources hash:', Array.from(secondarySourcesHash));
+      
+      // Return the current state of the hashes (respecting user choices)
+      return {
+        primary: Array.from(primarySourcesHash),
+        secondary: Array.from(secondarySourcesHash)
+      };
+    }
+    
+    // Only reset hashes if user hasn't made any modifications
+    console.log('No user modifications detected, setting up initial state based on evidence');
+    
+    // All detected sources from evidence should be primary sources
+    const primarySources = allSources;
+    
+    // Secondary sources are all available sources that are NOT in primary sources
+    const secondarySources = AVAILABLE_SOURCES.filter(source => 
+      !primarySources.includes(source)
     );
     
-    const secondarySources = allSources.filter(source => 
-      !primarySourceTypes.includes(source)
-    );
+    // Update the unique hashes
+    primarySourcesHash.clear();
+    secondarySourcesHash.clear();
     
-    console.log('Primary sources:', primarySources);
-    console.log('Secondary sources:', secondarySources);
+    primarySources.forEach(source => primarySourcesHash.add(source));
+    secondarySources.forEach(source => secondarySourcesHash.add(source));
+    
+    console.log('Primary sources (from evidence):', primarySources);
+    console.log('Secondary sources (remaining):', secondarySources);
+    console.log('Primary sources hash:', Array.from(primarySourcesHash));
+    console.log('Secondary sources hash:', Array.from(secondarySourcesHash));
     
     return {
       primary: primarySources,
@@ -487,11 +533,17 @@
 
   function addDragListeners(element) {
     element.addEventListener('dragstart', function(e) {
+      console.log('Drag start event triggered for:', this.getAttribute('data-source'));
+      isDragging = true;
+      draggedFromList = this.parentNode.id; // Track which list the drag started from
       e.dataTransfer.setData('text/plain', this.getAttribute('data-source'));
       this.classList.add('dragging');
     });
     
     element.addEventListener('dragend', function(e) {
+      console.log('Drag end event triggered for:', this.getAttribute('data-source'));
+      isDragging = false;
+      draggedFromList = null; // Reset when drag ends
       this.classList.remove('dragging');
       // Remove dragover class from all sources lists
       document.querySelectorAll('.sources-list').forEach(list => {
@@ -505,15 +557,7 @@
     
     element.addEventListener('drop', function(e) {
       e.preventDefault();
-      const source = e.dataTransfer.getData('text/plain');
-      const sourceElement = document.querySelector(`[data-source="${source}"]`);
-      const targetList = this.closest('.sources-list');
-      
-      if (sourceElement && targetList && sourceElement.parentNode !== targetList) {
-        targetList.appendChild(sourceElement);
-        updateHiddenFields();
-      }
-      
+      // Drop logic is now handled in the list drop event handler
       // Remove dragover class
       document.querySelectorAll('.sources-list').forEach(list => {
         list.classList.remove('dragover');
@@ -529,6 +573,7 @@
       list.addEventListener('dragover', function(e) {
         e.preventDefault();
         this.classList.add('dragover');
+        console.log('Dragover on list:', this.id);
       });
       
       list.addEventListener('dragleave', function(e) {
@@ -539,18 +584,79 @@
       });
       
       list.addEventListener('drop', function(e) {
+        console.log('List drop event triggered for list:', this.id);
         e.preventDefault();
         this.classList.remove('dragover');
+        
+        // Handle the actual drop logic here
+        const source = e.dataTransfer.getData('text/plain');
+        const sourceElement = document.querySelector(`[data-source="${source}"]`);
+        
+        console.log('List drop event triggered:', {
+          source: source,
+          sourceElement: sourceElement,
+          targetList: this,
+          draggedFromList: draggedFromList,
+          oldParent: sourceElement ? sourceElement.parentNode : null
+        });
+        
+        if (sourceElement && draggedFromList && draggedFromList !== this.id) {
+          console.log('Moving from', draggedFromList, 'to', this.id);
+          
+          // Remove from old list hash
+          if (draggedFromList === 'primary-sources-list') {
+            primarySourcesHash.delete(source);
+            console.log('Removed from primary hash:', source);
+          } else if (draggedFromList === 'secondary-sources-list') {
+            secondarySourcesHash.delete(source);
+            console.log('Removed from secondary hash:', source);
+          }
+          
+          // Add to new list hash
+          if (this.id === 'primary-sources-list') {
+            primarySourcesHash.add(source);
+            console.log('Added to primary hash:', source);
+          } else if (this.id === 'secondary-sources-list') {
+            secondarySourcesHash.add(source);
+            console.log('Added to secondary hash:', source);
+          }
+          
+          this.appendChild(sourceElement);
+          updateHiddenFields();
+          
+          // Refresh the UI to ensure consistency
+          console.log('Current primary sources hash:', Array.from(primarySourcesHash));
+          console.log('Current secondary sources hash:', Array.from(secondarySourcesHash));
+          
+          // Add a small delay to ensure drag and drop completes
+          setTimeout(() => {
+            console.log('Drag and drop completed. Final state:');
+            console.log('Primary sources:', Array.from(primarySourcesHash));
+            console.log('Secondary sources:', Array.from(secondarySourcesHash));
+          }, 100);
+        } else {
+          console.log('No move detected - same list or invalid drag');
+        }
       });
     });
   }
 
   function updateSourcesUI() {
     console.log('updateSourcesUI called');
-    const sources = determinePrimaryAndSecondarySources();
-    console.log('Sources to display:', sources);
+    console.log('Call stack:', new Error().stack);
     
-    // Hide AI assistant and show sources columns
+    // Skip updates if currently dragging to prevent conflicts
+    if (isDragging) {
+      console.log('Skipping updateSourcesUI because currently dragging');
+      return;
+    }
+    
+    // Use the current state of the source hashes (respecting user's drag and drop choices)
+    const primarySources = Array.from(primarySourcesHash);
+    const secondarySources = Array.from(secondarySourcesHash);
+    console.log('Primary sources from hash:', primarySources);
+    console.log('Secondary sources from hash:', secondarySources);
+    
     const aiChatbotContainer = document.getElementById('ai-chatbot-container');
     const aiEvidenceChatbotContainer = document.getElementById('ai-evidence-chatbot-container');
     const sourcesColumns = document.getElementById('sources-columns');
@@ -571,9 +677,9 @@
     // Update primary sources
     const primarySourcesList = document.getElementById('primary-sources-list');
     if (primarySourcesList) {
-      console.log('Updating primary sources list with:', sources.primary);
+      console.log('Updating primary sources list with:', primarySources);
       primarySourcesList.innerHTML = '';
-      sources.primary.forEach(source => {
+      primarySources.forEach(source => {
         console.log('Creating source element for:', source);
         const sourceElement = createSourceElement(source);
         addDragListeners(sourceElement);
@@ -591,7 +697,7 @@
       
       // Get all available sources that are not in primary
       const availableSecondarySources = AVAILABLE_SOURCES.filter(source => 
-        !sources.primary.includes(source)
+        !primarySources.includes(source)
       );
       
       console.log('Available secondary sources:', availableSecondarySources);
@@ -611,7 +717,6 @@
     
     // Update hidden fields
     updateHiddenFields();
-    console.log('updateSourcesUI completed');
   }
 
   function updateHiddenFields() {
@@ -620,14 +725,16 @@
     const primarySourcesField = document.getElementById('primary-sources-field');
     const secondarySourcesField = document.getElementById('secondary-sources-field');
     
-    if (primarySourcesList && primarySourcesField) {
-      const primarySources = Array.from(primarySourcesList.querySelectorAll('.source-item')).map(item => item.getAttribute('data-source'));
+    // Get sources from the hashes for more reliable state management
+    const primarySources = Array.from(primarySourcesHash);
+    const secondarySources = Array.from(secondarySourcesHash);
+    
+    if (primarySourcesField) {
       primarySourcesField.value = JSON.stringify(primarySources);
       console.log('Updated primary sources field:', primarySources);
     }
     
-    if (secondarySourcesList && secondarySourcesField) {
-      const secondarySources = Array.from(secondarySourcesList.querySelectorAll('.source-item')).map(item => item.getAttribute('data-source'));
+    if (secondarySourcesField) {
       secondarySourcesField.value = JSON.stringify(secondarySources);
       console.log('Updated secondary sources field:', secondarySources);
     }
@@ -700,13 +807,17 @@
           // Update the evidence unit with the pending evidence data
           const evidenceUnit = evidenceUnits.find(unit => unit.id === currentEvidenceUnit.id);
           if (evidenceUnit && pendingEvidence) {
+            // Convert source to sources array format
+            const sources = Array.isArray(pendingEvidence.sources) ? pendingEvidence.sources : 
+                          (pendingEvidence.source ? [pendingEvidence.source] : ['Unknown']);
+            
             evidenceUnit.sections[currentAssistantType] = {
               id: pendingEvidence.id,
               type: pendingEvidence.type,
               content: pendingEvidence.content,
               details: pendingEvidence.details,
               expanded: true,
-              source: pendingEvidence.source
+              sources: sources
             };
             
             // Update the combined evidence field
@@ -774,6 +885,7 @@
     switch(sectionType) {
       case 'verse':
         content = `${evidence.verse_reference}\n\n${evidence.translation}`;
+        const verseSources = Array.isArray(evidence.sources) ? evidence.sources : (evidence.source ? [evidence.source] : ['Unknown']);
         details = `
           <div class="detail-row">
             <span class="detail-label">Reference:</span>
@@ -781,7 +893,7 @@
           </div>
           <div class="detail-row">
             <span class="detail-label">Source:</span>
-            <span class="detail-value">${evidence.source}</span>
+            <span class="detail-value">${verseSources.join(', ')}</span>
           </div>
           <div class="detail-row">
             <span class="detail-label">Original Text:</span>
@@ -796,12 +908,12 @@
             <span class="detail-value">${evidence.explanation}</span>
           </div>
         `;
-        streamText = `${evidence.verse_reference}\n\nSource: ${evidence.source}\n\nOriginal: ${evidence.original_text}\n\nTranslation: ${evidence.translation}\n\nExplanation: ${evidence.explanation}`;
-        // Store source in evidence unit
-        evidenceUnit.sections[sectionType].source = evidence.source;
+        streamText = `${evidence.verse_reference}\n\nSource: ${verseSources.join(', ')}\n\nOriginal: ${evidence.original_text}\n\nTranslation: ${evidence.translation}\n\nExplanation: ${evidence.explanation}`;
+        evidenceUnit.sections[sectionType].sources = verseSources;
         break;
       case 'historical':
         content = `${evidence.historical_event}\n\n${evidence.description}`;
+        const historicalSources = Array.isArray(evidence.sources) ? evidence.sources : (evidence.source ? [evidence.source] : ['Historical']);
         details = `
           <div class="detail-row">
             <span class="detail-label">Historical Event:</span>
@@ -809,7 +921,7 @@
           </div>
           <div class="detail-row">
             <span class="detail-label">Source:</span>
-            <span class="detail-value">${evidence.source}</span>
+            <span class="detail-value">${historicalSources.join(', ')}</span>
           </div>
           <div class="detail-row">
             <span class="detail-label">Description:</span>
@@ -820,11 +932,12 @@
             <span class="detail-value">${evidence.relevance}</span>
           </div>
         `;
-        streamText = `${evidence.historical_event}\n\nSource: ${evidence.source}\n\nDescription: ${evidence.description}\n\nRelevance: ${evidence.relevance}`;
-        evidenceUnit.sections[sectionType].source = evidence.source;
+        streamText = `${evidence.historical_event}\n\nSource: ${historicalSources.join(', ')}\n\nDescription: ${evidence.description}\n\nRelevance: ${evidence.relevance}`;
+        evidenceUnit.sections[sectionType].sources = historicalSources;
         break;
       case 'definition':
         content = `${evidence.term}\n\n${evidence.definition}`;
+        const definitionSources = Array.isArray(evidence.sources) ? evidence.sources : (evidence.source ? [evidence.source] : ['Historical']);
         details = `
           <div class="detail-row">
             <span class="detail-label">Term:</span>
@@ -832,7 +945,7 @@
           </div>
           <div class="detail-row">
             <span class="detail-label">Source:</span>
-            <span class="detail-value">${evidence.source}</span>
+            <span class="detail-value">${definitionSources.join(', ')}</span>
           </div>
           <div class="detail-row">
             <span class="detail-label">Definition:</span>
@@ -847,11 +960,12 @@
             <span class="detail-value">${evidence.usage_context}</span>
           </div>
         `;
-        streamText = `${evidence.term}\n\nSource: ${evidence.source}\n\nDefinition: ${evidence.definition}\n\nEtymology: ${evidence.etymology}\n\nUsage Context: ${evidence.usage_context}`;
-        evidenceUnit.sections[sectionType].source = evidence.source;
+        streamText = `${evidence.term}\n\nSource: ${definitionSources.join(', ')}\n\nDefinition: ${evidence.definition}\n\nEtymology: ${evidence.etymology}\n\nUsage Context: ${evidence.usage_context}`;
+        evidenceUnit.sections[sectionType].sources = definitionSources;
         break;
       case 'logic':
         content = `${evidence.premise}\n\n${evidence.reasoning}\n\n${evidence.conclusion}`;
+        const logicSources = Array.isArray(evidence.sources) ? evidence.sources : (evidence.source ? [evidence.source] : ['Historical']);
         details = `
           <div class="detail-row">
             <span class="detail-label">Premise:</span>
@@ -859,7 +973,7 @@
           </div>
           <div class="detail-row">
             <span class="detail-label">Source:</span>
-            <span class="detail-value">${evidence.source}</span>
+            <span class="detail-value">${logicSources.join(', ')}</span>
           </div>
           <div class="detail-row">
             <span class="detail-label">Reasoning:</span>
@@ -874,8 +988,8 @@
             <span class="detail-value">${evidence.logical_form}</span>
           </div>
         `;
-        streamText = `${evidence.premise}\n\nSource: ${evidence.source}\n\nReasoning: ${evidence.reasoning}\n\nConclusion: ${evidence.conclusion}\n\nLogical Form: ${evidence.logical_form}`;
-        evidenceUnit.sections[sectionType].source = evidence.source;
+        streamText = `${evidence.premise}\n\nSource: ${logicSources.join(', ')}\n\nReasoning: ${evidence.reasoning}\n\nConclusion: ${evidence.conclusion}\n\nLogical Form: ${evidence.logical_form}`;
+        evidenceUnit.sections[sectionType].sources = logicSources;
         break;
     }
     evidenceUnit.sections[sectionType].content = content;
@@ -1039,27 +1153,36 @@
       // Set the final values
       claimInput.value = window.validatedClaim;
       
-      // Update evidence sources hash and determine sources
+      // Update evidence sources hash first
       updateEvidenceSourcesHash();
-      const sources = determinePrimaryAndSecondarySources();
+      
+      // Use the current state of the source hashes (respecting user's drag and drop choices)
+      const primarySources = Array.from(primarySourcesHash);
+      const secondarySources = Array.from(secondarySourcesHash);
+      
+      console.log('Form submission - Hash state:');
+      console.log('Primary sources hash:', primarySources);
+      console.log('Secondary sources hash:', secondarySources);
       
       // Update hidden fields for sources
       const primarySourcesField = document.getElementById('primary-sources-field');
       const secondarySourcesField = document.getElementById('secondary-sources-field');
       
       if (primarySourcesField) {
-        primarySourcesField.value = JSON.stringify(sources.primary);
+        primarySourcesField.value = JSON.stringify(primarySources);
+        console.log('Updated primary sources field with:', primarySources);
       }
       
       if (secondarySourcesField) {
-        secondarySourcesField.value = JSON.stringify(sources.secondary);
+        secondarySourcesField.value = JSON.stringify(secondarySources);
+        console.log('Updated secondary sources field with:', secondarySources);
       }
       
       console.log('Submitting form with:', {
         finalClaim: claimInput.value,
         evidenceUnits: evidenceUnits,
-        primarySources: sources.primary,
-        secondarySources: sources.secondary
+        primarySources: primarySources,
+        secondarySources: secondarySources
       });
 
       // Show loader before submitting

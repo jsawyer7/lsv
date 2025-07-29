@@ -1,4 +1,6 @@
 class AiDefinitionEvidenceService
+  AVAILABLE_SOURCES = ['Quran', 'Tanakh', 'Catholic', 'Ethiopian', 'Protestant', 'Historical']
+
   def initialize(claim_content)
     @claim_content = claim_content
   end
@@ -13,7 +15,7 @@ class AiDefinitionEvidenceService
           messages: [
             {
               role: "system",
-              content: "You are an expert linguist and scholar specializing in religious and philosophical terminology. Provide precise definitions with etymological context and usage examples."
+              content: "You are an expert linguist and scholar specializing in religious and philosophical terminology. Provide precise definitions with etymological context and usage examples. You must identify ALL relevant sources for the definition from the available sources: #{AVAILABLE_SOURCES.join(', ')}."
             },
             {
               role: "user",
@@ -41,9 +43,10 @@ class AiDefinitionEvidenceService
       Please provide definition evidence with the following structure:
 
       1. **Term/Concept**: The key term or concept being defined
-      2. **Definition**: Precise definition with linguistic accuracy
-      3. **Etymology**: Origin and historical development of the term
-      4. **Usage Context**: How the term is used in religious or philosophical contexts
+      2. **Sources**: Identify ALL relevant sources from these available options: #{AVAILABLE_SOURCES.join(', ')}
+      3. **Definition**: Precise definition with linguistic accuracy
+      4. **Etymology**: Origin and historical development of the term
+      5. **Usage Context**: How the term is used in religious or philosophical contexts
 
       Important guidelines:
       - Focus on precise, scholarly definitions
@@ -52,12 +55,18 @@ class AiDefinitionEvidenceService
       - Distinguish between literal and metaphorical meanings
       - Include examples of usage in relevant contexts
       - Consider cultural and historical variations in meaning
+      - **CRITICAL**: Identify ALL relevant sources for the definition:
+        * Religious terms from specific traditions → Sources: [specific tradition] (e.g., ["Quran"], ["Catholic"])
+        * Cross-cultural religious terms → Sources: [all relevant traditions] (e.g., ["Quran", "Catholic", "Protestant"])
+        * Historical linguistic terms → Sources: ["Historical"]
+        * Terms with multiple religious contexts → Sources: [all relevant religious sources]
 
       #{user_query ? "User specific request: #{user_query}" : ""}
 
       Please format your response as JSON:
       {
         "term": "Key term or concept",
+        "sources": ["Quran", "Catholic"],
         "definition": "Precise definition",
         "etymology": "Origin and development",
         "usage_context": "How it's used in context"
@@ -73,8 +82,16 @@ class AiDefinitionEvidenceService
       json_match = content.match(/\{[\s\S]*\}/)
       if json_match
         parsed = JSON.parse(json_match[0])
+        sources = parsed["sources"] || [parsed["source"]].compact
+
+        # If sources is still empty, default to Historical
+        if sources.empty?
+          sources = ["Historical"]
+        end
+
         {
           term: parsed["term"],
+          sources: sources,
           definition: parsed["definition"],
           etymology: parsed["etymology"],
           usage_context: parsed["usage_context"],
@@ -95,12 +112,14 @@ class AiDefinitionEvidenceService
     lines = content.split("\n").map(&:strip).reject(&:empty?)
 
     term = lines.find { |line| line.match?(/term|concept|word/i) } || "Term/Concept"
+    sources = ["Historical"] # Default to Historical for definition evidence
     definition = lines.find { |line| line.match?(/definition|meaning/i) } || "Definition"
     etymology = lines.find { |line| line.match?(/etymology|origin|root/i) } || "Etymology"
     usage = lines.find { |line| line.match?(/usage|context|how/i) } || "Usage Context"
 
     {
       term: term,
+      sources: sources,
       definition: definition,
       etymology: etymology,
       usage_context: usage,

@@ -1,4 +1,6 @@
 class AiHistoricalEvidenceService
+  AVAILABLE_SOURCES = ['Quran', 'Tanakh', 'Catholic', 'Ethiopian', 'Protestant', 'Historical']
+
   def initialize(claim_content)
     @claim_content = claim_content
   end
@@ -13,7 +15,7 @@ class AiHistoricalEvidenceService
           messages: [
             {
               role: "system",
-              content: "You are an expert historian specializing in religious and cultural history. Provide accurate, well-documented historical evidence with proper citations and context."
+              content: "You are an expert historian specializing in religious and cultural history. Provide accurate, well-documented historical evidence with proper citations and context. You must identify ALL relevant sources for the historical evidence from the available sources: #{AVAILABLE_SOURCES.join(', ')}."
             },
             {
               role: "user",
@@ -41,7 +43,7 @@ class AiHistoricalEvidenceService
       Please provide historical evidence with the following structure:
 
       1. **Historical Event/Period**: The specific historical event, period, or context
-      2. **Source**: Primary or secondary historical source (document, artifact, record, etc.)
+      2. **Sources**: Identify ALL relevant sources from these available options: #{AVAILABLE_SOURCES.join(', ')}
       3. **Description**: Detailed description of the historical evidence
       4. **Relevance**: How this historical evidence supports or relates to the claim
 
@@ -52,13 +54,18 @@ class AiHistoricalEvidenceService
       - Provide context about the historical period and cultural background
       - Ensure the evidence directly relates to or supports the claim
       - Distinguish between primary and secondary sources
+      - **CRITICAL**: Identify ALL relevant sources for the historical evidence:
+        * Religious historical events → Sources: ["Historical"] + relevant religious source (e.g., ["Historical", "Catholic"])
+        * Archaeological findings → Sources: ["Historical"]
+        * Historical documents from specific traditions → Sources: ["Historical"] + specific tradition (e.g., ["Historical", "Ethiopian"])
+        * Cross-cultural historical events → Sources: ["Historical"] + all relevant religious sources
 
       #{user_query ? "User specific request: #{user_query}" : ""}
 
       Please format your response as JSON:
       {
         "historical_event": "Specific historical event or period",
-        "source": "Historical source or document",
+        "sources": ["Historical", "Catholic"],
         "description": "Detailed description of the historical evidence",
         "relevance": "How this evidence supports the claim"
       }
@@ -73,9 +80,16 @@ class AiHistoricalEvidenceService
       json_match = content.match(/\{[\s\S]*\}/)
       if json_match
         parsed = JSON.parse(json_match[0])
+        sources = parsed["sources"] || [parsed["source"]].compact
+
+        # If sources is still empty, default to Historical
+        if sources.empty?
+          sources = ["Historical"]
+        end
+
         {
           historical_event: parsed["historical_event"],
-          source: parsed["source"],
+          sources: sources,
           description: parsed["description"],
           relevance: parsed["relevance"],
           success: true
@@ -95,13 +109,13 @@ class AiHistoricalEvidenceService
     lines = content.split("\n").map(&:strip).reject(&:empty?)
 
     event = lines.find { |line| line.match?(/event|period|history/i) } || "Historical Event"
-    source = lines.find { |line| line.match?(/source|document|record/i) } || "Historical Source"
+    sources = ["Historical"] # Default to Historical for historical evidence
     description = lines.find { |line| line.match?(/description|detail/i) } || "Description"
     relevance = lines.find { |line| line.match?(/relevance|support|relate/i) } || "Relevance"
 
     {
       historical_event: event,
-      source: source,
+      sources: sources,
       description: description,
       relevance: relevance,
       success: true
