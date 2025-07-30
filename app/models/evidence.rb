@@ -36,6 +36,7 @@ class Evidence < ApplicationRecord
 
   # Methods to handle structured evidence data
   # An evidence can contain multiple sections, so we store them as JSON in content
+  # Each section can contain multiple items (e.g., multiple verses)
   def evidence_sections
     return {} unless content.present?
 
@@ -53,22 +54,62 @@ class Evidence < ApplicationRecord
 
   def add_evidence_section(section_type, section_data)
     sections = evidence_sections
-    sections[section_type] = section_data
+
+    # Initialize section as array if it doesn't exist
+    sections[section_type] = [] unless sections[section_type]
+
+    # Add the new section data to the array
+    sections[section_type] << section_data
     set_evidence_sections(sections)
   end
 
-  def remove_evidence_section(section_type)
+  def remove_evidence_section(section_type, section_index = nil)
     sections = evidence_sections
-    sections.delete(section_type)
+
+    if section_index.nil?
+      # Remove entire section type
+      sections.delete(section_type)
+    else
+      # Remove specific item from section array
+      if sections[section_type].is_a?(Array) && sections[section_type][section_index]
+        sections[section_type].delete_at(section_index)
+        # Remove section type if empty
+        sections.delete(section_type) if sections[section_type].empty?
+      end
+    end
+
     set_evidence_sections(sections)
   end
 
-  def get_evidence_section(section_type)
-    evidence_sections[section_type]
+  def get_evidence_section(section_type, section_index = nil)
+    sections = evidence_sections
+    section_data = sections[section_type]
+
+    if section_index.nil?
+      section_data
+    elsif section_data.is_a?(Array) && section_data[section_index]
+      section_data[section_index]
+    else
+      nil
+    end
   end
 
   def has_evidence_section?(section_type)
-    evidence_sections.key?(section_type)
+    sections = evidence_sections
+    sections.key?(section_type) && !sections[section_type].empty?
+  end
+
+  def get_evidence_section_count(section_type)
+    sections = evidence_sections
+    section_data = sections[section_type]
+
+    if section_data.is_a?(Array)
+      section_data.length
+    elsif section_data
+      1
+    else
+      0
+    end
   end
 
   # Method to get all evidence content as text
@@ -80,22 +121,54 @@ class Evidence < ApplicationRecord
 
     if sections['verse']
       verse_data = sections['verse']
-      content_parts << "#{verse_data['verse_reference']}\n\n#{verse_data['translation']}"
+      if verse_data.is_a?(Array)
+        # Handle multiple verses
+        verse_data.each_with_index do |verse, index|
+          content_parts << "Verse #{index + 1}: #{verse['verse_reference']}\n\n#{verse['translation']}"
+        end
+      else
+        # Handle single verse (backward compatibility)
+        content_parts << "#{verse_data['verse_reference']}\n\n#{verse_data['translation']}"
+      end
     end
 
     if sections['historical']
       historical_data = sections['historical']
-      content_parts << "#{historical_data['historical_event']}\n\n#{historical_data['description']}"
+      if historical_data.is_a?(Array)
+        # Handle multiple historical events
+        historical_data.each_with_index do |event, index|
+          content_parts << "Historical Event #{index + 1}: #{event['historical_event']}\n\n#{event['description']}"
+        end
+      else
+        # Handle single historical event (backward compatibility)
+        content_parts << "#{historical_data['historical_event']}\n\n#{historical_data['description']}"
+      end
     end
 
     if sections['definition']
       definition_data = sections['definition']
-      content_parts << "#{definition_data['term']}\n\n#{definition_data['definition']}"
+      if definition_data.is_a?(Array)
+        # Handle multiple definitions
+        definition_data.each_with_index do |def_item, index|
+          content_parts << "Definition #{index + 1}: #{def_item['term']}\n\n#{def_item['definition']}"
+        end
+      else
+        # Handle single definition (backward compatibility)
+        content_parts << "#{definition_data['term']}\n\n#{definition_data['definition']}"
+      end
     end
 
     if sections['logic']
       logic_data = sections['logic']
-      content_parts << "#{logic_data['premise']}\n\n#{logic_data['reasoning']}\n\n#{logic_data['conclusion']}"
+      if logic_data.is_a?(Array)
+        # Handle multiple logic arguments
+        logic_data.each_with_index do |logic_item, index|
+          content_parts << "Logic #{index + 1}: #{logic_item['premise']}\n\n#{logic_item['reasoning']}\n\n#{logic_item['conclusion']}"
+        end
+      else
+        # Handle single logic argument (backward compatibility)
+        content_parts << "#{logic_data['premise']}\n\n#{logic_data['reasoning']}\n\n#{logic_data['conclusion']}"
+      end
     end
 
     content_parts.join("\n\n---\n\n")
@@ -143,190 +216,272 @@ class Evidence < ApplicationRecord
     sections = evidence_sections
     return if sections.empty?
 
+    # Collect all sources from all sections
+    all_sources = []
+
     sections.each do |section_type, section_data|
       case section_type
       when 'verse'
-        # Extract data from the section_data directly
-        self.verse_reference = section_data['verse_reference']
-        self.original_text = section_data['original_text']
-        self.translation = section_data['translation']
-        self.explanation = section_data['explanation']
+        if section_data.is_a?(Array)
+          # Handle multiple verses
+          section_data.each_with_index do |verse_data, index|
+            # Extract data from HTML details
+            if verse_data['details']
+              details_html = verse_data['details']
 
-        # If the above fields are nil, try to extract from details HTML
-        if self.verse_reference.nil? && section_data['details']
-          # Parse the details HTML to extract structured data
-          details_html = section_data['details']
+              # Extract verse reference
+              if details_html.match(/Reference:<\/span>\s*<span[^>]*>([^<]+)</)
+                verse_reference = $1.strip
+                if index == 0
+                  self.verse_reference = verse_reference
+                end
+              end
 
-          # Extract verse reference
-          if details_html.match(/Reference:<\/span>\s*<span[^>]*>([^<]+)</)
-            self.verse_reference = $1.strip
+              # Extract original text
+              if details_html.match(/Original Text:<\/span>\s*<span[^>]*>([^<]+)</)
+                original_text = $1.strip
+                if index == 0
+                  self.original_text = original_text
+                end
+              end
+
+              # Extract translation
+              if details_html.match(/Translation:<\/span>\s*<span[^>]*>([^<]+)</)
+                translation = $1.strip
+                if index == 0
+                  self.translation = translation
+                end
+              end
+
+              # Extract explanation
+              if details_html.match(/Explanation:<\/span>\s*<span[^>]*>([^<]+)</)
+                explanation = $1.strip
+                if index == 0
+                  self.explanation = explanation
+                end
+              end
+
+              # Extract sources from HTML
+              if details_html.match(/Source:<\/span>\s*<span[^>]*>([^<]+)</)
+                source_text = $1.strip
+                # Split by comma and clean up
+                source_names = source_text.split(',').map(&:strip)
+                all_sources.concat(source_names)
+              end
+            end
+
+            # Also check for sources in the sources array
+            if verse_data['sources']
+              all_sources.concat(verse_data['sources'])
+            end
+          end
+        else
+          # Handle single verse (backward compatibility)
+          if section_data['details']
+            details_html = section_data['details']
+
+            # Extract verse reference
+            if details_html.match(/Reference:<\/span>\s*<span[^>]*>([^<]+)</)
+              self.verse_reference = $1.strip
+            end
+
+            # Extract original text
+            if details_html.match(/Original Text:<\/span>\s*<span[^>]*>([^<]+)</)
+              self.original_text = $1.strip
+            end
+
+            # Extract translation
+            if details_html.match(/Translation:<\/span>\s*<span[^>]*>([^<]+)</)
+              self.translation = $1.strip
+            end
+
+            # Extract explanation
+            if details_html.match(/Explanation:<\/span>\s*<span[^>]*>([^<]+)</)
+              self.explanation = $1.strip
+            end
+
+            # Extract sources from HTML
+            if details_html.match(/Source:<\/span>\s*<span[^>]*>([^<]+)</)
+              source_text = $1.strip
+              # Split by comma and clean up
+              source_names = source_text.split(',').map(&:strip)
+              all_sources.concat(source_names)
+            end
           end
 
-          # Extract original text
-          if details_html.match(/Original Text:<\/span>\s*<span[^>]*>([^<]+)</)
-            self.original_text = $1.strip
-          end
-
-          # Extract translation
-          if details_html.match(/Translation:<\/span>\s*<span[^>]*>([^<]+)</)
-            self.translation = $1.strip
-          end
-
-          # Extract explanation
-          if details_html.match(/Explanation:<\/span>\s*<span[^>]*>([^<]+)</)
-            self.explanation = $1.strip
-          end
-        end
-
-        # Store sources in the sources array
-        if section_data['sources']
-          source_enums = section_data['sources'].map { |s| AVAILABLE_SOURCES[s.downcase] }.compact
-          self.sources = source_enums if source_enums.any?
-        elsif section_data['source']
-          source_enum = AVAILABLE_SOURCES[section_data['source'].downcase]
-          self.sources = [source_enum] if source_enum
-        elsif section_data['details']
-          # Extract sources from HTML details
-          details_html = section_data['details']
-          if details_html.match(/Source:<\/span>\s*<span[^>]*>([^<]+)</)
-            source_text = $1.strip
-            # Split by comma and clean up
-            source_names = source_text.split(',').map(&:strip)
-            source_enums = source_names.map { |s| AVAILABLE_SOURCES[s.downcase] }.compact
-            self.sources = source_enums if source_enums.any?
+          # Also check for sources in the sources array
+          if section_data['sources']
+            all_sources.concat(section_data['sources'])
           end
         end
       when 'historical'
-        self.historical_event = section_data['historical_event']
-        self.description = section_data['description']
-        self.relevance = section_data['relevance']
+        if section_data.is_a?(Array)
+          # Handle multiple historical events
+          section_data.each_with_index do |historical_data, index|
+            if index == 0
+              # Use first historical event for main fields (backward compatibility)
+              if historical_data['details']
+                details_html = historical_data['details']
 
-        # If the above fields are nil, try to extract from details HTML
-        if self.historical_event.nil? && section_data['details']
-          details_html = section_data['details']
+                if details_html.match(/Historical Event:<\/span>\s*<span[^>]*>([^<]+)</)
+                  self.historical_event = $1.strip
+                end
 
-          if details_html.match(/Historical Event:<\/span>\s*<span[^>]*>([^<]+)</)
-            self.historical_event = $1.strip
+                if details_html.match(/Description:<\/span>\s*<span[^>]*>([^<]+)</)
+                  self.description = $1.strip
+                end
+
+                if details_html.match(/Relevance:<\/span>\s*<span[^>]*>([^<]+)</)
+                  self.relevance = $1.strip
+                end
+              end
+            end
+
+            # Collect sources from each historical event
+            if historical_data['sources']
+              all_sources.concat(historical_data['sources'])
+            end
+          end
+        else
+          # Handle single historical event (backward compatibility)
+          if section_data['details']
+            details_html = section_data['details']
+
+            if details_html.match(/Historical Event:<\/span>\s*<span[^>]*>([^<]+)</)
+              self.historical_event = $1.strip
+            end
+
+            if details_html.match(/Description:<\/span>\s*<span[^>]*>([^<]+)</)
+              self.description = $1.strip
+            end
+
+            if details_html.match(/Relevance:<\/span>\s*<span[^>]*>([^<]+)</)
+              self.relevance = $1.strip
+            end
           end
 
-          if details_html.match(/Description:<\/span>\s*<span[^>]*>([^<]+)</)
-            self.description = $1.strip
-          end
-
-          if details_html.match(/Relevance:<\/span>\s*<span[^>]*>([^<]+)</)
-            self.relevance = $1.strip
-          end
-        end
-
-        # Store sources in the sources array
-        if section_data['sources']
-          source_enums = section_data['sources'].map { |s| AVAILABLE_SOURCES[s.downcase] }.compact
-          self.sources = source_enums if source_enums.any?
-        elsif section_data['source']
-          source_enum = AVAILABLE_SOURCES[section_data['source'].downcase]
-          self.sources = [source_enum] if source_enum
-        elsif section_data['details']
-          # Extract sources from HTML details
-          details_html = section_data['details']
-          if details_html.match(/Source:<\/span>\s*<span[^>]*>([^<]+)</)
-            source_text = $1.strip
-            # Split by comma and clean up
-            source_names = source_text.split(',').map(&:strip)
-            source_enums = source_names.map { |s| AVAILABLE_SOURCES[s.downcase] }.compact
-            self.sources = source_enums if source_enums.any?
+          # Collect sources from single historical event
+          if section_data['sources']
+            all_sources.concat(section_data['sources'])
           end
         end
       when 'definition'
-        self.term = section_data['term']
-        self.definition = section_data['definition']
-        self.etymology = section_data['etymology']
-        self.usage_context = section_data['usage_context']
+        if section_data.is_a?(Array)
+          # Handle multiple definitions
+          section_data.each_with_index do |definition_data, index|
+            if index == 0
+              # Use first definition for main fields (backward compatibility)
+              if definition_data['details']
+                details_html = definition_data['details']
 
-        # If the above fields are nil, try to extract from details HTML
-        if self.term.nil? && section_data['details']
-          details_html = section_data['details']
+                if details_html.match(/Term:<\/span>\s*<span[^>]*>([^<]+)</)
+                  self.term = $1.strip
+                end
 
-          if details_html.match(/Term:<\/span>\s*<span[^>]*>([^<]+)</)
-            self.term = $1.strip
+                if details_html.match(/Definition:<\/span>\s*<span[^>]*>([^<]+)</)
+                  self.definition = $1.strip
+                end
+
+                if details_html.match(/Etymology:<\/span>\s*<span[^>]*>([^<]+)</)
+                  self.etymology = $1.strip
+                end
+
+                if details_html.match(/Usage Context:<\/span>\s*<span[^>]*>([^<]+)</)
+                  self.usage_context = $1.strip
+                end
+              end
+            end
+
+            # Collect sources from each definition
+            if definition_data['sources']
+              all_sources.concat(definition_data['sources'])
+            end
+          end
+        else
+          # Handle single definition (backward compatibility)
+          if section_data['details']
+            details_html = section_data['details']
+
+            if details_html.match(/Term:<\/span>\s*<span[^>]*>([^<]+)</)
+              self.term = $1.strip
+            end
+
+            if details_html.match(/Definition:<\/span>\s*<span[^>]*>([^<]+)</)
+              self.definition = $1.strip
+            end
+
+            if details_html.match(/Etymology:<\/span>\s*<span[^>]*>([^<]+)</)
+              self.etymology = $1.strip
+            end
+
+            if details_html.match(/Usage Context:<\/span>\s*<span[^>]*>([^<]+)</)
+              self.usage_context = $1.strip
+            end
           end
 
-          if details_html.match(/Definition:<\/span>\s*<span[^>]*>([^<]+)</)
-            self.definition = $1.strip
-          end
-
-          if details_html.match(/Etymology:<\/span>\s*<span[^>]*>([^<]+)</)
-            self.etymology = $1.strip
-          end
-
-          if details_html.match(/Usage Context:<\/span>\s*<span[^>]*>([^<]+)</)
-            self.usage_context = $1.strip
-          end
-        end
-
-        # Store sources in the sources array
-        if section_data['sources']
-          source_enums = section_data['sources'].map { |s| AVAILABLE_SOURCES[s.downcase] }.compact
-          self.sources = source_enums if source_enums.any?
-        elsif section_data['source']
-          source_enum = AVAILABLE_SOURCES[section_data['source'].downcase]
-          self.sources = [source_enum] if source_enum
-        elsif section_data['details']
-          # Extract sources from HTML details
-          details_html = section_data['details']
-          if details_html.match(/Source:<\/span>\s*<span[^>]*>([^<]+)</)
-            source_text = $1.strip
-            # Split by comma and clean up
-            source_names = source_text.split(',').map(&:strip)
-            source_enums = source_names.map { |s| AVAILABLE_SOURCES[s.downcase] }.compact
-            self.sources = source_enums if source_enums.any?
+          # Collect sources from single definition
+          if section_data['sources']
+            all_sources.concat(section_data['sources'])
           end
         end
       when 'logic'
-        self.premise = section_data['premise']
-        self.reasoning = section_data['reasoning']
-        self.conclusion = section_data['conclusion']
-        self.logical_form = section_data['logical_form']
+        if section_data.is_a?(Array)
+          # Handle multiple logic arguments
+          section_data.each_with_index do |logic_data, index|
+            if index == 0
+              # Use first logic argument for main fields (backward compatibility)
+              if logic_data['details']
+                details_html = logic_data['details']
 
-        # If the above fields are nil, try to extract from details HTML
-        if self.premise.nil? && section_data['details']
-          details_html = section_data['details']
+                if details_html.match(/Premise:<\/span>\s*<span[^>]*>([^<]+)</)
+                  self.premise = $1.strip
+                end
 
-          if details_html.match(/Premise:<\/span>\s*<span[^>]*>([^<]+)</)
-            self.premise = $1.strip
+                if details_html.match(/Reasoning:<\/span>\s*<span[^>]*>([^<]+)</)
+                  self.reasoning = $1.strip
+                end
+
+                if details_html.match(/Conclusion:<\/span>\s*<span[^>]*>([^<]+)</)
+                  self.conclusion = $1.strip
+                end
+              end
+            end
+
+            # Collect sources from each logic argument
+            if logic_data['sources']
+              all_sources.concat(logic_data['sources'])
+            end
+          end
+        else
+          # Handle single logic argument (backward compatibility)
+          if section_data['details']
+            details_html = section_data['details']
+
+            if details_html.match(/Premise:<\/span>\s*<span[^>]*>([^<]+)</)
+              self.premise = $1.strip
+            end
+
+            if details_html.match(/Reasoning:<\/span>\s*<span[^>]*>([^<]+)</)
+              self.reasoning = $1.strip
+            end
+
+            if details_html.match(/Conclusion:<\/span>\s*<span[^>]*>([^<]+)</)
+              self.conclusion = $1.strip
+            end
           end
 
-          if details_html.match(/Reasoning:<\/span>\s*<span[^>]*>([^<]+)</)
-            self.reasoning = $1.strip
-          end
-
-          if details_html.match(/Conclusion:<\/span>\s*<span[^>]*>([^<]+)</)
-            self.conclusion = $1.strip
-          end
-
-          if details_html.match(/Logical Form:<\/span>\s*<span[^>]*>([^<]+)</)
-            self.logical_form = $1.strip
-          end
-        end
-
-        # Store sources in the sources array
-        if section_data['sources']
-          source_enums = section_data['sources'].map { |s| AVAILABLE_SOURCES[s.downcase] }.compact
-          self.sources = source_enums if source_enums.any?
-        elsif section_data['source']
-          source_enum = AVAILABLE_SOURCES[section_data['source'].downcase]
-          self.sources = [source_enum] if source_enum
-        elsif section_data['details']
-          # Extract sources from HTML details
-          details_html = section_data['details']
-          if details_html.match(/Source:<\/span>\s*<span[^>]*>([^<]+)</)
-            source_text = $1.strip
-            # Split by comma and clean up
-            source_names = source_text.split(',').map(&:strip)
-            source_enums = source_names.map { |s| AVAILABLE_SOURCES[s.downcase] }.compact
-            self.sources = source_enums if source_enums.any?
+          # Collect sources from single logic argument
+          if section_data['sources']
+            all_sources.concat(section_data['sources'])
           end
         end
       end
+    end
+
+    # Convert all collected sources to enums and store in sources array
+    if all_sources.any?
+      source_enums = all_sources.map { |s| AVAILABLE_SOURCES[s.downcase] }.compact.uniq
+      self.sources = source_enums if source_enums.any?
     end
   end
 end

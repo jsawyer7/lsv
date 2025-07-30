@@ -1623,6 +1623,22 @@ body {
       border-radius: 4px;
       border: 1px solid #e5e7eb;
       
+      h5 {
+        margin: 0 0 0.75rem 0;
+        color: #374151;
+        font-weight: 600;
+        font-size: 1rem;
+      }
+      
+      .evidence-detail {
+        margin-bottom: 0.5rem;
+        
+        strong {
+          color: #6b7280;
+          font-weight: 600;
+        }
+      }
+      
       .evidence-sources {
         margin-bottom: 0.25rem;
         

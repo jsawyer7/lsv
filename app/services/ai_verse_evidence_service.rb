@@ -44,7 +44,7 @@ class AiVerseEvidenceService
     base_prompt = <<~PROMPT
       For the claim: "#{@claim_content}"
 
-      #{user_query ? "USER SPECIFIC REQUEST: #{user_query}" : "Please provide a relevant verse for this claim."}
+      **CRITICAL USER REQUEST**: #{user_query ? user_query : "Please provide a relevant verse for this claim."}
 
       Please provide verse evidence with the following structure:
 
@@ -55,7 +55,8 @@ class AiVerseEvidenceService
       5. **Sources**: Identify ALL relevant sources from these available options: #{AVAILABLE_SOURCES.join(', ')}
 
       Important guidelines:
-      - **CRITICAL**: Use the specific verse requested by the user, not a default example
+      - **CRITICAL**: You MUST use the specific verse requested by the user: "#{user_query}"
+      - **CRITICAL**: Do NOT use any default or example verses - only the verse specifically requested
       - Focus on literal, direct translation rather than interpretive translation
       - Include context from surrounding verses if needed for accurate translation
       - **CRITICAL**: You must identify ALL relevant sources for the verse:
@@ -72,7 +73,7 @@ class AiVerseEvidenceService
 
       Please format your response as JSON:
       {
-        "verse_reference": "EXACT_VERSE_FROM_USER_REQUEST",
+        "verse_reference": "#{user_query}",
         "original_text": "Original text here",
         "translation": "English translation here",
         "explanation": "Explanation of translation choices and context",

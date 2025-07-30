@@ -334,58 +334,87 @@
     const evidenceUnit = evidenceUnits.find(unit => unit.id === unitId);
     if (!evidenceUnit) return;
     const sectionId = Date.now();
-    evidenceUnit.sections[sectionType] = {
+    
+    // Initialize section as array if it doesn't exist
+    if (!evidenceUnit.sections[sectionType]) {
+      evidenceUnit.sections[sectionType] = [];
+    }
+    
+    // Get the current count before adding the new section
+    const currentCount = evidenceUnit.sections[sectionType].length;
+    
+    // Add new section to the array
+    evidenceUnit.sections[sectionType].push({
       id: sectionId,
       type: sectionType,
       content: '',
       details: '',
-      expanded: true
-    };
+      expanded: true,
+      sources: []
+    });
+    
+    // Create the section element
     const sectionsContainer = document.getElementById(`evidence-sections-${unitId}`);
     const sectionElement = document.createElement('div');
     sectionElement.className = 'evidence-section';
     sectionElement.id = `evidence-section-${sectionId}`;
+    sectionElement.setAttribute('data-section-type', sectionType);
+    sectionElement.setAttribute('data-unit-id', unitId);
+    sectionElement.setAttribute('data-section-index', currentCount);
+    
+    const sectionTitle = getSectionTitle(sectionType, currentCount + 1);
     sectionElement.innerHTML = `
       <div class="evidence-section-header" onclick="toggleEvidenceSection(${sectionId})">
-        <div class="evidence-section-title">${sectionType}</div>
+        <div class="evidence-section-title">${sectionTitle}</div>
         <div class="evidence-section-actions">
           <button type="button" class="toggle-section-btn" onclick="event.stopPropagation(); toggleEvidenceSection(${sectionId})">
             <i class="fa fa-chevron-down"></i>
           </button>
-          <button type="button" class="remove-section-btn" onclick="event.stopPropagation(); removeEvidenceSection(${unitId}, '${sectionType}')">
+          <button type="button" class="remove-section-btn" onclick="event.stopPropagation(); removeEvidenceSection(${unitId}, '${sectionType}', ${currentCount})">
             <i class="fa fa-times"></i>
           </button>
         </div>
       </div>
-      <div class="evidence-section-content expanded" id="evidence-section-content-${sectionId}">
+      <div class="evidence-section-content expanded">
         <div class="evidence-section-placeholder">
-          <i class="fa fa-comment"></i> Use the AI ${sectionType} Assistant to generate evidence
+          <p>Click "Add ${getSectionDisplayName(sectionType)}" to generate ${getSectionDisplayName(sectionType).toLowerCase()} evidence.</p>
         </div>
       </div>
     `;
-    sectionElement.setAttribute('data-section-type', sectionType);
-    sectionElement.setAttribute('data-unit-id', unitId);
+    
     sectionsContainer.appendChild(sectionElement);
-    showEvidenceChatbot(sectionType);
     updateAvailableSectionButtons(unitId);
+    showEvidenceChatbot(sectionType);
+    updateCombinedEvidenceField();
   }
 
   function updateAvailableSectionButtons(unitId) {
     const evidenceUnit = evidenceUnits.find(unit => unit.id === unitId);
     if (!evidenceUnit) return;
+    
     const optionsContainer = document.getElementById(`evidence-section-options-${unitId}`);
     if (!optionsContainer) return;
+    
+    // Clear existing buttons
     optionsContainer.innerHTML = '';
-    const availableTypes = ['verse', 'historical', 'definition', 'logic'].filter(type => !evidenceUnit.sections[type]);
-    availableTypes.forEach(type => {
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'add-section-btn';
-      button.setAttribute('data-section-type', type);
-      button.onclick = function() { addEvidenceSection(unitId, type); };
-      const buttonText = { 'verse': 'Add Verse', 'historical': 'Add Historical', 'definition': 'Add Definition', 'logic': 'Add Logic' };
-      button.innerHTML = `<i class="fa fa-plus"></i> ${buttonText[type]}`;
-      optionsContainer.appendChild(button);
+    
+    // Get all available section types
+    const allSectionTypes = ['verse', 'historical', 'definition', 'logic'];
+    
+    // For each section type, show the "Add" button if it's not already added
+    // or if it's verse type (allow multiple verses)
+    allSectionTypes.forEach(sectionType => {
+      const hasSection = evidenceUnit.sections[sectionType] && evidenceUnit.sections[sectionType].length > 0;
+      const shouldShowButton = !hasSection || sectionType === 'verse'; // Always show verse button
+      
+      if (shouldShowButton) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'add-section-btn';
+        button.textContent = `+ Add ${getSectionDisplayName(sectionType)}`;
+        button.onclick = () => addEvidenceSection(unitId, sectionType);
+        optionsContainer.appendChild(button);
+      }
     });
   }
 
@@ -427,10 +456,10 @@
     updateEvidenceSourcesHash();
   }
 
-  function removeEvidenceSection(unitId, sectionType) {
+  function removeEvidenceSection(unitId, sectionType, index) {
     const evidenceUnit = evidenceUnits.find(unit => unit.id === unitId);
-    if (!evidenceUnit || !evidenceUnit.sections[sectionType]) return;
-    delete evidenceUnit.sections[sectionType];
+    if (!evidenceUnit || !evidenceUnit.sections[sectionType] || index < 0 || index >= evidenceUnit.sections[sectionType].length) return;
+    evidenceUnit.sections[sectionType].splice(index, 1);
     const sectionElement = document.querySelector(`[data-section-type="${sectionType}"][data-unit-id="${unitId}"]`);
     if (sectionElement) { sectionElement.remove(); }
     updateAvailableSectionButtons(unitId);
@@ -449,22 +478,44 @@
     evidenceSourcesHash.clear();
     
     evidenceUnits.forEach(unit => {
-      Object.values(unit.sections).forEach(section => {
-        if (section.sources && Array.isArray(section.sources)) {
-          // Handle new sources array format
-          section.sources.forEach(source => {
-            if (AVAILABLE_SOURCES.includes(source)) {
-              evidenceSourcesHash.add(source);
+      Object.values(unit.sections).forEach(sections => {
+        if (Array.isArray(sections)) {
+          // Handle multiple sections (e.g., multiple verses)
+          sections.forEach(section => {
+            if (section.sources && Array.isArray(section.sources)) {
+              // Handle new sources array format
+              section.sources.forEach(source => {
+                if (AVAILABLE_SOURCES.includes(source)) {
+                  evidenceSourcesHash.add(source);
+                }
+              });
+            } else if (section.source) {
+              // Handle old single source format
+              const sources = section.source.split(',').map(s => s.trim());
+              sources.forEach(source => {
+                if (AVAILABLE_SOURCES.includes(source)) {
+                  evidenceSourcesHash.add(source);
+                }
+              });
             }
           });
-        } else if (section.source) {
-          // Fallback to old comma-separated sources format
-          const sources = section.source.split(',').map(s => s.trim());
-          sources.forEach(source => {
-            if (AVAILABLE_SOURCES.includes(source)) {
-              evidenceSourcesHash.add(source);
-            }
-          });
+        } else {
+          // Handle single section (backward compatibility)
+          const section = sections;
+          if (section.sources && Array.isArray(section.sources)) {
+            section.sources.forEach(source => {
+              if (AVAILABLE_SOURCES.includes(source)) {
+                evidenceSourcesHash.add(source);
+              }
+            });
+          } else if (section.source) {
+            const sources = section.source.split(',').map(s => s.trim());
+            sources.forEach(source => {
+              if (AVAILABLE_SOURCES.includes(source)) {
+                evidenceSourcesHash.add(source);
+              }
+            });
+          }
         }
       });
     });
@@ -796,38 +847,9 @@
       // If we have pending evidence and user responds to confirmation
       if (pendingEvidence && (message.toLowerCase().includes('yes') || message.toLowerCase().includes('y'))) {
         if (currentEvidenceUnit && currentAssistantType) {
-          const existingSection = document.querySelector(`[data-section-type="${currentAssistantType}"][data-unit-id="${currentEvidenceUnit.id}"]`);
-          if (existingSection && pendingEvidence.details) {
-            const contentElement = existingSection.querySelector('.evidence-section-content');
-            contentElement.innerHTML = `
-              <div class="evidence-section-details">${pendingEvidence.details}</div>
-            `;
-          }
-          
-          // Update the evidence unit with the pending evidence data
-          const evidenceUnit = evidenceUnits.find(unit => unit.id === currentEvidenceUnit.id);
-          if (evidenceUnit && pendingEvidence) {
-            // Convert source to sources array format
-            const sources = Array.isArray(pendingEvidence.sources) ? pendingEvidence.sources : 
-                          (pendingEvidence.source ? [pendingEvidence.source] : ['Unknown']);
-            
-            evidenceUnit.sections[currentAssistantType] = {
-              id: pendingEvidence.id,
-              type: pendingEvidence.type,
-              content: pendingEvidence.content,
-              details: pendingEvidence.details,
-              expanded: true,
-              sources: sources
-            };
-            
-            // Update the combined evidence field
-            updateCombinedEvidenceField();
-          }
-          
-          const sectionTypeNames = { 'verse': 'verse', 'historical': 'historical evidence', 'definition': 'definition', 'logic': 'logical evidence' };
-          addAIEvidenceMessage(`${sectionTypeNames[currentAssistantType]} added successfully! You can add more ${sectionTypeNames[currentAssistantType]} for me to find.`, 'ai');
+          // Add the evidence to the evidence unit
+          addEvidenceToUnit(pendingEvidence, currentAssistantType);
           pendingEvidence = null;
-          updateEvidenceSourcesHash();
           return;
         }
       }
@@ -872,16 +894,157 @@
     });
   }
 
-  function streamAIEvidenceResponse(evidence, sectionType) {
+  function addEvidenceToUnit(evidence, sectionType) {
     const evidenceUnit = evidenceUnits.find(unit => unit.id === currentEvidenceUnit.id);
     if (!evidenceUnit) return;
-    const existingSection = document.querySelector(`[data-section-type="${sectionType}"][data-unit-id="${currentEvidenceUnit.id}"]`);
-    if (!existingSection) return;
-    const sectionId = existingSection.id.replace('evidence-section-', '');
-    evidenceUnit.sections[sectionType] = { id: sectionId, type: sectionType, content: '', details: '', expanded: true };
+    
+    // Initialize section as array if it doesn't exist
+    if (!evidenceUnit.sections[sectionType]) {
+      evidenceUnit.sections[sectionType] = [];
+    }
+    
+    // First, try to find an empty verse section to populate
+    let targetSectionIndex = -1;
+    let targetSectionElement = null;
+    
+    if (sectionType === 'verse') {
+      // Look for existing empty verse sections
+      const existingSections = document.querySelectorAll(`[data-section-type="verse"][data-unit-id="${currentEvidenceUnit.id}"]`);
+      existingSections.forEach((section, index) => {
+        const contentElement = section.querySelector('.evidence-section-content');
+        const placeholder = contentElement.querySelector('.evidence-section-placeholder');
+        if (placeholder && targetSectionIndex === -1) {
+          // This is the first empty section, use it
+          targetSectionIndex = index;
+          targetSectionElement = section;
+        }
+      });
+    }
+    
+    if (targetSectionElement) {
+      // Use existing empty section
+      const sectionId = targetSectionElement.id.replace('evidence-section-', '');
+      const sectionIndex = parseInt(targetSectionElement.getAttribute('data-section-index'));
+      
+      // Update the section element with the new content
+      const contentElement = targetSectionElement.querySelector('.evidence-section-content');
+      contentElement.innerHTML = `<div class="evidence-section-details">${evidence.details}</div>`;
+      
+      // Update the evidence unit data
+      evidenceUnit.sections[sectionType][sectionIndex] = {
+        id: sectionId,
+        type: sectionType,
+        content: evidence.content,
+        details: evidence.details,
+        expanded: true,
+        sources: evidence.sources
+      };
+    } else {
+      // Create a new section element
+      const sectionId = Date.now();
+      const sectionsContainer = document.getElementById(`evidence-sections-${currentEvidenceUnit.id}`);
+      const sectionElement = document.createElement('div');
+      sectionElement.className = 'evidence-section';
+      sectionElement.id = `evidence-section-${sectionId}`;
+      sectionElement.setAttribute('data-section-type', sectionType);
+      sectionElement.setAttribute('data-unit-id', currentEvidenceUnit.id);
+      
+      // Count actual filled sections to get correct index
+      const filledSections = evidenceUnit.sections[sectionType].filter(section => section.content || section.details);
+      const newIndex = filledSections.length;
+      sectionElement.setAttribute('data-section-index', newIndex);
+      
+      const sectionTitle = getSectionTitle(sectionType, newIndex + 1);
+      sectionElement.innerHTML = `
+        <div class="evidence-section-header" onclick="toggleEvidenceSection(${sectionId})">
+          <div class="evidence-section-title">${sectionTitle}</div>
+          <div class="evidence-section-actions">
+            <button type="button" class="toggle-section-btn" onclick="event.stopPropagation(); toggleEvidenceSection(${sectionId})">
+              <i class="fa fa-chevron-down"></i>
+            </button>
+            <button type="button" class="remove-section-btn" onclick="event.stopPropagation(); removeEvidenceSection(${currentEvidenceUnit.id}, '${sectionType}', ${newIndex})">
+              <i class="fa fa-times"></i>
+            </button>
+          </div>
+        </div>
+        <div class="evidence-section-content expanded">
+          <div class="evidence-section-details">${evidence.details}</div>
+        </div>
+      `;
+      
+      sectionsContainer.appendChild(sectionElement);
+      
+      // Add evidence to the evidence unit
+      evidenceUnit.sections[sectionType].push({
+        id: sectionId,
+        type: sectionType,
+        content: evidence.content,
+        details: evidence.details,
+        expanded: true,
+        sources: evidence.sources
+      });
+    }
+    
+    // Update the combined evidence field
+    updateCombinedEvidenceField();
+    
+    // Update sources hash
+    updateEvidenceSourcesHash();
+    
+    // Update available section buttons
+    updateAvailableSectionButtons(currentEvidenceUnit.id);
+  }
+
+  function removeEvidenceSection(unitId, sectionType, index) {
+    const evidenceUnit = evidenceUnits.find(unit => unit.id === unitId);
+    if (!evidenceUnit || !evidenceUnit.sections[sectionType] || index < 0 || index >= evidenceUnit.sections[sectionType].length) return;
+    
+    // Remove from array
+    evidenceUnit.sections[sectionType].splice(index, 1);
+    
+    // Remove from DOM
+    const sectionElement = document.querySelector(`[data-section-type="${sectionType}"][data-unit-id="${unitId}"][data-section-index="${index}"]`);
+    if (sectionElement) { 
+      sectionElement.remove(); 
+    }
+    
+    // Renumber remaining sections
+    const remainingSections = document.querySelectorAll(`[data-section-type="${sectionType}"][data-unit-id="${unitId}"]`);
+    remainingSections.forEach((section, newIndex) => {
+      section.setAttribute('data-section-index', newIndex);
+      const titleElement = section.querySelector('.evidence-section-title');
+      if (titleElement) {
+        titleElement.textContent = getSectionTitle(sectionType, newIndex + 1);
+      }
+      const removeBtn = section.querySelector('.remove-section-btn');
+      if (removeBtn) {
+        removeBtn.onclick = (e) => {
+          e.stopPropagation();
+          removeEvidenceSection(unitId, sectionType, newIndex);
+        };
+      }
+    });
+    
+    updateAvailableSectionButtons(unitId);
+    updateCombinedEvidenceField();
+    updateEvidenceSourcesHash();
+  }
+
+  function streamAIEvidenceResponse(evidence, sectionType) {
+    // Create a temporary evidence object for streaming
+    const tempEvidence = { 
+      id: Date.now(), 
+      type: sectionType, 
+      content: '', 
+      details: '', 
+      expanded: true,
+      sources: []
+    };
+    
     let content = '';
     let details = '';
     let streamText = '';
+    
     switch(sectionType) {
       case 'verse':
         content = `${evidence.verse_reference}\n\n${evidence.translation}`;
@@ -909,7 +1072,7 @@
           </div>
         `;
         streamText = `${evidence.verse_reference}\n\nSource: ${verseSources.join(', ')}\n\nOriginal: ${evidence.original_text}\n\nTranslation: ${evidence.translation}\n\nExplanation: ${evidence.explanation}`;
-        evidenceUnit.sections[sectionType].sources = verseSources;
+        tempEvidence.sources = verseSources;
         break;
       case 'historical':
         content = `${evidence.historical_event}\n\n${evidence.description}`;
@@ -933,7 +1096,7 @@
           </div>
         `;
         streamText = `${evidence.historical_event}\n\nSource: ${historicalSources.join(', ')}\n\nDescription: ${evidence.description}\n\nRelevance: ${evidence.relevance}`;
-        evidenceUnit.sections[sectionType].sources = historicalSources;
+        tempEvidence.sources = historicalSources;
         break;
       case 'definition':
         content = `${evidence.term}\n\n${evidence.definition}`;
@@ -961,7 +1124,7 @@
           </div>
         `;
         streamText = `${evidence.term}\n\nSource: ${definitionSources.join(', ')}\n\nDefinition: ${evidence.definition}\n\nEtymology: ${evidence.etymology}\n\nUsage Context: ${evidence.usage_context}`;
-        evidenceUnit.sections[sectionType].sources = definitionSources;
+        tempEvidence.sources = definitionSources;
         break;
       case 'logic':
         content = `${evidence.premise}\n\n${evidence.reasoning}\n\n${evidence.conclusion}`;
@@ -983,17 +1146,19 @@
             <span class="detail-label">Conclusion:</span>
             <span class="detail-value">${evidence.conclusion}</span>
           </div>
-          <div class="detail-row">
-            <span class="detail-label">Logical Form:</span>
-            <span class="detail-value">${evidence.logical_form}</span>
-          </div>
         `;
-        streamText = `${evidence.premise}\n\nSource: ${logicSources.join(', ')}\n\nReasoning: ${evidence.reasoning}\n\nConclusion: ${evidence.conclusion}\n\nLogical Form: ${evidence.logical_form}`;
-        evidenceUnit.sections[sectionType].sources = logicSources;
+        streamText = `${evidence.premise}\n\nSource: ${logicSources.join(', ')}\n\nReasoning: ${evidence.reasoning}\n\nConclusion: ${evidence.conclusion}`;
+        tempEvidence.sources = logicSources;
         break;
     }
-    evidenceUnit.sections[sectionType].content = content;
-    evidenceUnit.sections[sectionType].details = details;
+    
+    tempEvidence.content = content;
+    tempEvidence.details = details;
+    
+    // Store the evidence for confirmation
+    window.setPendingEvidence(tempEvidence);
+    
+    // Stream the response in the AI assistant
     streamTextInEvidenceAssistant(streamText, sectionType);
   }
 
@@ -1011,15 +1176,13 @@
         i++;
         setTimeout(streamChar, 30);
       } else {
-        const sectionTypeNames = { 'verse': 'verse', 'historical': 'historical evidence', 'definition': 'definition', 'logic': 'logical evidence' };
+        // Ask user if they want to add this evidence AFTER streaming is complete
         setTimeout(() => {
+          const sectionTypeNames = { 'verse': 'verse', 'historical': 'historical evidence', 'definition': 'definition', 'logic': 'logical evidence' };
           addAIEvidenceMessage(`Do you want me to add this ${sectionTypeNames[sectionType]} to your evidence? (Yes/No)`, 'ai');
-          if (window.setPendingEvidence) {
-            const evidenceUnit = evidenceUnits.find(unit => unit.id === currentEvidenceUnit.id);
-            if (evidenceUnit && evidenceUnit.sections[sectionType]) {
-              window.setPendingEvidence(evidenceUnit.sections[sectionType]);
-            }
-          }
+        }, 500);
+        
+        setTimeout(() => {
           updateAvailableSectionButtons(currentEvidenceUnit.id);
         }, 500);
       }
@@ -1344,5 +1507,21 @@
     if (obj.original) out += 'Original: ' + obj.original + '\n';
     if (obj.translation) out += 'Translation: ' + obj.translation;
     return out.trim();
+  }
+
+  // Helper functions for evidence sections
+  function getSectionTitle(sectionType, count) {
+    const displayName = getSectionDisplayName(sectionType);
+    return `${displayName} ${count}`;
+  }
+
+  function getSectionDisplayName(sectionType) {
+    const displayNames = {
+      'verse': 'Verse',
+      'historical': 'Historical',
+      'definition': 'Definition',
+      'logic': 'Logic'
+    };
+    return displayNames[sectionType] || sectionType;
   }
 <% end %>

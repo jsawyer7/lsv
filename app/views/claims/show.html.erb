@@ -31,68 +31,310 @@
                   <% evidence.evidence_sections.each do |section_type, section_data| %>
                     <div class="evidence-section">
                       <h4><%= section_type.humanize %></h4>
-                      <% case section_type %>
-                      <% when 'verse' %>
-                        <div class="evidence-detail">
-                          <strong>Reference:</strong> <%= section_data['verse_reference'] || evidence.verse_reference %>
-                        </div>
-                        <div class="evidence-detail">
-                          <strong>Source:</strong> <%= section_data['source'] || evidence.source_names.first %>
-                        </div>
-                        <div class="evidence-detail">
-                          <strong>Original Text:</strong> <%= section_data['original_text'] || evidence.original_text %>
-                        </div>
-                        <div class="evidence-detail">
-                          <strong>Translation:</strong> <%= section_data['translation'] || evidence.translation %>
-                        </div>
-                        <div class="evidence-detail">
-                          <strong>Explanation:</strong> <%= section_data['explanation'] || evidence.explanation %>
-                        </div>
-                      <% when 'historical' %>
-                        <div class="evidence-detail">
-                          <strong>Historical Event:</strong> <%= section_data['historical_event'] || evidence.historical_event %>
-                        </div>
-                        <div class="evidence-detail">
-                          <strong>Source:</strong> <%= section_data['source'] || evidence.source_names.first %>
-                        </div>
-                        <div class="evidence-detail">
-                          <strong>Description:</strong> <%= section_data['description'] || evidence.description %>
-                        </div>
-                        <div class="evidence-detail">
-                          <strong>Relevance:</strong> <%= section_data['relevance'] || evidence.relevance %>
-                        </div>
-                      <% when 'definition' %>
-                        <div class="evidence-detail">
-                          <strong>Term:</strong> <%= section_data['term'] || evidence.term %>
-                        </div>
-                        <div class="evidence-detail">
-                          <strong>Source:</strong> <%= section_data['source'] || evidence.source_names.first %>
-                        </div>
-                        <div class="evidence-detail">
-                          <strong>Definition:</strong> <%= section_data['definition'] || evidence.definition %>
-                        </div>
-                        <div class="evidence-detail">
-                          <strong>Etymology:</strong> <%= section_data['etymology'] || evidence.etymology %>
-                        </div>
-                        <div class="evidence-detail">
-                          <strong>Usage Context:</strong> <%= section_data['usage_context'] || evidence.usage_context %>
-                        </div>
-                      <% when 'logic' %>
-                        <div class="evidence-detail">
-                          <strong>Premise:</strong> <%= section_data['premise'] || evidence.premise %>
-                        </div>
-                        <div class="evidence-detail">
-                          <strong>Source:</strong> <%= section_data['source'] || evidence.source_names.first %>
-                        </div>
-                        <div class="evidence-detail">
-                          <strong>Reasoning:</strong> <%= section_data['reasoning'] || evidence.reasoning %>
-                        </div>
-                        <div class="evidence-detail">
-                          <strong>Conclusion:</strong> <%= section_data['conclusion'] || evidence.conclusion %>
-                        </div>
-                        <div class="evidence-detail">
-                          <strong>Logical Form:</strong> <%= section_data['logical_form'] || evidence.logical_form %>
-                        </div>
+                      <% if section_data.is_a?(Array) %>
+                        <% section_data.each_with_index do |item, index| %>
+                          <div class="evidence-item">
+                            <h5><%= "#{section_type.humanize} #{index + 1}" %></h5>
+                            <% case section_type %>
+                            <% when 'verse' %>
+                              <% if item['details'] %>
+                                <% details_html = item['details'] %>
+                                <% if details_html.match(/Reference:<\/span>\s*<span[^>]*>([^<]+)</) %>
+                                  <div class="evidence-detail">
+                                    <strong>Reference:</strong> <%= $1.strip %>
+                                  </div>
+                                <% end %>
+                                <% if details_html.match(/Source:<\/span>\s*<span[^>]*>([^<]+)</) %>
+                                  <div class="evidence-detail">
+                                    <strong>Source:</strong> <%= $1.strip %>
+                                  </div>
+                                <% end %>
+                                <% if details_html.match(/Original Text:<\/span>\s*<span[^>]*>([^<]+)</) %>
+                                  <div class="evidence-detail">
+                                    <strong>Original Text:</strong> <%= $1.strip %>
+                                  </div>
+                                <% end %>
+                                <% if details_html.match(/Translation:<\/span>\s*<span[^>]*>([^<]+)</) %>
+                                  <div class="evidence-detail">
+                                    <strong>Translation:</strong> <%= $1.strip %>
+                                  </div>
+                                <% end %>
+                                <% if details_html.match(/Explanation:<\/span>\s*<span[^>]*>([^<]+)</) %>
+                                  <div class="evidence-detail">
+                                    <strong>Explanation:</strong> <%= $1.strip %>
+                                  </div>
+                                <% end %>
+                              <% else %>
+                                <%# Fallback to content field %>
+                                <div class="evidence-detail">
+                                  <strong>Content:</strong> <%= item['content'] %>
+                                </div>
+                                <% if item['sources'] %>
+                                  <div class="evidence-detail">
+                                    <strong>Source:</strong> <%= item['sources'].join(', ') %>
+                                  </div>
+                                <% end %>
+                              <% end %>
+                            <% when 'historical' %>
+                              <% if item['details'] %>
+                                <% details_html = item['details'] %>
+                                <% if details_html.match(/Historical Event:<\/span>\s*<span[^>]*>([^<]+)</) %>
+                                  <div class="evidence-detail">
+                                    <strong>Historical Event:</strong> <%= $1.strip %>
+                                  </div>
+                                <% end %>
+                                <% if details_html.match(/Source:<\/span>\s*<span[^>]*>([^<]+)</) %>
+                                  <div class="evidence-detail">
+                                    <strong>Source:</strong> <%= $1.strip %>
+                                  </div>
+                                <% end %>
+                                <% if details_html.match(/Description:<\/span>\s*<span[^>]*>([^<]+)</) %>
+                                  <div class="evidence-detail">
+                                    <strong>Description:</strong> <%= $1.strip %>
+                                  </div>
+                                <% end %>
+                                <% if details_html.match(/Relevance:<\/span>\s*<span[^>]*>([^<]+)</) %>
+                                  <div class="evidence-detail">
+                                    <strong>Relevance:</strong> <%= $1.strip %>
+                                  </div>
+                                <% end %>
+                              <% else %>
+                                <%# Fallback to content field %>
+                                <div class="evidence-detail">
+                                  <strong>Content:</strong> <%= item['content'] %>
+                                </div>
+                                <% if item['sources'] %>
+                                  <div class="evidence-detail">
+                                    <strong>Source:</strong> <%= item['sources'].join(', ') %>
+                                  </div>
+                                <% end %>
+                              <% end %>
+                            <% when 'definition' %>
+                              <% if item['details'] %>
+                                <% details_html = item['details'] %>
+                                <% if details_html.match(/Term:<\/span>\s*<span[^>]*>([^<]+)</) %>
+                                  <div class="evidence-detail">
+                                    <strong>Term:</strong> <%= $1.strip %>
+                                  </div>
+                                <% end %>
+                                <% if details_html.match(/Source:<\/span>\s*<span[^>]*>([^<]+)</) %>
+                                  <div class="evidence-detail">
+                                    <strong>Source:</strong> <%= $1.strip %>
+                                  </div>
+                                <% end %>
+                                <% if details_html.match(/Definition:<\/span>\s*<span[^>]*>([^<]+)</) %>
+                                  <div class="evidence-detail">
+                                    <strong>Definition:</strong> <%= $1.strip %>
+                                  </div>
+                                <% end %>
+                                <% if details_html.match(/Etymology:<\/span>\s*<span[^>]*>([^<]+)</) %>
+                                  <div class="evidence-detail">
+                                    <strong>Etymology:</strong> <%= $1.strip %>
+                                  </div>
+                                <% end %>
+                                <% if details_html.match(/Usage Context:<\/span>\s*<span[^>]*>([^<]+)</) %>
+                                  <div class="evidence-detail">
+                                    <strong>Usage Context:</strong> <%= $1.strip %>
+                                  </div>
+                                <% end %>
+                              <% else %>
+                                <%# Fallback to content field %>
+                                <div class="evidence-detail">
+                                  <strong>Content:</strong> <%= item['content'] %>
+                                </div>
+                                <% if item['sources'] %>
+                                  <div class="evidence-detail">
+                                    <strong>Source:</strong> <%= item['sources'].join(', ') %>
+                                  </div>
+                                <% end %>
+                              <% end %>
+                            <% when 'logic' %>
+                              <% if item['details'] %>
+                                <% details_html = item['details'] %>
+                                <% if details_html.match(/Premise:<\/span>\s*<span[^>]*>([^<]+)</) %>
+                                  <div class="evidence-detail">
+                                    <strong>Premise:</strong> <%= $1.strip %>
+                                  </div>
+                                <% end %>
+                                <% if details_html.match(/Source:<\/span>\s*<span[^>]*>([^<]+)</) %>
+                                  <div class="evidence-detail">
+                                    <strong>Source:</strong> <%= $1.strip %>
+                                  </div>
+                                <% end %>
+                                <% if details_html.match(/Reasoning:<\/span>\s*<span[^>]*>([^<]+)</) %>
+                                  <div class="evidence-detail">
+                                    <strong>Reasoning:</strong> <%= $1.strip %>
+                                  </div>
+                                <% end %>
+                                <% if details_html.match(/Conclusion:<\/span>\s*<span[^>]*>([^<]+)</) %>
+                                  <div class="evidence-detail">
+                                    <strong>Conclusion:</strong> <%= $1.strip %>
+                                  </div>
+                                <% end %>
+                              <% else %>
+                                <%# Fallback to content field %>
+                                <div class="evidence-detail">
+                                  <strong>Content:</strong> <%= item['content'] %>
+                                </div>
+                                <% if item['sources'] %>
+                                  <div class="evidence-detail">
+                                    <strong>Source:</strong> <%= item['sources'].join(', ') %>
+                                  </div>
+                                <% end %>
+                              <% end %>
+                            <% end %>
+                          </div>
+                        <% end %>
+                      <% else %>
+                        <%# Backward compatibility for single items %>
+                        <% case section_type %>
+                        <% when 'verse' %>
+                          <% if section_data['details'] %>
+                            <% details_html = section_data['details'] %>
+                            <% if details_html.match(/Reference:<\/span>\s*<span[^>]*>([^<]+)</) %>
+                              <div class="evidence-detail">
+                                <strong>Reference:</strong> <%= $1.strip %>
+                              </div>
+                            <% end %>
+                            <% if details_html.match(/Source:<\/span>\s*<span[^>]*>([^<]+)</) %>
+                              <div class="evidence-detail">
+                                <strong>Source:</strong> <%= $1.strip %>
+                              </div>
+                            <% end %>
+                            <% if details_html.match(/Original Text:<\/span>\s*<span[^>]*>([^<]+)</) %>
+                              <div class="evidence-detail">
+                                <strong>Original Text:</strong> <%= $1.strip %>
+                              </div>
+                            <% end %>
+                            <% if details_html.match(/Translation:<\/span>\s*<span[^>]*>([^<]+)</) %>
+                              <div class="evidence-detail">
+                                <strong>Translation:</strong> <%= $1.strip %>
+                              </div>
+                            <% end %>
+                            <% if details_html.match(/Explanation:<\/span>\s*<span[^>]*>([^<]+)</) %>
+                              <div class="evidence-detail">
+                                <strong>Explanation:</strong> <%= $1.strip %>
+                              </div>
+                            <% end %>
+                          <% else %>
+                            <%# Fallback to content field %>
+                            <div class="evidence-detail">
+                              <strong>Content:</strong> <%= section_data['content'] %>
+                            </div>
+                            <% if section_data['sources'] %>
+                              <div class="evidence-detail">
+                                <strong>Source:</strong> <%= section_data['sources'].join(', ') %>
+                              </div>
+                            <% end %>
+                          <% end %>
+                        <% when 'historical' %>
+                          <% if section_data['details'] %>
+                            <% details_html = section_data['details'] %>
+                            <% if details_html.match(/Historical Event:<\/span>\s*<span[^>]*>([^<]+)</) %>
+                              <div class="evidence-detail">
+                                <strong>Historical Event:</strong> <%= $1.strip %>
+                              </div>
+                            <% end %>
+                            <% if details_html.match(/Source:<\/span>\s*<span[^>]*>([^<]+)</) %>
+                              <div class="evidence-detail">
+                                <strong>Source:</strong> <%= $1.strip %>
+                              </div>
+                            <% end %>
+                            <% if details_html.match(/Description:<\/span>\s*<span[^>]*>([^<]+)</) %>
+                              <div class="evidence-detail">
+                                <strong>Description:</strong> <%= $1.strip %>
+                              </div>
+                            <% end %>
+                            <% if details_html.match(/Relevance:<\/span>\s*<span[^>]*>([^<]+)</) %>
+                              <div class="evidence-detail">
+                                <strong>Relevance:</strong> <%= $1.strip %>
+                              </div>
+                            <% end %>
+                          <% else %>
+                            <%# Fallback to content field %>
+                            <div class="evidence-detail">
+                              <strong>Content:</strong> <%= section_data['content'] %>
+                            </div>
+                            <% if section_data['sources'] %>
+                              <div class="evidence-detail">
+                                <strong>Source:</strong> <%= section_data['sources'].join(', ') %>
+                              </div>
+                            <% end %>
+                          <% end %>
+                        <% when 'definition' %>
+                          <% if section_data['details'] %>
+                            <% details_html = section_data['details'] %>
+                            <% if details_html.match(/Term:<\/span>\s*<span[^>]*>([^<]+)</) %>
+                              <div class="evidence-detail">
+                                <strong>Term:</strong> <%= $1.strip %>
+                              </div>
+                            <% end %>
+                            <% if details_html.match(/Source:<\/span>\s*<span[^>]*>([^<]+)</) %>
+                              <div class="evidence-detail">
+                                <strong>Source:</strong> <%= $1.strip %>
+                              </div>
+                            <% end %>
+                            <% if details_html.match(/Definition:<\/span>\s*<span[^>]*>([^<]+)</) %>
+                              <div class="evidence-detail">
+                                <strong>Definition:</strong> <%= $1.strip %>
+                              </div>
+                            <% end %>
+                            <% if details_html.match(/Etymology:<\/span>\s*<span[^>]*>([^<]+)</) %>
+                              <div class="evidence-detail">
+                                <strong>Etymology:</strong> <%= $1.strip %>
+                              </div>
+                            <% end %>
+                            <% if details_html.match(/Usage Context:<\/span>\s*<span[^>]*>([^<]+)</) %>
+                              <div class="evidence-detail">
+                                <strong>Usage Context:</strong> <%= $1.strip %>
+                              </div>
+                            <% end %>
+                          <% else %>
+                            <%# Fallback to content field %>
+                            <div class="evidence-detail">
+                              <strong>Content:</strong> <%= section_data['content'] %>
+                            </div>
+                            <% if section_data['sources'] %>
+                              <div class="evidence-detail">
+                                <strong>Source:</strong> <%= section_data['sources'].join(', ') %>
+                              </div>
+                            <% end %>
+                          <% end %>
+                        <% when 'logic' %>
+                          <% if section_data['details'] %>
+                            <% details_html = section_data['details'] %>
+                            <% if details_html.match(/Premise:<\/span>\s*<span[^>]*>([^<]+)</) %>
+                              <div class="evidence-detail">
+                                <strong>Premise:</strong> <%= $1.strip %>
+                              </div>
+                            <% end %>
+                            <% if details_html.match(/Source:<\/span>\s*<span[^>]*>([^<]+)</) %>
+                              <div class="evidence-detail">
+                                <strong>Source:</strong> <%= $1.strip %>
+                              </div>
+                            <% end %>
+                            <% if details_html.match(/Reasoning:<\/span>\s*<span[^>]*>([^<]+)</) %>
+                              <div class="evidence-detail">
+                                <strong>Reasoning:</strong> <%= $1.strip %>
+                              </div>
+                            <% end %>
+                            <% if details_html.match(/Conclusion:<\/span>\s*<span[^>]*>([^<]+)</) %>
+                              <div class="evidence-detail">
+                                <strong>Conclusion:</strong> <%= $1.strip %>
+                              </div>
+                            <% end %>
+                          <% else %>
+                            <%# Fallback to content field %>
+                            <div class="evidence-detail">
+                              <strong>Content:</strong> <%= section_data['content'] %>
+                            </div>
+                            <% if section_data['sources'] %>
+                              <div class="evidence-detail">
+                                <strong>Source:</strong> <%= section_data['sources'].join(', ') %>
+                              </div>
+                            <% end %>
+                          <% end %>
+                        <% end %>
                       <% end %>
                     </div>
                   <% end %>
