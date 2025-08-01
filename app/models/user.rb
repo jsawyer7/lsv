@@ -6,6 +6,8 @@ class User < ApplicationRecord
          :confirmable, :omniauthable, omniauth_providers: [:google_oauth2, :twitter, :facebook]
 
   has_many :claims
+  has_many :subscriptions, dependent: :destroy
+  has_one :customer, dependent: :destroy
 
   has_many :added_peers, -> { where(status: 'accepted') }, class_name: 'Peer', foreign_key: 'user_id', dependent: :destroy
   has_many :peers, through: :added_peers, source: :peer
@@ -101,7 +103,38 @@ class User < ApplicationRecord
 
   # Define ransackable associations
   def self.ransackable_associations(auth_object = nil)
-    %w[claims]
+    %w[claims subscriptions customer]
+  end
+
+  # Subscription methods
+  def current_subscription
+    subscriptions.active.first
+  end
+
+  def current_plan
+    current_subscription&.plan
+  end
+
+  def has_active_subscription?
+    subscriptions.active.exists?
+  end
+
+  def subscription_status
+    current_subscription&.status || 'none'
+  end
+
+  def can_access_feature?(feature_name)
+    return true if admin? || moderator?
+    current_plan&.feature_enabled?(feature_name) || false
+  end
+
+  def subscription_expires_at
+    current_subscription&.current_term_end
+  end
+
+  def days_until_subscription_expires
+    return nil unless subscription_expires_at
+    (subscription_expires_at - Time.current).to_i / 1.day
   end
 
   private
