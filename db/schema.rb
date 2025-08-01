@@ -81,6 +81,20 @@ ActiveRecord::Schema[7.0].define(version: 2025_08_02_063844) do
     t.index ["user_id"], name: "index_claims_on_user_id"
   end
 
+  create_table "customers", force: :cascade do |t|
+    t.string "chargebee_id"
+    t.bigint "user_id", null: false
+    t.string "email"
+    t.string "first_name"
+    t.string "last_name"
+    t.string "company"
+    t.string "phone"
+    t.jsonb "metadata"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id"], name: "index_customers_on_user_id"
+  end
+
   create_table "evidences", force: :cascade do |t|
     t.bigint "claim_id", null: false
     t.text "content"
@@ -145,6 +159,18 @@ ActiveRecord::Schema[7.0].define(version: 2025_08_02_063844) do
     t.index ["user_id"], name: "index_peers_on_user_id"
   end
 
+  create_table "plans", force: :cascade do |t|
+    t.string "chargebee_id"
+    t.string "name"
+    t.text "description"
+    t.decimal "price"
+    t.string "billing_cycle"
+    t.string "status"
+    t.jsonb "metadata"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
   create_table "reasonings", force: :cascade do |t|
     t.string "source", null: false
     t.text "response"
@@ -157,6 +183,22 @@ ActiveRecord::Schema[7.0].define(version: 2025_08_02_063844) do
     t.text "normalized_content"
     t.index ["normalized_content"], name: "index_reasonings_on_normalized_content"
     t.index ["reasonable_type", "reasonable_id", "source"], name: "index_reasonings_on_reasonable_and_source", unique: true
+  end
+
+  create_table "subscriptions", force: :cascade do |t|
+    t.string "chargebee_id"
+    t.bigint "user_id", null: false
+    t.bigint "plan_id", null: false
+    t.string "status"
+    t.datetime "current_term_start"
+    t.datetime "current_term_end"
+    t.datetime "trial_start"
+    t.datetime "trial_end"
+    t.jsonb "metadata"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["plan_id"], name: "index_subscriptions_on_plan_id"
+    t.index ["user_id"], name: "index_subscriptions_on_user_id"
   end
 
   create_table "theories", force: :cascade do |t|
@@ -199,10 +241,13 @@ ActiveRecord::Schema[7.0].define(version: 2025_08_02_063844) do
   add_foreign_key "challenges", "evidences"
   add_foreign_key "challenges", "users"
   add_foreign_key "claims", "users"
+  add_foreign_key "customers", "users"
   add_foreign_key "evidences", "claims"
   add_foreign_key "follows", "users"
   add_foreign_key "follows", "users", column: "followed_user"
   add_foreign_key "peers", "users"
   add_foreign_key "peers", "users", column: "peer_id"
+  add_foreign_key "subscriptions", "plans"
+  add_foreign_key "subscriptions", "users"
   add_foreign_key "theories", "users"
 end

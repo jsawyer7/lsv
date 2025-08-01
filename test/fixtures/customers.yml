@@ -1,0 +1,21 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  chargebee_id: MyString
+  user: one
+  email: MyString
+  first_name: MyString
+  last_name: MyString
+  company: MyString
+  phone: MyString
+  metadata: 
+
+two:
+  chargebee_id: MyString
+  user: two
+  email: MyString
+  first_name: MyString
+  last_name: MyString
+  company: MyString
+  phone: MyString
+  metadata: 

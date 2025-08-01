@@ -1,0 +1,101 @@
+<div class="subscriptions-container">
+  <div class="subscriptions-header">
+    <h1>My Subscriptions</h1>
+    <p>Manage your subscription and billing information</p>
+  </div>
+
+  <% if @current_subscription %>
+    <div class="current-subscription">
+      <div class="subscription-card active">
+        <div class="subscription-header">
+          <h3><%= @current_subscription.plan.name %></h3>
+          <span class="status-badge <%= @current_subscription.status %>">
+            <%= @current_subscription.status.humanize %>
+          </span>
+        </div>
+        
+        <div class="subscription-details">
+          <div class="detail-row">
+            <span class="label">Plan:</span>
+            <span class="value"><%= @current_subscription.plan.name %></span>
+          </div>
+          
+          <div class="detail-row">
+            <span class="label">Price:</span>
+            <span class="value">$<%= @current_subscription.plan.price %>/<%= @current_subscription.plan.billing_cycle %></span>
+          </div>
+          
+          <div class="detail-row">
+            <span class="label">Current Period:</span>
+            <span class="value">
+              <%= @current_subscription.current_term_start&.strftime("%B %d, %Y") %> - 
+              <%= @current_subscription.current_term_end&.strftime("%B %d, %Y") %>
+            </span>
+          </div>
+          
+          <% if @current_subscription.days_until_renewal %>
+            <div class="detail-row">
+              <span class="label">Days until renewal:</span>
+              <span class="value"><%= @current_subscription.days_until_renewal %> days</span>
+            </div>
+          <% end %>
+          
+          <% if @current_subscription.trial_active? %>
+            <div class="detail-row">
+              <span class="label">Trial Period:</span>
+              <span class="value">
+                <%= @current_subscription.trial_start&.strftime("%B %d, %Y") %> - 
+                <%= @current_subscription.trial_end&.strftime("%B %d, %Y") %>
+              </span>
+            </div>
+          <% end %>
+        </div>
+        
+        <div class="subscription-actions">
+          <% if @current_subscription.active? %>
+            <%= link_to "Cancel Subscription", cancel_subscription_path(@current_subscription), 
+                method: :post, 
+                class: "btn btn-danger",
+                data: { confirm: "Are you sure you want to cancel your subscription?" } %>
+          <% elsif @current_subscription.cancelled? %>
+            <%= link_to "Reactivate Subscription", reactivate_subscription_path(@current_subscription), 
+                method: :post, 
+                class: "btn btn-success" %>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  <% else %>
+    <div class="no-subscription">
+      <div class="no-subscription-content">
+        <i class="fas fa-credit-card"></i>
+        <h3>No Active Subscription</h3>
+        <p>You don't have an active subscription. Choose a plan to get started.</p>
+        <%= link_to "View Plans", plans_path, class: "btn btn-primary" %>
+      </div>
+    </div>
+  <% end %>
+
+  <% if @subscriptions.any? %>
+    <div class="subscription-history">
+      <h3>Subscription History</h3>
+      <div class="history-list">
+        <% @subscriptions.each do |subscription| %>
+          <div class="history-item">
+            <div class="history-details">
+              <h4><%= subscription.plan.name %></h4>
+              <p class="history-status">
+                Status: <span class="status-badge <%= subscription.status %>"><%= subscription.status.humanize %></span>
+              </p>
+              <p class="history-dates">
+                <%= subscription.created_at.strftime("%B %d, %Y") %> - 
+                <%= subscription.current_term_end&.strftime("%B %d, %Y") || "Ongoing" %>
+              </p>
+            </div>
+            <%= link_to "View Details", subscription_path(subscription), class: "btn btn-outline btn-sm" %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+</div>

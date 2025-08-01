@@ -1,4 +1,12 @@
 Rails.application.routes.draw do
+  get 'webhooks/chargebee'
+  get 'plans/index'
+  get 'plans/show'
+  get 'subscriptions/index'
+  get 'subscriptions/show'
+  get 'subscriptions/create'
+  get 'subscriptions/cancel'
+  get 'subscriptions/reactivate'
   ActiveAdmin.routes(self)
 
   root to: "home#index"
@@ -74,6 +82,18 @@ Rails.application.routes.draw do
   resource :settings, only: [:edit, :update] do
     get :notifications, on: :collection
   end
+
+  # Subscription routes
+  resources :plans, only: [:index, :show]
+  resources :subscriptions, only: [:index, :show, :create] do
+    member do
+      post :cancel
+      post :reactivate
+    end
+  end
+
+  # Webhook route
+  post '/webhooks/chargebee', to: 'webhooks#chargebee'
 
   resources :facts, only: [:index] do
     collection do
