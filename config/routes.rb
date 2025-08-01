@@ -1,6 +1,15 @@
 Rails.application.routes.draw do
   ActiveAdmin.routes(self)
 
+  # Custom admin routes
+  namespace :admin do
+    resources :claims, only: [] do
+      member do
+        patch :update_state
+      end
+    end
+  end
+
   root to: "home#index"
 
   devise_for :users, controllers: {

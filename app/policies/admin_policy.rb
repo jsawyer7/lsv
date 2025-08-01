@@ -26,4 +26,9 @@ class AdminPolicy < ApplicationPolicy
   def destroy?
     user.admin?
   end
+
+  # Add authorization for custom page actions
+  def user_claims?
+    user.admin?
+  end
 end 

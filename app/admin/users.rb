@@ -9,6 +9,12 @@ ActiveAdmin.register User do
     column :role
     column :created_at
     column :confirmed_at
+    column "Claims" do |user|
+      link_to "View Claims", admin_user_path(user), 
+              target: "_blank", 
+              class: "button",
+              style: "background-color: #007bff; color: white; padding: 5px 10px; text-decoration: none; border-radius: 3px;"
+    end
     actions
   end
 
@@ -38,6 +44,28 @@ ActiveAdmin.register User do
       row :confirmed_at
       row :provider
       row :uid
+    end
+
+    # Add claims section to user show page
+    panel "User Claims" do
+      claims = resource.claims.order(created_at: :desc)
+      if claims.any?
+        table_for claims do
+          column :id
+          column :content do |claim|
+            div style: "max-width: 300px; overflow: hidden; text-overflow: ellipsis;" do
+              claim.content.truncate(100)
+            end
+          end
+          column :state
+          column :created_at
+          column "Actions" do |claim|
+            link_to "View", admin_claim_path(claim), target: "_blank", class: "button"
+          end
+        end
+      else
+        para "No claims found for this user."
+      end
     end
   end
 

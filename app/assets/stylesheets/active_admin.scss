@@ -7,6 +7,16 @@
 // For example, to change the sidebar width:
 // $sidebar-width: 242px;
 
+// Custom Active Admin variables
+$primary-color: #667eea;
+$secondary-color: #764ba2;
+$success-color: #28a745;
+$warning-color: #ffc107;
+$danger-color: #dc3545;
+$info-color: #17a2b8;
+$light-color: #f8f9fa;
+$dark-color: #343a40;
+
 // Active Admin's got SASS!
 @import "active_admin/mixins";
 @import "active_admin/base";
@@ -15,3 +25,433 @@
 // For example, to change the default status-tag color:
 //
 //   .status_tag { background: #6090DB; }
+
+// Custom Active Admin styling
+.active_admin {
+  // Modern header styling
+  #header {
+    background: linear-gradient(135deg, $primary-color 0%, $secondary-color 100%);
+    border-bottom: none;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    
+    h1 {
+      color: white;
+      font-weight: 600;
+    }
+    
+    .header-item {
+      color: rgba(255,255,255,0.9);
+      
+      a {
+        color: white;
+        text-decoration: none;
+        
+        &:hover {
+          color: rgba(255,255,255,0.8);
+        }
+      }
+    }
+  }
+
+  // Modern sidebar styling
+  #sidebar {
+    background: white;
+    border-right: 1px solid #e9ecef;
+    box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+    
+    .sidebar_section {
+      h3 {
+        color: $dark-color;
+        font-weight: 600;
+        border-bottom: 2px solid $primary-color;
+        padding-bottom: 8px;
+      }
+      
+      ul {
+        li {
+          a {
+            color: #666;
+            padding: 8px 12px;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            
+            &:hover {
+              background: $light-color;
+              color: $primary-color;
+              text-decoration: none;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Modern content area
+  #content {
+    background: #f8f9fa;
+    padding: 20px;
+    
+    .flashes {
+      .flash {
+        border-radius: 8px;
+        border: none;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        
+        &.flash_notice {
+          background: $success-color;
+          color: white;
+        }
+        
+        &.flash_error {
+          background: $danger-color;
+          color: white;
+        }
+        
+        &.flash_alert {
+          background: $warning-color;
+          color: $dark-color;
+        }
+      }
+    }
+  }
+
+  // Modern table styling
+  .index_table {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    
+    thead {
+      background: $light-color;
+      
+      th {
+        border-bottom: 2px solid $primary-color;
+        color: $dark-color;
+        font-weight: 600;
+        padding: 15px 12px;
+      }
+    }
+    
+    tbody {
+      tr {
+        transition: background 0.3s ease;
+        
+        &:hover {
+          background: rgba($primary-color, 0.05);
+        }
+        
+        td {
+          padding: 12px;
+          border-bottom: 1px solid #e9ecef;
+          vertical-align: middle;
+        }
+      }
+    }
+  }
+
+  // Modern form styling
+  .formtastic {
+    .inputs {
+      background: white;
+      border-radius: 12px;
+      padding: 25px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+      
+      legend {
+        color: $dark-color;
+        font-weight: 600;
+        font-size: 1.2rem;
+        border-bottom: 2px solid $primary-color;
+        padding-bottom: 10px;
+      }
+      
+      .input {
+        margin-bottom: 20px;
+        
+        label {
+          color: $dark-color;
+          font-weight: 500;
+          margin-bottom: 8px;
+        }
+        
+        input, textarea, select {
+          border: 2px solid #e9ecef;
+          border-radius: 8px;
+          padding: 12px;
+          transition: border-color 0.3s ease;
+          
+          &:focus {
+            border-color: $primary-color;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba($primary-color, 0.1);
+          }
+        }
+      }
+    }
+    
+    .actions {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      
+      .action {
+        .button {
+          background: $primary-color;
+          color: white;
+          border: none;
+          padding: 12px 24px;
+          border-radius: 8px;
+          font-weight: 500;
+          transition: all 0.3s ease;
+          
+          &:hover {
+            background: darken($primary-color, 10%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba($primary-color, 0.3);
+          }
+        }
+      }
+    }
+  }
+
+  // Modern panel styling
+  .panel {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+    overflow: hidden;
+    
+    h3 {
+      background: $light-color;
+      color: $dark-color;
+      font-weight: 600;
+      padding: 20px;
+      margin: 0;
+      border-bottom: 1px solid #e9ecef;
+    }
+    
+    .panel_contents {
+      padding: 20px;
+    }
+  }
+
+  // Modern attributes table styling
+  .attributes_table {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    
+    th {
+      background: $light-color;
+      color: $dark-color;
+      font-weight: 600;
+      padding: 15px 20px;
+      border-bottom: 2px solid $primary-color;
+    }
+    
+    td {
+      padding: 15px 20px;
+      border-bottom: 1px solid #e9ecef;
+      vertical-align: top;
+    }
+  }
+
+  // Modern button styling
+  .button, .action_item a {
+    background: $primary-color;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    
+    &:hover {
+      background: darken($primary-color, 10%);
+      color: white;
+      text-decoration: none;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba($primary-color, 0.3);
+    }
+  }
+
+  // Modern filter styling
+  .filter_form {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+    
+    .filter_form_field {
+      label {
+        color: $dark-color;
+        font-weight: 500;
+        margin-bottom: 8px;
+      }
+      
+      input, select {
+        border: 2px solid #e9ecef;
+        border-radius: 6px;
+        padding: 8px 12px;
+        transition: border-color 0.3s ease;
+        
+        &:focus {
+          border-color: $primary-color;
+          outline: none;
+          box-shadow: 0 0 0 3px rgba($primary-color, 0.1);
+        }
+      }
+    }
+    
+    .buttons {
+      .button {
+        background: $primary-color;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 6px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        
+        &:hover {
+          background: darken($primary-color, 10%);
+          transform: translateY(-1px);
+          box-shadow: 0 2px 8px rgba($primary-color, 0.3);
+        }
+      }
+    }
+  }
+
+  // Modern pagination styling
+  .pagination {
+    background: white;
+    border-radius: 12px;
+    padding: 15px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    margin-top: 20px;
+    
+    a, span {
+      padding: 8px 12px;
+      margin: 0 2px;
+      border-radius: 6px;
+      text-decoration: none;
+      transition: all 0.3s ease;
+    }
+    
+    a {
+      background: $light-color;
+      color: $dark-color;
+      
+      &:hover {
+        background: $primary-color;
+        color: white;
+      }
+    }
+    
+    .current {
+      background: $primary-color;
+      color: white;
+    }
+  }
+
+  // Modern status tag styling
+  .status_tag {
+    border-radius: 12px;
+    font-weight: 500;
+    padding: 4px 8px;
+    border: none;
+    
+    &.yes, &.ok, &.published {
+      background: $success-color;
+      color: white;
+    }
+    
+    &.no, &.draft {
+      background: $danger-color;
+      color: white;
+    }
+    
+    &.pending {
+      background: $warning-color;
+      color: $dark-color;
+    }
+  }
+
+  // Modern action buttons
+  .action_items {
+    .action_item {
+      a {
+        background: $primary-color;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 6px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        
+        &:hover {
+          background: darken($primary-color, 10%);
+          color: white;
+          text-decoration: none;
+          transform: translateY(-1px);
+          box-shadow: 0 2px 8px rgba($primary-color, 0.3);
+        }
+      }
+    }
+  }
+
+  // Modern blank slate styling
+  .blank_slate {
+    background: white;
+    border-radius: 12px;
+    padding: 40px;
+    text-align: center;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    
+    h3 {
+      color: $dark-color;
+      margin-bottom: 10px;
+    }
+    
+    p {
+      color: #666;
+      margin-bottom: 20px;
+    }
+  }
+
+  // Responsive design
+  @media (max-width: 768px) {
+    #header {
+      padding: 10px 20px;
+      
+      h1 {
+        font-size: 1.5rem;
+      }
+    }
+    
+    #sidebar {
+      width: 100%;
+      position: static;
+    }
+    
+    #content {
+      padding: 15px;
+    }
+    
+    .index_table {
+      font-size: 0.9rem;
+      
+      th, td {
+        padding: 8px 6px;
+      }
+    }
+  }
+}

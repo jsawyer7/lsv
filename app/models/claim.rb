@@ -31,6 +31,9 @@ class Claim < ApplicationRecord
     %w[
       id
       content
+      state
+      fact
+      published
       created_at
       updated_at
       user_id
