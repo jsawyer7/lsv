@@ -1,0 +1,45 @@
+<div class="pricing-container">
+  <div class="pricing-header">
+    <h1>Choose Your Plan</h1>
+    <p>Select the perfect plan for your fact-checking needs</p>
+  </div>
+
+  <div class="pricing-grid">
+    <% @plans.each do |plan| %>
+      <div class="pricing-card <%= 'featured' if plan.name == 'Plus' %>">
+        <div class="plan-header">
+          <h3><%= plan.name %></h3>
+          <div class="price">
+            <span class="currency">$</span>
+            <span class="amount"><%= plan.price %></span>
+            <span class="period">/<%= plan.billing_cycle %></span>
+          </div>
+          <% if plan.free? %>
+            <div class="free-badge">Free Forever</div>
+          <% end %>
+        </div>
+
+        <div class="plan-features">
+          <% plan.features.each do |feature, enabled| %>
+            <div class="feature <%= 'enabled' if enabled %>">
+              <i class="fas fa-<%= enabled ? 'check' : 'times' %>"></i>
+              <span><%= feature.humanize %></span>
+            </div>
+          <% end %>
+        </div>
+
+        <div class="plan-actions">
+          <% if current_user.current_subscription&.plan == plan %>
+            <button class="btn btn-current" disabled>Current Plan</button>
+          <% else %>
+            <%= link_to "Choose Plan", plan_path(plan), class: "btn btn-primary" %>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="pricing-footer">
+    <p>All plans include our core fact-checking features. Upgrade anytime!</p>
+  </div>
+</div>

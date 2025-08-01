@@ -1,0 +1,318 @@
+// Pricing Page Styles
+.pricing-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+
+  @media (max-width: 768px) {
+    padding: 1rem;
+  }
+}
+
+.pricing-header {
+  text-align: center;
+  margin-bottom: 3rem;
+
+  h1 {
+    font-size: 2.5rem;
+    color: #333;
+    margin-bottom: 0.5rem;
+
+    @media (max-width: 768px) {
+      font-size: 2rem;
+    }
+  }
+
+  p {
+    font-size: 1.1rem;
+    color: #666;
+  }
+}
+
+.pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+  margin-bottom: 2rem;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.pricing-card {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border: 2px solid #e1e5e9;
+  transition: all 0.3s ease;
+  position: relative;
+
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  }
+
+  &.featured {
+    border-color: #007bff;
+    transform: scale(1.05);
+
+    @media (max-width: 768px) {
+      transform: none;
+    }
+  }
+}
+
+.plan-header {
+  text-align: center;
+  margin-bottom: 2rem;
+
+  h3 {
+    font-size: 1.5rem;
+    color: #333;
+    margin-bottom: 1rem;
+  }
+}
+
+.price {
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: #007bff;
+  margin-bottom: 0.5rem;
+
+  .currency {
+    font-size: 1.5rem;
+    vertical-align: top;
+  }
+
+  .period {
+    font-size: 1rem;
+    color: #666;
+    font-weight: normal;
+  }
+}
+
+.free-badge {
+  background: #28a745;
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  display: inline-block;
+  margin-top: 0.5rem;
+}
+
+.plan-features {
+  margin-bottom: 2rem;
+}
+
+.feature {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  font-size: 1rem;
+
+  i {
+    margin-right: 0.75rem;
+    width: 16px;
+  }
+
+  &.enabled {
+    color: #333;
+
+    i {
+      color: #28a745;
+    }
+  }
+
+  &:not(.enabled) {
+    color: #999;
+
+    i {
+      color: #dc3545;
+    }
+  }
+}
+
+.plan-actions {
+  text-align: center;
+}
+
+.pricing-footer {
+  text-align: center;
+  color: #666;
+  font-size: 1rem;
+}
+
+// Plan Detail Page Styles
+.plan-detail-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
+
+  @media (max-width: 768px) {
+    padding: 1rem;
+  }
+}
+
+.plan-header {
+  text-align: center;
+  margin-bottom: 2rem;
+  padding: 2rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 12px;
+
+  h1 {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+
+    @media (max-width: 768px) {
+      font-size: 2rem;
+    }
+  }
+}
+
+.plan-price {
+  font-size: 3rem;
+  font-weight: bold;
+  margin-bottom: 1rem;
+
+  @media (max-width: 768px) {
+    font-size: 2.5rem;
+  }
+
+  .currency {
+    font-size: 2rem;
+    vertical-align: top;
+  }
+
+  .period {
+    font-size: 1.2rem;
+    font-weight: normal;
+    opacity: 0.9;
+  }
+}
+
+.plan-description {
+  text-align: center;
+  margin-bottom: 2rem;
+  font-size: 1.1rem;
+  color: #666;
+}
+
+.plan-features {
+  margin-bottom: 3rem;
+
+  h3 {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    color: #333;
+  }
+}
+
+.features-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.feature-item {
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  font-size: 1rem;
+
+  i {
+    margin-right: 1rem;
+    width: 20px;
+    font-size: 1.1rem;
+  }
+
+  &.enabled {
+    background: #e8f5e8;
+    color: #333;
+
+    i {
+      color: #28a745;
+    }
+  }
+
+  &:not(.enabled) {
+    background: #f8f9fa;
+    color: #999;
+
+    i {
+      color: #dc3545;
+    }
+  }
+}
+
+.subscription-actions {
+  margin-bottom: 3rem;
+}
+
+.current-plan-info {
+  text-align: center;
+  padding: 2rem;
+  background: #f8f9fa;
+  border-radius: 12px;
+  border: 2px solid #28a745;
+
+  h3 {
+    color: #28a745;
+    margin-bottom: 1rem;
+  }
+}
+
+.subscription-details {
+  margin: 1.5rem 0;
+  text-align: left;
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+
+  p {
+    margin-bottom: 0.5rem;
+  }
+}
+
+.subscribe-section {
+  text-align: center;
+  padding: 2rem;
+  background: #f8f9fa;
+  border-radius: 12px;
+
+  h3 {
+    margin-bottom: 1rem;
+    color: #333;
+  }
+
+  p {
+    margin-bottom: 1.5rem;
+    color: #666;
+  }
+}
+
+.subscribe-form {
+  margin-bottom: 1rem;
+}
+
+.subscription-note {
+  margin-top: 1rem;
+  color: #666;
+}
+
+.plan-comparison {
+  text-align: center;
+  padding: 2rem;
+  background: #f8f9fa;
+  border-radius: 12px;
+
+  h3 {
+    margin-bottom: 1rem;
+    color: #333;
+  }
+} 

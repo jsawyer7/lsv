@@ -75,3 +75,6 @@ gem 'sassc-rails'
 gem 'pundit'
 
 gem "kaminari", "~> 1.2"
+
+# Chargebee Integration
+gem 'chargebee'
