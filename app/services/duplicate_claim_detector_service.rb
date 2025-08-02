@@ -6,7 +6,7 @@ class DuplicateClaimDetectorService
   MAX_SIMILAR_CLAIMS = 20
 
   def initialize(claim_text, evidence_texts = [], current_claim = nil)
-    @claim_text = claim_text.to_s.strip
+    @claim_text = clean_claim_text(claim_text.to_s.strip)
     @evidence_texts = Array(evidence_texts).compact
     @current_claim = current_claim
     @embedding_service = ClaimEmbeddingService.new(@claim_text)
@@ -25,12 +25,16 @@ class DuplicateClaimDetectorService
     # 3. Name-normalized exact match check
     normalized_exact_matches = find_normalized_exact_matches
 
+    # 4. Tradition-based duplicate check (NEW)
+    tradition_duplicates = find_tradition_duplicates
+
     {
       exact_matches: serialize_claims(exact_matches),
       strong_matches: semantic_matches[:strong],
       possible_matches: semantic_matches[:possible],
       normalized_exact_matches: serialize_claims(normalized_exact_matches),
-      has_duplicates: exact_matches.any? || semantic_matches[:strong].any? || semantic_matches[:possible].any? || normalized_exact_matches.any?
+      tradition_duplicates: serialize_claims(tradition_duplicates),
+      has_duplicates: exact_matches.any? || semantic_matches[:strong].any? || semantic_matches[:possible].any? || normalized_exact_matches.any? || tradition_duplicates.any?
     }
   end
 
@@ -42,8 +46,14 @@ class DuplicateClaimDetectorService
       strong_matches: [],
       possible_matches: [],
       normalized_exact_matches: [],
+      tradition_duplicates: [],
       has_duplicates: false
     }
+  end
+
+  def clean_claim_text(text)
+    # Remove trailing punctuation and special characters
+    text.gsub(/[.!?;:,]+$/, '').strip
   end
 
   def find_exact_matches
@@ -66,6 +76,61 @@ class DuplicateClaimDetectorService
     claims = Claim.where(normalized_content_hash: normalized_hash, published: true)
     claims = claims.where.not(id: @current_claim.id) if @current_claim
     claims.includes(:user, :evidences).limit(10)
+  end
+
+  def find_tradition_duplicates
+    # Normalize the current claim text
+    normalized_text = @name_normalization_service.normalize_text(@claim_text)
+    return [] if normalized_text.blank?
+
+    # Generate tradition hashes for the normalized text
+    tradition_hashes = generate_tradition_hashes_for_text(normalized_text)
+    return [] if tradition_hashes.empty?
+
+    # Find claims that have any matching tradition hashes
+    matching_claims = []
+    
+    published_facts = Claim.where(published: true, fact: true)
+                          .where.not(id: @current_claim&.id)
+                          .where.not(tradition_hashes: [nil, ''])
+    
+    published_facts.includes(:user, :evidences).find_each do |claim|
+      claim_hashes = claim.tradition_hashes
+      next if claim_hashes.empty?
+
+      # Check if any of our tradition hashes match any of their tradition hashes
+      matching_traditions = []
+      tradition_hashes.each do |tradition, hash|
+        if claim_hashes[tradition] == hash
+          matching_traditions << tradition
+        end
+      end
+
+      if matching_traditions.any?
+        matching_claims << claim
+      end
+    end
+
+    matching_claims
+  end
+
+  def generate_tradition_hashes_for_text(normalized_text)
+    hashes = {}
+    
+    # Get all name mappings
+    name_mappings = NameMapping.all
+    
+    # Generate hashes for each tradition
+    ['actual', 'jewish', 'christian', 'muslim', 'ethiopian'].each do |tradition|
+      # Denormalize the text for this tradition
+      denormalized_text = @name_normalization_service.denormalize_text(normalized_text, tradition)
+      
+      # Generate hash for this tradition's version
+      hash = Digest::SHA256.hexdigest(denormalized_text.downcase.strip)
+      hashes[tradition] = hash
+    end
+    
+    hashes
   end
 
   def find_semantic_matches

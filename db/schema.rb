@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2025_08_02_015928) do
+ActiveRecord::Schema[7.0].define(version: 2025_08_02_063844) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
   enable_extension "vector"
@@ -74,6 +74,7 @@ ActiveRecord::Schema[7.0].define(version: 2025_08_02_015928) do
     t.vector "content_embedding", limit: 3072
     t.string "normalized_content_hash"
     t.text "normalized_content"
+    t.text "tradition_hashes"
     t.index ["normalized_content"], name: "index_claims_on_normalized_content"
     t.index ["normalized_content_hash", "user_id"], name: "index_claims_on_normalized_content_hash_and_user_id"
     t.index ["normalized_content_hash"], name: "index_claims_on_normalized_content_hash"

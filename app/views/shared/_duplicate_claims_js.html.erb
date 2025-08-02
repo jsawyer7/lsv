@@ -16,11 +16,13 @@
     
     // Clear previous content
     document.getElementById('exact-matches-list').innerHTML = '';
+    document.getElementById('tradition-duplicates-list').innerHTML = '';
     document.getElementById('strong-matches-list').innerHTML = '';
     document.getElementById('possible-matches-list').innerHTML = '';
     
     // Hide all sections initially
     document.getElementById('exact-matches-section').style.display = 'none';
+    document.getElementById('tradition-duplicates-section').style.display = 'none';
     document.getElementById('strong-matches-section').style.display = 'none';
     document.getElementById('possible-matches-section').style.display = 'none';
     
@@ -38,6 +40,22 @@
       
       title.textContent = 'Exact Match Found';
       hasAnyMatches = true;
+    }
+    
+    // Handle tradition duplicates
+    if (duplicates.tradition_duplicates && duplicates.tradition_duplicates.length > 0) {
+      document.getElementById('tradition-duplicates-section').style.display = 'block';
+      const traditionList = document.getElementById('tradition-duplicates-list');
+      
+      duplicates.tradition_duplicates.forEach(claim => {
+        const claimElement = createDuplicateClaimElement(claim, 'tradition');
+        traditionList.appendChild(claimElement);
+      });
+      
+      if (!hasAnyMatches) {
+        title.textContent = 'Name Variation Match Found';
+        hasAnyMatches = true;
+      }
     }
     
     // Handle strong matches
@@ -88,6 +106,17 @@
       userName = claim.user.email;
     }
     
+    // Format evidence content
+    let evidenceHtml = '';
+    if (claim.evidences && claim.evidences.length > 0) {
+      evidenceHtml = `
+        <div class="duplicate-claim-evidence">
+          <strong>Evidence:</strong>
+          ${claim.evidences.map(evidence => formatEvidenceContent(evidence)).join('')}
+        </div>
+      `;
+    }
+    
     div.innerHTML = `
       <div class="duplicate-claim-header">
         <div class="duplicate-claim-user">
@@ -103,21 +132,7 @@
         ${claim.content}
       </div>
       
-      ${claim.evidences && claim.evidences.length > 0 ? `
-        <div class="duplicate-claim-evidence">
-          <strong>Evidence:</strong>
-          ${claim.evidences.map(evidence => `
-            <div class="evidence-item">
-              <span class="evidence-sources">
-                ${evidence.source_names ? evidence.source_names.map(source => 
-                  `<span class="source-badge">${source}</span>`
-                ).join('') : ''}
-              </span>
-              <div class="evidence-content">${evidence.content}</div>
-            </div>
-          `).join('')}
-        </div>
-      ` : ''}
+      ${evidenceHtml}
       
       <div class="duplicate-claim-actions">
         <a href="/claims/${claim.id}" class="btn btn-sm btn-outline" target="_blank">View Claim</a>
@@ -125,6 +140,124 @@
     `;
     
     return div;
+  }
+
+  function formatEvidenceContent(evidence) {
+    try {
+      // Parse the evidence content JSON
+      const evidenceData = JSON.parse(evidence.content);
+      let formattedHtml = '';
+      
+      // Handle different evidence types
+      if (evidenceData.verse && Array.isArray(evidenceData.verse)) {
+        evidenceData.verse.forEach((item, index) => {
+          // Extract content from the details field if it exists
+          let detailsContent = '';
+          if (item.details) {
+            // Create a temporary div to parse the HTML
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = item.details;
+            
+            // Extract the text content from the parsed HTML
+            const detailRows = tempDiv.querySelectorAll('.detail-row');
+            detailRows.forEach(row => {
+              const label = row.querySelector('.detail-label');
+              const value = row.querySelector('.detail-value');
+              if (label && value) {
+                detailsContent += `<div class="evidence-detail"><strong>${label.textContent}:</strong> ${value.textContent}</div>`;
+              }
+            });
+          }
+          
+          formattedHtml += `
+            <div class="evidence-item">
+              <h6>Verse ${index + 1}</h6>
+              ${detailsContent}
+            </div>
+          `;
+        });
+      } else if (evidenceData.historical && Array.isArray(evidenceData.historical)) {
+        evidenceData.historical.forEach((item, index) => {
+          let detailsContent = '';
+          if (item.details) {
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = item.details;
+            
+            const detailRows = tempDiv.querySelectorAll('.detail-row');
+            detailRows.forEach(row => {
+              const label = row.querySelector('.detail-label');
+              const value = row.querySelector('.detail-value');
+              if (label && value) {
+                detailsContent += `<div class="evidence-detail"><strong>${label.textContent}:</strong> ${value.textContent}</div>`;
+              }
+            });
+          }
+          
+          formattedHtml += `
+            <div class="evidence-item">
+              <h6>Historical ${index + 1}</h6>
+              ${detailsContent}
+            </div>
+          `;
+        });
+      } else if (evidenceData.definition && Array.isArray(evidenceData.definition)) {
+        evidenceData.definition.forEach((item, index) => {
+          let detailsContent = '';
+          if (item.details) {
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = item.details;
+            
+            const detailRows = tempDiv.querySelectorAll('.detail-row');
+            detailRows.forEach(row => {
+              const label = row.querySelector('.detail-label');
+              const value = row.querySelector('.detail-value');
+              if (label && value) {
+                detailsContent += `<div class="evidence-detail"><strong>${label.textContent}:</strong> ${value.textContent}</div>`;
+              }
+            });
+          }
+          
+          formattedHtml += `
+            <div class="evidence-item">
+              <h6>Definition ${index + 1}</h6>
+              ${detailsContent}
+            </div>
+          `;
+        });
+      } else if (evidenceData.logic && Array.isArray(evidenceData.logic)) {
+        evidenceData.logic.forEach((item, index) => {
+          let detailsContent = '';
+          if (item.details) {
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = item.details;
+            
+            const detailRows = tempDiv.querySelectorAll('.detail-row');
+            detailRows.forEach(row => {
+              const label = row.querySelector('.detail-label');
+              const value = row.querySelector('.detail-value');
+              if (label && value) {
+                detailsContent += `<div class="evidence-detail"><strong>${label.textContent}:</strong> ${value.textContent}</div>`;
+              }
+            });
+          }
+          
+          formattedHtml += `
+            <div class="evidence-item">
+              <h6>Logic ${index + 1}</h6>
+              ${detailsContent}
+            </div>
+          `;
+        });
+      } else {
+        // Fallback to raw content if parsing fails
+        formattedHtml = `<div class="evidence-content">${evidence.content}</div>`;
+      }
+      
+      return formattedHtml;
+    } catch (error) {
+      // If JSON parsing fails, return the raw content
+      return `<div class="evidence-content">${evidence.content}</div>`;
+    }
   }
 
   function closeDuplicateModal() {

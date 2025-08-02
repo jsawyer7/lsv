@@ -41,8 +41,11 @@ class ClaimsController < ApplicationController
     if result[:valid]
       cleaned_claim = result[:reason].presence || params[:claim][:content]
 
-      # Check for duplicates
-      detector = DuplicateClaimDetectorService.new(cleaned_claim)
+      # Clean the claim text for duplicate detection
+      clean_claim_text = clean_claim_text_for_duplicate_detection(params[:claim][:content])
+
+      # Check for duplicates using the cleaned claim text
+      detector = DuplicateClaimDetectorService.new(clean_claim_text)
       duplicates = detector.detect_duplicates
 
       render json: {
@@ -219,6 +222,9 @@ class ClaimsController < ApplicationController
     if @claim.fact?
       @claim.update(published: true)
 
+      # Normalize content first
+      @claim.normalize_and_save_content!
+
       # Generate embedding for the published fact
       begin
         embedding_service = ClaimEmbeddingService.new(@claim.content)
@@ -238,6 +244,14 @@ class ClaimsController < ApplicationController
         Rails.logger.error "Error generating embedding for published fact #{@claim.id}: #{e.message}"
       end
 
+      # Generate tradition hashes for duplicate detection
+      begin
+        @claim.generate_tradition_hashes!
+        Rails.logger.info "Generated tradition hashes for published fact #{@claim.id}"
+      rescue => e
+        Rails.logger.error "Error generating tradition hashes for published fact #{@claim.id}: #{e.message}"
+      end
+
       respond_to do |format|
         format.html { redirect_to @claim, notice: 'Fact published successfully!' }
         format.json { render json: { status: 'success', message: 'Fact published successfully!' } }
@@ -254,10 +268,14 @@ class ClaimsController < ApplicationController
     if @claim.fact?
       @claim.update(published: false)
 
-    # Remove embeddings when fact is unpublished
-    @claim.update_columns(content_embedding: nil, normalized_content_hash: nil)
+      # Remove embeddings and tradition hashes when fact is unpublished
+      @claim.update_columns(
+        content_embedding: nil,
+        normalized_content_hash: nil,
+        tradition_hashes: nil
+      )
 
-    respond_to do |format|
+      respond_to do |format|
         format.html { redirect_to @claim, notice: 'Fact unpublished successfully!' }
         format.json { render json: { status: 'success', message: 'Fact unpublished successfully!' } }
       end
@@ -336,5 +354,11 @@ class ClaimsController < ApplicationController
       evidence.save!
       evidence.normalize_and_save_content!
     end
+  end
+
+  def clean_claim_text_for_duplicate_detection(text)
+    return "" if text.blank?
+    # Remove trailing punctuation and special characters
+    text.gsub(/[.!?;:,]+$/, '').strip
   end
 end
