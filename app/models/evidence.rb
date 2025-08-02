@@ -34,6 +34,199 @@ class Evidence < ApplicationRecord
     (sources || []).include?(source_enum)
   end
 
+  # Name normalization methods
+  def self.name_normalization_service
+    @name_normalization_service ||= NameNormalizationService.new
+  end
+
+  # Get evidence content with names normalized for a specific tradition
+  def evidence_content_for_tradition(tradition = 'actual')
+    if normalized_content.present?
+      self.class.name_normalization_service.denormalize_text(normalized_content, tradition)
+    else
+      evidence_content
+    end
+  end
+
+  # Get tradition-specific verse reference
+  def verse_reference_for_tradition(tradition = 'actual')
+    if verse_reference.present?
+      self.class.name_normalization_service.denormalize_text(verse_reference, tradition)
+    else
+      verse_reference
+    end
+  end
+
+  # Get tradition-specific translation
+  def translation_for_tradition(tradition = 'actual')
+    if translation.present?
+      self.class.name_normalization_service.denormalize_text(translation, tradition)
+    else
+      translation
+    end
+  end
+
+  # Get tradition-specific explanation
+  def explanation_for_tradition(tradition = 'actual')
+    if explanation.present?
+      self.class.name_normalization_service.denormalize_text(explanation, tradition)
+    else
+      explanation
+    end
+  end
+
+  # Normalize content and save
+  def normalize_and_save_content!
+    sections = evidence_sections
+    return if sections.empty?
+
+    # Normalize content within the JSON structure
+    normalized_sections = {}
+    
+    sections.each do |section_type, section_data|
+      if section_data.is_a?(Array)
+        # Handle multiple items in a section
+        normalized_sections[section_type] = section_data.map do |item|
+          normalized_item = item.dup
+          
+          # Normalize the main content field
+          if normalized_item['content'].present?
+            normalized_item['content'] = self.class.name_normalization_service.normalize_text(normalized_item['content'])
+          end
+          
+          # Normalize other text fields that might contain names
+          if normalized_item['verse_reference'].present?
+            normalized_item['verse_reference'] = self.class.name_normalization_service.normalize_text(normalized_item['verse_reference'])
+          end
+          
+          if normalized_item['translation'].present?
+            normalized_item['translation'] = self.class.name_normalization_service.normalize_text(normalized_item['translation'])
+          end
+          
+          if normalized_item['explanation'].present?
+            normalized_item['explanation'] = self.class.name_normalization_service.normalize_text(normalized_item['explanation'])
+          end
+          
+          if normalized_item['historical_event'].present?
+            normalized_item['historical_event'] = self.class.name_normalization_service.normalize_text(normalized_item['historical_event'])
+          end
+          
+          if normalized_item['description'].present?
+            normalized_item['description'] = self.class.name_normalization_service.normalize_text(normalized_item['description'])
+          end
+          
+          if normalized_item['term'].present?
+            normalized_item['term'] = self.class.name_normalization_service.normalize_text(normalized_item['term'])
+          end
+          
+          if normalized_item['definition'].present?
+            normalized_item['definition'] = self.class.name_normalization_service.normalize_text(normalized_item['definition'])
+          end
+          
+          if normalized_item['premise'].present?
+            normalized_item['premise'] = self.class.name_normalization_service.normalize_text(normalized_item['premise'])
+          end
+          
+          if normalized_item['reasoning'].present?
+            normalized_item['reasoning'] = self.class.name_normalization_service.normalize_text(normalized_item['reasoning'])
+          end
+          
+          if normalized_item['conclusion'].present?
+            normalized_item['conclusion'] = self.class.name_normalization_service.normalize_text(normalized_item['conclusion'])
+          end
+          
+          normalized_item
+        end
+      else
+        # Handle single item in a section
+        normalized_sections[section_type] = section_data.dup
+        
+        if normalized_sections[section_type]['content'].present?
+          normalized_sections[section_type]['content'] = self.class.name_normalization_service.normalize_text(normalized_sections[section_type]['content'])
+        end
+        
+        if normalized_sections[section_type]['verse_reference'].present?
+          normalized_sections[section_type]['verse_reference'] = self.class.name_normalization_service.normalize_text(normalized_sections[section_type]['verse_reference'])
+        end
+        
+        if normalized_sections[section_type]['translation'].present?
+          normalized_sections[section_type]['translation'] = self.class.name_normalization_service.normalize_text(normalized_sections[section_type]['translation'])
+        end
+        
+        if normalized_sections[section_type]['explanation'].present?
+          normalized_sections[section_type]['explanation'] = self.class.name_normalization_service.normalize_text(normalized_sections[section_type]['explanation'])
+        end
+        
+        if normalized_sections[section_type]['historical_event'].present?
+          normalized_sections[section_type]['historical_event'] = self.class.name_normalization_service.normalize_text(normalized_sections[section_type]['historical_event'])
+        end
+        
+        if normalized_sections[section_type]['description'].present?
+          normalized_sections[section_type]['description'] = self.class.name_normalization_service.normalize_text(normalized_sections[section_type]['description'])
+        end
+        
+        if normalized_sections[section_type]['term'].present?
+          normalized_sections[section_type]['term'] = self.class.name_normalization_service.normalize_text(normalized_sections[section_type]['term'])
+        end
+        
+        if normalized_sections[section_type]['definition'].present?
+          normalized_sections[section_type]['definition'] = self.class.name_normalization_service.normalize_text(normalized_sections[section_type]['definition'])
+        end
+        
+        if normalized_sections[section_type]['premise'].present?
+          normalized_sections[section_type]['premise'] = self.class.name_normalization_service.normalize_text(normalized_sections[section_type]['premise'])
+        end
+        
+        if normalized_sections[section_type]['reasoning'].present?
+          normalized_sections[section_type]['reasoning'] = self.class.name_normalization_service.normalize_text(normalized_sections[section_type]['reasoning'])
+        end
+        
+        if normalized_sections[section_type]['conclusion'].present?
+          normalized_sections[section_type]['conclusion'] = self.class.name_normalization_service.normalize_text(normalized_sections[section_type]['conclusion'])
+        end
+      end
+    end
+    
+    # Update the content with normalized data
+    update_column(:content, normalized_sections.to_json)
+    
+    # Also normalize the individual fields for backward compatibility
+    if verse_reference.present?
+      normalized_reference = self.class.name_normalization_service.normalize_text(verse_reference)
+      update_column(:verse_reference, normalized_reference) if normalized_reference != verse_reference
+    end
+    
+    if translation.present?
+      normalized_translation = self.class.name_normalization_service.normalize_text(translation)
+      update_column(:translation, normalized_translation) if normalized_translation != translation
+    end
+    
+    if explanation.present?
+      normalized_explanation = self.class.name_normalization_service.normalize_text(explanation)
+      update_column(:explanation, normalized_explanation) if normalized_explanation != explanation
+    end
+    
+    # Update normalized_content field with the extracted content
+    content_text = evidence_content
+    if content_text.present?
+      normalized = self.class.name_normalization_service.normalize_text(content_text)
+      update_column(:normalized_content, normalized) if normalized != content_text
+    end
+  end
+
+  # Check if evidence content contains mapped names
+  def contains_mapped_names?
+    content_text = evidence_content
+    return false if content_text.blank?
+    self.class.name_normalization_service.contains_mapped_names?(content_text)
+  end
+
+  # Get all internal IDs used in this evidence
+  def internal_ids_used
+    return [] unless normalized_content.present?
+    self.class.name_normalization_service.extract_internal_ids(normalized_content)
+  end
+
   # Methods to handle structured evidence data
   # An evidence can contain multiple sections, so we store them as JSON in content
   # Each section can contain multiple items (e.g., multiple verses)
@@ -124,11 +317,14 @@ class Evidence < ApplicationRecord
       if verse_data.is_a?(Array)
         # Handle multiple verses
         verse_data.each_with_index do |verse, index|
-          content_parts << "Verse #{index + 1}: #{verse['verse_reference']}\n\n#{verse['translation']}"
+          # Extract content from the verse structure
+          verse_content = verse['content'] || verse['translation'] || verse['verse_reference'] || ''
+          content_parts << "Verse #{index + 1}: #{verse_content}"
         end
       else
         # Handle single verse (backward compatibility)
-        content_parts << "#{verse_data['verse_reference']}\n\n#{verse_data['translation']}"
+        verse_content = verse_data['content'] || verse_data['translation'] || verse_data['verse_reference'] || ''
+        content_parts << verse_content
       end
     end
 
@@ -470,10 +666,10 @@ class Evidence < ApplicationRecord
             end
           end
 
-          # Collect sources from single logic argument
-          if section_data['sources']
-            all_sources.concat(section_data['sources'])
-          end
+                      # Collect sources from single logic argument
+            if section_data['sources']
+              all_sources.concat(section_data['sources'])
+            end
         end
       end
     end

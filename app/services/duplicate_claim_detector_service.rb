@@ -10,22 +10,27 @@ class DuplicateClaimDetectorService
     @evidence_texts = Array(evidence_texts).compact
     @current_claim = current_claim
     @embedding_service = ClaimEmbeddingService.new(@claim_text)
+    @name_normalization_service = NameNormalizationService.new
   end
 
   def detect_duplicates
     return empty_result if @claim_text.blank?
 
-    # 1. Exact match check
+    # 1. Exact match check (using normalized content)
     exact_matches = find_exact_matches
 
     # 2. Semantic similarity check
     semantic_matches = find_semantic_matches
 
+    # 3. Name-normalized exact match check
+    normalized_exact_matches = find_normalized_exact_matches
+
     {
       exact_matches: serialize_claims(exact_matches),
       strong_matches: semantic_matches[:strong],
       possible_matches: semantic_matches[:possible],
-      has_duplicates: exact_matches.any? || semantic_matches[:strong].any? || semantic_matches[:possible].any?
+      normalized_exact_matches: serialize_claims(normalized_exact_matches),
+      has_duplicates: exact_matches.any? || semantic_matches[:strong].any? || semantic_matches[:possible].any? || normalized_exact_matches.any?
     }
   end
 
@@ -36,6 +41,7 @@ class DuplicateClaimDetectorService
       exact_matches: [],
       strong_matches: [],
       possible_matches: [],
+      normalized_exact_matches: [],
       has_duplicates: false
     }
   end
@@ -44,6 +50,19 @@ class DuplicateClaimDetectorService
     normalized_hash = @embedding_service.generate_hash
     return [] if normalized_hash.blank?
 
+    claims = Claim.where(normalized_content_hash: normalized_hash, published: true)
+    claims = claims.where.not(id: @current_claim.id) if @current_claim
+    claims.includes(:user, :evidences).limit(10)
+  end
+
+  def find_normalized_exact_matches
+    # Normalize the current claim text
+    normalized_text = @name_normalization_service.normalize_text(@claim_text)
+    normalized_hash = Digest::SHA256.hexdigest(normalized_text.downcase.strip)
+    
+    return [] if normalized_hash.blank?
+
+    # Find claims with the same normalized content
     claims = Claim.where(normalized_content_hash: normalized_hash, published: true)
     claims = claims.where.not(id: @current_claim.id) if @current_claim
     claims.includes(:user, :evidences).limit(10)

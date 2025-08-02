@@ -43,12 +43,14 @@ class LsvValidatorService
     results = threads.map(&:value).compact
 
     results.each do |result|
-      @claim.reasonings.create!(
+      reasoning = @claim.reasonings.create!(
         source: result[:source],
         response: result[:reasoning],
         result: result[:badge],
         primary_source: result[:primary]
       )
+      # Normalize the reasoning content
+      reasoning.normalize_and_save_content!
     end
 
     store_claim_result(@claim)

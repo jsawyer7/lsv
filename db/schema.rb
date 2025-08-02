@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2025_07_30_164835) do
+ActiveRecord::Schema[7.0].define(version: 2025_08_02_015928) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
   enable_extension "vector"
@@ -73,6 +73,8 @@ ActiveRecord::Schema[7.0].define(version: 2025_07_30_164835) do
     t.boolean "published", default: false
     t.vector "content_embedding", limit: 3072
     t.string "normalized_content_hash"
+    t.text "normalized_content"
+    t.index ["normalized_content"], name: "index_claims_on_normalized_content"
     t.index ["normalized_content_hash", "user_id"], name: "index_claims_on_normalized_content_hash_and_user_id"
     t.index ["normalized_content_hash"], name: "index_claims_on_normalized_content_hash"
     t.index ["user_id"], name: "index_claims_on_user_id"
@@ -80,10 +82,10 @@ ActiveRecord::Schema[7.0].define(version: 2025_07_30_164835) do
 
   create_table "evidences", force: :cascade do |t|
     t.bigint "claim_id", null: false
+    t.text "content"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "sources", default: [], array: true
-    t.text "content"
     t.string "verse_reference"
     t.text "original_text"
     t.text "translation"
@@ -99,7 +101,9 @@ ActiveRecord::Schema[7.0].define(version: 2025_07_30_164835) do
     t.text "reasoning"
     t.text "conclusion"
     t.string "logical_form"
+    t.text "normalized_content"
     t.index ["claim_id"], name: "index_evidences_on_claim_id"
+    t.index ["normalized_content"], name: "index_evidences_on_normalized_content"
     t.index ["sources"], name: "index_evidences_on_sources", using: :gin
   end
 
@@ -110,6 +114,23 @@ ActiveRecord::Schema[7.0].define(version: 2025_07_30_164835) do
     t.datetime "updated_at", null: false
     t.index ["user_id", "followed_user"], name: "index_follows_on_user_id_and_followed_user", unique: true
     t.index ["user_id"], name: "index_follows_on_user_id"
+  end
+
+  create_table "name_mappings", force: :cascade do |t|
+    t.string "internal_id", null: false
+    t.string "jewish"
+    t.string "christian"
+    t.string "muslim"
+    t.string "actual"
+    t.string "ethiopian"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["actual"], name: "index_name_mappings_on_actual"
+    t.index ["christian"], name: "index_name_mappings_on_christian"
+    t.index ["ethiopian"], name: "index_name_mappings_on_ethiopian"
+    t.index ["internal_id"], name: "index_name_mappings_on_internal_id", unique: true
+    t.index ["jewish"], name: "index_name_mappings_on_jewish"
+    t.index ["muslim"], name: "index_name_mappings_on_muslim"
   end
 
   create_table "peers", force: :cascade do |t|
@@ -132,6 +153,8 @@ ActiveRecord::Schema[7.0].define(version: 2025_07_30_164835) do
     t.boolean "primary_source", default: false
     t.string "reasonable_type"
     t.bigint "reasonable_id"
+    t.text "normalized_content"
+    t.index ["normalized_content"], name: "index_reasonings_on_normalized_content"
     t.index ["reasonable_type", "reasonable_id", "source"], name: "index_reasonings_on_reasonable_and_source", unique: true
   end
 

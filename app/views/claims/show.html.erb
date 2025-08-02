@@ -2,6 +2,18 @@
   <div class="claim-center">
     <div class="claim-header">
       <h2><%= @claim.fact? ? 'Fact Details' : 'Claim Details' %></h2>
+      
+      <!-- Tradition Preference Selector -->
+      <div class="tradition-selector">
+        <label for="tradition-select">Name Tradition:</label>
+        <select id="tradition-select" onchange="changeTradition(this.value)">
+          <option value="actual" <%= 'selected' if @tradition == 'actual' %>>Actual</option>
+          <option value="jewish" <%= 'selected' if @tradition == 'jewish' %>>Jewish</option>
+          <option value="christian" <%= 'selected' if @tradition == 'christian' %>>Christian</option>
+          <option value="muslim" <%= 'selected' if @tradition == 'muslim' %>>Muslim</option>
+          <option value="ethiopian" <%= 'selected' if @tradition == 'ethiopian' %>>Ethiopian</option>
+        </select>
+      </div>
     </div>
     <div class="claim-details-list">
       <div class="claim-details-card">
@@ -11,7 +23,9 @@
             <span class="claim-details-label">Claim</span>
             <span class="claim-details-date"><%= @claim.created_at.strftime('%d %b, %Y') %></span>
           </div>
-          <div class="claim-details-content"><%= @claim.content %></div>
+          <div class="claim-details-content" id="claim-content">
+            <%= @claim.content_for_tradition(@tradition) %>
+          </div>
         </div>
         <div class="claim-section-divider"></div>
         <div class="claim-details-section">
@@ -19,7 +33,7 @@
             <%= image_tag 'evidence-icon.png', alt: 'Evidence Icon', class: 'claim-section-icon' %>
             <span class="claim-details-label">Evidence</span>
           </div>
-          <div class="claim-details-evidence">
+          <div class="claim-details-evidence" id="evidence-content">
             <% @claim.evidences.each do |evidence| %>
               <div class="claim-evidence-block" id="evidence-<%= evidence.id %>">
                 <div><strong>Sources:</strong> 
@@ -37,150 +51,118 @@
                             <h5><%= "#{section_type.humanize} #{index + 1}" %></h5>
                             <% case section_type %>
                             <% when 'verse' %>
-                              <% if item['details'] %>
-                                <% details_html = item['details'] %>
-                                <% if details_html.match(/Reference:<\/span>\s*<span[^>]*>([^<]+)</) %>
-                                  <div class="evidence-detail">
-                                    <strong>Reference:</strong> <%= $1.strip %>
-                                  </div>
-                                <% end %>
-                                <% if details_html.match(/Source:<\/span>\s*<span[^>]*>([^<]+)</) %>
-                                  <div class="evidence-detail">
-                                    <strong>Source:</strong> <%= $1.strip %>
-                                  </div>
-                                <% end %>
-                                <% if details_html.match(/Original Text:<\/span>\s*<span[^>]*>([^<]+)</) %>
-                                  <div class="evidence-detail">
-                                    <strong>Original Text:</strong> <%= $1.strip %>
-                                  </div>
-                                <% end %>
-                                <% if details_html.match(/Translation:<\/span>\s*<span[^>]*>([^<]+)</) %>
-                                  <div class="evidence-detail">
-                                    <strong>Translation:</strong> <%= $1.strip %>
-                                  </div>
-                                <% end %>
-                                <% if details_html.match(/Explanation:<\/span>\s*<span[^>]*>([^<]+)</) %>
-                                  <div class="evidence-detail">
-                                    <strong>Explanation:</strong> <%= $1.strip %>
-                                  </div>
-                                <% end %>
-                              <% else %>
-                                <%# Fallback to content field %>
+                              <% if item['content'].present? %>
                                 <div class="evidence-detail">
-                                  <strong>Content:</strong> <%= item['content'] %>
+                                  <strong>Content:</strong> <%= @tradition ? evidence.class.name_normalization_service.denormalize_text(item['content'], @tradition) : item['content'] %>
                                 </div>
-                                <% if item['sources'] %>
-                                  <div class="evidence-detail">
-                                    <strong>Source:</strong> <%= item['sources'].join(', ') %>
-                                  </div>
-                                <% end %>
+                              <% end %>
+                              <% if item['verse_reference'].present? %>
+                                <div class="evidence-detail">
+                                  <strong>Reference:</strong> <%= @tradition ? evidence.class.name_normalization_service.denormalize_text(item['verse_reference'], @tradition) : item['verse_reference'] %>
+                                </div>
+                              <% end %>
+                              <% if item['sources'].present? %>
+                                <div class="evidence-detail">
+                                  <strong>Source:</strong> <%= item['sources'].map(&:humanize).join(', ') %>
+                                </div>
+                              <% end %>
+                              <% if item['original_text'].present? %>
+                                <div class="evidence-detail">
+                                  <strong>Original Text:</strong> <%= item['original_text'] %>
+                                </div>
+                              <% end %>
+                              <% if item['translation'].present? %>
+                                <div class="evidence-detail">
+                                  <strong>Translation:</strong> <%= @tradition ? evidence.class.name_normalization_service.denormalize_text(item['translation'], @tradition) : item['translation'] %>
+                                </div>
+                              <% end %>
+                              <% if item['explanation'].present? %>
+                                <div class="evidence-detail">
+                                  <strong>Explanation:</strong> <%= @tradition ? evidence.class.name_normalization_service.denormalize_text(item['explanation'], @tradition) : item['explanation'] %>
+                                </div>
                               <% end %>
                             <% when 'historical' %>
-                              <% if item['details'] %>
-                                <% details_html = item['details'] %>
-                                <% if details_html.match(/Historical Event:<\/span>\s*<span[^>]*>([^<]+)</) %>
-                                  <div class="evidence-detail">
-                                    <strong>Historical Event:</strong> <%= $1.strip %>
-                                  </div>
-                                <% end %>
-                                <% if details_html.match(/Source:<\/span>\s*<span[^>]*>([^<]+)</) %>
-                                  <div class="evidence-detail">
-                                    <strong>Source:</strong> <%= $1.strip %>
-                                  </div>
-                                <% end %>
-                                <% if details_html.match(/Description:<\/span>\s*<span[^>]*>([^<]+)</) %>
-                                  <div class="evidence-detail">
-                                    <strong>Description:</strong> <%= $1.strip %>
-                                  </div>
-                                <% end %>
-                                <% if details_html.match(/Relevance:<\/span>\s*<span[^>]*>([^<]+)</) %>
-                                  <div class="evidence-detail">
-                                    <strong>Relevance:</strong> <%= $1.strip %>
-                                  </div>
-                                <% end %>
-                              <% else %>
-                                <%# Fallback to content field %>
+                              <% if item['content'].present? %>
                                 <div class="evidence-detail">
-                                  <strong>Content:</strong> <%= item['content'] %>
+                                  <strong>Content:</strong> <%= @tradition ? evidence.class.name_normalization_service.denormalize_text(item['content'], @tradition) : item['content'] %>
                                 </div>
-                                <% if item['sources'] %>
-                                  <div class="evidence-detail">
-                                    <strong>Source:</strong> <%= item['sources'].join(', ') %>
-                                  </div>
-                                <% end %>
+                              <% end %>
+                              <% if item['historical_event'].present? %>
+                                <div class="evidence-detail">
+                                  <strong>Historical Event:</strong> <%= @tradition ? evidence.class.name_normalization_service.denormalize_text(item['historical_event'], @tradition) : item['historical_event'] %>
+                                </div>
+                              <% end %>
+                              <% if item['sources'].present? %>
+                                <div class="evidence-detail">
+                                  <strong>Source:</strong> <%= item['sources'].map(&:humanize).join(', ') %>
+                                </div>
+                              <% end %>
+                              <% if item['description'].present? %>
+                                <div class="evidence-detail">
+                                  <strong>Description:</strong> <%= @tradition ? evidence.class.name_normalization_service.denormalize_text(item['description'], @tradition) : item['description'] %>
+                                </div>
+                              <% end %>
+                              <% if item['relevance'].present? %>
+                                <div class="evidence-detail">
+                                  <strong>Relevance:</strong> <%= @tradition ? evidence.class.name_normalization_service.denormalize_text(item['relevance'], @tradition) : item['relevance'] %>
+                                </div>
                               <% end %>
                             <% when 'definition' %>
-                              <% if item['details'] %>
-                                <% details_html = item['details'] %>
-                                <% if details_html.match(/Term:<\/span>\s*<span[^>]*>([^<]+)</) %>
-                                  <div class="evidence-detail">
-                                    <strong>Term:</strong> <%= $1.strip %>
-                                  </div>
-                                <% end %>
-                                <% if details_html.match(/Source:<\/span>\s*<span[^>]*>([^<]+)</) %>
-                                  <div class="evidence-detail">
-                                    <strong>Source:</strong> <%= $1.strip %>
-                                  </div>
-                                <% end %>
-                                <% if details_html.match(/Definition:<\/span>\s*<span[^>]*>([^<]+)</) %>
-                                  <div class="evidence-detail">
-                                    <strong>Definition:</strong> <%= $1.strip %>
-                                  </div>
-                                <% end %>
-                                <% if details_html.match(/Etymology:<\/span>\s*<span[^>]*>([^<]+)</) %>
-                                  <div class="evidence-detail">
-                                    <strong>Etymology:</strong> <%= $1.strip %>
-                                  </div>
-                                <% end %>
-                                <% if details_html.match(/Usage Context:<\/span>\s*<span[^>]*>([^<]+)</) %>
-                                  <div class="evidence-detail">
-                                    <strong>Usage Context:</strong> <%= $1.strip %>
-                                  </div>
-                                <% end %>
-                              <% else %>
-                                <%# Fallback to content field %>
+                              <% if item['content'].present? %>
                                 <div class="evidence-detail">
-                                  <strong>Content:</strong> <%= item['content'] %>
+                                  <strong>Content:</strong> <%= @tradition ? evidence.class.name_normalization_service.denormalize_text(item['content'], @tradition) : item['content'] %>
                                 </div>
-                                <% if item['sources'] %>
-                                  <div class="evidence-detail">
-                                    <strong>Source:</strong> <%= item['sources'].join(', ') %>
-                                  </div>
-                                <% end %>
+                              <% end %>
+                              <% if item['term'].present? %>
+                                <div class="evidence-detail">
+                                  <strong>Term:</strong> <%= @tradition ? evidence.class.name_normalization_service.denormalize_text(item['term'], @tradition) : item['term'] %>
+                                </div>
+                              <% end %>
+                              <% if item['sources'].present? %>
+                                <div class="evidence-detail">
+                                  <strong>Source:</strong> <%= item['sources'].map(&:humanize).join(', ') %>
+                                </div>
+                              <% end %>
+                              <% if item['definition'].present? %>
+                                <div class="evidence-detail">
+                                  <strong>Definition:</strong> <%= @tradition ? evidence.class.name_normalization_service.denormalize_text(item['definition'], @tradition) : item['definition'] %>
+                                </div>
+                              <% end %>
+                              <% if item['etymology'].present? %>
+                                <div class="evidence-detail">
+                                  <strong>Etymology:</strong> <%= @tradition ? evidence.class.name_normalization_service.denormalize_text(item['etymology'], @tradition) : item['etymology'] %>
+                                </div>
+                              <% end %>
+                              <% if item['usage_context'].present? %>
+                                <div class="evidence-detail">
+                                  <strong>Usage Context:</strong> <%= @tradition ? evidence.class.name_normalization_service.denormalize_text(item['usage_context'], @tradition) : item['usage_context'] %>
+                                </div>
                               <% end %>
                             <% when 'logic' %>
-                              <% if item['details'] %>
-                                <% details_html = item['details'] %>
-                                <% if details_html.match(/Premise:<\/span>\s*<span[^>]*>([^<]+)</) %>
-                                  <div class="evidence-detail">
-                                    <strong>Premise:</strong> <%= $1.strip %>
-                                  </div>
-                                <% end %>
-                                <% if details_html.match(/Source:<\/span>\s*<span[^>]*>([^<]+)</) %>
-                                  <div class="evidence-detail">
-                                    <strong>Source:</strong> <%= $1.strip %>
-                                  </div>
-                                <% end %>
-                                <% if details_html.match(/Reasoning:<\/span>\s*<span[^>]*>([^<]+)</) %>
-                                  <div class="evidence-detail">
-                                    <strong>Reasoning:</strong> <%= $1.strip %>
-                                  </div>
-                                <% end %>
-                                <% if details_html.match(/Conclusion:<\/span>\s*<span[^>]*>([^<]+)</) %>
-                                  <div class="evidence-detail">
-                                    <strong>Conclusion:</strong> <%= $1.strip %>
-                                  </div>
-                                <% end %>
-                              <% else %>
-                                <%# Fallback to content field %>
+                              <% if item['content'].present? %>
                                 <div class="evidence-detail">
-                                  <strong>Content:</strong> <%= item['content'] %>
+                                  <strong>Content:</strong> <%= @tradition ? evidence.class.name_normalization_service.denormalize_text(item['content'], @tradition) : item['content'] %>
                                 </div>
-                                <% if item['sources'] %>
-                                  <div class="evidence-detail">
-                                    <strong>Source:</strong> <%= item['sources'].join(', ') %>
-                                  </div>
-                                <% end %>
+                              <% end %>
+                              <% if item['premise'].present? %>
+                                <div class="evidence-detail">
+                                  <strong>Premise:</strong> <%= @tradition ? evidence.class.name_normalization_service.denormalize_text(item['premise'], @tradition) : item['premise'] %>
+                                </div>
+                              <% end %>
+                              <% if item['sources'].present? %>
+                                <div class="evidence-detail">
+                                  <strong>Source:</strong> <%= item['sources'].map(&:humanize).join(', ') %>
+                                </div>
+                              <% end %>
+                              <% if item['reasoning'].present? %>
+                                <div class="evidence-detail">
+                                  <strong>Reasoning:</strong> <%= @tradition ? evidence.class.name_normalization_service.denormalize_text(item['reasoning'], @tradition) : item['reasoning'] %>
+                                </div>
+                              <% end %>
+                              <% if item['conclusion'].present? %>
+                                <div class="evidence-detail">
+                                  <strong>Conclusion:</strong> <%= @tradition ? evidence.class.name_normalization_service.denormalize_text(item['conclusion'], @tradition) : item['conclusion'] %>
+                                </div>
                               <% end %>
                             <% end %>
                           </div>
@@ -189,150 +171,118 @@
                         <%# Backward compatibility for single items %>
                         <% case section_type %>
                         <% when 'verse' %>
-                          <% if section_data['details'] %>
-                            <% details_html = section_data['details'] %>
-                            <% if details_html.match(/Reference:<\/span>\s*<span[^>]*>([^<]+)</) %>
-                              <div class="evidence-detail">
-                                <strong>Reference:</strong> <%= $1.strip %>
-                              </div>
-                            <% end %>
-                            <% if details_html.match(/Source:<\/span>\s*<span[^>]*>([^<]+)</) %>
-                              <div class="evidence-detail">
-                                <strong>Source:</strong> <%= $1.strip %>
-                              </div>
-                            <% end %>
-                            <% if details_html.match(/Original Text:<\/span>\s*<span[^>]*>([^<]+)</) %>
-                              <div class="evidence-detail">
-                                <strong>Original Text:</strong> <%= $1.strip %>
-                              </div>
-                            <% end %>
-                            <% if details_html.match(/Translation:<\/span>\s*<span[^>]*>([^<]+)</) %>
-                              <div class="evidence-detail">
-                                <strong>Translation:</strong> <%= $1.strip %>
-                              </div>
-                            <% end %>
-                            <% if details_html.match(/Explanation:<\/span>\s*<span[^>]*>([^<]+)</) %>
-                              <div class="evidence-detail">
-                                <strong>Explanation:</strong> <%= $1.strip %>
-                              </div>
-                            <% end %>
-                          <% else %>
-                            <%# Fallback to content field %>
+                          <% if section_data['content'].present? %>
                             <div class="evidence-detail">
-                              <strong>Content:</strong> <%= section_data['content'] %>
+                              <strong>Content:</strong> <%= @tradition ? evidence.class.name_normalization_service.denormalize_text(section_data['content'], @tradition) : section_data['content'] %>
                             </div>
-                            <% if section_data['sources'] %>
-                              <div class="evidence-detail">
-                                <strong>Source:</strong> <%= section_data['sources'].join(', ') %>
-                              </div>
-                            <% end %>
+                          <% end %>
+                          <% if section_data['verse_reference'].present? %>
+                            <div class="evidence-detail">
+                              <strong>Reference:</strong> <%= @tradition ? evidence.class.name_normalization_service.denormalize_text(section_data['verse_reference'], @tradition) : section_data['verse_reference'] %>
+                            </div>
+                          <% end %>
+                          <% if section_data['sources'].present? %>
+                            <div class="evidence-detail">
+                              <strong>Source:</strong> <%= section_data['sources'].map(&:humanize).join(', ') %>
+                            </div>
+                          <% end %>
+                          <% if section_data['original_text'].present? %>
+                            <div class="evidence-detail">
+                              <strong>Original Text:</strong> <%= section_data['original_text'] %>
+                            </div>
+                          <% end %>
+                          <% if section_data['translation'].present? %>
+                            <div class="evidence-detail">
+                              <strong>Translation:</strong> <%= @tradition ? evidence.class.name_normalization_service.denormalize_text(section_data['translation'], @tradition) : section_data['translation'] %>
+                            </div>
+                          <% end %>
+                          <% if section_data['explanation'].present? %>
+                            <div class="evidence-detail">
+                              <strong>Explanation:</strong> <%= @tradition ? evidence.class.name_normalization_service.denormalize_text(section_data['explanation'], @tradition) : section_data['explanation'] %>
+                            </div>
                           <% end %>
                         <% when 'historical' %>
-                          <% if section_data['details'] %>
-                            <% details_html = section_data['details'] %>
-                            <% if details_html.match(/Historical Event:<\/span>\s*<span[^>]*>([^<]+)</) %>
-                              <div class="evidence-detail">
-                                <strong>Historical Event:</strong> <%= $1.strip %>
-                              </div>
-                            <% end %>
-                            <% if details_html.match(/Source:<\/span>\s*<span[^>]*>([^<]+)</) %>
-                              <div class="evidence-detail">
-                                <strong>Source:</strong> <%= $1.strip %>
-                              </div>
-                            <% end %>
-                            <% if details_html.match(/Description:<\/span>\s*<span[^>]*>([^<]+)</) %>
-                              <div class="evidence-detail">
-                                <strong>Description:</strong> <%= $1.strip %>
-                              </div>
-                            <% end %>
-                            <% if details_html.match(/Relevance:<\/span>\s*<span[^>]*>([^<]+)</) %>
-                              <div class="evidence-detail">
-                                <strong>Relevance:</strong> <%= $1.strip %>
-                              </div>
-                            <% end %>
-                          <% else %>
-                            <%# Fallback to content field %>
+                          <% if section_data['content'].present? %>
                             <div class="evidence-detail">
-                              <strong>Content:</strong> <%= section_data['content'] %>
+                              <strong>Content:</strong> <%= @tradition ? evidence.class.name_normalization_service.denormalize_text(section_data['content'], @tradition) : section_data['content'] %>
                             </div>
-                            <% if section_data['sources'] %>
-                              <div class="evidence-detail">
-                                <strong>Source:</strong> <%= section_data['sources'].join(', ') %>
-                              </div>
-                            <% end %>
+                          <% end %>
+                          <% if section_data['historical_event'].present? %>
+                            <div class="evidence-detail">
+                              <strong>Historical Event:</strong> <%= @tradition ? evidence.class.name_normalization_service.denormalize_text(section_data['historical_event'], @tradition) : section_data['historical_event'] %>
+                            </div>
+                          <% end %>
+                          <% if section_data['sources'].present? %>
+                            <div class="evidence-detail">
+                              <strong>Source:</strong> <%= section_data['sources'].map(&:humanize).join(', ') %>
+                            </div>
+                          <% end %>
+                          <% if section_data['description'].present? %>
+                            <div class="evidence-detail">
+                              <strong>Description:</strong> <%= @tradition ? evidence.class.name_normalization_service.denormalize_text(section_data['description'], @tradition) : section_data['description'] %>
+                            </div>
+                          <% end %>
+                          <% if section_data['relevance'].present? %>
+                            <div class="evidence-detail">
+                              <strong>Relevance:</strong> <%= @tradition ? evidence.class.name_normalization_service.denormalize_text(section_data['relevance'], @tradition) : section_data['relevance'] %>
+                            </div>
                           <% end %>
                         <% when 'definition' %>
-                          <% if section_data['details'] %>
-                            <% details_html = section_data['details'] %>
-                            <% if details_html.match(/Term:<\/span>\s*<span[^>]*>([^<]+)</) %>
-                              <div class="evidence-detail">
-                                <strong>Term:</strong> <%= $1.strip %>
-                              </div>
-                            <% end %>
-                            <% if details_html.match(/Source:<\/span>\s*<span[^>]*>([^<]+)</) %>
-                              <div class="evidence-detail">
-                                <strong>Source:</strong> <%= $1.strip %>
-                              </div>
-                            <% end %>
-                            <% if details_html.match(/Definition:<\/span>\s*<span[^>]*>([^<]+)</) %>
-                              <div class="evidence-detail">
-                                <strong>Definition:</strong> <%= $1.strip %>
-                              </div>
-                            <% end %>
-                            <% if details_html.match(/Etymology:<\/span>\s*<span[^>]*>([^<]+)</) %>
-                              <div class="evidence-detail">
-                                <strong>Etymology:</strong> <%= $1.strip %>
-                              </div>
-                            <% end %>
-                            <% if details_html.match(/Usage Context:<\/span>\s*<span[^>]*>([^<]+)</) %>
-                              <div class="evidence-detail">
-                                <strong>Usage Context:</strong> <%= $1.strip %>
-                              </div>
-                            <% end %>
-                          <% else %>
-                            <%# Fallback to content field %>
+                          <% if section_data['content'].present? %>
                             <div class="evidence-detail">
-                              <strong>Content:</strong> <%= section_data['content'] %>
+                              <strong>Content:</strong> <%= @tradition ? evidence.class.name_normalization_service.denormalize_text(section_data['content'], @tradition) : section_data['content'] %>
                             </div>
-                            <% if section_data['sources'] %>
-                              <div class="evidence-detail">
-                                <strong>Source:</strong> <%= section_data['sources'].join(', ') %>
-                              </div>
-                            <% end %>
+                          <% end %>
+                          <% if section_data['term'].present? %>
+                            <div class="evidence-detail">
+                              <strong>Term:</strong> <%= @tradition ? evidence.class.name_normalization_service.denormalize_text(section_data['term'], @tradition) : section_data['term'] %>
+                            </div>
+                          <% end %>
+                          <% if section_data['sources'].present? %>
+                            <div class="evidence-detail">
+                              <strong>Source:</strong> <%= section_data['sources'].map(&:humanize).join(', ') %>
+                            </div>
+                          <% end %>
+                          <% if section_data['definition'].present? %>
+                            <div class="evidence-detail">
+                              <strong>Definition:</strong> <%= @tradition ? evidence.class.name_normalization_service.denormalize_text(section_data['definition'], @tradition) : section_data['definition'] %>
+                            </div>
+                          <% end %>
+                          <% if section_data['etymology'].present? %>
+                            <div class="evidence-detail">
+                              <strong>Etymology:</strong> <%= @tradition ? evidence.class.name_normalization_service.denormalize_text(section_data['etymology'], @tradition) : section_data['etymology'] %>
+                            </div>
+                          <% end %>
+                          <% if section_data['usage_context'].present? %>
+                            <div class="evidence-detail">
+                              <strong>Usage Context:</strong> <%= @tradition ? evidence.class.name_normalization_service.denormalize_text(section_data['usage_context'], @tradition) : section_data['usage_context'] %>
+                            </div>
                           <% end %>
                         <% when 'logic' %>
-                          <% if section_data['details'] %>
-                            <% details_html = section_data['details'] %>
-                            <% if details_html.match(/Premise:<\/span>\s*<span[^>]*>([^<]+)</) %>
-                              <div class="evidence-detail">
-                                <strong>Premise:</strong> <%= $1.strip %>
-                              </div>
-                            <% end %>
-                            <% if details_html.match(/Source:<\/span>\s*<span[^>]*>([^<]+)</) %>
-                              <div class="evidence-detail">
-                                <strong>Source:</strong> <%= $1.strip %>
-                              </div>
-                            <% end %>
-                            <% if details_html.match(/Reasoning:<\/span>\s*<span[^>]*>([^<]+)</) %>
-                              <div class="evidence-detail">
-                                <strong>Reasoning:</strong> <%= $1.strip %>
-                              </div>
-                            <% end %>
-                            <% if details_html.match(/Conclusion:<\/span>\s*<span[^>]*>([^<]+)</) %>
-                              <div class="evidence-detail">
-                                <strong>Conclusion:</strong> <%= $1.strip %>
-                              </div>
-                            <% end %>
-                          <% else %>
-                            <%# Fallback to content field %>
+                          <% if section_data['content'].present? %>
                             <div class="evidence-detail">
-                              <strong>Content:</strong> <%= section_data['content'] %>
+                              <strong>Content:</strong> <%= @tradition ? evidence.class.name_normalization_service.denormalize_text(section_data['content'], @tradition) : section_data['content'] %>
                             </div>
-                            <% if section_data['sources'] %>
-                              <div class="evidence-detail">
-                                <strong>Source:</strong> <%= section_data['sources'].join(', ') %>
-                              </div>
-                            <% end %>
+                          <% end %>
+                          <% if section_data['premise'].present? %>
+                            <div class="evidence-detail">
+                              <strong>Premise:</strong> <%= @tradition ? evidence.class.name_normalization_service.denormalize_text(section_data['premise'], @tradition) : section_data['premise'] %>
+                            </div>
+                          <% end %>
+                          <% if section_data['sources'].present? %>
+                            <div class="evidence-detail">
+                              <strong>Source:</strong> <%= section_data['sources'].map(&:humanize).join(', ') %>
+                            </div>
+                          <% end %>
+                          <% if section_data['reasoning'].present? %>
+                            <div class="evidence-detail">
+                              <strong>Reasoning:</strong> <%= @tradition ? evidence.class.name_normalization_service.denormalize_text(section_data['reasoning'], @tradition) : section_data['reasoning'] %>
+                            </div>
+                          <% end %>
+                          <% if section_data['conclusion'].present? %>
+                            <div class="evidence-detail">
+                              <strong>Conclusion:</strong> <%= @tradition ? evidence.class.name_normalization_service.denormalize_text(section_data['conclusion'], @tradition) : section_data['conclusion'] %>
+                            </div>
                           <% end %>
                         <% end %>
                       <% end %>
@@ -355,24 +305,22 @@
             <%= image_tag 'ai-icon.png', alt: 'AI Icon', class: 'claim-section-icon' %>
             <span class="claim-details-label">AI Validator Response</span>
           </div>
-          <% @claim.reasonings.where(primary_source: true).each do |reasoning| %>
-            <div class="claim-details-reasoning">
-              <div class="claim-details-reasoning-header">
-                <span class="claim-details-source"><%= reasoning.source %></span>
-                <span class="claim-details-result"><%= reasoning.result %></span>
+          <div id="reasoning-content">
+            <% @claim.reasonings.where(primary_source: true).each do |reasoning| %>
+              <div class="claim-details-reasoning">
+                <div class="claim-details-reasoning-header">
+                  <span class="claim-details-source"><%= reasoning.source %></span>
+                  <span class="claim-details-result"><%= reasoning.result %></span>
+                </div>
+                <div class="claim-details-reasoning-body">
+                  <%= simple_format(reasoning.response_for_tradition(@tradition)) %>
+                </div>
               </div>
-              <div class="claim-details-reasoning-body"><%= simple_format(reasoning.response) %></div>
-            </div>
-          <% end %>
+            <% end %>
+          </div>
         </div>
         <div class="claim-section-divider"></div>
-        <div class="claim-peer-insight">
-          <div class="claim-section-heading">
-            <%= image_tag 'peer-icon.png', alt: 'Peer Icon', class: 'claim-section-icon' %>
-            <h3>Peer Insight</h3>
-          </div>
-          <div class="peer-insight-text">N/A</div>
-        </div>
+        
         <% if @claim.fact? && user_signed_in? && @claim.user == current_user %>
           <div class="claim-section-divider"></div>
           <div class="claim-publish-section">

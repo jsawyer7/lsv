@@ -21,4 +21,11 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 });
+
+function changeTradition(tradition) {
+  const claimId = <%= @claim.id %>;
+  const url = new URL(window.location);
+  url.searchParams.set('tradition', tradition);
+  window.location.href = url.toString();
+}
 </script>

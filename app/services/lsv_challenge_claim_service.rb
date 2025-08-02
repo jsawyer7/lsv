@@ -39,12 +39,14 @@ class LsvChallengeClaimService
     results = threads.map(&:value).compact
 
     results.each do |result|
-      @challenge.reasonings.create!(
+      reasoning = @challenge.reasonings.create!(
         source: result[:source],
         response: result[:reasoning],
         result: result[:badge],
         primary_source: result[:primary]
       )
+      # Normalize the reasoning content
+      reasoning.normalize_and_save_content!
     end
 
     @challenge.update(status: 'completed')

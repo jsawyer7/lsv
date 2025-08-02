@@ -133,6 +133,8 @@ class ClaimsController < ApplicationController
       @claim = current_user.claims.new(claim_params.except(:combined_evidence_field).merge(state: 'draft'))
       if @claim.save
         create_evidence_from_units(@claim, evidence_units)
+        # Normalize content after saving
+        @claim.normalize_and_save_content!
         redirect_to claims_path(filter: 'drafts'), notice: 'Claim saved as draft.'
       else
         render :new, status: :unprocessable_entity
@@ -141,6 +143,8 @@ class ClaimsController < ApplicationController
       @claim = current_user.claims.new(claim_params.except(:combined_evidence_field))
       if @claim.save
         create_evidence_from_units(@claim, evidence_units)
+        # Normalize content after saving
+        @claim.normalize_and_save_content!
         response = LsvValidatorService.new(@claim).run_validation!
         store_claim_result(@claim) if response
         redirect_to @claim, notice: "Claim validated successfully."
@@ -150,7 +154,9 @@ class ClaimsController < ApplicationController
     end
   end
 
-  def show; end
+  def show
+    @tradition = params[:tradition] || 'actual'
+  end
 
   def edit; end
 
@@ -183,6 +189,8 @@ class ClaimsController < ApplicationController
       if @claim.update(claim_params.except(:combined_evidence_field).merge(state: 'draft'))
         @claim.evidences.destroy_all
         create_evidence_from_units(@claim, evidence_units)
+        # Normalize content after updating
+        @claim.normalize_and_save_content!
         redirect_to claims_path(filter: 'drafts'), notice: 'Claim saved as draft.'
       else
         render :edit, status: :unprocessable_entity
@@ -191,6 +199,8 @@ class ClaimsController < ApplicationController
       if @claim.update(claim_params.except(:combined_evidence_field))
         @claim.evidences.destroy_all
         create_evidence_from_units(@claim, evidence_units)
+        # Normalize content after updating
+        @claim.normalize_and_save_content!
         response = LsvValidatorService.new(@claim).run_validation!
         store_claim_result(@claim) if response
         redirect_to @claim, notice: "Claim updated successfully."
@@ -324,6 +334,7 @@ class ClaimsController < ApplicationController
       # Extract and populate individual fields from the sections
       evidence.populate_structured_fields
       evidence.save!
+      evidence.normalize_and_save_content!
     end
   end
 end
