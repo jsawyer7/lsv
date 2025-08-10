@@ -8,6 +8,10 @@ class LsvValidatorService
 
   def initialize(claim)
     @claim = claim
+    @client = OpenAI::Client.new(
+        access_token: openai_api_key,
+        log_errors: true
+      )
   end
 
   def run_validation!
@@ -100,15 +104,10 @@ class LsvValidatorService
     prompt
   end
 
-    def send_to_openai(claim, source)
-      client = OpenAI::Client.new(
-        access_token: openai_api_key,
-        log_errors: true
-      )
-
+  def send_to_openai(claim, source)
     prompt = build_prompt(claim, source)
 
-    client.chat(
+    @client.chat(
       parameters: {
         model: "gpt-4o",
         messages: [
