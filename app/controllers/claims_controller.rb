@@ -60,6 +60,19 @@ class ClaimsController < ApplicationController
 
   # Remove validate_evidence endpoint - source validation is now handled on frontend
   def generate_ai_evidence
+    # Check AI evidence entitlement
+    unless current_user.can_generate_ai_evidence?
+      render json: { error: 'AI evidence generation not available in your plan' }, status: :forbidden
+      return
+    end
+
+    # Check usage limits
+    remaining = current_user.ai_evidence_remaining
+    if remaining == 0
+      render json: { error: 'AI evidence limit reached. Please upgrade your plan.' }, status: :forbidden
+      return
+    end
+
     claim_content = params[:claim_content]
     evidence_type = params[:evidence_type]
     user_query = params[:user_query]
@@ -89,6 +102,9 @@ class ClaimsController < ApplicationController
       end
 
       if result[:success]
+        # Record AI evidence usage for AI evidence generation
+        current_user.record_ai_evidence_usage
+
         render json: { success: true, evidence: result }
       else
         render json: { success: false, error: result[:error] }, status: :unprocessable_entity
@@ -101,6 +117,21 @@ class ClaimsController < ApplicationController
 
   def create
     Rails.logger.info "Create action params: #{params.inspect}"
+
+    # Check AI evidence entitlement before creating claim
+    unless current_user.can_generate_ai_evidence?
+      flash[:alert] = 'Claim creation requires an active subscription. Please upgrade your plan.'
+      redirect_to subscription_settings_path
+      return
+    end
+
+    # Check usage limits
+    remaining = current_user.ai_evidence_remaining
+    if remaining == 0
+      flash[:alert] = 'AI evidence limit reached. Please upgrade your plan to continue creating claims.'
+      redirect_to subscription_settings_path
+      return
+    end
 
     if params[:claim][:content].blank?
       flash[:alert] = 'Claim content is required.'
@@ -145,6 +176,9 @@ class ClaimsController < ApplicationController
     else
       @claim = current_user.claims.new(claim_params.except(:combined_evidence_field))
       if @claim.save
+        # Record AI evidence usage for claim creation
+        current_user.record_ai_evidence_usage
+
         create_evidence_from_units(@claim, evidence_units)
         # Normalize content after saving
         @claim.normalize_and_save_content!

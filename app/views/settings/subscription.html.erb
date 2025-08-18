@@ -1,0 +1,173 @@
+<%= render 'settings/layout', active: 'subscription' do %>
+  <div class="subscription-page">
+    <!-- Subscription Plan Section -->
+    <div class="subscription-section">
+      <div class="section-header">
+        <div class="header-content">
+          <h2 class="section-title">Subscription Plan</h2>
+          <p class="section-subtitle">Clear and fair pricing for everyone. 10,000+ peoples are using it.</p>
+        </div>
+        <div class="header-actions">
+          <%= link_to "Billing History", billing_settings_path, class: "billing-history-link" %>
+        </div>
+      </div>
+
+      <!-- Plan Cards -->
+      <div class="plan-cards">
+        <% @plans.each do |plan| %>
+          <%= link_to plan_details_settings_path(plan.chargebee_item_price_id), class: "plan-card-link" do %>
+            <div class="plan-card <%= 'current-plan' if @current_subscription&.chargebee_plan&.chargebee_item_price_id == plan.chargebee_item_price_id %>">
+              <% if plan.name.downcase.include?('plus') || plan.name.downcase.include?('pro') %>
+                <div class="plan-badge">Most Popular</div>
+              <% end %>
+              
+              <div class="plan-header">
+                <h3 class="plan-name"><%= plan.name %></h3>
+                <p class="plan-description">Clear and fair pricing for everyone. 10,000+ peoples are using it.</p>
+              </div>
+
+              <div class="plan-pricing">
+                <div class="price">
+                  <span class="currency">$</span>
+                  <span class="amount"><%= plan.price.to_i == 0 ? '0' : plan.price.to_i %></span>
+                </div>
+                <div class="billing-cycle">
+                  <%= plan.price.to_i == 0 ? 'Free' : "#{plan.period_unit.capitalize}ly" %>
+                </div>
+              </div>
+
+              <div class="plan-features">
+                <% if plan.features.present? %>
+                  <% plan.features.each do |feature| %>
+                    <div class="feature-item">
+                      <i class="fas fa-check feature-icon"></i>
+                      <span class="feature-text"><%= feature %></span>
+                    </div>
+                  <% end %>
+                <% else %>
+                  <!-- Default features based on plan -->
+                  <% if plan.name.downcase.include?('basic') || plan.name.downcase.include?('free') %>
+                    <div class="feature-item">
+                      <i class="fas fa-check feature-icon"></i>
+                      <span class="feature-text">Basic Claims</span>
+                    </div>
+                    <div class="feature-item">
+                      <i class="fas fa-check feature-icon"></i>
+                      <span class="feature-text">Community Access</span>
+                    </div>
+                    <div class="feature-item">
+                      <i class="fas fa-check feature-icon"></i>
+                      <span class="feature-text">Limited AI Evidence</span>
+                    </div>
+                  <% elsif plan.name.downcase.include?('plus') || plan.name.downcase.include?('pro') %>
+                    <div class="feature-item">
+                      <i class="fas fa-check feature-icon"></i>
+                      <span class="feature-text">Basic Claims</span>
+                    </div>
+                    <div class="feature-item">
+                      <i class="fas fa-check feature-icon"></i>
+                      <span class="feature-text">Community Access</span>
+                    </div>
+                    <div class="feature-item">
+                      <i class="fas fa-check feature-icon"></i>
+                      <span class="feature-text">Unlimited Claims</span>
+                    </div>
+                    <div class="feature-item">
+                      <i class="fas fa-check feature-icon"></i>
+                      <span class="feature-text">Limited AI Evidence</span>
+                    </div>
+                  <% elsif plan.name.downcase.include?('premium') %>
+                    <div class="feature-item">
+                      <i class="fas fa-check feature-icon"></i>
+                      <span class="feature-text">Basic Claims</span>
+                    </div>
+                    <div class="feature-item">
+                      <i class="fas fa-check feature-icon"></i>
+                      <span class="feature-text">Community Access</span>
+                    </div>
+                    <div class="feature-item">
+                      <i class="fas fa-check feature-icon"></i>
+                      <span class="feature-text">Unlimited Claims</span>
+                    </div>
+                    <div class="feature-item">
+                      <i class="fas fa-check feature-icon"></i>
+                      <span class="feature-text">Advance AI Evidence</span>
+                    </div>
+                    <div class="feature-item">
+                      <i class="fas fa-check feature-icon"></i>
+                      <span class="feature-text">Priority Support</span>
+                    </div>
+                  <% end %>
+                <% end %>
+              </div>
+
+              <div class="plan-action">
+                <% if @current_subscription&.chargebee_plan&.chargebee_item_price_id == plan.chargebee_item_price_id %>
+                  <button class="btn btn-current-plan" disabled>Current Plan</button>
+                <% else %>
+                  <% if @current_subscription.present? %>
+                    <% if plan.price > @current_subscription.chargebee_plan&.price %>
+                      <% Rails.logger.info "Generating upgrade button for plan: #{plan.name} with ID: #{plan.chargebee_item_price_id}" %>
+                      <%= button_to "Upgrade to #{plan.name}", chargebee_subscriptions_path(plan_id: plan.chargebee_item_price_id), 
+                          method: :post, 
+                          class: "btn btn-upgrade",
+                          data: { 
+                            disable_with: "Upgrading...",
+                            action: "plan-action"
+                          } %>
+                    <% else %>
+                      <% Rails.logger.info "Generating downgrade button for plan: #{plan.name} with ID: #{plan.chargebee_item_price_id}" %>
+                      <%= button_to "Downgrade to #{plan.name}", chargebee_subscriptions_path(plan_id: plan.chargebee_item_price_id), 
+                          method: :post, 
+                          class: "btn btn-downgrade",
+                          data: { 
+                            disable_with: "Downgrading...",
+                            action: "plan-action"
+                          } %>
+                    <% end %>
+                  <% else %>
+                    <% Rails.logger.info "Generating select button for plan: #{plan.name} with ID: #{plan.chargebee_item_price_id}" %>
+                    <%= button_to "Select Plan", chargebee_subscriptions_path(plan_id: plan.chargebee_item_price_id), 
+                        method: :post, 
+                        class: "btn btn-select-plan",
+                        data: { 
+                          disable_with: "Selecting...",
+                          action: "plan-action"
+                        } %>
+                  <% end %>
+                <% end %>
+              </div>
+            </div>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+  </div>
+<% end %>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('Plan card JavaScript loaded');
+  
+  // Handle plan card clicks (excluding buttons and forms)
+  document.querySelectorAll('.plan-card-link').forEach(function(cardLink) {
+    cardLink.addEventListener('click', function(e) {
+      console.log('Card clicked, target:', e.target.tagName, e.target.className);
+      
+      // If the click target is a button, form, or inside a button/form, don't navigate
+      if (e.target.closest('[data-action="plan-action"]') || 
+          e.target.closest('.btn') || 
+          e.target.closest('form') ||
+          e.target.tagName === 'BUTTON' ||
+          e.target.tagName === 'INPUT') {
+        console.log('Preventing card navigation - button/form clicked');
+        // Don't prevent default - let the form submit normally
+        e.stopPropagation(); // Only stop the card navigation, not the form submission
+        return false;
+      }
+      
+      console.log('Allowing card navigation');
+    });
+  });
+});
+</script> 
