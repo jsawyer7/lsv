@@ -1,0 +1,80 @@
+<!-- Feature Gating Examples -->
+
+<!-- AI Evidence Generation -->
+<% if current_user.can_generate_ai_evidence? %>
+  <div class="ai-evidence-section">
+    <h3>AI Evidence Generation</h3>
+    <p>Remaining this month: <%= current_user.ai_evidence_remaining %></p>
+    
+    <button class="btn btn-primary" onclick="generateAIEvidence()">
+      Generate AI Evidence
+    </button>
+  </div>
+<% else %>
+  <div class="upgrade-prompt">
+    <h3>AI Evidence Generation</h3>
+    <p>Upgrade to Plus or Premium to access AI evidence generation.</p>
+    <%= link_to "Upgrade Plan", subscription_settings_path, class: "btn btn-upgrade" %>
+  </div>
+<% end %>
+
+<!-- API Access -->
+<% if current_user.can_access_api? %>
+  <div class="api-section">
+    <h3>API Integration</h3>
+    <p>Your API key: <code><%= current_user.api_key %></code></p>
+    <button class="btn btn-secondary">View API Documentation</button>
+  </div>
+<% else %>
+  <div class="upgrade-prompt">
+    <h3>API Integration</h3>
+    <p>Upgrade to Plus or Premium to access API integration.</p>
+    <%= link_to "Upgrade Plan", subscription_settings_path, class: "btn btn-upgrade" %>
+  </div>
+<% end %>
+
+<!-- Advanced Analytics -->
+<% if current_user.can_access_advanced_analytics? %>
+  <div class="analytics-section">
+    <h3>Advanced Analytics</h3>
+    <div class="analytics-dashboard">
+      <!-- Advanced analytics content -->
+    </div>
+  </div>
+<% else %>
+  <div class="upgrade-prompt">
+    <h3>Advanced Analytics</h3>
+    <p>Upgrade to Premium to access advanced analytics and reporting.</p>
+    <%= link_to "Upgrade Plan", subscription_settings_path, class: "btn btn-upgrade" %>
+  </div>
+<% end %>
+
+<!-- Priority Support -->
+<% if current_user.has_priority_support? %>
+  <div class="support-section">
+    <h3>Priority Support</h3>
+    <p>You have access to priority customer support.</p>
+    <button class="btn btn-success">Contact Priority Support</button>
+  </div>
+<% else %>
+  <div class="support-section">
+    <h3>Standard Support</h3>
+    <p>Upgrade to Plus or Premium for priority support.</p>
+    <button class="btn btn-outline">Contact Support</button>
+  </div>
+<% end %>
+
+<!-- Custom Integrations -->
+<% if current_user.can_use_custom_integrations? %>
+  <div class="integrations-section">
+    <h3>Custom Integrations</h3>
+    <p>Set up custom webhooks and integrations.</p>
+    <button class="btn btn-primary">Configure Integrations</button>
+  </div>
+<% else %>
+  <div class="upgrade-prompt">
+    <h3>Custom Integrations</h3>
+    <p>Upgrade to Premium to access custom integrations and webhooks.</p>
+    <%= link_to "Upgrade Plan", subscription_settings_path, class: "btn btn-upgrade" %>
+  </div>
+<% end %>

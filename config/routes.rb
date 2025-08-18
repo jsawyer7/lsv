@@ -74,7 +74,25 @@ Rails.application.routes.draw do
 
   resource :settings, only: [:edit, :update] do
     get :notifications, on: :collection
+    get :subscription, on: :collection
+    get :billing, on: :collection
+    post :refresh_billing, on: :collection
+    get 'plan/:id', to: 'settings#plan_details', as: :plan_details, on: :collection
+    post 'plan/:id/cancel', to: 'settings#cancel_subscription', as: :cancel_subscription, on: :collection
+    get 'invoice/:id/download', to: 'settings#download_invoice', as: :download_invoice, on: :collection
   end
+
+  # Subscription routes
+  resources :chargebee_subscriptions, only: [:create] do
+    collection do
+      get :success
+    end
+  end
+
+  # Entitlements routes
+  resources :entitlements, only: [:index, :show]
+
+  post '/webhooks/chargebee', to: 'webhooks#chargebee'
 
   resources :facts, only: [:index] do
     collection do

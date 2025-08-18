@@ -1,0 +1,120 @@
+<div class="plan-details-page">
+  <div class="plan-details-header">
+    <h2 class="plan-details-title">Plan Details</h2>
+  </div>
+
+  <div class="plan-details-card">
+    <div class="plan-details-header-section">
+      <div class="plan-name-section">
+        <div class="plan-name-row">
+          <h3 class="plan-name"><%= @plan.name %></h3>
+          <span class="plan-status-badge <%= @is_current_plan ? 'active' : 'inactive' %>">
+            <%= @is_current_plan ? 'Active' : 'Inactive' %>
+          </span>
+        </div>
+        <p class="plan-description"><%= @plan.description %></p>
+      </div>
+      <div class="plan-pricing-section">
+        <div class="plan-price">
+          <span class="currency">$</span>
+          <span class="amount"><%= @plan.price.to_i == 0 ? '0' : @plan.price.to_i %></span>
+          <span class="plan-billing-cycle">
+            <%= @plan.price.to_i == 0 ? 'Free' : "#{@plan.period_unit.capitalize}ly" %>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="plan-features-section">
+      <div class="features-grid">
+        <% if @plan.features.present? %>
+          <% @plan.features.each do |feature| %>
+            <div class="feature-item">
+              <i class="fas fa-check feature-icon"></i>
+              <span class="feature-text"><%= feature %></span>
+            </div>
+          <% end %>
+        <% else %>
+          <!-- Default features based on plan -->
+          <% if @plan.name.downcase.include?('basic') || @plan.name.downcase.include?('free') %>
+            <div class="feature-item">
+              <i class="fas fa-check feature-icon"></i>
+              <span class="feature-text">Basic Claims</span>
+            </div>
+            <div class="feature-item">
+              <i class="fas fa-check feature-icon"></i>
+              <span class="feature-text">Community Access</span>
+            </div>
+            <div class="feature-item">
+              <i class="fas fa-check feature-icon"></i>
+              <span class="feature-text">Limited AI Evidence</span>
+            </div>
+          <% elsif @plan.name.downcase.include?('plus') || @plan.name.downcase.include?('pro') %>
+            <div class="feature-item">
+              <i class="fas fa-check feature-icon"></i>
+              <span class="feature-text">Basic Claims</span>
+            </div>
+            <div class="feature-item">
+              <i class="fas fa-check feature-icon"></i>
+              <span class="feature-text">Community Access</span>
+            </div>
+            <div class="feature-item">
+              <i class="fas fa-check feature-icon"></i>
+              <span class="feature-text">Unlimited Claims</span>
+            </div>
+            <div class="feature-item">
+              <i class="fas fa-check feature-icon"></i>
+              <span class="feature-text">Limited AI Evidence</span>
+            </div>
+          <% elsif @plan.name.downcase.include?('premium') %>
+            <div class="feature-item">
+              <i class="fas fa-check feature-icon"></i>
+              <span class="feature-text">Basic Claims</span>
+            </div>
+            <div class="feature-item">
+              <i class="fas fa-check feature-icon"></i>
+              <span class="feature-text">Community Access</span>
+            </div>
+            <div class="feature-item">
+              <i class="fas fa-check feature-icon"></i>
+              <span class="feature-text">Unlimited Claims</span>
+            </div>
+            <div class="feature-item">
+              <i class="fas fa-check feature-icon"></i>
+              <span class="feature-text">Advance AI Evidence</span>
+            </div>
+            <div class="feature-item">
+              <i class="fas fa-check feature-icon"></i>
+              <span class="feature-text">Priority Support</span>
+            </div>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+
+    <div class="plan-actions">
+      <% if @is_current_plan %>
+        <%= button_to "Cancel Plan", cancel_subscription_settings_path(@plan.chargebee_item_price_id), 
+            method: :post, 
+            class: "btn btn-cancel-plan",
+            data: { 
+              confirm: "Are you sure you want to cancel your subscription? You'll continue to have access until the end of your current billing period.",
+              turbo: false
+            } %>
+      <% else %>
+        <% if @current_subscription.present? %>
+          <% if @plan.price > @current_subscription.chargebee_plan&.price %>
+            <%= button_to "Upgrade to #{@plan.name}", chargebee_subscriptions_path(plan_id: @plan.chargebee_item_price_id), 
+                method: :post, class: "btn btn-upgrade-plan" %>
+          <% else %>
+            <%= button_to "Downgrade to #{@plan.name}", chargebee_subscriptions_path(plan_id: @plan.chargebee_item_price_id), 
+                method: :post, class: "btn btn-downgrade-plan" %>
+          <% end %>
+        <% else %>
+          <%= button_to "Select Plan", chargebee_subscriptions_path(plan_id: @plan.chargebee_item_price_id), 
+              method: :post, class: "btn btn-select-plan" %>
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+</div>

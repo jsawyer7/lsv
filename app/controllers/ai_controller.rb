@@ -1,6 +1,7 @@
 class AiController < ApplicationController
   include ActionController::Live
   before_action :authenticate_user!
+  before_action :check_ai_access
 
   def claim_suggestion
     response.headers['Content-Type'] = 'text/event-stream'
@@ -131,7 +132,53 @@ class AiController < ApplicationController
     response.stream.close
   end
 
+  def generate_evidence
+    # Check if user has AI evidence entitlement
+    unless current_user.can_generate_ai_evidence?
+      render json: { error: "AI evidence generation not available in your plan" }, status: :forbidden
+      return
+    end
+
+    # Check usage limits
+    remaining = current_user.ai_evidence_remaining
+    if remaining == 0
+      render json: { error: "AI evidence limit reached. Please upgrade your plan." }, status: :forbidden
+      return
+    end
+
+    # Record usage BEFORE generating (to prevent race conditions)
+    current_user.record_ai_evidence_usage
+
+    # Proceed with AI evidence generation
+    # ... your AI logic here ...
+
+    # Return success with updated remaining count
+    render json: {
+      success: true,
+      remaining_ai_evidence: current_user.ai_evidence_remaining,
+      message: "AI evidence generated successfully"
+    }
+  end
+
+  def analytics
+    # Check if user has advanced analytics entitlement
+    unless current_user.can_access_advanced_analytics?
+      render json: { error: "Advanced analytics not available in your plan" }, status: :forbidden
+      return
+    end
+
+    # Proceed with analytics
+    # ... your analytics logic here ...
+  end
+
   private
+
+  def check_ai_access
+    unless current_user.has_entitlement?('ai_evidence_limitation')
+      redirect_to subscription_settings_path,
+                  alert: "AI features require an active subscription. Please upgrade your plan."
+    end
+  end
 
   def build_prompt(claim, error)
     {
