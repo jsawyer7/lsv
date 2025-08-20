@@ -37,7 +37,14 @@
               </div>
 
               <div class="plan-features">
-                <% if plan.features.present? %>
+                <% if plan.feature_descriptions.present? %>
+                  <% plan.feature_descriptions.each do |description| %>
+                    <div class="feature-item">
+                      <i class="fas fa-check feature-icon"></i>
+                      <span class="feature-text"><%= description %></span>
+                    </div>
+                  <% end %>
+                <% elsif plan.features.present? %>
                   <% plan.features.each do |feature| %>
                     <div class="feature-item">
                       <i class="fas fa-check feature-icon"></i>
@@ -45,11 +52,11 @@
                     </div>
                   <% end %>
                 <% else %>
-                  <!-- Default features based on plan -->
+                  <!-- Fallback to default features based on plan -->
                   <% if plan.name.downcase.include?('basic') || plan.name.downcase.include?('free') %>
                     <div class="feature-item">
                       <i class="fas fa-check feature-icon"></i>
-                      <span class="feature-text">Basic Claims</span>
+                      <span class="feature-text">Basic Claims Creation</span>
                     </div>
                     <div class="feature-item">
                       <i class="fas fa-check feature-icon"></i>
@@ -57,16 +64,16 @@
                     </div>
                     <div class="feature-item">
                       <i class="fas fa-check feature-icon"></i>
-                      <span class="feature-text">Limited AI Evidence</span>
+                      <span class="feature-text">Limited AI Evidence (5/month)</span>
+                    </div>
+                    <div class="feature-item">
+                      <i class="fas fa-check feature-icon"></i>
+                      <span class="feature-text">Basic Support</span>
                     </div>
                   <% elsif plan.name.downcase.include?('plus') || plan.name.downcase.include?('pro') %>
                     <div class="feature-item">
                       <i class="fas fa-check feature-icon"></i>
-                      <span class="feature-text">Basic Claims</span>
-                    </div>
-                    <div class="feature-item">
-                      <i class="fas fa-check feature-icon"></i>
-                      <span class="feature-text">Community Access</span>
+                      <span class="feature-text">Everything in Basic</span>
                     </div>
                     <div class="feature-item">
                       <i class="fas fa-check feature-icon"></i>
@@ -74,28 +81,40 @@
                     </div>
                     <div class="feature-item">
                       <i class="fas fa-check feature-icon"></i>
-                      <span class="feature-text">Limited AI Evidence</span>
-                    </div>
-                  <% elsif plan.name.downcase.include?('premium') %>
-                    <div class="feature-item">
-                      <i class="fas fa-check feature-icon"></i>
-                      <span class="feature-text">Basic Claims</span>
-                    </div>
-                    <div class="feature-item">
-                      <i class="fas fa-check feature-icon"></i>
-                      <span class="feature-text">Community Access</span>
-                    </div>
-                    <div class="feature-item">
-                      <i class="fas fa-check feature-icon"></i>
-                      <span class="feature-text">Unlimited Claims</span>
-                    </div>
-                    <div class="feature-item">
-                      <i class="fas fa-check feature-icon"></i>
-                      <span class="feature-text">Advance AI Evidence</span>
+                      <span class="feature-text">Enhanced AI Evidence (25/month)</span>
                     </div>
                     <div class="feature-item">
                       <i class="fas fa-check feature-icon"></i>
                       <span class="feature-text">Priority Support</span>
+                    </div>
+                    <div class="feature-item">
+                      <i class="fas fa-check feature-icon"></i>
+                      <span class="feature-text">Advanced Analytics</span>
+                    </div>
+                  <% elsif plan.name.downcase.include?('premium') %>
+                    <div class="feature-item">
+                      <i class="fas fa-check feature-icon"></i>
+                      <span class="feature-text">Everything in Plus</span>
+                    </div>
+                    <div class="feature-item">
+                      <i class="fas fa-check feature-icon"></i>
+                      <span class="feature-text">Unlimited AI Evidence</span>
+                    </div>
+                    <div class="feature-item">
+                      <i class="fas fa-check feature-icon"></i>
+                      <span class="feature-text">Premium Support</span>
+                    </div>
+                    <div class="feature-item">
+                      <i class="fas fa-check feature-icon"></i>
+                      <span class="feature-text">24/7 Response Time</span>
+                    </div>
+                    <div class="feature-item">
+                      <i class="fas fa-check feature-icon"></i>
+                      <span class="feature-text">Custom Integrations</span>
+                    </div>
+                    <div class="feature-item">
+                      <i class="fas fa-check feature-icon"></i>
+                      <span class="feature-text">Dedicated Account Manager</span>
                     </div>
                   <% end %>
                 <% end %>

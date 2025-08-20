@@ -31,54 +31,80 @@ class SettingsController < ApplicationController
   end
 
   def subscription
-    # Fetch only currently available plan prices from Chargebee API (no fallback to local DB)
     @plans = []
 
     begin
+      # Use plans from local database (which we synced with features)
+      local_plans = ChargebeePlan.where(status: 'active').order(:price)
 
-      ChargeBee::ItemPrice.list({ limit: 100 }).each do |item_price_response|
-        item_price = item_price_response.item_price
+      if local_plans.any?
+        Rails.logger.info "✅ Using #{local_plans.count} plans from local database with features"
 
-        # Only include active plan item prices (exclude add-ons/charges)
-        next unless item_price.status == 'active'
-        next unless item_price.item_type == 'plan'
+        local_plans.each do |local_plan|
+          # Build plan object from local database
+          plan = OpenStruct.new(
+            id: local_plan.chargebee_id,
+            name: clean_plan_name(local_plan.name),
+            description: local_plan.description,
+            price: local_plan.price,
+            billing_cycle: local_plan.billing_cycle,
+            period: local_plan.billing_cycle&.split(' ')&.first,
+            period_unit: local_plan.billing_cycle&.split(' ')&.last,
+            status: local_plan.status,
+            chargebee_item_price_id: local_plan.chargebee_item_price_id,
+            features: local_plan.feature_descriptions,
+            feature_descriptions: local_plan.feature_descriptions
+          )
 
-
-
-        # Fetch the parent Item to display the cleaner plan name
-        item_name = begin
-          ChargeBee::Item.retrieve(item_price.item_id).item.name
-        rescue => _e
-          item_price.name
+          @plans << plan
         end
+      else
+        Rails.logger.info "⚠️ No local plans found, fetching from Chargebee API"
 
-        # Get feature descriptions from Chargebee entitlements
-        feature_descriptions = get_plan_feature_descriptions(item_name)
+        # Fallback to Chargebee API
+        ChargeBee::ItemPrice.list({ limit: 100 }).each do |item_price_response|
+          item_price = item_price_response.item_price
 
-        # Build a lightweight plan object for the view
-        plan = OpenStruct.new(
-          id: item_price.item_id, # item id (plan id)
-          name: item_name,
-          description: nil,
-          price: item_price.price.to_f / 100,
-          billing_cycle: "#{item_price.period} #{item_price.period_unit}",
-          period: item_price.period,
-          period_unit: item_price.period_unit,
-          status: item_price.status,
-          chargebee_item_price_id: item_price.id,
-          features: feature_descriptions
-        )
+          # Only include active plan item prices (exclude add-ons/charges)
+          next unless item_price.status == 'active'
+          next unless item_price.item_type == 'plan'
 
-        @plans << plan
+          # Fetch the parent Item to display the cleaner plan name
+          item_name = begin
+            ChargeBee::Item.retrieve(item_price.item_id).item.name
+          rescue => _e
+            item_price.name
+          end
+
+          # Get feature descriptions from Chargebee entitlements
+          feature_descriptions = get_plan_feature_descriptions(item_name)
+
+          # Build a lightweight plan object for the view
+          plan = OpenStruct.new(
+            id: item_price.item_id,
+            name: item_name,
+            description: nil,
+            price: item_price.price.to_f / 100,
+            billing_cycle: "#{item_price.period} #{item_price.period_unit}",
+            period: item_price.period,
+            period_unit: item_price.period_unit,
+            status: item_price.status,
+            chargebee_item_price_id: item_price.id,
+            features: feature_descriptions,
+            feature_descriptions: feature_descriptions
+          )
+
+          @plans << plan
+        end
       end
+
       # Sort by price ascending to resemble Basic → Pro → Premium
       @plans.sort_by! { |p| p.price.to_f }
 
     rescue => e
-      Rails.logger.error "Error fetching plans from Chargebee: #{e.message}"
-      # No fallback to local database - only show what's currently available in Chargebee
+      Rails.logger.error "Error fetching plans: #{e.message}"
       @plans = []
-      Rails.logger.info "No plans available - Chargebee API error"
+      Rails.logger.info "No plans available - API error"
     end
 
     # Pick the most recent subscription that is effectively current
@@ -195,32 +221,57 @@ class SettingsController < ApplicationController
     plan_id = params[:id]
 
     begin
-      # Fetch the specific plan from Chargebee
-      item_price = ChargeBee::ItemPrice.retrieve(plan_id)
+      # First try to get plan from local database
+      local_plan = ChargebeePlan.find_by(chargebee_item_price_id: plan_id)
 
-      # Get the parent Item to display the cleaner plan name
-      item_name = begin
-        ChargeBee::Item.retrieve(item_price.item_price.item_id).item.name
-      rescue => _e
-        item_price.item_price.name
+      if local_plan
+        Rails.logger.info "✅ Using plan from local database: #{local_plan.name}"
+
+                  # Build plan object from local database
+          @plan = OpenStruct.new(
+            id: local_plan.chargebee_id,
+            name: clean_plan_name(local_plan.name),
+            description: local_plan.description || "Clear and fair pricing for everyone. 10,000+ peoples are using it.",
+            price: local_plan.price,
+            billing_cycle: local_plan.billing_cycle,
+            period: local_plan.billing_cycle&.split(' ')&.first,
+            period_unit: local_plan.billing_cycle&.split(' ')&.last,
+            status: local_plan.status,
+            chargebee_item_price_id: local_plan.chargebee_item_price_id,
+            features: local_plan.feature_descriptions,
+            feature_descriptions: local_plan.feature_descriptions
+          )
+      else
+        Rails.logger.info "⚠️ Plan not found in local database, fetching from Chargebee API"
+
+        # Fallback to Chargebee API
+        item_price = ChargeBee::ItemPrice.retrieve(plan_id)
+
+        # Get the parent Item to display the cleaner plan name
+        item_name = begin
+          ChargeBee::Item.retrieve(item_price.item_price.item_id).item.name
+        rescue => _e
+          item_price.item_price.name
+        end
+
+        # Get feature descriptions from Chargebee entitlements
+        feature_descriptions = get_plan_feature_descriptions(item_name)
+
+        # Build plan object for the view
+        @plan = OpenStruct.new(
+          id: item_price.item_price.item_id,
+          name: item_name,
+          description: "Clear and fair pricing for everyone. 10,000+ peoples are using it.",
+          price: item_price.item_price.price.to_f / 100,
+          billing_cycle: "#{item_price.item_price.period} #{item_price.item_price.period_unit}",
+          period: item_price.item_price.period,
+          period_unit: item_price.item_price.period_unit,
+          status: item_price.item_price.status,
+          chargebee_item_price_id: item_price.item_price.id,
+          features: feature_descriptions,
+          feature_descriptions: feature_descriptions
+        )
       end
-
-      # Get feature descriptions from Chargebee entitlements
-      feature_descriptions = get_plan_feature_descriptions(item_name)
-
-      # Build plan object for the view
-      @plan = OpenStruct.new(
-        id: item_price.item_price.item_id,
-        name: item_name,
-        description: "Clear and fair pricing for everyone. 10,000+ peoples are using it.",
-        price: item_price.item_price.price.to_f / 100,
-        billing_cycle: "#{item_price.item_price.period} #{item_price.item_price.period_unit}",
-        period: item_price.item_price.period,
-        period_unit: item_price.item_price.period_unit,
-        status: item_price.item_price.status,
-        chargebee_item_price_id: item_price.item_price.id,
-        features: feature_descriptions
-      )
 
       # Check if this is the current user's plan
       @current_subscription = current_user
@@ -502,6 +553,11 @@ class SettingsController < ApplicationController
 
   def user_params
     params.require(:user).permit(:full_name, :phone, :email, :about, :avatar, :avatar_cache, :remove_avatar)
+  end
+
+  def clean_plan_name(plan_name)
+    # Remove common suffixes like "USD Monthly", "USD-Monthly", etc.
+    plan_name.gsub(/\s*(USD|USD-)?\s*(Monthly|Yearly|Annually)/i, '').strip
   end
 
   def get_chargebee_customer_id
