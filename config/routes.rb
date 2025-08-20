@@ -94,6 +94,8 @@ Rails.application.routes.draw do
 
   post '/webhooks/chargebee', to: 'webhooks#chargebee'
 
+
+
   resources :facts, only: [:index] do
     collection do
       get :infinite
