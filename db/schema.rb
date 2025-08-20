@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2025_08_02_063844) do
+ActiveRecord::Schema[7.0].define(version: 2025_08_15_225518) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
   enable_extension "vector"
@@ -43,6 +43,16 @@ ActiveRecord::Schema[7.0].define(version: 2025_08_02_063844) do
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
   end
 
+  create_table "ai_evidence_usages", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.datetime "used_at"
+    t.string "feature_type"
+    t.integer "usage_count"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id"], name: "index_ai_evidence_usages_on_user_id"
+  end
+
   create_table "challenges", force: :cascade do |t|
     t.text "text", null: false
     t.string "status", default: "pending"
@@ -56,6 +66,56 @@ ActiveRecord::Schema[7.0].define(version: 2025_08_02_063844) do
     t.index ["evidence_id"], name: "index_challenges_on_evidence_id"
     t.index ["status"], name: "index_challenges_on_status"
     t.index ["user_id"], name: "index_challenges_on_user_id"
+  end
+
+  create_table "chargebee_billings", force: :cascade do |t|
+    t.string "chargebee_id", null: false
+    t.bigint "user_id", null: false
+    t.bigint "chargebee_subscription_id", null: false
+    t.string "plan_name"
+    t.datetime "purchase_date"
+    t.datetime "ending_date"
+    t.string "status"
+    t.decimal "amount", precision: 10, scale: 2
+    t.string "currency"
+    t.text "description"
+    t.jsonb "metadata"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["chargebee_id"], name: "index_chargebee_billings_on_chargebee_id", unique: true
+    t.index ["chargebee_subscription_id"], name: "index_chargebee_billings_on_chargebee_subscription_id"
+    t.index ["purchase_date"], name: "index_chargebee_billings_on_purchase_date"
+    t.index ["status"], name: "index_chargebee_billings_on_status"
+    t.index ["user_id"], name: "index_chargebee_billings_on_user_id"
+  end
+
+  create_table "chargebee_plans", force: :cascade do |t|
+    t.string "chargebee_id"
+    t.string "name"
+    t.text "description"
+    t.decimal "price"
+    t.string "billing_cycle"
+    t.string "status"
+    t.jsonb "metadata"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "chargebee_item_price_id"
+  end
+
+  create_table "chargebee_subscriptions", force: :cascade do |t|
+    t.string "chargebee_id"
+    t.bigint "user_id", null: false
+    t.bigint "chargebee_plan_id", null: false
+    t.string "status"
+    t.datetime "current_term_start"
+    t.datetime "current_term_end"
+    t.datetime "trial_start"
+    t.datetime "trial_end"
+    t.jsonb "metadata"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["chargebee_plan_id"], name: "index_chargebee_subscriptions_on_chargebee_plan_id"
+    t.index ["user_id"], name: "index_chargebee_subscriptions_on_user_id"
   end
 
   create_table "claims", force: :cascade do |t|
@@ -83,11 +143,11 @@ ActiveRecord::Schema[7.0].define(version: 2025_08_02_063844) do
 
   create_table "evidences", force: :cascade do |t|
     t.bigint "claim_id", null: false
-    t.text "content"
+t.text "content"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "sources", default: [], array: true
-    t.string "verse_reference"
+        t.string "verse_reference"
     t.text "original_text"
     t.text "translation"
     t.text "explanation"
@@ -195,11 +255,16 @@ ActiveRecord::Schema[7.0].define(version: 2025_08_02_063844) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "ai_evidence_usages", "users"
   add_foreign_key "challenges", "claims"
   add_foreign_key "challenges", "evidences"
   add_foreign_key "challenges", "users"
+  add_foreign_key "chargebee_billings", "chargebee_subscriptions"
+  add_foreign_key "chargebee_billings", "users"
+  add_foreign_key "chargebee_subscriptions", "chargebee_plans"
+  add_foreign_key "chargebee_subscriptions", "users"
   add_foreign_key "claims", "users"
-  add_foreign_key "evidences", "claims"
+    add_foreign_key "evidences", "claims"
   add_foreign_key "follows", "users"
   add_foreign_key "follows", "users", column: "followed_user"
   add_foreign_key "peers", "users"

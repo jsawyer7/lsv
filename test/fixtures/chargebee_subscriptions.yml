@@ -1,0 +1,23 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  chargebee_id: MyString
+  user: one
+  chargebee_plan: one
+  status: MyString
+  current_term_start: 2025-08-03 14:10:36
+  current_term_end: 2025-08-03 14:10:36
+  trial_start: 2025-08-03 14:10:36
+  trial_end: 2025-08-03 14:10:36
+  metadata: 
+
+two:
+  chargebee_id: MyString
+  user: two
+  chargebee_plan: two
+  status: MyString
+  current_term_start: 2025-08-03 14:10:36
+  current_term_end: 2025-08-03 14:10:36
+  trial_start: 2025-08-03 14:10:36
+  trial_end: 2025-08-03 14:10:36
+  metadata: 
