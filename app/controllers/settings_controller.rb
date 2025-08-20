@@ -30,71 +30,53 @@ class SettingsController < ApplicationController
     render :notifications
   end
 
-  def subscription
+    def subscription
     @plans = []
 
     begin
-      # Use plans from local database (which we synced with features)
-      local_plans = ChargebeePlan.where(status: 'active').order(:price)
+      # Try to get plans from cache first
+      cached_plans = Rails.cache.read('chargebee_plans')
 
-      if local_plans.any?
-        Rails.logger.info "✅ Using #{local_plans.count} plans from local database with features"
-
-        local_plans.each do |local_plan|
-          # Build plan object from local database
-          plan = OpenStruct.new(
-            id: local_plan.chargebee_id,
-            name: clean_plan_name(local_plan.name),
-            description: local_plan.description,
-            price: local_plan.price,
-            billing_cycle: local_plan.billing_cycle,
-            period: local_plan.billing_cycle&.split(' ')&.first,
-            period_unit: local_plan.billing_cycle&.split(' ')&.last,
-            status: local_plan.status,
-            chargebee_item_price_id: local_plan.chargebee_item_price_id,
-            features: local_plan.feature_descriptions,
-            feature_descriptions: local_plan.feature_descriptions
-          )
-
-          @plans << plan
-        end
+      if cached_plans && cache_fresh?
+        Rails.logger.info "✅ Using cached plans"
+        @plans = cached_plans
       else
-        Rails.logger.info "⚠️ No local plans found, fetching from Chargebee API"
+        Rails.logger.info "🔄 Cache expired or missing, fetching fresh plans"
 
-        # Fallback to Chargebee API
-        ChargeBee::ItemPrice.list({ limit: 100 }).each do |item_price_response|
-          item_price = item_price_response.item_price
+        # Use plans from local database (which we synced with features)
+        local_plans = ChargebeePlan.where(status: 'active').order(:price)
 
-          # Only include active plan item prices (exclude add-ons/charges)
-          next unless item_price.status == 'active'
-          next unless item_price.item_type == 'plan'
+        if local_plans.any?
+          Rails.logger.info "✅ Using #{local_plans.count} plans from local database with features"
 
-          # Fetch the parent Item to display the cleaner plan name
-          item_name = begin
-            ChargeBee::Item.retrieve(item_price.item_id).item.name
-          rescue => _e
-            item_price.name
+          local_plans.each do |local_plan|
+            # Build plan object from local database
+            plan = OpenStruct.new(
+              id: local_plan.chargebee_id,
+              name: clean_plan_name(local_plan.name),
+              description: local_plan.description,
+              price: local_plan.price,
+              billing_cycle: local_plan.billing_cycle,
+              period: local_plan.billing_cycle&.split(' ')&.first,
+              period_unit: local_plan.billing_cycle&.split(' ')&.last,
+              status: local_plan.status,
+              chargebee_item_price_id: local_plan.chargebee_item_price_id,
+              features: local_plan.feature_descriptions,
+              feature_descriptions: local_plan.feature_descriptions
+            )
+
+            @plans << plan
           end
 
-          # Get feature descriptions from Chargebee entitlements
-          feature_descriptions = get_plan_feature_descriptions(item_name)
+          # Cache the plans for 1 hour
+          Rails.cache.write('chargebee_plans', @plans, expires_in: 1.hour)
+          Rails.logger.info "✅ Plans cached for 1 hour"
+        else
+          Rails.logger.info "⚠️ No local plans found, triggering sync job"
+          SyncChargebeePlansJob.perform_later
 
-          # Build a lightweight plan object for the view
-          plan = OpenStruct.new(
-            id: item_price.item_id,
-            name: item_name,
-            description: nil,
-            price: item_price.price.to_f / 100,
-            billing_cycle: "#{item_price.period} #{item_price.period_unit}",
-            period: item_price.period,
-            period_unit: item_price.period_unit,
-            status: item_price.status,
-            chargebee_item_price_id: item_price.id,
-            features: feature_descriptions,
-            feature_descriptions: feature_descriptions
-          )
-
-          @plans << plan
+          # Return empty plans for now, they'll be available on next request
+          @plans = []
         end
       end
 
@@ -558,6 +540,11 @@ class SettingsController < ApplicationController
   def clean_plan_name(plan_name)
     # Remove common suffixes like "USD Monthly", "USD-Monthly", etc.
     plan_name.gsub(/\s*(USD|USD-)?\s*(Monthly|Yearly|Annually)/i, '').strip
+  end
+
+  def cache_fresh?
+    last_synced = Rails.cache.read('chargebee_plans_last_synced')
+    last_synced && last_synced > 1.hour.ago
   end
 
   def get_chargebee_customer_id

@@ -536,6 +536,19 @@ namespace :chargebee do
     puts "🎉 Feature assignment completed!"
   end
 
+  desc "Schedule daily Chargebee sync (for production)"
+  task schedule_sync: :environment do
+    puts "📅 Scheduling daily Chargebee sync..."
+
+    # This would typically be done with a job scheduler like Sidekiq-Scheduler
+    # For now, we'll just run the sync immediately
+    puts "🔄 Running sync now..."
+    SyncChargebeePlansJob.perform_later
+
+    puts "✅ Sync job queued successfully!"
+    puts "💡 In production, set up a cron job or scheduler to run this daily"
+  end
+
   desc "Fetch all features from Chargebee"
   task fetch_features: :environment do
     puts "🔍 Fetching all features from Chargebee..."
