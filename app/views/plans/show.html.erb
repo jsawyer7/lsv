@@ -1,0 +1,77 @@
+<div class="plan-detail-container">
+  <div class="plan-header">
+    <h1><%= @plan.name %></h1>
+    <div class="plan-price">
+      <span class="currency">$</span>
+      <span class="amount"><%= @plan.price %></span>
+      <span class="period">/<%= @plan.billing_cycle %></span>
+    </div>
+    <% if @plan.free? %>
+      <div class="free-badge">Free Forever</div>
+    <% end %>
+  </div>
+
+  <div class="plan-description">
+    <p><%= @plan.description %></p>
+  </div>
+
+  <div class="plan-features">
+    <h3>What's Included</h3>
+    <div class="features-list">
+      <% @plan.features.each do |feature, enabled| %>
+        <div class="feature-item <%= 'enabled' if enabled %>">
+          <i class="fas fa-<%= enabled ? 'check' : 'times' %>"></i>
+          <span><%= feature.humanize %></span>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="subscription-actions">
+    <% if @current_subscription&.plan == @plan %>
+      <div class="current-plan-info">
+        <h3>Current Plan</h3>
+        <p>You are currently subscribed to this plan.</p>
+        <div class="subscription-details">
+          <p><strong>Status:</strong> <%= @current_subscription.status.humanize %></p>
+          <p><strong>Next billing:</strong> <%= @current_subscription.current_term_end&.strftime("%B %d, %Y") %></p>
+          <% if @current_subscription.days_until_renewal %>
+            <p><strong>Days until renewal:</strong> <%= @current_subscription.days_until_renewal %></p>
+          <% end %>
+        </div>
+        <%= link_to "Manage Subscription", subscriptions_path, class: "btn btn-secondary" %>
+      </div>
+    <% else %>
+      <div class="subscribe-section">
+        <h3>Subscribe to <%= @plan.name %></h3>
+        <p>Get access to all the features included in this plan.</p>
+        
+        <%= form_tag subscriptions_path, method: :post, class: "subscribe-form" do %>
+          <%= hidden_field_tag :plan_id, @plan.id %>
+          <button type="submit" class="btn btn-primary btn-large">
+            <% if @plan.free? %>
+              Start Free Plan
+            <% else %>
+              Subscribe Now - $<%= @plan.price %>/<%= @plan.billing_cycle %>
+            <% end %>
+          </button>
+        <% end %>
+        
+        <div class="subscription-note">
+          <p><small>
+            <% if @plan.free? %>
+              No credit card required. Start using immediately.
+            <% else %>
+              You'll be charged $<%= @plan.price %> every <%= @plan.billing_cycle %>. Cancel anytime.
+            <% end %>
+          </small></p>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="plan-comparison">
+    <h3>Compare Plans</h3>
+    <%= link_to "View All Plans", plans_path, class: "btn btn-outline" %>
+  </div>
+</div>
