@@ -186,6 +186,7 @@ class ChargebeeSubscriptionsController < ApplicationController
       end
 
       # If no local subscription or it's not valid, check for any single active subscription
+      # BUT only if it's properly linked to the local user account
       active_subs = ChargeBee::Subscription.list({
         customer_email: current_user.email,
         status: 'active'
@@ -193,8 +194,15 @@ class ChargebeeSubscriptionsController < ApplicationController
 
       if active_subs.count == 1
         subs = active_subs.first.subscription
-        Rails.logger.info "🔍 Found single active subscription: #{subs.id}"
-        return subs
+        # Check if this subscription is already linked to the local user
+        local_sub_exists = current_user.chargebee_subscriptions.exists?(chargebee_id: subs.id)
+        if local_sub_exists
+          Rails.logger.info "🔍 Found single active subscription linked to user: #{subs.id}"
+          return subs
+        else
+          Rails.logger.info "🔍 Found orphaned subscription in Chargebee (not linked locally): #{subs.id} - treating as new user"
+          return nil
+        end
       elsif active_subs.count > 1
         Rails.logger.info "🔍 Multiple active subscriptions found (#{active_subs.count}) - treating as new user"
         return nil
@@ -208,8 +216,15 @@ class ChargebeeSubscriptionsController < ApplicationController
 
       if trial_subs.count == 1
         subs = trial_subs.first.subscription
-        Rails.logger.info "🔍 Found single trial/non-renewing subscription: #{subs.id}"
-        return subs
+        # Check if this subscription is already linked to the local user
+        local_sub_exists = current_user.chargebee_subscriptions.exists?(chargebee_id: subs.id)
+        if local_sub_exists
+          Rails.logger.info "🔍 Found single trial/non-renewing subscription linked to user: #{subs.id}"
+          return subs
+        else
+          Rails.logger.info "🔍 Found orphaned trial/non-renewing subscription in Chargebee (not linked locally): #{subs.id} - treating as new user"
+          return nil
+        end
       elsif trial_subs.count > 1
         Rails.logger.info "🔍 Multiple trial/non-renewing subscriptions found (#{trial_subs.count}) - treating as new user"
         return nil
