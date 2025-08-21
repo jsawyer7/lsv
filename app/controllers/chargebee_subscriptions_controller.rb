@@ -39,10 +39,10 @@ class ChargebeeSubscriptionsController < ApplicationController
 
         sync_plan_and_subscription(update_result.subscription, item_price)
 
-        redirect_to subscription_settings_path, notice: "Subscription updated successfully"
+        redirect_to subscription_settings_path, notice: "Your subscription has been successfully updated to #{item_price.name}!"
       rescue => e
         Rails.logger.error "Failed to update subscription: #{e.message}"
-        redirect_to subscription_settings_path, alert: "Could not update subscription. Please contact support."
+        redirect_to subscription_settings_path, alert: "We couldn't update your subscription at this time. Please try again or contact our support team."
       end
     else
       Rails.logger.info "🆕 New user - sending to hosted checkout"
@@ -77,7 +77,7 @@ class ChargebeeSubscriptionsController < ApplicationController
         Rails.logger.error "❌ Failed to create hosted checkout: #{e.message}"
         Rails.logger.error "❌ Error class: #{e.class}"
         Rails.logger.error "❌ Error backtrace: #{e.backtrace.first(5).join("\n")}"
-        redirect_to subscription_settings_path, alert: "Could not create checkout. Please try again or contact support."
+        redirect_to subscription_settings_path, alert: "We couldn't create your checkout session. Please try again or contact our support team."
       end
     end
   end
@@ -106,11 +106,11 @@ class ChargebeeSubscriptionsController < ApplicationController
       sync_plan_and_subscription(subscription, item_price)
       Rails.logger.info "✅ Synced plan and subscription successfully"
 
-      redirect_to subscription_settings_path, notice: "Subscription successful"
+              redirect_to subscription_settings_path, notice: "Welcome! Your #{item_price&.name || 'subscription'} has been activated successfully!"
     rescue => e
       Rails.logger.error "❌ Error in success callback: #{e.message}"
       Rails.logger.error "❌ Error backtrace: #{e.backtrace.first(5).join("\n")}"
-      redirect_to subscription_settings_path, alert: "There was an issue processing your subscription. Please contact support."
+      redirect_to subscription_settings_path, alert: "There was an issue processing your subscription. Please contact our support team for assistance."
     end
   end
 

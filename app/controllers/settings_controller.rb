@@ -266,7 +266,7 @@ class SettingsController < ApplicationController
 
     rescue => e
       Rails.logger.error "Error fetching plan details: #{e.message}"
-      redirect_to subscription_settings_path, alert: "Plan not found or unavailable."
+              redirect_to subscription_settings_path, alert: "The selected plan is not available at this time. Please try again or contact support."
       return
     end
 
@@ -285,13 +285,13 @@ class SettingsController < ApplicationController
         .first
 
       unless current_subscription
-        redirect_to subscription_settings_path, alert: "No active subscription found."
+        redirect_to subscription_settings_path, alert: "No active subscription found. Please select a plan to continue."
         return
       end
 
       # Verify this is the correct plan being cancelled
       if current_subscription.chargebee_plan&.chargebee_item_price_id != plan_id
-        redirect_to subscription_settings_path, alert: "Plan mismatch. Cannot cancel this plan."
+        redirect_to subscription_settings_path, alert: "There was a mismatch with the selected plan. Please try again or contact support."
         return
       end
 
@@ -315,7 +315,7 @@ class SettingsController < ApplicationController
 
     rescue => e
       Rails.logger.error "Error cancelling subscription: #{e.message}"
-      redirect_to subscription_settings_path, alert: "Failed to cancel subscription. Please contact support."
+      redirect_to subscription_settings_path, alert: "We couldn't cancel your subscription at this time. Please try again or contact our support team."
     end
   end
 

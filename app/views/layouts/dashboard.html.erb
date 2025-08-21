@@ -17,6 +17,7 @@
       <%= render 'shared/navbar' %>
 
       <div class="dashboard-main">
+        <%= render 'shared/flash_messages' %>
         <header class="dashboard-header">
           <div class="header-actions">
             <% if current_page?(dashboard_path) || current_page?(claims_path) %>

@@ -41,13 +41,7 @@
 
   <body>
     <%= render 'shared/omniauth_facebook_js' %>
-    <div class="flash-container">
-      <% flash.each do |key, message| %>
-        <div class="flash-message <%= key %>">
-          <%= message %>
-        </div>
-      <% end %>
-    </div>
+    <%= render 'shared/flash_messages' %>
 
     <%= yield %>
 

@@ -19,7 +19,7 @@
           <span class="currency">$</span>
           <span class="amount"><%= @plan.price.to_i == 0 ? '0' : @plan.price.to_i %></span>
           <span class="plan-billing-cycle">
-            <%= @plan.price.to_i == 0 ? 'Free' : "#{@plan.period_unit.capitalize}ly" %>
+            <%= @plan.price.to_i == 0 ? 'Free' : "#{@plan.period_unit&.capitalize}ly" %>
           </span>
         </div>
       </div>
