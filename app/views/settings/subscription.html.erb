@@ -32,7 +32,7 @@
                   <span class="amount"><%= plan.price.to_i == 0 ? '0' : plan.price.to_i %></span>
                 </div>
                 <div class="billing-cycle">
-                  <%= plan.price.to_i == 0 ? 'Free' : "#{plan.period_unit.capitalize}ly" %>
+                  <%= plan.price.to_i == 0 ? 'Free' : "#{plan.period_unit&.capitalize}ly" %>
                 </div>
               </div>
 

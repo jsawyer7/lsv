@@ -12,4 +12,10 @@ class ChargebeePlan < ApplicationRecord
   def feature_descriptions
     entitlements.map { |entitlement| entitlement['description'] }.compact
   end
+
+  def period_unit
+    return nil if billing_cycle.blank?
+    parts = billing_cycle.split(' ')
+    parts.last if parts.length > 1
+  end
 end
