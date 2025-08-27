@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2025_08_21_160928) do
+ActiveRecord::Schema[7.0].define(version: 2025_08_27_124501) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
   enable_extension "vector"
@@ -41,6 +41,41 @@ ActiveRecord::Schema[7.0].define(version: 2025_08_21_160928) do
     t.bigint "blob_id", null: false
     t.string "variation_digest", null: false
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
+  end
+
+  create_table "canon_book_inclusions", id: false, force: :cascade do |t|
+    t.bigint "canon_id", null: false
+    t.string "work_code", null: false
+    t.string "include_from"
+    t.string "include_to"
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["canon_id", "work_code"], name: "index_canon_book_inclusions_on_canon_id_and_work_code", unique: true
+    t.index ["canon_id"], name: "index_canon_book_inclusions_on_canon_id"
+  end
+
+  create_table "canon_work_preferences", id: false, force: :cascade do |t|
+    t.bigint "canon_id", null: false
+    t.string "work_code", null: false
+    t.string "foundation_code"
+    t.string "numbering_system_code"
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["canon_id", "work_code"], name: "index_canon_work_preferences_on_canon_id_and_work_code", unique: true
+    t.index ["canon_id"], name: "index_canon_work_preferences_on_canon_id"
+  end
+
+  create_table "canons", force: :cascade do |t|
+    t.string "code"
+    t.string "name"
+    t.string "domain_code"
+    t.text "description"
+    t.boolean "is_official"
+    t.integer "display_order"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
   end
 
   create_table "challenges", force: :cascade do |t|
@@ -249,6 +284,8 @@ ActiveRecord::Schema[7.0].define(version: 2025_08_21_160928) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "canon_book_inclusions", "canons"
+  add_foreign_key "canon_work_preferences", "canons"
   add_foreign_key "challenges", "claims"
   add_foreign_key "challenges", "evidences"
   add_foreign_key "challenges", "users"

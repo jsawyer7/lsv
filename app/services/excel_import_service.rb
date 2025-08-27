@@ -22,6 +22,19 @@ class ExcelImportService
       'families_seed.xlsx' => {
         model: FamiliesSeed,
         columns: ['id', 'code', 'name', 'notes']
+      },
+      # Phase 1 tables
+      'canons.xlsx' => {
+        model: Canon,
+        columns: ['code', 'name', 'domain_code', 'description', 'is_official', 'display_order']
+      },
+      'canon_book_inclusions.xlsx' => {
+        model: CanonBookInclusion,
+        columns: ['canon_id', 'work_code', 'include_from', 'include_to', 'notes']
+      },
+      'canon_work_preferences.xlsx' => {
+        model: CanonWorkPreference,
+        columns: ['canon_id', 'work_code', 'foundation_code', 'numbering_system_code', 'notes']
       }
     }
   end
@@ -90,17 +103,36 @@ class ExcelImportService
         end
         
         begin
-          # Check if record already exists (by code)
-          existing_record = model_class.find_by(code: record_data['code'])
-          
-          if existing_record
-            # Update existing record
-            existing_record.update!(record_data)
-            puts "  Updated: #{record_data['code']}"
+          # Handle different primary key strategies
+          if model_class == CanonBookInclusion || model_class == CanonWorkPreference
+            # Composite primary key tables
+            existing_record = model_class.find_by(
+              canon_id: record_data['canon_id'],
+              work_code: record_data['work_code']
+            )
+            
+            if existing_record
+              # Update existing record
+              existing_record.update!(record_data)
+              puts "  Updated: Canon #{record_data['canon_id']}, Work #{record_data['work_code']}"
+            else
+              # Create new record
+              model_class.create!(record_data)
+              puts "  Created: Canon #{record_data['canon_id']}, Work #{record_data['work_code']}"
+            end
           else
-            # Create new record
-            model_class.create!(record_data)
-            puts "  Created: #{record_data['code']}"
+            # Standard primary key tables
+            existing_record = model_class.find_by(code: record_data['code'])
+            
+            if existing_record
+              # Update existing record
+              existing_record.update!(record_data)
+              puts "  Updated: #{record_data['code']}"
+            else
+              # Create new record
+              model_class.create!(record_data)
+              puts "  Created: #{record_data['code']}"
+            end
           end
           
           imported_count += 1

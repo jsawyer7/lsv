@@ -7,4 +7,7 @@ class FoundationsOnly < ApplicationRecord
   validates :lang_code, presence: true
   validates :scope, presence: true
   validates :is_active, inclusion: { in: [true, false] }
+  
+  # Canon associations
+  has_many :canon_work_preferences, foreign_key: 'foundation_code', primary_key: 'code', dependent: :destroy
 end
