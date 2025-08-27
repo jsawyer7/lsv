@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2025_08_02_063844) do
+ActiveRecord::Schema[7.0].define(version: 2025_08_21_160928) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
   enable_extension "vector"
@@ -108,6 +108,25 @@ ActiveRecord::Schema[7.0].define(version: 2025_08_02_063844) do
     t.index ["sources"], name: "index_evidences_on_sources", using: :gin
   end
 
+  create_table "families_for_foundations", force: :cascade do |t|
+    t.string "code"
+    t.string "name"
+    t.string "domain"
+    t.text "description"
+    t.integer "display_order"
+    t.boolean "is_active"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "families_seed", force: :cascade do |t|
+    t.string "code"
+    t.string "name"
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
   create_table "follows", force: :cascade do |t|
     t.bigint "user_id", null: false
     t.bigint "followed_user", null: false
@@ -115,6 +134,41 @@ ActiveRecord::Schema[7.0].define(version: 2025_08_02_063844) do
     t.datetime "updated_at", null: false
     t.index ["user_id", "followed_user"], name: "index_follows_on_user_id_and_followed_user", unique: true
     t.index ["user_id"], name: "index_follows_on_user_id"
+  end
+
+  create_table "foundations_only", force: :cascade do |t|
+    t.string "code"
+    t.string "title"
+    t.string "tradition_code"
+    t.string "lang_code"
+    t.string "scope"
+    t.string "pub_range"
+    t.text "citation_hint"
+    t.boolean "is_active"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "languages", force: :cascade do |t|
+    t.string "code"
+    t.string "name"
+    t.string "iso_639_3"
+    t.string "script"
+    t.string "direction"
+    t.string "language_family"
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "master_books", force: :cascade do |t|
+    t.string "code"
+    t.string "title"
+    t.string "family_code"
+    t.string "origin_lang"
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
   end
 
   create_table "name_mappings", force: :cascade do |t|
