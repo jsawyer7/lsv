@@ -73,7 +73,7 @@ gem 'omniauth-facebook'
 # Admin Interface
 gem 'activeadmin'
 gem 'sassc-rails'
-gem 'chargebee', '~>2'
+gem 'chargebee'
 # Authorization
 gem 'pundit'
 
