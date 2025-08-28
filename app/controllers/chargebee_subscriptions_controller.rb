@@ -36,7 +36,7 @@ class ChargebeeSubscriptionsController < ApplicationController
         customer_id = customer_result.customer.id
       end
     rescue => e
-      redirect_to new_chargebee_subscription_path(plan_id: item_price_id), alert: "Error creating customer: #{e.message}"
+      redirect_to subscription_settings_path, alert: "Error creating customer: #{e.message}"
       return
     end
 
@@ -86,7 +86,7 @@ class ChargebeeSubscriptionsController < ApplicationController
           )
           payment_source_id = payment_source_result.payment_source.id
         rescue ChargeBee::InvalidRequestError => e
-          redirect_to new_chargebee_subscription_path(plan_id: item_price_id), alert: "Invalid payment method. Please try again."
+          redirect_to subscription_settings_path, alert: "Invalid payment method. Please try again."
           return
         end
 
@@ -106,16 +106,17 @@ class ChargebeeSubscriptionsController < ApplicationController
         redirect_to subscription_settings_path, notice: "Welcome! Your subscription has been activated successfully!"
       end
       rescue ChargeBee::InvalidRequestError => e
-      redirect_to new_chargebee_subscription_path(plan_id: item_price_id), alert: "Error creating subscription: #{e.message}"
+      redirect_to subscription_settings_path, alert: "Error creating subscription: #{e.message}"
     rescue ChargeBee::APIError => e
-      redirect_to new_chargebee_subscription_path(plan_id: item_price_id), alert: "Subscription failed: #{e.message}"
+      redirect_to subscription_settings_path, alert: "Subscription failed: #{e.message}"
     rescue StandardError => e
-      redirect_to new_chargebee_subscription_path(plan_id: item_price_id), alert: "An unexpected error occurred: #{e.message}"
+      redirect_to subscription_settings_path, alert: "An unexpected error occurred: #{e.message}"
     end
   end
 
   def new
     @plan_id = params.require(:plan_id)
+    @user = current_user
 
     # Find the plan details
     item_price = find_item_price(@plan_id)
@@ -123,6 +124,12 @@ class ChargebeeSubscriptionsController < ApplicationController
       redirect_to subscription_settings_path, alert: "Plan not found or unavailable."
       return
     end
+
+    # Build plan object for the view
+    @plan = build_plan_object(item_price)
+
+    # Set Chargebee configuration for the view
+    @chargebee_site = ENV['CHARGEBEE_SITE']
   end
 
 
