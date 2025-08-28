@@ -111,8 +111,8 @@
                 method: :post, class: "btn btn-downgrade-plan" %>
           <% end %>
         <% else %>
-          <%= button_to "Select Plan", chargebee_subscriptions_path(plan_id: @plan.chargebee_item_price_id), 
-              method: :post, class: "btn btn-select-plan" %>
+          <%= link_to "Select Plan", new_chargebee_subscription_path(plan_id: @plan.chargebee_item_price_id), 
+              class: "btn btn-select-plan" %>
         <% end %>
       <% end %>
     </div>

@@ -604,4 +604,62 @@ namespace :chargebee do
       end
     end
   end
+
+  desc "List all payment methods with customer information"
+  task list_all_payment_methods: :environment do
+    puts "🔍 Listing all payment methods with customer information..."
+
+    begin
+      all_payment_sources = ChargeBee::PaymentSource.list({ limit: 100 })
+      puts "✅ Found #{all_payment_sources.length} payment methods total"
+      puts ""
+
+      all_payment_sources.each_with_index do |ps, index|
+        payment_method_id = ps.card&.id || ps.payment_source&.id
+        status = ps.card&.status || ps.payment_source&.status
+
+        begin
+          payment_details = ChargeBee::PaymentSource.retrieve(payment_method_id)
+          customer_id = payment_details.card&.customer_id || payment_details.payment_source&.customer_id
+          last4 = payment_details.card&.last4 || payment_details.payment_source&.last4
+          brand = payment_details.card&.brand || payment_details.payment_source&.brand
+
+          puts "#{index + 1}. #{payment_method_id}"
+          puts "   Status: #{status}"
+          puts "   Customer: #{customer_id}"
+          puts "   Card: #{brand&.titleize} ****#{last4}"
+          puts ""
+        rescue => e
+          puts "#{index + 1}. #{payment_method_id} (Error getting details: #{e.message})"
+          puts ""
+        end
+      end
+    rescue => e
+      puts "❌ Error: #{e.message}"
+    end
+  end
+
+  desc "Check payment methods for a specific customer"
+  task :check_payment_methods, [:customer_id] => :environment do |t, args|
+    customer_id = args[:customer_id]
+    if customer_id.blank?
+      puts "❌ Please provide a customer ID: rails chargebee:check_payment_methods[customer_id]"
+      exit 1
+    end
+
+    puts "🔍 Checking payment methods for customer: #{customer_id}"
+
+    begin
+      payment_sources = ChargeBee::PaymentSource.list({ customer_id: customer_id })
+      puts "✅ Found #{payment_sources.length} payment method(s) for customer #{customer_id}"
+
+      payment_sources.each_with_index do |ps, index|
+        payment_method_id = ps.card&.id || ps.payment_source&.id
+        status = ps.card&.status || ps.payment_source&.status
+        puts "  #{index + 1}. #{payment_method_id} (Status: #{status})"
+      end
+    rescue => e
+      puts "❌ Error: #{e.message}"
+    end
+  end
 end

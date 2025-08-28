@@ -1,0 +1,259 @@
+<%= render 'settings/layout', active: 'subscription' do %>
+  <div class="checkout-page">
+    <div class="container py-5">
+      <div class="row justify-content-center">
+        <div class="col-lg-8">
+          <div class="card shadow-lg border-0">
+            <div class="card-body p-4">
+              <div class="checkout-header mb-4">
+                <h2 class="checkout-title">Complete Your Subscription</h2>
+                <p class="checkout-subtitle">You're subscribing to <strong><%= @plan.name %></strong></p>
+              </div>
+
+              <div class="plan-summary mb-4">
+                <div class="plan-summary-card">
+                  <div class="plan-info">
+                    <h4><%= @plan.name %></h4>
+                    <p class="plan-description"><%= @plan.description %></p>
+                  </div>
+                  <div class="plan-price">
+                    <span class="price-amount">$<%= @plan.price.to_i == 0 ? '0' : @plan.price.to_i %></span>
+                    <span class="price-period">/<%= @plan.period_unit&.downcase %></span>
+                  </div>
+                </div>
+              </div>
+
+              <%= form_with url: chargebee_subscriptions_path, method: :post, id: "checkout-form" do |f| %>
+                <%= hidden_field_tag :plan_id, @plan_id %>
+                <%= hidden_field_tag :payment_source_id, "", id: "payment_source_id" %>
+
+                <div class="row g-3 mb-4">
+                  <div class="col-md-6">
+                    <label class="form-label">Full Name</label>
+                    <%= text_field_tag :name, @user.full_name, class: "form-control", required: true %>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Email</label>
+                    <%= email_field_tag :email, @user.email, class: "form-control", required: true, readonly: true %>
+                  </div>
+                </div>
+
+                <hr class="my-4">
+
+                <div class="payment-section">
+                  <h5 class="mb-3">Payment Information</h5>
+                  
+                  <div class="cb-form">
+                    <div class="mb-3">
+                      <label class="form-label">Card Details</label>
+                      <div id="cb-card" class="form-control cb-field"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="checkout-actions mt-4">
+                  <button class="btn btn-primary btn-lg w-100" id="pay_btn" type="submit">
+                    <span class="btn-text">Subscribe Now - $<%= @plan.price.to_i == 0 ? '0' : @plan.price.to_i %>/<%= @plan.period_unit&.downcase %></span>
+                    <span class="btn-loading" style="display: none;">
+                      <i class="fas fa-spinner fa-spin"></i> Processing...
+                    </span>
+                  </button>
+                  
+                  <div class="security-notice mt-3">
+                    <small class="text-muted">
+                      <i class="fas fa-lock"></i> Your payment information is secured by Chargebee and never stored on our servers.
+                    </small>
+                  </div>
+                </div>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chargebee.js v2 -->
+  <script src="https://js.chargebee.com/v2/chargebee.js"></script>
+  <script>
+    // Initialize Chargebee with site configuration
+    window.CHARGEBEE_SITE = '<%= @chargebee_site %>';
+    window.CHARGEBEE_CURRENCY = '<%= @plan.currency_code || "USD" %>';
+    window.CHARGEBEE_GATEWAY_ACCOUNT_ID = '<%= ENV.fetch("CHARGEBEE_GATEWAY_ACCOUNT_ID", "") %>';
+    window.CHARGEBEE_PUBLISHABLE_KEY = '<%= ENV.fetch("CHARGEBEE_PUBLISHABLE_KEY", "") %>';
+  </script>
+  
+  <script>
+  // Wait for both DOM and Chargebee library to be ready
+  function initializeChargebee() {
+    console.log('Chargebee site:', '<%= @chargebee_site %>');
+    
+    if (!window.CHARGEBEE_SITE || window.CHARGEBEE_SITE === '') {
+      console.error('Chargebee site not configured');
+      alert('Payment configuration error. Please contact support.');
+      return;
+    }
+    
+    if (typeof Chargebee === 'undefined') {
+      console.error('Chargebee library not loaded, retrying in 100ms...');
+      setTimeout(initializeChargebee, 100);
+      return;
+    }
+    
+    try {
+      // Initialize Chargebee v2
+      const cbInstance = Chargebee.init({
+        site: window.CHARGEBEE_SITE,
+        publishableKey: window.CHARGEBEE_PUBLISHABLE_KEY
+      });
+      console.log('Chargebee v2 instance initialized:', cbInstance);
+      
+      // Load the components module before creating hosted fields
+      console.log('Loading components module...');
+      cbInstance.load("components").then(() => {
+        console.log('Components module loaded successfully');
+        
+        // Check site configuration
+        if (cbInstance.getSiteInfo) {
+          console.log('Getting site info...');
+          cbInstance.getSiteInfo().then((siteInfo) => {
+            console.log('Site info:', siteInfo);
+            initializeHostedFields(cbInstance);
+          }).catch((error) => {
+            console.log('Could not get site info:', error);
+            initializeHostedFields(cbInstance);
+          });
+        } else {
+          initializeHostedFields(cbInstance);
+        }
+      }).catch((error) => {
+        console.error('Error loading components module:', error);
+        alert('Unable to load payment components. Please refresh the page or contact support.');
+      });
+    } catch (error) {
+      console.error('Error initializing Chargebee:', error);
+      alert('Unable to initialize payment system. Please refresh the page or contact support.');
+    }
+  }
+  
+  function initializeHostedFields(cbInstance) {
+    // Hosted Fields for Chargebee v2 - single card component
+    try {
+      console.log('Creating hosted fields...');
+      
+      const card = cbInstance.createComponent("card");
+      card.mount("#cb-card");
+      console.log('Card field mounted successfully ✅');
+      
+      // Try setting currency on the card component
+      if (card.setCurrency) {
+        console.log('Setting currency on card component to USD');
+        card.setCurrency("USD");
+      }
+      
+      // Debug: Check available methods on cbInstance
+      console.log('Available methods on cbInstance:', Object.getOwnPropertyNames(cbInstance));
+      console.log('cbInstance methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(cbInstance)));
+      
+      // Check if 3D Secure is available
+      if (cbInstance.load3DSHandler) {
+        console.log('3D Secure handler is available');
+      } else {
+        console.log('3D Secure handler not available');
+      }
+      
+      // Initialize the rest of the functionality
+      initializeFormSubmission(cbInstance, card);
+    } catch (error) {
+      console.error('Error creating hosted fields:', error);
+      alert('Unable to load payment form. Please refresh the page or contact support.');
+      return;
+    }
+  }
+  
+  
+  
+  function initializeFormSubmission(cbInstance, card) {
+  const form = document.getElementById("checkout-form");
+  const payBtn = document.getElementById("pay_btn");
+  const btnText = payBtn.querySelector(".btn-text");
+  const btnLoading = payBtn.querySelector(".btn-loading");
+
+  form.addEventListener("submit", async function(e) {
+    e.preventDefault();
+    
+    payBtn.disabled = true;
+    btnText.style.display = "none";
+    btnLoading.style.display = "inline-block";
+
+    try {
+      console.log('Tokenizing card details...');
+      console.log('Parameters:', {
+        currency_code: window.CHARGEBEE_CURRENCY,
+        gateway_account_id: window.CHARGEBEE_GATEWAY_ACCOUNT_ID
+      });
+      
+      if (!window.CHARGEBEE_CURRENCY || window.CHARGEBEE_CURRENCY === '') {
+        console.error('Currency is not defined!');
+        alert('Payment configuration error. Please contact support.');
+        payBtn.disabled = false;
+        btnText.style.display = "inline-block";
+        btnLoading.style.display = "none";
+        return;
+      }
+      
+      if (!window.CHARGEBEE_GATEWAY_ACCOUNT_ID || window.CHARGEBEE_GATEWAY_ACCOUNT_ID === '') {
+        console.error('Gateway Account ID is not defined!');
+        alert('Payment configuration error. Please contact support.');
+        payBtn.disabled = false;
+        btnText.style.display = "inline-block";
+        btnLoading.style.display = "none";
+        return;
+      }
+      
+      console.log('Attempting to tokenize card...');
+      const result = await cbInstance.tokenize(card, {
+        currency_code: window.CHARGEBEE_CURRENCY,
+        gateway_account_id: window.CHARGEBEE_GATEWAY_ACCOUNT_ID
+      });
+      console.log('Tokenization result:', result);
+      console.log('Token:', result.token, 'Vault Token:', result.vaultToken);
+      
+      // For Stripe gateway, use vaultToken (Stripe token) instead of token (Chargebee token)
+      const tokenToUse = result.vaultToken; // Use Stripe token for Stripe gateway
+      if (!tokenToUse || !tokenToUse.startsWith('tok_')) {
+        console.error('Invalid Stripe token generated:', tokenToUse);
+        alert('Failed to generate a valid payment token. Please check your card details and try again.');
+        payBtn.disabled = false;
+        btnText.style.display = "inline-block";
+        btnLoading.style.display = "none";
+        return;
+      }
+
+      
+      document.getElementById("payment_source_id").value = tokenToUse;
+      console.log('Submitting form with Stripe token:', tokenToUse);
+      form.submit();
+    } catch (err) {
+      console.error('Card tokenization failed:', err);
+      console.error('Error details:', {
+        message: err.message,
+        code: err.code,
+        type: err.type
+      });
+      alert(err && err.message ? err.message : "Payment failed. Please check your card details and try again.");
+      payBtn.disabled = false;
+      btnText.style.display = "inline-block";
+      btnLoading.style.display = "none";
+    }
+  });
+}
+  
+  // Start initialization when DOM is ready
+  document.addEventListener("DOMContentLoaded", function() {
+    initializeChargebee();
+  });
+  </script>
+
+
+<% end %>
