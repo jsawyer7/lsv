@@ -143,11 +143,14 @@
                           } %>
                     <% end %>
                   <% else %>
-                    <%= link_to "Select Plan", new_chargebee_subscription_path(plan_id: plan.chargebee_item_price_id), 
-                        class: "btn btn-select-plan",
-                        data: { 
-                          action: "plan-action"
-                        } %>
+                    <button class="btn btn-select-plan" 
+                            data-plan-id="<%= plan.chargebee_item_price_id %>"
+                            data-plan-name="<%= plan.name %>"
+                            data-plan-price="<%= plan.price %>"
+                            data-plan-period="<%= plan.period_unit %>"
+                            onclick="openSubscriptionModal(this); event.stopPropagation(); event.preventDefault();">
+                      Select Plan
+                    </button>
                   <% end %>
                 <% end %>
               </div>
@@ -159,29 +162,268 @@
   </div>
 <% end %>
 
+<!-- Subscription Modal -->
+<div id="subscriptionModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="subscriptionModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="subscriptionModalLabel">Complete Your Subscription</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="checkout-page">
+          <div class="plan-summary mb-4">
+            <div class="plan-summary-card">
+              <div class="plan-info">
+                <h4 id="modalPlanName"></h4>
+                <p class="plan-description">Clear and fair pricing for everyone. 10,000+ peoples are using it.</p>
+              </div>
+              <div class="plan-price">
+                <span class="price-amount" id="modalPlanPrice"></span>
+                <span class="price-period" id="modalPlanPeriod"></span>
+              </div>
+            </div>
+          </div>
+
+          <form id="checkout-form" method="post" action="<%= chargebee_subscriptions_path %>">
+            <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
+            <input type="hidden" name="plan_id" id="modalPlanId">
+            <input type="hidden" name="payment_source_id" id="payment_source_id">
+
+            <div class="row g-3 mb-4">
+              <div class="col-md-6">
+                <label class="form-label">Full Name</label>
+                <input type="text" name="name" value="<%= current_user.full_name %>" class="form-control" required>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Email</label>
+                <input type="email" name="email" value="<%= current_user.email %>" class="form-control" required readonly>
+              </div>
+            </div>
+
+            <hr class="my-4">
+
+            <div class="payment-section">
+              <h5 class="mb-3">Payment Information</h5>
+              
+              <div class="cb-form">
+                <div class="mb-3">
+                  <label class="form-label">Card Details</label>
+                  <div id="cb-card" class="form-control cb-field"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="checkout-actions mt-4">
+              <button class="btn btn-primary btn-lg w-100" id="pay_btn" type="submit">
+                <span class="btn-text" id="payButtonText">Subscribe Now</span>
+                <span class="btn-loading" style="display: none;">
+                  <i class="fas fa-spinner fa-spin"></i> Processing...
+                </span>
+              </button>
+              
+              <div class="security-notice mt-3">
+                <small class="text-muted">
+                  <i class="fas fa-lock"></i> Your payment information is secured by Chargebee and never stored on our servers.
+                </small>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Chargebee.js v2 -->
+<script src="https://js.chargebee.com/v2/chargebee.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-  console.log('Plan card JavaScript loaded');
-  
-  // Handle plan card clicks (excluding buttons and forms)
-  document.querySelectorAll('.plan-card-link').forEach(function(cardLink) {
-    cardLink.addEventListener('click', function(e) {
-      console.log('Card clicked, target:', e.target.tagName, e.target.className);
+  // Initialize Chargebee with site configuration
+  window.CHARGEBEE_SITE = '<%= ENV['CHARGEBEE_SITE'] %>';
+  window.CHARGEBEE_CURRENCY = 'USD';
+  window.CHARGEBEE_GATEWAY_ACCOUNT_ID = '<%= ENV.fetch("CHARGEBEE_GATEWAY_ACCOUNT_ID", "") %>';
+  window.CHARGEBEE_PUBLISHABLE_KEY = '<%= ENV.fetch("CHARGEBEE_PUBLISHABLE_KEY", "") %>';
+
+  let cbInstance = null;
+  let card = null;
+
+  function openSubscriptionModal(button) {
+    const planId = button.getAttribute('data-plan-id');
+    const planName = button.getAttribute('data-plan-name');
+    const planPrice = button.getAttribute('data-plan-price');
+    const planPeriod = button.getAttribute('data-plan-period');
+
+    // Set modal content
+    document.getElementById('modalPlanId').value = planId;
+    document.getElementById('modalPlanName').textContent = planName;
+    document.getElementById('modalPlanPrice').textContent = `$${planPrice}/${planPeriod}`;
+    document.getElementById('payButtonText').textContent = `Subscribe Now - $${planPrice}/${planPeriod}`;
+
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('subscriptionModal'));
+    modal.show();
+
+    // Initialize Chargebee after modal is shown
+    setTimeout(() => {
+      initializeChargebee();
+    }, 300);
+  }
+
+  // Initialize Chargebee
+  function initializeChargebee() {
+    console.log('Chargebee site:', window.CHARGEBEE_SITE);
+    
+    if (!window.CHARGEBEE_SITE || window.CHARGEBEE_SITE === '') {
+      console.error('Chargebee site not configured');
+      alert('Payment configuration error. Please contact support.');
+      return;
+    }
+    
+    if (typeof Chargebee === 'undefined') {
+      console.error('Chargebee library not loaded, retrying in 100ms...');
+      setTimeout(initializeChargebee, 100);
+      return;
+    }
+    
+    try {
+      // Initialize Chargebee v2
+      cbInstance = Chargebee.init({
+        site: window.CHARGEBEE_SITE,
+        publishableKey: window.CHARGEBEE_PUBLISHABLE_KEY
+      });
+      console.log('Chargebee v2 instance initialized:', cbInstance);
       
-      // If the click target is a button, form, or inside a button/form, don't navigate
-      if (e.target.closest('[data-action="plan-action"]') || 
-          e.target.closest('.btn') || 
-          e.target.closest('form') ||
-          e.target.tagName === 'BUTTON' ||
-          e.target.tagName === 'INPUT') {
-        console.log('Preventing card navigation - button/form clicked');
-        // Don't prevent default - let the form submit normally
-        e.stopPropagation(); // Only stop the card navigation, not the form submission
-        return false;
+      // Load the components module before creating hosted fields
+      console.log('Loading components module...');
+      cbInstance.load("components").then(() => {
+        console.log('Components module loaded successfully');
+        initializeHostedFields(cbInstance);
+      }).catch((error) => {
+        console.error('Error loading components module:', error);
+        alert('Unable to load payment components. Please refresh the page or contact support.');
+      });
+    } catch (error) {
+      console.error('Error initializing Chargebee:', error);
+      alert('Unable to initialize payment system. Please refresh the page or contact support.');
+    }
+  }
+  
+  function initializeHostedFields(cbInstance) {
+    try {
+      console.log('Creating hosted fields...');
+      
+      card = cbInstance.createComponent("card");
+      card.mount("#cb-card");
+      console.log('Card field mounted successfully ✅');
+      
+      // Try setting currency on the card component
+      if (card.setCurrency) {
+        console.log('Setting currency on card component to USD');
+        card.setCurrency("USD");
       }
       
-      console.log('Allowing card navigation');
+      initializeFormSubmission(cbInstance, card);
+    } catch (error) {
+      console.error('Error creating hosted fields:', error);
+      alert('Unable to load payment form. Please refresh the page or contact support.');
+      return;
+    }
+  }
+  
+  function initializeFormSubmission(cbInstance, card) {
+    const form = document.getElementById("checkout-form");
+    const payBtn = document.getElementById("pay_btn");
+    const btnText = payBtn.querySelector(".btn-text");
+    const btnLoading = payBtn.querySelector(".btn-loading");
+
+    form.addEventListener("submit", async function(e) {
+      e.preventDefault();
+      
+      payBtn.disabled = true;
+      btnText.style.display = "none";
+      btnLoading.style.display = "inline-block";
+
+      try {
+        console.log('Tokenizing card details...');
+        
+        if (!window.CHARGEBEE_CURRENCY || window.CHARGEBEE_CURRENCY === '') {
+          console.error('Currency is not defined!');
+          alert('Payment configuration error. Please contact support.');
+          payBtn.disabled = false;
+          btnText.style.display = "inline-block";
+          btnLoading.style.display = "none";
+          return;
+        }
+        
+        if (!window.CHARGEBEE_GATEWAY_ACCOUNT_ID || window.CHARGEBEE_GATEWAY_ACCOUNT_ID === '') {
+          console.error('Gateway Account ID is not defined!');
+          alert('Payment configuration error. Please contact support.');
+          payBtn.disabled = false;
+          btnText.style.display = "inline-block";
+          btnLoading.style.display = "none";
+          return;
+        }
+        
+        console.log('Attempting to tokenize card...');
+        const result = await cbInstance.tokenize(card, {
+          currency_code: window.CHARGEBEE_CURRENCY,
+          gateway_account_id: window.CHARGEBEE_GATEWAY_ACCOUNT_ID
+        });
+        console.log('Tokenization result:', result);
+        console.log('Token:', result.token, 'Vault Token:', result.vaultToken);
+        
+        // For Stripe gateway, use vaultToken (Stripe token) instead of token (Chargebee token)
+        const tokenToUse = result.vaultToken; // Use Stripe token for Stripe gateway
+        if (!tokenToUse || !tokenToUse.startsWith('tok_')) {
+          console.error('Invalid Stripe token generated:', tokenToUse);
+          alert('Failed to generate a valid payment token. Please check your card details and try again.');
+          payBtn.disabled = false;
+          btnText.style.display = "inline-block";
+          btnLoading.style.display = "none";
+          return;
+        }
+
+        document.getElementById("payment_source_id").value = tokenToUse;
+        console.log('Submitting form with Stripe token:', tokenToUse);
+        form.submit();
+      } catch (err) {
+        console.error('Card tokenization failed:', err);
+        console.error('Error details:', {
+          message: err.message,
+          code: err.code,
+          type: err.type
+        });
+        alert(err && err.message ? err.message : "Payment failed. Please check your card details and try again.");
+        payBtn.disabled = false;
+        btnText.style.display = "inline-block";
+        btnLoading.style.display = "none";
+      }
+    });
+  }
+
+  // Add click handler to plan cards for navigation
+  document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.plan-card').forEach(function(card) {
+      card.addEventListener('click', function(event) {
+        // Don't navigate if clicking on buttons or forms
+        if (event.target.closest('.btn') || 
+            event.target.closest('form') ||
+            event.target.tagName === 'BUTTON' ||
+            event.target.tagName === 'INPUT') {
+          event.stopPropagation();
+          return;
+        }
+        
+        // Navigate to plan details page
+        const planId = card.getAttribute('data-plan-id');
+        if (planId) {
+          window.location.href = `/settings/plan/${planId}`;
+        }
+      });
     });
   });
-});
+
+  document.addEventListener('DOMContentLoaded', function() {
+    console.log('Plan card JavaScript loaded');
+  });
 </script> 
