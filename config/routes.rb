@@ -83,7 +83,7 @@ Rails.application.routes.draw do
   end
 
   # Subscription routes
-  resources :chargebee_subscriptions, only: [:new, :create]
+  resources :chargebee_subscriptions, only: [:create]
 
   # Entitlements routes
   resources :entitlements, only: [:index, :show]
