@@ -316,6 +316,23 @@
     document.getElementById('modalPlanPrice').textContent = `$${planPrice}/${planPeriod}`;
     document.getElementById('payButtonText').textContent = `Subscribe Now - $${planPrice}/${planPeriod}`;
 
+    // Clean up any existing card component first
+    if (card) {
+      try {
+        card.unmount();
+        console.log('Cleaned up existing card component');
+      } catch (e) {
+        console.log('Error cleaning up existing card component:', e);
+      }
+      card = null;
+    }
+
+    // Clear the card container
+    const cardContainer = document.getElementById('cb-card');
+    if (cardContainer) {
+      cardContainer.innerHTML = '';
+    }
+
     // Show modal
     const modal = new bootstrap.Modal(document.getElementById('subscriptionModal'));
     modal.show();
@@ -335,6 +352,23 @@
     const modal = bootstrap.Modal.getInstance(document.getElementById('subscriptionModal'));
     if (modal) {
       modal.hide();
+    }
+    
+    // Clean up card component
+    if (card) {
+      try {
+        card.unmount();
+        console.log('Card component cleaned up on close');
+      } catch (e) {
+        console.log('Error cleaning up card component:', e);
+      }
+      card = null;
+    }
+    
+    // Clear the card container
+    const cardContainer = document.getElementById('cb-card');
+    if (cardContainer) {
+      cardContainer.innerHTML = '';
     }
   }
 
@@ -536,5 +570,28 @@
 
   document.addEventListener('DOMContentLoaded', function() {
     console.log('Plan card JavaScript loaded');
-  });
+    
+    // Add modal hidden event listener for cleanup
+    const modal = document.getElementById('subscriptionModal');
+    if (modal) {
+      modal.addEventListener('hidden.bs.modal', function() {
+        // Clean up card component when modal is hidden
+        if (card) {
+          try {
+            card.unmount();
+            console.log('Card component cleaned up on modal hidden');
+          } catch (e) {
+            console.log('Error cleaning up card component:', e);
+          }
+          card = null;
+        }
+        
+        // Clear the card container
+        const cardContainer = document.getElementById('cb-card');
+        if (cardContainer) {
+          cardContainer.innerHTML = '';
+        }
+      });
+    }
+});
 </script> 
