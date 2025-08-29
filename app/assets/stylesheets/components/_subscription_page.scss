@@ -750,8 +750,8 @@
 // Subscription Modal Styles
 #subscriptionModal {
   .modal-dialog {
-    max-width: 1000px;
-    width: 90%;
+    max-width: 1200px;
+    width: 95%;
   }
   
   .modal-content {
@@ -947,17 +947,86 @@
         }
       }
       
-      .cb-form {
-        .cb-field {
-          min-height: 48px;
-          border: 1px solid #d1d5db;
-          border-radius: 8px;
-          padding: 0.75rem;
-          background: white;
+      .card-details-section {
+        .form-group {
+          margin-bottom: 1rem;
           
-          &:focus-within {
-            border-color: #2196F3;
-            box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+          .form-label {
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+          }
+          
+          .input-group {
+            .input-group-text {
+              background: #f9fafb;
+              border: 1px solid #d1d5db;
+              border-right: none;
+              color: #6b7280;
+              
+              i {
+                font-size: 0.875rem;
+              }
+            }
+            
+            .form-control {
+              border: 1px solid #d1d5db;
+              border-left: none;
+              padding: 0.75rem;
+              font-size: 0.875rem;
+              
+              &:focus {
+                border-color: #2196F3;
+                box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+                z-index: 1;
+              }
+              
+              &::placeholder {
+                color: #9ca3af;
+              }
+            }
+            
+            .cb-field {
+              min-height: 48px;
+              border: 1px solid #d1d5db;
+              padding: 0.75rem;
+              background: white;
+              border-radius: 8px;
+              
+              &:focus-within {
+                border-color: #2196F3;
+                box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+                z-index: 1;
+              }
+            }
+          }
+        }
+      }
+      
+      .pricing-summary {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-top: 1.5rem;
+        
+        .pricing-item {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 0.5rem;
+          
+          &:last-child {
+            margin-bottom: 0;
+            padding-top: 0.5rem;
+            border-top: 1px solid #e2e8f0;
+            font-weight: 600;
+          }
+          
+          span {
+            color: #374151;
+            font-size: 0.875rem;
           }
         }
       }
@@ -1040,21 +1109,25 @@
       .timeline-item {
         display: flex;
         gap: 1rem;
-        margin-bottom: 1.5rem;
+        margin-bottom: 2rem;
+        
+        &:last-child {
+          margin-bottom: 0;
+        }
         
         .timeline-icon {
-          width: 32px;
-          height: 32px;
+          width: 40px;
+          height: 40px;
           border-radius: 50%;
-          background: #e5e7eb;
+          background: #dcfce7;
           display: flex;
           align-items: center;
           justify-content: center;
           flex-shrink: 0;
           
           i {
-            color: #6b7280;
-            font-size: 0.875rem;
+            color: #16a34a;
+            font-size: 1rem;
           }
         }
         
@@ -1062,23 +1135,23 @@
           flex: 1;
           
           .timeline-date {
-            font-weight: 600;
+            font-weight: 700;
             color: #1f2937;
-            font-size: 0.875rem;
-            margin-bottom: 0.25rem;
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
           }
           
           .timeline-title {
             font-weight: 600;
             color: #374151;
             font-size: 0.875rem;
-            margin-bottom: 0.25rem;
+            margin-bottom: 0.5rem;
           }
           
           .timeline-description {
             color: #6b7280;
-            font-size: 0.75rem;
-            line-height: 1.4;
+            font-size: 0.875rem;
+            line-height: 1.5;
           }
         }
       }
@@ -1241,6 +1314,90 @@
       .modal-header-right {
         align-self: flex-end;
       }
+    }
+  }
+}
+
+// Custom card field styles
+.card-details-section {
+  .input-group {
+    .form-control {
+      border-left: none;
+      border-right: none;
+      
+      &:focus {
+        border-color: #2196F3;
+        box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+      }
+      
+      &.is-invalid {
+        border-color: #dc3545;
+        box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1);
+      }
+    }
+    
+    .input-group-text {
+      background-color: #f8f9fa;
+      border-color: #d1d5db;
+      color: #6b7280;
+      
+      &:first-child {
+        border-right: none;
+      }
+      
+      &:last-child {
+        border-left: none;
+      }
+    }
+  }
+  
+  .card-type-icon {
+    background-color: #fff !important;
+    border-color: #d1d5db !important;
+    
+    i {
+      font-size: 1.2rem;
+      color: #6b7280;
+      
+      &.fa-cc-visa {
+        color: #1a1f71;
+      }
+      
+      &.fa-cc-mastercard {
+        color: #eb001b;
+      }
+      
+      &.fa-cc-amex {
+        color: #006fcf;
+      }
+      
+      &.fa-cc-discover {
+        color: #ff6000;
+      }
+      
+      &.fa-cc-jcb {
+        color: #0b4ea2;
+      }
+      
+      &.fa-cc-diners-club {
+        color: #0079be;
+      }
+    }
+  }
+  
+  .invalid-feedback {
+    display: none;
+    font-size: 0.875rem;
+    color: #dc3545;
+    margin-top: 0.25rem;
+  }
+  
+  .form-control.is-invalid {
+    border-color: #dc3545;
+    
+    &:focus {
+      border-color: #dc3545;
+      box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1);
     }
   }
 }
