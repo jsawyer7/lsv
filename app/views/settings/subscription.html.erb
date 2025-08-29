@@ -164,71 +164,128 @@
 
 <!-- Subscription Modal -->
 <div id="subscriptionModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="subscriptionModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-lg" role="document">
+  <div class="modal-dialog modal-xl" role="document">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="subscriptionModalLabel">Complete Your Subscription</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <div class="modal-header-left">
+          <button type="button" class="btn-back" onclick="closeSubscriptionModal()">
+            <i class="fas fa-arrow-left"></i>
+          </button>
+          <h5 class="modal-title" id="subscriptionModalLabel">Complete Your Subscription</h5>
+        </div>
+        <div class="modal-header-right">
+          <button type="button" class="btn-maybe-later" onclick="closeSubscriptionModal()">Maybe Later</button>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
       </div>
+      
       <div class="modal-body">
-        <div class="checkout-page">
-          <div class="plan-summary mb-4">
-            <div class="plan-summary-card">
-              <div class="plan-info">
-                <h4 id="modalPlanName"></h4>
-                <p class="plan-description">Clear and fair pricing for everyone. 10,000+ peoples are using it.</p>
-              </div>
-              <div class="plan-price">
-                <span class="price-amount" id="modalPlanPrice"></span>
-                <span class="price-period" id="modalPlanPeriod"></span>
-              </div>
-            </div>
-          </div>
-
-          <form id="checkout-form" method="post" action="<%= chargebee_subscriptions_path %>">
-            <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
-            <input type="hidden" name="plan_id" id="modalPlanId">
-            <input type="hidden" name="payment_source_id" id="payment_source_id">
-
-            <div class="row g-3 mb-4">
-              <div class="col-md-6">
-                <label class="form-label">Full Name</label>
-                <input type="text" name="name" value="<%= current_user.full_name %>" class="form-control" required>
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">Email</label>
-                <input type="email" name="email" value="<%= current_user.email %>" class="form-control" required readonly>
-              </div>
-            </div>
-
-            <hr class="my-4">
-
-            <div class="payment-section">
-              <h5 class="mb-3">Payment Information</h5>
-              
-              <div class="cb-form">
-                <div class="mb-3">
-                  <label class="form-label">Card Details</label>
-                  <div id="cb-card" class="form-control cb-field"></div>
+        <div class="modal-content-wrapper">
+          <!-- Left Side - Payment Form -->
+          <div class="payment-section">
+            <div class="plan-summary mb-4">
+              <div class="plan-summary-card">
+                <div class="plan-info">
+                  <h4 id="modalPlanName"></h4>
+                  <p class="plan-description">Clear and fair pricing for everyone. 10,000+ peoples are using it.</p>
+                </div>
+                <div class="plan-price">
+                  <span class="price-amount" id="modalPlanPrice"></span>
+                  <span class="price-period" id="modalPlanPeriod"></span>
                 </div>
               </div>
             </div>
 
-            <div class="checkout-actions mt-4">
-              <button class="btn btn-primary btn-lg w-100" id="pay_btn" type="submit">
-                <span class="btn-text" id="payButtonText">Subscribe Now</span>
-                <span class="btn-loading" style="display: none;">
-                  <i class="fas fa-spinner fa-spin"></i> Processing...
-                </span>
-              </button>
+            <form id="checkout-form" method="post" action="<%= chargebee_subscriptions_path %>">
+              <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
+              <input type="hidden" name="plan_id" id="modalPlanId">
+              <input type="hidden" name="payment_source_id" id="payment_source_id">
+
+              <div class="row g-3 mb-4">
+                <div class="col-md-6">
+                  <label class="form-label">Full Name</label>
+                  <input type="text" name="name" value="<%= current_user.full_name %>" class="form-control" required>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Email</label>
+                  <input type="email" name="email" value="<%= current_user.email %>" class="form-control" required readonly>
+                </div>
+              </div>
+
+              <div class="payment-method-section">
+                <h5 class="mb-3">Payment Method</h5>
+                
+                <div class="payment-method-option">
+                  <div class="payment-method-radio">
+                    <input type="radio" id="card-payment" name="payment_method" value="card" checked>
+                    <label for="card-payment">
+                      <i class="fas fa-credit-card"></i>
+                      Credit or debit card
+                    </label>
+                  </div>
+                </div>
+
+                <div class="cb-form mt-3">
+                  <div class="mb-3">
+                    <label class="form-label">Card Details</label>
+                    <div id="cb-card" class="form-control cb-field"></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="checkout-actions mt-4">
+                <button class="btn btn-primary btn-lg w-100" id="pay_btn" type="submit">
+                  <span class="btn-text" id="payButtonText">Subscribe Now</span>
+                  <span class="btn-loading" style="display: none;">
+                    <i class="fas fa-spinner fa-spin"></i> Processing...
+                  </span>
+                </button>
+                
+                <div class="security-notice mt-3">
+                  <small class="text-muted">
+                    <i class="fas fa-lock"></i> Your payment information is secured by Chargebee and never stored on our servers.
+                  </small>
+                </div>
+              </div>
+            </form>
+          </div>
+
+          <!-- Right Side - Plan Features -->
+          <div class="plan-features-section">
+            <div class="features-header">
+              <h5>What's included in your plan</h5>
+            </div>
+            
+            <div class="features-list" id="modalFeaturesList">
+              <!-- Features will be populated dynamically -->
+            </div>
+
+            <div class="subscription-timeline">
+              <div class="timeline-item">
+                <div class="timeline-icon">
+                  <i class="fas fa-gift"></i>
+                </div>
+                <div class="timeline-content">
+                  <div class="timeline-date">Today</div>
+                  <div class="timeline-title">Start your subscription</div>
+                  <div class="timeline-description">Get immediate access to all plan features and start using VeriFaith today.</div>
+                </div>
+              </div>
               
-              <div class="security-notice mt-3">
-                <small class="text-muted">
-                  <i class="fas fa-lock"></i> Your payment information is secured by Chargebee and never stored on our servers.
-                </small>
+              <div class="timeline-item">
+                <div class="timeline-icon">
+                  <i class="fas fa-bell"></i>
+                </div>
+                <div class="timeline-content">
+                  <div class="timeline-date">Next billing cycle</div>
+                  <div class="timeline-title">We'll remind you before renewal</div>
+                  <div class="timeline-description">You'll receive a notification before your next billing cycle.</div>
+                </div>
               </div>
             </div>
-          </form>
+          </div>
         </div>
       </div>
     </div>
@@ -263,10 +320,64 @@
     const modal = new bootstrap.Modal(document.getElementById('subscriptionModal'));
     modal.show();
 
+    // Populate features after modal is shown (with a small delay to ensure DOM is ready)
+    setTimeout(() => {
+      populateModalFeatures(planId);
+    }, 100);
+
     // Initialize Chargebee after modal is shown
     setTimeout(() => {
       initializeChargebee();
     }, 300);
+  }
+
+  function closeSubscriptionModal() {
+    const modal = bootstrap.Modal.getInstance(document.getElementById('subscriptionModal'));
+    if (modal) {
+      modal.hide();
+    }
+  }
+
+  function populateModalFeatures(planId) {
+    console.log('Populating features for plan ID:', planId);
+    
+    const featuresList = document.getElementById('modalFeaturesList');
+    if (!featuresList) {
+      console.error('Features list element not found');
+      return;
+    }
+    
+    // Find the plan card that contains the button with the matching plan ID
+    const button = document.querySelector(`[data-plan-id="${planId}"]`);
+    if (!button) {
+      console.error('Button not found for ID:', planId);
+      return;
+    }
+    
+    // Get the parent plan card (the div that contains the button)
+    const planCard = button.closest('.plan-card');
+    if (!planCard) {
+      console.error('Plan card not found for button with ID:', planId);
+      return;
+    }
+    
+    console.log('Found plan card:', planCard);
+    
+    // Find all feature items within this plan card
+    const featureItems = planCard.querySelectorAll('.feature-item');
+    console.log('Found feature items:', featureItems.length);
+    
+    // Clear existing features
+    featuresList.innerHTML = '';
+    
+    // Copy features from the plan card to the modal
+    featureItems.forEach((featureItem, index) => {
+      console.log(`Feature ${index + 1}:`, featureItem.textContent.trim());
+      const clonedFeature = featureItem.cloneNode(true);
+      featuresList.appendChild(clonedFeature);
+    });
+    
+    console.log(`Populated modal with ${featureItems.length} features from plan ${planId}`);
   }
 
   // Initialize Chargebee
