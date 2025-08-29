@@ -189,11 +189,10 @@
               <div class="plan-summary-card">
                 <div class="plan-info">
                   <h4 id="modalPlanName"></h4>
-                  <p class="plan-description">Clear and fair pricing for everyone. 10,000+ peoples are using it.</p>
                 </div>
                 <div class="plan-price">
-                  <span class="price-amount" id="modalPlanPrice"></span>
-                  <span class="price-period" id="modalPlanPeriod"></span>
+                  <span class="price-amount" id="modalPlanPrice" style="color: #346FCF; font-weight: 600;"></span>
+                  <span class="price-period" id="modalPlanPeriod" style="color: #346FCF;"></span>
                 </div>
               </div>
             </div>
@@ -202,17 +201,6 @@
               <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
               <input type="hidden" name="plan_id" id="modalPlanId">
               <input type="hidden" name="payment_source_id" id="payment_source_id">
-
-              <div class="row g-3 mb-4">
-                <div class="col-md-6">
-                  <label class="form-label">Full Name</label>
-                  <input type="text" name="name" value="<%= current_user.full_name %>" class="form-control" required>
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label">Email</label>
-                  <input type="email" name="email" value="<%= current_user.email %>" class="form-control" required readonly>
-                </div>
-              </div>
 
               <div class="payment-method-section">
                 <h5 class="mb-3">Payment Method</h5>
@@ -227,13 +215,25 @@
                   </div>
                 </div>
 
-                <div class="cb-form mt-3">
-                  <div class="mb-3">
-                    <label class="form-label">Card Details</label>
-                    <div id="cb-card" class="form-control cb-field"></div>
-                  </div>
-                </div>
-              </div>
+                                 <div class="cb-form mt-3">
+                   <div class="mb-3">
+                     <label class="form-label">Card Details</label>
+                     <div id="cb-card" class="form-control cb-field"></div>
+                   </div>
+                 </div>
+               </div>
+
+               <!-- Subscription Date Summary -->
+               <div class="subscription-summary mt-4" style="background-color: #f8f9fa; border-radius: 8px; padding: 16px;">
+                 <div class="summary-item" style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0;">
+                   <span>Due <span id="billing-date">September 20, 2025</span></span>
+                   <span id="billing-amount" style="color: #666; font-weight: 500;"></span>
+                 </div>
+                 <div class="summary-item" style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0;">
+                   <span>Due today</span>
+                   <span id="today-amount" style="color: #28a745; font-weight: 500;"></span>
+                 </div>
+               </div>
 
               <div class="checkout-actions mt-4">
                 <button class="btn btn-primary btn-lg w-100" id="pay_btn" type="submit">
@@ -262,15 +262,15 @@
               <!-- Features will be populated dynamically -->
             </div>
 
-            <div class="subscription-timeline">
+            <div class="subscription-timeline" style="text-align: left;">
               <div class="timeline-item">
                 <div class="timeline-icon">
                   <i class="fas fa-gift"></i>
                 </div>
-                <div class="timeline-content">
-                  <div class="timeline-date">Today</div>
-                  <div class="timeline-title">Start your subscription</div>
-                  <div class="timeline-description">Get immediate access to all plan features and start using VeriFaith today.</div>
+                <div class="timeline-content" style="text-align: left;">
+                  <div class="timeline-date" style="text-align: left;">Today</div>
+                  <div class="timeline-title" style="text-align: left;">Start your subscription</div>
+                  <div class="timeline-description" style="text-align: left;">Get immediate access to all plan features and start using VeriFaith today.</div>
                 </div>
               </div>
               
@@ -278,10 +278,10 @@
                 <div class="timeline-icon">
                   <i class="fas fa-bell"></i>
                 </div>
-                <div class="timeline-content">
-                  <div class="timeline-date">Next billing cycle</div>
-                  <div class="timeline-title">We'll remind you before renewal</div>
-                  <div class="timeline-description">You'll receive a notification before your next billing cycle.</div>
+                <div class="timeline-content" style="text-align: left;">
+                  <div class="timeline-date" style="text-align: left;">Next billing cycle</div>
+                  <div class="timeline-title" style="text-align: left;">We'll remind you before renewal</div>
+                  <div class="timeline-description" style="text-align: left;">You'll receive a notification before your next billing cycle.</div>
                 </div>
               </div>
             </div>
@@ -315,6 +315,10 @@
     document.getElementById('modalPlanName').textContent = planName;
     document.getElementById('modalPlanPrice').textContent = `$${planPrice}/${planPeriod}`;
     document.getElementById('payButtonText').textContent = `Subscribe Now - $${planPrice}/${planPeriod}`;
+    
+    // Update subscription summary with actual plan price
+    document.getElementById('billing-amount').textContent = `$${planPrice}`;
+    document.getElementById('today-amount').textContent = `$${planPrice}`;
 
     // Clean up any existing card component first
     if (card) {
