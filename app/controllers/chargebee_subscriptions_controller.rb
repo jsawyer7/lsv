@@ -114,23 +114,7 @@ class ChargebeeSubscriptionsController < ApplicationController
     end
   end
 
-  def new
-    @plan_id = params.require(:plan_id)
-    @user = current_user
 
-    # Find the plan details
-    item_price = find_item_price(@plan_id)
-    unless item_price
-      redirect_to subscription_settings_path, alert: "Plan not found or unavailable."
-      return
-    end
-
-    # Build plan object for the view
-    @plan = build_plan_object(item_price)
-
-    # Set Chargebee configuration for the view
-    @chargebee_site = ENV['CHARGEBEE_SITE']
-  end
 
 
 
