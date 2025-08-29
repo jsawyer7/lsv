@@ -82,7 +82,7 @@ class ChargebeeSubscriptionsController < ApplicationController
           payment_source_result = ChargeBee::PaymentSource.create_using_temp_token(
             customer_id: customer_id,
             type: "card",
-            tmp_token: 'tok_visa'
+            tmp_token: tmp_token
           )
           payment_source_id = payment_source_result.payment_source.id
         rescue ChargeBee::InvalidRequestError => e

@@ -170,17 +170,25 @@ class WebhooksController < ApplicationController
 
     if subscription
       billing = subscription.chargebee_billings.find_or_initialize_by(chargebee_id: invoice_data["id"])
-      billing.update!(
+
+      # Prepare billing attributes
+      billing_attributes = {
         user: subscription.user,
         plan_name: subscription.chargebee_plan&.name,
         purchase_date: Time.at(invoice_data["date"]),
-        ending_date: Time.at(invoice_data["due_date"]) if invoice_data["due_date"],
         status: invoice_data["status"],
         amount: invoice_data["total"].to_f / 100,
         currency: invoice_data["currency_code"],
         description: "Invoice for #{subscription.chargebee_plan&.name}",
         metadata: invoice_data
-      )
+      }
+
+      # Add ending_date only if due_date exists
+      if invoice_data["due_date"]
+        billing_attributes[:ending_date] = Time.at(invoice_data["due_date"])
+      end
+
+      billing.update!(billing_attributes)
     end
   end
 end
