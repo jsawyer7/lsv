@@ -408,14 +408,32 @@
     // Clear existing features
     featuresList.innerHTML = '';
     
-    // Copy features from the plan card to the modal
-    featureItems.forEach((featureItem, index) => {
-      console.log(`Feature ${index + 1}:`, featureItem.textContent.trim());
+    // Copy features from the plan card to the modal (limit to 6)
+    const maxFeatures = 6;
+    const featuresToShow = Math.min(featureItems.length, maxFeatures);
+    
+    for (let i = 0; i < featuresToShow; i++) {
+      const featureItem = featureItems[i];
+      console.log(`Feature ${i + 1}:`, featureItem.textContent.trim());
       const clonedFeature = featureItem.cloneNode(true);
       featuresList.appendChild(clonedFeature);
-    });
+    }
     
-    console.log(`Populated modal with ${featureItems.length} features from plan ${planId}`);
+    // Add "+ more" indicator if there are additional features
+    if (featureItems.length > maxFeatures) {
+      const moreFeatures = featureItems.length - maxFeatures;
+      const moreIndicator = document.createElement('div');
+      moreIndicator.className = 'feature-item';
+      moreIndicator.style.color = '#346FCF';
+      moreIndicator.style.fontWeight = '500';
+      moreIndicator.innerHTML = `
+        <i class="fas fa-plus feature-icon" style="color: #346FCF;"></i>
+        <span class="feature-text">+${moreFeatures} more</span>
+      `;
+      featuresList.appendChild(moreIndicator);
+    }
+    
+    console.log(`Populated modal with ${featuresToShow} features from plan ${planId}${featureItems.length > maxFeatures ? ` (+${featureItems.length - maxFeatures} more)` : ''}`);
   }
 
   // Initialize Chargebee
