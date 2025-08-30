@@ -76,18 +76,31 @@ class ChargebeeSubscriptionsController < ApplicationController
         # 3. Get tmp_token (only required for new subscriptions)
         tmp_token = params.require(:payment_source_id)
 
-        # 4. Convert tmp_token → vaulted payment source (only for new subscriptions)
+                # 4. Convert tmp_token → vaulted payment source (only for new subscriptions)
         payment_source_id = nil
         begin
+          # Always try to replace primary payment source first (works for both new and existing customers)
+          # This avoids the "multiple payment sources" restriction on lower tier plans
           payment_source_result = ChargeBee::PaymentSource.create_using_temp_token(
             customer_id: customer_id,
             type: "card",
-            tmp_token: tmp_token
+            tmp_token: tmp_token,
+            replace_primary_payment_source: true
           )
           payment_source_id = payment_source_result.payment_source.id
         rescue ChargeBee::InvalidRequestError => e
-          redirect_to subscription_settings_path, alert: "Invalid payment method. Please try again."
-          return
+          # If replace fails, try creating a new one (for truly new customers)
+          begin
+            payment_source_result = ChargeBee::PaymentSource.create_using_temp_token(
+              customer_id: customer_id,
+              type: "card",
+              tmp_token: tmp_token
+            )
+            payment_source_id = payment_source_result.payment_source.id
+          rescue ChargeBee::InvalidRequestError => e2
+            redirect_to subscription_settings_path, alert: "Invalid payment method. Please try again."
+            return
+          end
         end
 
         # 4. Create new subscription
