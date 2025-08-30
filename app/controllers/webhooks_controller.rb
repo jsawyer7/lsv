@@ -1,15 +1,15 @@
 class WebhooksController < ApplicationController
   skip_before_action :verify_authenticity_token
+  before_action :authenticate_webhook
 
   def chargebee
-    signature = request.headers["x-chargebee-signature"]
-    payload = request.raw_post
-
-    unless valid_signature?(payload, signature)
-      Rails.logger.error "❌ Invalid webhook signature"
-      return head :unauthorized
+    # Test endpoint for debugging
+    if params[:test] == 'true'
+      Rails.logger.info "🧪 Webhook test endpoint hit"
+      return render json: { status: 'test_received', timestamp: Time.current }
     end
 
+    payload = request.raw_post
     event = JSON.parse(payload)
     event_type = event["event_type"]
 
@@ -23,7 +23,9 @@ class WebhooksController < ApplicationController
     when "subscription_updated"
       handle_subscription_changes(event)
     when "item_created", "item_updated", "item_deleted"
-      handle_plan_changes(event)
+      handle_item_changes(event)
+    when "item_price_created", "item_price_updated", "item_price_deleted"
+      handle_item_price_changes(event)
     when "feature_created", "feature_updated", "feature_deleted"
       handle_feature_changes(event)
     when "invoice_generated"
@@ -36,16 +38,127 @@ class WebhooksController < ApplicationController
       Rails.logger.info "ℹ️ Unhandled webhook event: #{event_type}"
     end
 
+    Rails.logger.info "✅ Webhook processed successfully"
     head :ok
+  rescue => e
+    Rails.logger.error "❌ Webhook processing error: #{e.message}"
+    Rails.logger.error e.backtrace.first(5).join("\n")
+    head :internal_server_error
+  end
+
+  def health_check
+    last_sync = Rails.cache.read('chargebee_plans_last_synced')
+    webhook_status = {
+      endpoint: '/webhooks/chargebee',
+      last_sync: last_sync,
+      chargebee_site: ENV['CHARGEBEE_SITE'],
+      status: 'healthy'
+    }
+
+    render json: webhook_status
   end
 
   private
+
+  def authenticate_webhook
+    # Skip authentication for test requests
+    return if params[:test] == 'true'
+
+    # Get credentials from environment variables
+    expected_username = ENV['CHARGEBEE_WEBHOOK_USERNAME'] || 'webhook'
+    expected_password = ENV['CHARGEBEE_WEBHOOK_PASSWORD'] || 'verifaith2025'
+
+    # Extract credentials from request
+    auth_header = request.headers['Authorization']
+
+    if auth_header && auth_header.start_with?('Basic ')
+      # Decode basic auth credentials
+      credentials = Base64.decode64(auth_header.split(' ').last)
+      username, password = credentials.split(':')
+
+      if username == expected_username && password == expected_password
+        Rails.logger.info "✅ Webhook authentication successful"
+        return
+      end
+    end
+
+    Rails.logger.error "❌ Webhook authentication failed"
+    head :unauthorized
+  end
 
   def handle_subscription_cancelled(event)
     subscription_id = event.dig("content", "subscription", "id")
     sub = ChargebeeSubscription.find_by(chargebee_id: subscription_id)
     sub&.update(status: "cancelled")
     Rails.logger.info "✅ Handled subscription cancelled: #{subscription_id}"
+  end
+
+  def handle_item_changes(event)
+    event_type = event["event_type"]
+    item_data = event.dig("content", "item")
+
+    Rails.logger.info "🔄 Item changes detected: #{event_type}"
+
+    if item_data
+      item_id = item_data["id"]
+      item_name = item_data["name"]
+      Rails.logger.info "📦 Item: #{item_name} (ID: #{item_id})"
+
+      # Log specific changes for item_updated
+      if event_type == "item_updated"
+        Rails.logger.info "💰 Item price/plan updated - triggering sync..."
+
+        # Get the updated item prices
+        begin
+          prices_response = ChargeBee::ItemPrice.list({ item_id: item_id, status: 'active' })
+          if prices_response && prices_response.any?
+            prices_response.each do |price_response|
+              item_price = price_response.item_price
+              Rails.logger.info "💵 Price: $#{item_price.price.to_f / 100}/#{item_price.period_unit} (ID: #{item_price.id})"
+            end
+          end
+        rescue => e
+          Rails.logger.error "❌ Error fetching item prices: #{e.message}"
+        end
+      end
+    end
+
+    # Trigger the sync job to update plans in our database
+    Rails.logger.info "🔄 Triggering plan sync job..."
+    SyncChargebeePlansJob.perform_later
+  end
+
+  def handle_item_price_changes(event)
+    event_type = event["event_type"]
+    item_price_data = event.dig("content", "item_price")
+
+    Rails.logger.info "💰 Item price changes detected: #{event_type}"
+
+    if item_price_data
+      item_price_id = item_price_data["id"]
+      item_price_name = item_price_data["name"]
+      item_price_amount = item_price_data["price"]
+      item_price_currency = item_price_data["currency_code"]
+      item_price_period = item_price_data["period_unit"]
+
+      Rails.logger.info "💵 Price Details:"
+      Rails.logger.info "   Name: #{item_price_name}"
+      Rails.logger.info "   Amount: #{item_price_amount} #{item_price_currency}"
+      Rails.logger.info "   Period: #{item_price_period}"
+      Rails.logger.info "   ID: #{item_price_id}"
+
+      if event_type == "item_price_updated"
+        Rails.logger.info "🔄 Item price updated - triggering sync..."
+      elsif event_type == "item_price_created"
+        Rails.logger.info "🆕 New item price created - triggering sync..."
+      elsif event_type == "item_price_deleted"
+        Rails.logger.info "🗑️ Item price deleted - triggering sync..."
+      end
+    end
+
+    # Trigger the sync job to update plans in our database
+    Rails.logger.info "🔄 Triggering plan sync job..."
+    SyncChargebeePlansJob.perform_later
   end
 
   def handle_plan_changes(event)
@@ -119,24 +232,6 @@ class WebhooksController < ApplicationController
     Rails.logger.info "❌ Payment failed: #{payment_id} for subscription: #{subscription_id}"
 
     # Handle failed payment - could send notification, update status, etc.
-  end
-
-  private
-
-  # Chargebee docs show HMAC SHA256 using the webhook signing key
-  def valid_signature?(payload, header)
-    return false if header.blank?
-
-    begin
-      timestamp, signature = header.split(",").map { |kv| kv.split("=", 2)[1] }
-      secret = ENV.fetch("CHARGEBEE_WEBHOOK_SIGNING_KEY")
-
-      computed = OpenSSL::HMAC.hexdigest("SHA256", secret, "#{timestamp}#{payload}")
-      ActiveSupport::SecurityUtils.secure_compare(computed, signature)
-    rescue => e
-      Rails.logger.error "❌ Error validating webhook signature: #{e.message}"
-      false
-    end
   end
 
   def sync_plan_and_subscription_for_user(user, subscription, item_price)

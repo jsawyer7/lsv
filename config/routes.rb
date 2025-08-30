@@ -89,6 +89,7 @@ Rails.application.routes.draw do
   resources :entitlements, only: [:index, :show]
 
   post '/webhooks/chargebee', to: 'webhooks#chargebee'
+  get '/webhooks/health', to: 'webhooks#health_check'
 
 
 
