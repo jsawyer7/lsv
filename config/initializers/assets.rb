@@ -10,6 +10,8 @@ Rails.application.config.assets.version = "1.0"
 Rails.application.config.assets.paths << Rails.root.join("node_modules")
 Rails.application.config.assets.paths << Rails.root.join("app", "assets", "stylesheets")
 Rails.application.config.assets.paths << Rails.root.join("app", "assets", "stylesheets", "components")
+Rails.application.config.assets.paths << Rails.root.join("app/assets/materio")
+Rails.application.config.assets.precompile += %w[materio.css materio.js]
 
 # Precompile additional assets.
 # application.js, application.css, and all non-JS/CSS in the app/assets

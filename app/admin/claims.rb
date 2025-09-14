@@ -1,34 +1,218 @@
 ActiveAdmin.register Claim do
   permit_params :content, :user_id
 
+  # Custom page title
+  menu label: "Claims", priority: 2
+
+  # Force custom layout
+  controller do
+    layout "active_admin_custom"
+  end
+
   index do
-    selectable_column
-    id_column
-    column :content
-    column :user
-    column :created_at
-    actions
+    div class: "page-header mb-4" do
+      h1 "Claims Management", class: "mb-2"
+      para "Manage and review all claims submitted by users", class: "text-muted"
+    end
+
+    # Add filters section
+    div class: "card mb-4" do
+      div class: "card-body" do
+        h5 "Filters", class: "card-title mb-3"
+        div class: "row g-3" do
+          div class: "col-md-4" do
+            label "Content", class: "form-label"
+            input type: "text", name: "q[content_cont]", placeholder: "Search content...", class: "form-control", value: params.dig(:q, :content_cont)
+          end
+          div class: "col-md-4" do
+            label "User Email", class: "form-label"
+            input type: "text", name: "q[user_email_cont]", placeholder: "Search user email...", class: "form-control", value: params.dig(:q, :user_email_cont)
+          end
+          div class: "col-md-4" do
+            label "Created At", class: "form-label"
+            div class: "row g-2" do
+              div class: "col-6" do
+                input type: "date", name: "q[created_at_gteq]", class: "form-control", value: params.dig(:q, :created_at_gteq), placeholder: "From"
+              end
+              div class: "col-6" do
+                input type: "date", name: "q[created_at_lteq]", class: "form-control", value: params.dig(:q, :created_at_lteq), placeholder: "To"
+              end
+            end
+          end
+        end
+        div class: "mt-3" do
+          button type: "submit", class: "btn btn-primary me-2", onclick: "filterClaims()" do
+            "Filter"
+          end
+          a href: admin_claims_path, class: "btn btn-outline-secondary" do
+            "Clear Filters"
+          end
+        end
+      end
+    end
+
+    # Add JavaScript for form submission
+    script do
+      raw("
+        function filterClaims() {
+          var form = document.createElement('form');
+          form.method = 'GET';
+          form.action = '#{admin_claims_path}';
+
+          var content = document.querySelector('input[name=\"q[content_cont]\"]').value;
+          var userEmail = document.querySelector('input[name=\"q[user_email_cont]\"]').value;
+          var dateFrom = document.querySelector('input[name=\"q[created_at_gteq]\"]').value;
+          var dateTo = document.querySelector('input[name=\"q[created_at_lteq]\"]').value;
+
+          if (content) {
+            var input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'q[content_cont]';
+            input.value = content;
+            form.appendChild(input);
+          }
+
+          if (userEmail) {
+            var input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'q[user_email_cont]';
+            input.value = userEmail;
+            form.appendChild(input);
+          }
+
+          if (dateFrom) {
+            var input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'q[created_at_gteq]';
+            input.value = dateFrom;
+            form.appendChild(input);
+          }
+
+          if (dateTo) {
+            var input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'q[created_at_lteq]';
+            input.value = dateTo;
+            form.appendChild(input);
+          }
+
+          document.body.appendChild(form);
+          form.submit();
+        }
+      ")
+    end
+
+    div class: "table-responsive" do
+      table class: "table table-striped" do
+        thead do
+          tr do
+            th "ID"
+            th "Content"
+            th "User"
+            th "Email"
+            th "Created At"
+            th "Actions"
+          end
+        end
+        tbody do
+          claims.each do |claim|
+            tr do
+              td claim.id
+              td truncate(claim.content, length: 50)
+              # USER column with avatar and name
+              td do
+                if claim.user
+                  div class: "d-flex align-items-center" do
+                    div class: "avatar avatar-sm me-2" do
+                      img src: asset_path("avatars/#{(claim.user.id % 20) + 1}.png"),
+                          alt: claim.user.full_name || claim.user.email,
+                          class: "rounded-circle"
+                    end
+                    div do
+                      div class: "fw-semibold small" do
+                        claim.user.full_name || claim.user.email.split('@').first.titleize
+                      end
+                      div class: "text-muted small" do
+                        "@#{claim.user.email.split('@').first}"
+                      end
+                    end
+                  end
+                else
+                  span class: "text-muted" do
+                    "Unknown User"
+                  end
+                end
+              end
+              # EMAIL column
+              td do
+                if claim.user
+                  span class: "text-body small" do
+                    claim.user.email
+                  end
+                else
+                  span class: "text-muted small" do
+                    "N/A"
+                  end
+                end
+              end
+              td claim.created_at.strftime("%B %d, %Y")
+              td do
+                div class: "d-flex gap-2" do
+                  link_to "View", admin_claim_path(claim), class: "btn btn-sm btn-outline-primary"
+                  link_to "Edit", edit_admin_claim_path(claim), class: "btn btn-sm btn-outline-secondary"
+                  link_to "Delete", admin_claim_path(claim), method: :delete,
+                          data: { confirm: "Are you sure you want to delete this claim?" },
+                          class: "btn btn-sm btn-outline-danger"
+                end
+              end
+            end
+          end
+        end
+      end
+    end
   end
 
   filter :content
   filter :user
   filter :created_at
+  filter :updated_at
 
   form do |f|
-    f.inputs do
-      f.input :user
-      f.input :content
+    div class: "page-header mb-4" do
+      h1 "Edit Claim", class: "mb-2"
+      para "Update claim information", class: "text-muted"
     end
-    f.actions
+
+    div class: "card" do
+      div class: "card-body" do
+    f.inputs do
+          f.input :user, class: "form-control"
+          f.input :content, class: "form-control"
+        end
+        f.actions do
+          f.action :submit, label: "Update Claim", class: "btn btn-primary"
+          f.action :cancel, label: "Cancel", class: "btn btn-secondary"
+        end
+      end
+    end
   end
 
   show do
+    div class: "page-header mb-4" do
+      h1 "Claim Details", class: "mb-2"
+      para "View detailed information about this claim", class: "text-muted"
+    end
+
+    div class: "card" do
+      div class: "card-body" do
     attributes_table do
       row :id
       row :content
       row :user
       row :created_at
       row :updated_at
+        end
+      end
     end
 
     panel "Sources with Reasonings" do
@@ -88,4 +272,4 @@ ActiveAdmin.register Claim do
       end
     end
   end
-end 
+end
