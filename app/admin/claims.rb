@@ -156,14 +156,12 @@ ActiveAdmin.register Claim do
                 end
               end
               td claim.created_at.strftime("%B %d, %Y")
+              # ACTIONS column
               td do
-                div class: "d-flex gap-2" do
-                  link_to "View", admin_claim_path(claim), class: "btn btn-sm btn-outline-primary"
-                  link_to "Edit", edit_admin_claim_path(claim), class: "btn btn-sm btn-outline-secondary"
-                  link_to "Delete", admin_claim_path(claim), method: :delete,
-                          data: { confirm: "Are you sure you want to delete this claim?" },
-                          class: "btn btn-sm btn-outline-danger"
-                end
+                raw("<div class='d-flex gap-2'>
+                  <a href='#{admin_claim_path(claim)}' class='btn btn-sm btn-outline-primary'>View</a>
+                  <a href='#{admin_claim_path(claim)}' class='btn btn-sm btn-outline-danger' data-method='delete' data-confirm='Are you sure you want to delete this claim?'>Delete</a>
+                </div>")
               end
             end
           end
@@ -177,69 +175,362 @@ ActiveAdmin.register Claim do
   filter :created_at
   filter :updated_at
 
-  form do |f|
-    div class: "page-header mb-4" do
-      h1 "Edit Claim", class: "mb-2"
-      para "Update claim information", class: "text-muted"
+
+  show do
+    # Custom CSS for Materio-style design
+    style do
+      raw <<-CSS
+        .materio-card {
+          border: 1px solid #e7eaf3;
+          border-radius: 0.75rem;
+          box-shadow: 0 0.125rem 0.25rem rgba(165, 163, 174, 0.3);
+          transition: all 0.3s ease;
+        }
+        .materio-card:hover {
+          box-shadow: 0 0.5rem 1rem rgba(165, 163, 174, 0.15);
+          transform: translateY(-2px);
+        }
+        .materio-header {
+          background: linear-gradient(135deg, #696cff 0%, #5a5fcf 100%);
+          color: white;
+          border-radius: 0.75rem 0.75rem 0 0;
+          padding: 1.5rem;
+        }
+        .materio-info-card {
+          background: linear-gradient(135deg, #71dd37 0%, #5cb85c 100%);
+          color: white;
+          border-radius: 0.75rem 0.75rem 0 0;
+          padding: 1.5rem;
+        }
+        .materio-analysis-card {
+          background: linear-gradient(135deg, #ffab00 0%, #ff9800 100%);
+          color: white;
+          border-radius: 0.75rem 0.75rem 0 0;
+          padding: 1.5rem;
+        }
+        .materio-system-card {
+          background: linear-gradient(135deg, #8592a3 0%, #6c757d 100%);
+          color: white;
+          border-radius: 0.75rem 0.75rem 0 0;
+          padding: 1.5rem;
+        }
+        .materio-badge {
+          background: rgba(105, 108, 255, 0.1);
+          color: #696cff;
+          border: 1px solid rgba(105, 108, 255, 0.2);
+          padding: 0.5rem 1rem;
+          border-radius: 0.5rem;
+          font-weight: 600;
+          font-size: 0.875rem;
+        }
+        .materio-info-item {
+          background: #f8f9fa;
+          border: 1px solid #e7eaf3;
+          border-radius: 0.5rem;
+          padding: 1rem;
+          margin-bottom: 0.75rem;
+        }
+        .materio-tab {
+          background: #f8f9fa;
+          border: 1px solid #e7eaf3;
+          color: #697a8d;
+          padding: 0.75rem 1.5rem;
+          border-radius: 0.5rem;
+          margin-right: 0.5rem;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          font-weight: 500;
+        }
+        .materio-tab.active {
+          background: #696cff;
+          color: white;
+          border-color: #696cff;
+        }
+        .materio-tab:hover {
+          background: #e7eaf3;
+        }
+        .materio-tab.active:hover {
+          background: #5a5fcf;
+        }
+        .materio-content-area {
+          background: #f8f9fa;
+          border: 1px solid #e7eaf3;
+          border-radius: 0.5rem;
+          padding: 1.5rem;
+        }
+        .materio-metric-card {
+          background: white;
+          border: 1px solid #e7eaf3;
+          border-radius: 0.75rem;
+          padding: 1.5rem;
+          text-align: center;
+          transition: all 0.3s ease;
+        }
+        .materio-metric-card:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 0.5rem 1rem rgba(165, 163, 174, 0.15);
+        }
+        .materio-icon {
+          width: 3rem;
+          height: 3rem;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin: 0 auto 1rem;
+          font-size: 1.5rem;
+        }
+        .materio-icon.primary { background: rgba(105, 108, 255, 0.1); color: #696cff; }
+        .materio-icon.success { background: rgba(113, 221, 55, 0.1); color: #71dd37; }
+        .materio-icon.warning { background: rgba(255, 171, 0, 0.1); color: #ffab00; }
+        .materio-icon.info { background: rgba(133, 146, 163, 0.1); color: #8592a3; }
+      CSS
     end
 
-    div class: "card" do
-      div class: "card-body" do
-    f.inputs do
-          f.input :user, class: "form-control"
-          f.input :content, class: "form-control"
-        end
-        f.actions do
-          f.action :submit, label: "Update Claim", class: "btn btn-primary"
-          f.action :cancel, label: "Cancel", class: "btn btn-secondary"
+    # Page Header
+    div class: "d-flex justify-content-between align-items-center mb-4" do
+      div do
+        h1 "Claim ID ##{claim.id}", class: "mb-1 fw-bold text-dark"
+        p "#{claim.created_at.strftime('%b %d, %Y, %I:%M %p')} (#{Time.zone.name})", class: "text-muted mb-0"
+      end
+      div class: "d-flex gap-2" do
+        link_to "Edit Claim", edit_admin_claim_path(claim), class: "btn btn-primary px-3 py-2"
+        link_to "Back to Claims", admin_claims_path, class: "btn btn-outline-secondary px-3 py-2"
+      end
+    end
+
+    div class: "row g-4" do
+      # Left Column - Claim Profile Card
+      div class: "col-lg-4" do
+        div class: "materio-card" do
+          div class: "card-body p-4" do
+            # Profile Section
+            div class: "text-center mb-4" do
+              div class: "materio-icon primary mb-3" do
+                i class: "ri ri-file-text-line"
+              end
+              h3 "Claim ##{claim.id}", class: "mb-2 fw-bold"
+              p "Claim ID ##{claim.id}", class: "text-muted mb-3"
+
+              # Key Metrics
+              div class: "row g-3 mb-4" do
+                div class: "col-6" do
+                  div class: "text-center" do
+                    div class: "materio-icon success mb-2" do
+                      i class: "ri ri-user-line"
+                    end
+                    div class: "fw-bold text-dark" do
+                      if claim.user
+                        claim.user.email.split('@').first
+                      else
+                        "Unknown"
+                      end
+                    end
+                    div class: "text-muted small" do "Submitted By" end
+                  end
+                end
+                div class: "col-6" do
+                  div class: "text-center" do
+                    div class: "materio-icon warning mb-2" do
+                      i class: "ri ri-calendar-line"
+                    end
+                    div class: "fw-bold text-dark" do claim.created_at.strftime("%b %d") end
+                    div class: "text-muted small" do "Created Date" end
+                  end
+                end
+              end
+            end
+
+            # Details Section
+            div class: "materio-info-item" do
+              div class: "d-flex justify-content-between align-items-center mb-2" do
+                span class: "text-muted small fw-semibold" do "Username:" end
+                span class: "fw-semibold" do
+                  if claim.user
+                    claim.user.email.split('@').first
+                  else
+                    "N/A"
+                  end
+                end
+              end
+              div class: "d-flex justify-content-between align-items-center mb-2" do
+                span class: "text-muted small fw-semibold" do "Email:" end
+                span class: "fw-semibold" do
+                  if claim.user
+                    claim.user.email
+                  else
+                    "N/A"
+                  end
+                end
+              end
+              div class: "d-flex justify-content-between align-items-center mb-2" do
+                span class: "text-muted small fw-semibold" do "Status:" end
+                span class: "badge bg-#{claim.state == 'verified' ? 'success' : claim.state == 'ai_validated' ? 'warning' : 'secondary'}" do
+                  claim.state.present? ? claim.state.titleize : "Draft"
+                end
+              end
+              div class: "d-flex justify-content-between align-items-center mb-2" do
+                span class: "text-muted small fw-semibold" do "Contact:" end
+                span class: "fw-semibold" do
+                  if claim.user && claim.user.respond_to?(:phone)
+                    claim.user.phone || "N/A"
+                  else
+                    "N/A"
+                  end
+                end
+              end
+              div class: "d-flex justify-content-between align-items-center" do
+                span class: "text-muted small fw-semibold" do "Country:" end
+                span class: "fw-semibold" do "USA" end
+              end
+            end
+
+            # Action Button
+            link_to "Edit Details", edit_admin_claim_path(claim), class: "btn btn-primary w-100 mt-3"
+          end
         end
       end
+
+      # Right Column - Information Cards
+      div class: "col-lg-8" do
+        div class: "row g-4" do
+          # Claim Content Card
+          div class: "col-12" do
+            div class: "materio-card" do
+              div class: "materio-header" do
+                h5 class: "mb-0 fw-semibold" do
+                  i class: "ri ri-file-text-line me-2"
+                  "Claim Content"
+                end
+              end
+              div class: "card-body p-4" do
+                div class: "materio-content-area" do
+                  if claim.content.present?
+                    simple_format(claim.content, class: "mb-0 fw-semibold fs-5")
+                  else
+                    "No content available"
+                  end
+                end
+              end
+            end
+          end
+
+          # Information Cards Grid
+          div class: "col-md-6" do
+            div class: "materio-metric-card" do
+              div class: "materio-icon success" do
+                i class: "ri ri-shield-check-line"
+              end
+              h6 "Validation Status", class: "mb-2 fw-semibold"
+              div class: "badge bg-#{claim.state == 'verified' ? 'success' : claim.state == 'ai_validated' ? 'warning' : 'secondary'} mb-2" do
+                claim.state.present? ? claim.state.titleize : "Draft"
+              end
+              p "Current validation status of this claim", class: "text-muted small mb-0"
+            end
+          end
+
+          div class: "col-md-6" do
+            div class: "materio-metric-card" do
+              div class: "materio-icon warning" do
+                i class: "ri ri-brain-line"
+              end
+              h6 "AI Analysis", class: "mb-2 fw-semibold"
+              div class: "fw-bold text-dark mb-2" do
+                "#{claim.reasonings.count} Sources"
+              end
+              p "AI analysis from multiple sources", class: "text-muted small mb-0"
     end
   end
 
-  show do
-    div class: "page-header mb-4" do
-      h1 "Claim Details", class: "mb-2"
-      para "View detailed information about this claim", class: "text-muted"
-    end
+          div class: "col-md-6" do
+            div class: "materio-metric-card" do
+              div class: "materio-icon info" do
+                i class: "ri ri-calendar-line"
+              end
+              h6 "Created Date", class: "mb-2 fw-semibold"
+              div class: "fw-bold text-dark mb-2" do
+                claim.created_at.strftime("%B %d, %Y")
+              end
+              p "When this claim was first submitted", class: "text-muted small mb-0"
+            end
+          end
 
-    div class: "card" do
-      div class: "card-body" do
-    attributes_table do
-      row :id
-      row :content
-      row :user
-      row :created_at
-      row :updated_at
+          div class: "col-md-6" do
+            div class: "materio-metric-card" do
+              div class: "materio-icon primary" do
+                i class: "ri ri-refresh-line"
+              end
+              h6 "Last Updated", class: "mb-2 fw-semibold"
+              div class: "fw-bold text-dark mb-2" do
+                claim.updated_at.strftime("%B %d, %Y")
+              end
+              p "Most recent modification date", class: "text-muted small mb-0"
+            end
+          end
         end
       end
     end
 
-    panel "Sources with Reasonings" do
+    # AI Analysis Section
+    if claim.reasonings.any?
+      div class: "row mt-4" do
+        div class: "col-12" do
+          div class: "materio-card" do
+            div class: "materio-analysis-card" do
+              h5 class: "mb-0 fw-semibold" do
+                i class: "ri ri-brain-line me-2"
+                "AI Analysis & Reasoning"
+              end
+            end
+            div class: "card-body p-4" do
       sources = claim.reasonings.order(:source)
-      if sources.any?
         div id: "reasoning-sources-container" do
-          div class: "reasoning-sources-list", style: "display: flex; gap: 1rem; margin-bottom: 1rem;" do
+                div class: "reasoning-sources-list mb-4" do
             sources.each_with_index do |reasoning, idx|
               active = idx == 0
               span reasoning.source,
-                class: "reasoning-source-tab#{' active' if active}",
-                style: "cursor:pointer; padding: 0.5rem 1rem; border-radius: 6px; font-weight: 500; border: 1px solid #e0e0e0; background: #{active ? '#2563eb' : '#f5f5'}; color: #{active ? '#fff' : '#222'};",
+                      class: "materio-tab#{' active' if active}",
                 data: { source: reasoning.source }
             end
           end
           sources.each_with_index do |reasoning, idx|
             div id: "reasoning-details-#{reasoning.source}",
                 class: "reasoning-details-section",
-                style: "display:#{idx == 0 ? 'block' : 'none'}; background: #fafbfc; border: 1px solid #e0e0e0; border-radius: 8px; padding: 1rem; margin-bottom: 1rem;" do
-              h4 "#{reasoning.source} Details"
-              div do
-                b "Result: "
-                span reasoning.result
-              end
-              div do
-                b "Reasoning: "
-                span simple_format(reasoning.response)
+                      style: "display:#{idx == 0 ? 'block' : 'none'};" do
+                    div class: "materio-content-area" do
+                      div class: "row g-3" do
+                        div class: "col-md-6" do
+                          div class: "materio-info-item" do
+                            div class: "text-muted small fw-semibold mb-2" do
+                              i class: "ri ri-checkbox-circle-line me-2"
+                              "Result"
+                            end
+                            div class: "fw-semibold" do
+                              span class: "badge bg-#{reasoning.result == 'valid' ? 'success' : reasoning.result == 'invalid' ? 'danger' : 'warning'}" do
+                                reasoning.result.titleize
+                              end
+                            end
+                          end
+                        end
+                        div class: "col-md-6" do
+                          div class: "materio-info-item" do
+                            div class: "text-muted small fw-semibold mb-2" do
+                              i class: "ri ri-brain-line me-2"
+                              "Source"
+                            end
+                            div class: "fw-semibold text-dark" do reasoning.source.titleize end
+                          end
+                        end
+                        div class: "col-12" do
+                          div class: "materio-info-item" do
+                            div class: "text-muted small fw-semibold mb-2" do
+                              i class: "ri ri-file-text-line me-2"
+                              "AI Reasoning"
+                            end
+                            div class: "fw-semibold text-dark" do simple_format(reasoning.response) end
+                          end
+                        end
+                      end
               end
             end
           end
@@ -247,17 +538,13 @@ ActiveAdmin.register Claim do
         script do
           raw <<-JS
             document.addEventListener('DOMContentLoaded', function() {
-              var tabs = document.querySelectorAll('.reasoning-source-tab');
+                    var tabs = document.querySelectorAll('.materio-tab');
               tabs.forEach(function(tab) {
                 tab.addEventListener('click', function() {
                   tabs.forEach(function(t) {
                     t.classList.remove('active');
-                    t.style.background = '#f5f5f5';
-                    t.style.color = '#222';
                   });
                   tab.classList.add('active');
-                  tab.style.background = '#2563eb';
-                  tab.style.color = '#fff';
                   var allDetails = document.querySelectorAll('.reasoning-details-section');
                   allDetails.forEach(function(d) { d.style.display = 'none'; });
                   var details = document.getElementById('reasoning-details-' + tab.dataset.source);
@@ -267,9 +554,11 @@ ActiveAdmin.register Claim do
             });
           JS
         end
-      else
-        span "No sources with reasonings found."
+            end
+          end
+        end
       end
     end
+
   end
 end

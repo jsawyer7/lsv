@@ -205,63 +205,531 @@ ActiveAdmin.register User do
   filter :confirmed_at
 
   form do |f|
-    div class: "page-header mb-4" do
-      h1 "Edit User", class: "mb-2"
-      para "Update user information and permissions", class: "text-muted"
+    # Custom CSS for simple form design
+    style do
+      raw <<-CSS
+        .materio-form-card {
+          border: 1px solid #e7eaf3;
+          border-radius: 0.75rem;
+          box-shadow: 0 0.125rem 0.25rem rgba(165, 163, 174, 0.3);
+          transition: all 0.3s ease;
+        }
+        .materio-form-card:hover {
+          box-shadow: 0 0.5rem 1rem rgba(165, 163, 174, 0.15);
+        }
+        .materio-form-header {
+          background: linear-gradient(135deg, #696cff 0%, #5a5fcf 100%);
+          color: white;
+          border-radius: 0.75rem 0.75rem 0 0;
+          padding: 1.5rem;
+        }
+        .materio-form-group {
+          margin-bottom: 1.5rem;
+        }
+        .materio-form-label {
+          font-weight: 600;
+          color: #697a8d;
+          margin-bottom: 0.5rem;
+          font-size: 0.875rem;
+        }
+        .materio-form-control {
+          border: 1px solid #e7eaf3;
+          border-radius: 0.5rem;
+          padding: 0.75rem 1rem;
+          font-size: 0.875rem;
+          transition: all 0.3s ease;
+        }
+        .materio-form-control:focus {
+          border-color: #696cff;
+          box-shadow: 0 0 0 0.2rem rgba(105, 108, 255, 0.25);
+        }
+        .materio-form-select {
+          background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m1 6 7 7 7-7'/%3e%3c/svg%3e");
+          background-repeat: no-repeat;
+          background-position: right 0.75rem center;
+          background-size: 16px 12px;
+          padding-right: 2.5rem;
+          cursor: pointer;
+        }
+        .materio-user-info {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          padding: 0.5rem;
+          border-radius: 0.25rem;
+          background: #f8f9fa;
+          border: 1px solid #e7eaf3;
+          margin-bottom: 1rem;
+        }
+        .materio-user-avatar {
+          width: 2rem;
+          height: 2rem;
+          border-radius: 50%;
+          background: #696cff;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: white;
+          font-weight: 600;
+          font-size: 0.75rem;
+        }
+        .materio-btn-primary {
+          background: linear-gradient(135deg, #696cff 0%, #5a5fcf 100%);
+          border: none;
+          border-radius: 0.5rem;
+          color: white;
+          font-weight: 600;
+          font-size: 0.875rem;
+          padding: 0.75rem 2rem;
+          transition: all 0.3s ease;
+          box-shadow: 0 0.125rem 0.25rem rgba(105, 108, 255, 0.3);
+        }
+        .materio-btn-primary:hover {
+          background: linear-gradient(135deg, #5a5fcf 0%, #4a4fb8 100%);
+          transform: translateY(-1px);
+          box-shadow: 0 0.25rem 0.5rem rgba(105, 108, 255, 0.4);
+          color: white;
+        }
+        .materio-btn-secondary {
+          background: white;
+          border: 1px solid #e7eaf3;
+          border-radius: 0.5rem;
+          color: #697a8d;
+          font-weight: 600;
+          font-size: 0.875rem;
+          padding: 0.75rem 2rem;
+          transition: all 0.3s ease;
+        }
+        .materio-btn-secondary:hover {
+          background: #f8f9fa;
+          border-color: #d9dee3;
+          color: #2b2c40;
+          transform: translateY(-1px);
+          box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.1);
+        }
+      CSS
     end
 
-    div class: "card" do
-      div class: "card-body" do
-    f.inputs do
-          f.input :email, class: "form-control"
-          f.input :full_name, class: "form-control"
-          f.input :role, as: :select, collection: User.roles.keys, class: "form-control"
+    # Page Header
+    div class: "d-flex justify-content-between align-items-center mb-4" do
+      div do
+        h1 "Edit User", class: "mb-1 fw-bold text-dark"
+        p "Update user information and permissions", class: "text-muted mb-0"
+      end
+      div class: "d-flex gap-2" do
+        link_to "Back to Users", admin_users_path, class: "btn btn-outline-secondary px-3 py-2"
+      end
+    end
+
+    # Main Form Content
+    div class: "materio-form-card" do
+      div class: "materio-form-header" do
+        h5 class: "mb-0 fw-semibold" do
+          i class: "ri ri-edit-line me-2"
+          "User Information"
         end
-        f.actions do
-          f.action :submit, label: "Update User", class: "btn btn-primary"
-          f.action :cancel, label: "Cancel", class: "btn btn-secondary"
+      end
+      div class: "card-body p-4" do
+    f.inputs do
+          # Email Display (Read-only)
+          div class: "materio-form-group" do
+            div class: "materio-form-label" do
+              i class: "ri ri-mail-line me-2"
+              "Email Address"
+            end
+            div class: "materio-user-info" do
+              div class: "materio-user-avatar" do
+                f.object.email.first.upcase
+              end
+              div do
+                div class: "fw-semibold text-dark" do f.object.email end
+                div class: "text-muted small" do "Email cannot be changed" end
+              end
+            end
+          end
+
+          # Full Name Input
+          div class: "materio-form-group" do
+            div class: "materio-form-label" do
+              i class: "ri ri-user-line me-2"
+              "Full Name"
+            end
+            f.input :full_name,
+                    class: "materio-form-control",
+                    label: false,
+                    input_html: {
+                      class: "materio-form-control",
+                      placeholder: "Enter user's full name..."
+                    }
+          end
+
+          # Role Selection
+          div class: "materio-form-group" do
+            div class: "materio-form-label" do
+              i class: "ri ri-shield-user-line me-2"
+              "User Role"
+            end
+            f.input :role,
+                    as: :select,
+                    collection: User.roles.keys.map { |role| [role.titleize, role] },
+                    class: "materio-form-control materio-form-select",
+                    label: false,
+                    input_html: { class: "materio-form-control materio-form-select" }
+          end
+        end
+        # Actions Section
+        div class: "mt-4 pt-4 border-top" do
+          div class: "d-flex justify-content-end gap-3" do
+            f.action :submit,
+                     label: "Update User",
+                     class: "materio-btn-primary"
+            f.action :cancel,
+                     label: "Cancel",
+                     class: "materio-btn-secondary"
+          end
         end
       end
     end
   end
 
   show do
-    div class: "page-header mb-4" do
-      h1 "User Details", class: "mb-2"
-      para "View detailed information about this user", class: "text-muted"
+    # Custom CSS for Materio-style design
+    style do
+      raw <<-CSS
+        .materio-card {
+          border: 1px solid #e7eaf3;
+          border-radius: 0.75rem;
+          box-shadow: 0 0.125rem 0.25rem rgba(165, 163, 174, 0.3);
+          transition: all 0.3s ease;
+        }
+        .materio-card:hover {
+          box-shadow: 0 0.5rem 1rem rgba(165, 163, 174, 0.15);
+          transform: translateY(-2px);
+        }
+        .materio-header {
+          background: linear-gradient(135deg, #696cff 0%, #5a5fcf 100%);
+          color: white;
+          border-radius: 0.75rem 0.75rem 0 0;
+          padding: 1.5rem;
+        }
+        .materio-info-card {
+          background: linear-gradient(135deg, #71dd37 0%, #5cb85c 100%);
+          color: white;
+          border-radius: 0.75rem 0.75rem 0 0;
+          padding: 1.5rem;
+        }
+        .materio-badge {
+          background: rgba(105, 108, 255, 0.1);
+          color: #696cff;
+          border: 1px solid rgba(105, 108, 255, 0.2);
+          padding: 0.5rem 1rem;
+          border-radius: 0.5rem;
+          font-weight: 600;
+          font-size: 0.875rem;
+        }
+        .materio-info-item {
+          background: #f8f9fa;
+          border: 1px solid #e7eaf3;
+          border-radius: 0.5rem;
+          padding: 1rem;
+          margin-bottom: 0.75rem;
+        }
+        .materio-metric-card {
+          background: white;
+          border: 1px solid #e7eaf3;
+          border-radius: 0.75rem;
+          padding: 1.5rem;
+          text-align: center;
+          transition: all 0.3s ease;
+        }
+        .materio-metric-card:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 0.5rem 1rem rgba(165, 163, 174, 0.15);
+        }
+        .materio-icon {
+          width: 3rem;
+          height: 3rem;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin: 0 auto 1rem;
+          font-size: 1.5rem;
+        }
+        .materio-icon.primary { background: rgba(105, 108, 255, 0.1); color: #696cff; }
+        .materio-icon.success { background: rgba(113, 221, 55, 0.1); color: #71dd37; }
+        .materio-icon.warning { background: rgba(255, 171, 0, 0.1); color: #ffab00; }
+        .materio-icon.info { background: rgba(133, 146, 163, 0.1); color: #8592a3; }
+        .materio-avatar {
+          width: 5rem;
+          height: 5rem;
+          border-radius: 50%;
+          border: 3px solid #696cff;
+          margin: 0 auto 1.5rem;
+        }
+      CSS
     end
 
-    div class: "card" do
-      div class: "card-body" do
-        div class: "d-flex align-items-center mb-4" do
-          div class: "avatar avatar-lg me-3" do
+    # Page Header
+    div class: "d-flex justify-content-between align-items-center mb-4" do
+      div do
+        h1 "User ID ##{user.id}", class: "mb-1 fw-bold text-dark"
+        p "#{user.created_at.strftime('%b %d, %Y, %I:%M %p')} (#{Time.zone.name})", class: "text-muted mb-0"
+      end
+      div class: "d-flex gap-2" do
+        link_to "Edit User", edit_admin_user_path(user), class: "btn btn-primary px-3 py-2"
+        link_to "Back to Users", admin_users_path, class: "btn btn-outline-secondary px-3 py-2"
+      end
+    end
+
+    div class: "row g-4" do
+      # Left Column - User Profile Card
+      div class: "col-lg-4" do
+        div class: "materio-card" do
+          div class: "card-body p-4" do
+            # Profile Section
+            div class: "text-center mb-4" do
+              div class: "materio-avatar" do
             img src: asset_path("avatars/#{(user.id % 20) + 1}.png"),
                 alt: user.full_name || user.email,
-                class: "rounded-circle"
+                    class: "w-100 h-100 rounded-circle"
           end
-          div do
-            h4 class: "mb-1" do
+              h3 class: "mb-2 fw-bold" do
               user.full_name || user.email.split('@').first.titleize
             end
-            p class: "text-muted mb-0" do
-              user.email
+              p class: "text-muted mb-3" do user.email end
+
+              # Role Badge
+              span class: "badge bg-#{user.role == 'admin' ? 'primary' : 'success'} mb-3" do
+                case user.role
+                when 'admin'
+                  "Administrator"
+                when 'user'
+                  "User"
+                else
+                  user.role&.titleize || "User"
+                end
+              end
+
+              # Key Metrics
+              div class: "row g-3 mb-4" do
+                div class: "col-6" do
+                  div class: "text-center" do
+                    div class: "materio-icon success mb-2" do
+                      i class: "ri ri-check-line"
+                    end
+                    div class: "fw-bold text-dark" do
+                      user.claims.count
+                    end
+                    div class: "text-muted small" do "Claims Made" end
+                  end
+                end
+                div class: "col-6" do
+                  div class: "text-center" do
+                    div class: "materio-icon warning mb-2" do
+                      i class: "ri ri-calendar-line"
+                    end
+                    div class: "fw-bold text-dark" do user.created_at.strftime("%b %d") end
+                    div class: "text-muted small" do "Member Since" end
+                  end
+                end
+              end
             end
+
+            # Details Section
+            div class: "materio-info-item" do
+              div class: "d-flex justify-content-between align-items-center mb-2" do
+                span class: "text-muted small fw-semibold" do "Username:" end
+                span class: "fw-semibold" do "@#{user.email.split('@').first}" end
+              end
+              div class: "d-flex justify-content-between align-items-center mb-2" do
+                span class: "text-muted small fw-semibold" do "Email:" end
+                span class: "fw-semibold" do user.email end
+              end
+              div class: "d-flex justify-content-between align-items-center mb-2" do
+                span class: "text-muted small fw-semibold" do "Status:" end
             span class: "badge bg-#{user.confirmed? ? 'success' : 'warning'}" do
               user.confirmed? ? "Active" : "Pending"
+                end
+              end
+              div class: "d-flex justify-content-between align-items-center mb-2" do
+                span class: "text-muted small fw-semibold" do "Role:" end
+                span class: "fw-semibold" do
+                  case user.role
+                  when 'admin'
+                    "Administrator"
+                  when 'user'
+                    "User"
+                  else
+                    user.role&.titleize || "User"
+                  end
+                end
+              end
+              div class: "d-flex justify-content-between align-items-center mb-2" do
+                span class: "text-muted small fw-semibold" do "Contact:" end
+                span class: "fw-semibold" do "N/A" end
+              end
+              div class: "d-flex justify-content-between align-items-center mb-2" do
+                span class: "text-muted small fw-semibold" do "Languages:" end
+                span class: "fw-semibold" do "English" end
+              end
+              div class: "d-flex justify-content-between align-items-center" do
+                span class: "text-muted small fw-semibold" do "Country:" end
+                span class: "fw-semibold" do "USA" end
+              end
+            end
+
+            # Action Buttons
+            div class: "d-flex gap-2 mt-3" do
+              link_to "Edit", edit_admin_user_path(user), class: "btn btn-primary flex-fill"
+              link_to "Delete", admin_user_path(user), method: :delete,
+                      data: { confirm: "Are you sure you want to delete this user? This action cannot be undone." },
+                      class: "btn btn-outline-danger flex-fill"
             end
           end
         end
+      end
 
-    attributes_table do
-      row :id
-      row :email
-      row :full_name
-      row :role
-      row :created_at
-      row :updated_at
-      row :confirmed_at
-      row :provider
-      row :uid
+      # Right Column - Information Cards
+      div class: "col-lg-8" do
+        div class: "row g-4" do
+          # User Information Card
+          div class: "col-12" do
+            div class: "materio-card" do
+              div class: "materio-header" do
+                h5 class: "mb-0 fw-semibold" do
+                  i class: "ri ri-user-settings-line me-2"
+                  "User Information"
+                end
+              end
+              div class: "card-body p-4" do
+                div class: "row g-3" do
+                  div class: "col-md-6" do
+                    div class: "materio-info-item" do
+                      div class: "text-muted small fw-semibold mb-2" do
+                        i class: "ri ri-mail-line me-2"
+                        "Email Address"
+                      end
+                      div class: "fw-semibold text-dark" do user.email end
+                    end
+                  end
+                  div class: "col-md-6" do
+                    div class: "materio-info-item" do
+                      div class: "text-muted small fw-semibold mb-2" do
+                        i class: "ri ri-user-line me-2"
+                        "Full Name"
+                      end
+                      div class: "fw-semibold text-dark" do user.full_name || "Not provided" end
+                    end
+                  end
+                  div class: "col-md-6" do
+                    div class: "materio-info-item" do
+                      div class: "text-muted small fw-semibold mb-2" do
+                        i class: "ri ri-calendar-line me-2"
+                        "Member Since"
+                      end
+                      div class: "fw-semibold text-dark" do user.created_at.strftime("%B %d, %Y") end
+                    end
+                  end
+                  div class: "col-md-6" do
+                    div class: "materio-info-item" do
+                      div class: "text-muted small fw-semibold mb-2" do
+                        i class: "ri ri-shield-check-line me-2"
+                        "Account Status"
+                      end
+                      div class: "fw-semibold" do
+                        span class: "badge bg-#{user.confirmed? ? 'success' : 'warning'}" do
+                          user.confirmed? ? "Verified" : "Pending Verification"
+                        end
+                      end
+                    end
+                  end
+                  if user.provider.present?
+                    div class: "col-md-6" do
+                      div class: "materio-info-item" do
+                        div class: "text-muted small fw-semibold mb-2" do
+                          i class: "ri ri-login-box-line me-2"
+                          "Login Provider"
+                        end
+                        div class: "fw-semibold text-dark" do user.provider.titleize end
+                      end
+                    end
+                  end
+                  if user.about.present?
+                    div class: "col-12" do
+                      div class: "materio-info-item" do
+                        div class: "text-muted small fw-semibold mb-2" do
+                          i class: "ri ri-file-text-line me-2"
+                          "About"
+                        end
+                        div class: "fw-semibold text-dark" do user.about end
+                      end
+                    end
+                  end
+                end
+              end
+            end
+          end
+
+          # Information Cards Grid
+          div class: "col-md-6" do
+            div class: "materio-metric-card" do
+              div class: "materio-icon success" do
+                i class: "ri ri-file-text-line"
+              end
+              h6 "Total Claims", class: "mb-2 fw-semibold"
+              div class: "fw-bold text-dark mb-2" do
+                user.claims.count
+              end
+              p "Claims submitted by this user", class: "text-muted small mb-0"
+            end
+          end
+
+          div class: "col-md-6" do
+            div class: "materio-metric-card" do
+              div class: "materio-icon warning" do
+                i class: "ri ri-calendar-line"
+              end
+              h6 "Member Since", class: "mb-2 fw-semibold"
+              div class: "fw-bold text-dark mb-2" do
+                user.created_at.strftime("%B %d, %Y")
+              end
+              p "When user joined the platform", class: "text-muted small mb-0"
+            end
+          end
+
+          div class: "col-md-6" do
+            div class: "materio-metric-card" do
+              div class: "materio-icon info" do
+                i class: "ri ri-shield-check-line"
+              end
+              h6 "Account Status", class: "mb-2 fw-semibold"
+              div class: "badge bg-#{user.confirmed? ? 'success' : 'warning'} mb-2" do
+                user.confirmed? ? "Active" : "Pending"
+              end
+              p "Current account verification status", class: "text-muted small mb-0"
+          end
+        end
+
+          div class: "col-md-6" do
+            div class: "materio-metric-card" do
+              div class: "materio-icon primary" do
+                i class: "ri ri-user-line"
+              end
+              h6 "User Role", class: "mb-2 fw-semibold"
+              div class: "fw-bold text-dark mb-2" do
+                case user.role
+                when 'admin'
+                  "Administrator"
+                when 'user'
+                  "User"
+                else
+                  user.role&.titleize || "User"
+                end
+              end
+              p "User's permission level", class: "text-muted small mb-0"
+            end
+          end
         end
       end
     end
