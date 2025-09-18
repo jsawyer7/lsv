@@ -191,98 +191,22 @@ ActiveAdmin.register FoundationsOnly do
   filter :created_at
 
   form do |f|
-    # Custom CSS for simple form design
-    style do
-      raw <<-CSS
-        .materio-form-card {
-          border: 1px solid #e7eaf3;
-          border-radius: 0.75rem;
-          box-shadow: 0 0.125rem 0.25rem rgba(165, 163, 174, 0.3);
-          transition: all 0.3s ease;
-        }
-        .materio-form-card:hover {
-          box-shadow: 0 0.5rem 1rem rgba(165, 163, 174, 0.15);
-        }
-        .materio-form-header {
-          background: linear-gradient(135deg, #696cff 0%, #5a5fcf 100%);
-          color: white;
-          border-radius: 0.75rem 0.75rem 0 0;
-          padding: 1.5rem;
-        }
-        .materio-form-group {
-          margin-bottom: 1.5rem;
-        }
-        .materio-form-label {
-          font-weight: 600;
-          color: #697a8d;
-          margin-bottom: 0.5rem;
-          font-size: 0.875rem;
-          display: flex;
-          align-items: center;
-        }
-        .materio-form-control {
-          border: 1px solid #e7eaf3;
-          border-radius: 0.5rem;
-          padding: 0.75rem 1rem;
-          font-size: 0.875rem;
-          transition: all 0.3s ease;
-        }
-        .materio-form-control:focus {
-          border-color: #696cff;
-          box-shadow: 0 0 0 0.2rem rgba(105, 108, 255, 0.25);
-        }
-        .materio-btn-primary {
-          background: linear-gradient(135deg, #696cff 0%, #5a5fcf 100%);
-          border: none;
-          border-radius: 0.5rem;
-          color: white;
-          font-weight: 600;
-          font-size: 0.875rem;
-          padding: 0.75rem 2rem;
-          transition: all 0.3s ease;
-          box-shadow: 0 0.125rem 0.25rem rgba(105, 108, 255, 0.3);
-        }
-        .materio-btn-primary:hover {
-          background: linear-gradient(135deg, #5a5fcf 0%, #4a4fb8 100%);
-          transform: translateY(-1px);
-          box-shadow: 0 0.25rem 0.5rem rgba(105, 108, 255, 0.4);
-          color: white;
-        }
-        .materio-btn-secondary {
-          background: white;
-          border: 1px solid #e7eaf3;
-          border-radius: 0.5rem;
-          color: #697a8d;
-          font-weight: 600;
-          font-size: 0.875rem;
-          padding: 0.75rem 2rem;
-          transition: all 0.3s ease;
-        }
-        .materio-btn-secondary:hover {
-          background: #f8f9fa;
-          border-color: #d9dee3;
-          color: #2b2c40;
-          transform: translateY(-1px);
-          box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.1);
-        }
-      CSS
-    end
 
-    # Page Header
-    div class: "d-flex justify-content-between align-items-center mb-4" do
-      div do
-        h1 "Edit Religious Text", class: "mb-1 fw-bold text-dark"
-        p "Update religious text information and settings", class: "text-muted mb-0"
-      end
-      div class: "d-flex gap-2" do
-        link_to "Back to Religious Texts", admin_foundations_onlies_path, class: "btn btn-outline-secondary px-3 py-2"
+    div class: "page-header mb-4" do
+      div class: "d-flex justify-content-between align-items-center" do
+        div do
+          h1 "Edit Religious Text", class: "mb-2 text-primary"
+          para "Update religious text information and settings", class: "text-muted mb-0"
+        end
+        div do
+          link_to "Back to Religious Texts", admin_foundations_onlies_path, class: "btn btn-outline-secondary"
+        end
       end
     end
 
-    # Main Form Content
-    div class: "materio-form-card" do
-      div class: "materio-form-header" do
-        h5 class: "mb-0 fw-semibold" do
+    div class: "card" do
+      div class: "card-header bg-primary text-white" do
+        h5 class: "mb-0" do
           i class: "ri ri-edit-line me-2"
           "Text Information"
         end
@@ -426,85 +350,6 @@ ActiveAdmin.register FoundationsOnly do
   end
 
   show do
-    # Custom CSS for Materio-style design
-    style do
-      raw <<-CSS
-        .materio-card {
-          border: 1px solid #e7eaf3;
-          border-radius: 0.75rem;
-          box-shadow: 0 0.125rem 0.25rem rgba(165, 163, 174, 0.3);
-          transition: all 0.3s ease;
-        }
-        .materio-card:hover {
-          box-shadow: 0 0.5rem 1rem rgba(165, 163, 174, 0.15);
-          transform: translateY(-2px);
-        }
-        .materio-header {
-          background: linear-gradient(135deg, #696cff 0%, #5a5fcf 100%);
-          color: white;
-          border-radius: 0.75rem 0.75rem 0 0;
-          padding: 1.5rem;
-        }
-        .materio-info-card {
-          background: linear-gradient(135deg, #71dd37 0%, #5cb85c 100%);
-          color: white;
-          border-radius: 0.75rem 0.75rem 0 0;
-          padding: 1.5rem;
-        }
-        .materio-badge {
-          background: rgba(105, 108, 255, 0.1);
-          color: #696cff;
-          border: 1px solid rgba(105, 108, 255, 0.2);
-          padding: 0.5rem 1rem;
-          border-radius: 0.5rem;
-          font-weight: 600;
-          font-size: 0.875rem;
-        }
-        .materio-info-item {
-          background: #f8f9fa;
-          border: 1px solid #e7eaf3;
-          border-radius: 0.5rem;
-          padding: 1rem;
-          margin-bottom: 0.75rem;
-        }
-        .materio-metric-card {
-          background: white;
-          border: 1px solid #e7eaf3;
-          border-radius: 0.75rem;
-          padding: 1.5rem;
-          text-align: center;
-          transition: all 0.3s ease;
-        }
-        .materio-metric-card:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 0.5rem 1rem rgba(165, 163, 174, 0.15);
-        }
-        .materio-icon {
-          width: 3rem;
-          height: 3rem;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          margin: 0 auto 1rem;
-          font-size: 1.5rem;
-        }
-        .materio-icon.primary { background: rgba(105, 108, 255, 0.1); color: #696cff; }
-        .materio-icon.success { background: rgba(113, 221, 55, 0.1); color: #71dd37; }
-        .materio-icon.warning { background: rgba(255, 171, 0, 0.1); color: #ffab00; }
-        .materio-icon.info { background: rgba(133, 146, 163, 0.1); color: #8592a3; }
-        .materio-avatar {
-          width: 5rem;
-          height: 5rem;
-          border-radius: 50%;
-          border: 3px solid #696cff;
-          margin: 0 auto 1.5rem;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-      CSS
-    end
 
     # Page Header
     div class: "d-flex justify-content-between align-items-center mb-4" do
@@ -567,7 +412,7 @@ ActiveAdmin.register FoundationsOnly do
             # Metric-style cards for key information
             div class: "row g-3 mb-4" do
               div class: "col-md-4" do
-                div class: "materio-metric-card" do
+                div class: "materio-metric-card materio-metric-card-light" do
                   div class: "materio-icon primary" do
                     i class: "ri ri-code-line"
                   end
@@ -578,7 +423,7 @@ ActiveAdmin.register FoundationsOnly do
                 end
               end
               div class: "col-md-4" do
-                div class: "materio-metric-card" do
+                div class: "materio-metric-card materio-metric-card-light" do
                   div class: "materio-icon success" do
                     i class: "ri ri-translate"
                   end
@@ -589,7 +434,7 @@ ActiveAdmin.register FoundationsOnly do
                 end
               end
               div class: "col-md-4" do
-                div class: "materio-metric-card" do
+                div class: "materio-metric-card materio-metric-card-light" do
                   div class: "materio-icon #{foundations_only.is_active? ? 'success' : 'warning'}" do
                     i class: "ri ri-#{foundations_only.is_active? ? 'check-line' : 'close-line'}"
                   end

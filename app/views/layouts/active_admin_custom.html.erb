@@ -24,13 +24,20 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
+    <!-- Immediate CSS to prevent FOUC -->
+    <style>
+      /* Hide Active Admin elements immediately to prevent flash */
+      #header, #header h1, #header h1 a, #utility_nav, #title_bar, #title_bar_left, #title_bar_right, .breadcrumb, #active_admin_content .sidebar, #active_admin_content .sidebar_section, .sidebar, .sidebar_section, #sidebar, #sidebar_sections, #sidebar_sections_wrapper, #sidebar_sections_wrapper .sidebar_section, #sidebar_sections_wrapper .sidebar_section h3, #sidebar_sections_wrapper .sidebar_section ul, #sidebar_sections_wrapper .sidebar_section li, #sidebar_sections_wrapper .sidebar_section a, #active_admin_content .sidebar_sections, #active_admin_content .sidebar_sections .sidebar_section, #active_admin_content .sidebar_sections .sidebar_section h3, #active_admin_content .sidebar_sections .sidebar_section ul, #active_admin_content .sidebar_sections .sidebar_section li, #active_admin_content .sidebar_sections .sidebar_section a, #active_admin_content .content_wrapper .sidebar, #active_admin_content .content_wrapper .main_content .sidebar, #active_admin_content .content_wrapper .main_content .sidebar_section, #active_admin_content .content_wrapper .main_content .sidebar_section ul, #active_admin_content .content_wrapper .main_content .sidebar_section li, #active_admin_content .content_wrapper .main_content .sidebar_section a { display: none !important; }
+    </style>
+
     <!-- Core CSS -->
     <%= stylesheet_link_tag "materio", "data-turbo-track": "reload" %>
+    <%= stylesheet_link_tag "admin", "data-turbo-track": "reload" %>
 
     <!-- Helpers -->
   </head>
 
-  <body>
+  <body data-controller="<%= controller_name %>" data-action="<%= action_name %>">
     <!-- Layout wrapper -->
     <div class="layout-wrapper layout-content-navbar">
       <div class="layout-container">
@@ -168,139 +175,5 @@
       Rails.start();
     </script>
     
-    <!-- Hide any remaining Active Admin default content -->
-    <style>
-      /* Hide Active Admin's default navigation and content */
-      #header,
-      #header h1,
-      #header h1 a,
-      #utility_nav,
-      #title_bar,
-      #title_bar_left,
-      #title_bar_right,
-      .breadcrumb,
-      #active_admin_content .sidebar,
-      #active_admin_content .sidebar_section,
-      .sidebar,
-      .sidebar_section,
-      #sidebar,
-      #sidebar_sections,
-      #sidebar_sections_wrapper,
-      #sidebar_sections_wrapper .sidebar_section,
-      #sidebar_sections_wrapper .sidebar_section h3,
-      #sidebar_sections_wrapper .sidebar_section ul,
-      #sidebar_sections_wrapper .sidebar_section li,
-      #sidebar_sections_wrapper .sidebar_section a,
-      #active_admin_content .sidebar_sections,
-      #active_admin_content .sidebar_sections .sidebar_section,
-      #active_admin_content .sidebar_sections .sidebar_section h3,
-      #active_admin_content .sidebar_sections .sidebar_section ul,
-      #active_admin_content .sidebar_sections .sidebar_section li,
-      #active_admin_content .sidebar_sections .sidebar_section a,
-      #active_admin_content .content_wrapper .sidebar,
-      #active_admin_content .content_wrapper .main_content .sidebar,
-      #active_admin_content .content_wrapper .main_content .sidebar_section,
-      #active_admin_content .content_wrapper .main_content .sidebar_section ul,
-      #active_admin_content .content_wrapper .main_content .sidebar_section li,
-      #active_admin_content .content_wrapper .main_content .sidebar_section a,
-      #active_admin_content .content_wrapper .main_content .sidebar_section h3,
-      #active_admin_content .content_wrapper .main_content .sidebar_section h4,
-      #active_admin_content .content_wrapper .main_content .sidebar_section p,
-      #active_admin_content .content_wrapper .main_content .sidebar_section div,
-      #active_admin_content .content_wrapper .main_content .sidebar_section span,
-      #active_admin_content .content_wrapper .main_content .sidebar_section strong,
-      #active_admin_content .content_wrapper .main_content .sidebar_section em,
-      #active_admin_content .content_wrapper .main_content .sidebar_section i,
-      #active_admin_content .content_wrapper .main_content .sidebar_section b,
-      #active_admin_content .content_wrapper .main_content .sidebar_section u,
-      #active_admin_content .content_wrapper .main_content .sidebar_section s,
-      #active_admin_content .content_wrapper .main_content .sidebar_section del,
-      #active_admin_content .content_wrapper .main_content .sidebar_section ins,
-      #active_admin_content .content_wrapper .main_content .sidebar_section mark,
-      #active_admin_content .content_wrapper .main_content .sidebar_section small,
-      #active_admin_content .content_wrapper .main_content .sidebar_section sub,
-      #active_admin_content .content_wrapper .main_content .sidebar_section sup,
-      #active_admin_content .content_wrapper .main_content .sidebar_section code,
-      #active_admin_content .content_wrapper .main_content .sidebar_section pre,
-      #active_admin_content .content_wrapper .main_content .sidebar_section kbd,
-      #active_admin_content .content_wrapper .main_content .sidebar_section samp,
-      #active_admin_content .content_wrapper .main_content .sidebar_section var,
-      #active_admin_content .content_wrapper .main_content .sidebar_section abbr,
-      #active_admin_content .content_wrapper .main_content .sidebar_section acronym,
-      #active_admin_content .content_wrapper .main_content .sidebar_section address,
-      #active_admin_content .content_wrapper .main_content .sidebar_section cite,
-      #active_admin_content .content_wrapper .main_content .sidebar_section q,
-      #active_admin_content .content_wrapper .main_content .sidebar_section dfn,
-      #active_admin_content .content_wrapper .main_content .sidebar_section time,
-      #active_admin_content .content_wrapper .main_content .sidebar_section data,
-      #active_admin_content .content_wrapper .main_content .sidebar_section output,
-      #active_admin_content .content_wrapper .main_content .sidebar_section progress,
-      #active_admin_content .content_wrapper .main_content .sidebar_section meter,
-      #active_admin_content .content_wrapper .main_content .sidebar_section details,
-      #active_admin_content .content_wrapper .main_content .sidebar_section summary,
-      #active_admin_content .content_wrapper .main_content .sidebar_section menu,
-      #active_admin_content .content_wrapper .main_content .sidebar_section command,
-      #active_admin_content .content_wrapper .main_content .sidebar_section keygen,
-      #active_admin_content .content_wrapper .main_content .sidebar_section wbr,
-      #active_admin_content .content_wrapper .main_content .sidebar_section canvas,
-      #active_admin_content .content_wrapper .main_content .sidebar_section svg,
-      #active_admin_content .content_wrapper .main_content .sidebar_section math,
-      #active_admin_content .content_wrapper .main_content .sidebar_section video,
-      #active_admin_content .content_wrapper .main_content .sidebar_section audio,
-      #active_admin_content .content_wrapper .main_content .sidebar_section source,
-      #active_admin_content .content_wrapper .main_content .sidebar_section track,
-      #active_admin_content .content_wrapper .main_content .sidebar_section embed,
-      #active_admin_content .content_wrapper .main_content .sidebar_section object,
-      #active_admin_content .content_wrapper .main_content .sidebar_section param,
-      #active_admin_content .content_wrapper .main_content .sidebar_section iframe,
-      #active_admin_content .content_wrapper .main_content .sidebar_section map,
-      #active_admin_content .content_wrapper .main_content .sidebar_section area,
-      #active_admin_content .content_wrapper .main_content .sidebar_section form,
-      #active_admin_content .content_wrapper .main_content .sidebar_section fieldset,
-      #active_admin_content .content_wrapper .main_content .sidebar_section legend,
-      #active_admin_content .content_wrapper .main_content .sidebar_section label,
-      #active_admin_content .content_wrapper .main_content .sidebar_section input,
-      #active_admin_content .content_wrapper .main_content .sidebar_section button,
-      #active_admin_content .content_wrapper .main_content .sidebar_section select,
-      #active_admin_content .content_wrapper .main_content .sidebar_section datalist,
-      #active_admin_content .content_wrapper .main_content .sidebar_section optgroup,
-      #active_admin_content .content_wrapper .main_content .sidebar_section option,
-      #active_admin_content .content_wrapper .main_content .sidebar_section textarea,
-      #active_admin_content .content_wrapper .main_content .sidebar_section output,
-      #active_admin_content .content_wrapper .main_content .sidebar_section progress,
-      #active_admin_content .content_wrapper .main_content .sidebar_section meter,
-      #active_admin_content .content_wrapper .main_content .sidebar_section details,
-      #active_admin_content .content_wrapper .main_content .sidebar_section summary,
-      #active_admin_content .content_wrapper .main_content .sidebar_section menu,
-      #active_admin_content .content_wrapper .main_content .sidebar_section command,
-      #active_admin_content .content_wrapper .main_content .sidebar_section keygen,
-      #active_admin_content .content_wrapper .main_content .sidebar_section wbr,
-      #active_admin_content .content_wrapper .main_content .sidebar_section canvas,
-      #active_admin_content .content_wrapper .main_content .sidebar_section svg,
-      #active_admin_content .content_wrapper .main_content .sidebar_section math,
-      #active_admin_content .content_wrapper .main_content .sidebar_section video,
-      #active_admin_content .content_wrapper .main_content .sidebar_section audio,
-      #active_admin_content .content_wrapper .main_content .sidebar_section source,
-      #active_admin_content .content_wrapper .main_content .sidebar_section track,
-      #active_admin_content .content_wrapper .main_content .sidebar_section embed,
-      #active_admin_content .content_wrapper .main_content .sidebar_section object,
-      #active_admin_content .content_wrapper .main_content .sidebar_section param,
-      #active_admin_content .content_wrapper .main_content .sidebar_section iframe,
-      #active_admin_content .content_wrapper .main_content .sidebar_section map,
-      #active_admin_content .content_wrapper .main_content .sidebar_section area,
-      #active_admin_content .content_wrapper .main_content .sidebar_section form,
-      #active_admin_content .content_wrapper .main_content .sidebar_section fieldset,
-      #active_admin_content .content_wrapper .main_content .sidebar_section legend,
-      #active_admin_content .content_wrapper .main_content .sidebar_section label,
-      #active_admin_content .content_wrapper .main_content .sidebar_section input,
-      #active_admin_content .content_wrapper .main_content .sidebar_section button,
-      #active_admin_content .content_wrapper .main_content .sidebar_section select,
-      #active_admin_content .content_wrapper .main_content .sidebar_section datalist,
-      #active_admin_content .content_wrapper .main_content .sidebar_section optgroup,
-      #active_admin_content .content_wrapper .main_content .sidebar_section option,
-      #active_admin_content .content_wrapper .main_content .sidebar_section textarea {
-        display: none !important;
-      }
-    </style>
   </body>
 </html>
