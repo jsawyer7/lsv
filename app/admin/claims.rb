@@ -308,7 +308,7 @@ ActiveAdmin.register Claim do
 
           # Information Cards Grid
           div class: "col-md-6" do
-            div class: "materio-metric-card" do
+            div class: "materio-metric-card materio-metric-card-light" do
               div class: "materio-icon success" do
                 i class: "ri ri-shield-check-line"
               end
@@ -321,7 +321,7 @@ ActiveAdmin.register Claim do
           end
 
           div class: "col-md-6" do
-            div class: "materio-metric-card" do
+            div class: "materio-metric-card materio-metric-card-light" do
               div class: "materio-icon warning" do
                 i class: "ri ri-brain-line"
               end
@@ -334,7 +334,7 @@ ActiveAdmin.register Claim do
   end
 
           div class: "col-md-6" do
-            div class: "materio-metric-card" do
+            div class: "materio-metric-card materio-metric-card-light" do
               div class: "materio-icon info" do
                 i class: "ri ri-calendar-line"
               end
@@ -347,7 +347,7 @@ ActiveAdmin.register Claim do
           end
 
           div class: "col-md-6" do
-            div class: "materio-metric-card" do
+            div class: "materio-metric-card materio-metric-card-light" do
               div class: "materio-icon primary" do
                 i class: "ri ri-refresh-line"
               end
