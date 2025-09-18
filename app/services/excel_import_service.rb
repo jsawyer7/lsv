@@ -35,6 +35,19 @@ class ExcelImportService
       'canon_work_preferences.xlsx' => {
         model: CanonWorkPreference,
         columns: ['canon_id', 'work_code', 'foundation_code', 'numbering_system_code', 'notes']
+      },
+      # Phase 2 tables - Numbering System Management
+      'numbering_system.xlsx' => {
+        model: NumberingSystem,
+        columns: ['code', 'name', 'description']
+      },
+      'numbering_label.xlsx' => {
+        model: NumberingLabel,
+        columns: ['numbering_system_id', 'system_code', 'label', 'locale', 'applies_to', 'description']
+      },
+      'numbering_map.xlsx' => {
+        model: NumberingMap,
+        columns: ['numbering_system_id', 'unit_id', 'work_code', 'l1', 'l2', 'l3', 'n_book', 'n_chapter', 'n_verse', 'n_sub', 'status']
       }
     }
   end
@@ -120,8 +133,40 @@ class ExcelImportService
               model_class.create!(record_data)
               puts "  Created: Canon #{record_data['canon_id']}, Work #{record_data['work_code']}"
             end
+          elsif model_class == NumberingLabel
+            # NumberingLabel has composite key (numbering_system_id, system_code)
+            existing_record = model_class.find_by(
+              numbering_system_id: record_data['numbering_system_id'],
+              system_code: record_data['system_code']
+            )
+            
+            if existing_record
+              # Update existing record
+              existing_record.update!(record_data)
+              puts "  Updated: System #{record_data['numbering_system_id']}, Code #{record_data['system_code']}"
+            else
+              # Create new record
+              model_class.create!(record_data)
+              puts "  Created: System #{record_data['numbering_system_id']}, Code #{record_data['system_code']}"
+            end
+          elsif model_class == NumberingMap
+            # NumberingMap has composite key (numbering_system_id, unit_id)
+            existing_record = model_class.find_by(
+              numbering_system_id: record_data['numbering_system_id'],
+              unit_id: record_data['unit_id']
+            )
+            
+            if existing_record
+              # Update existing record
+              existing_record.update!(record_data)
+              puts "  Updated: System #{record_data['numbering_system_id']}, Unit #{record_data['unit_id']}"
+            else
+              # Create new record
+              model_class.create!(record_data)
+              puts "  Created: System #{record_data['numbering_system_id']}, Unit #{record_data['unit_id']}"
+            end
           else
-            # Standard primary key tables
+            # Standard primary key tables (code-based)
             existing_record = model_class.find_by(code: record_data['code'])
             
             if existing_record

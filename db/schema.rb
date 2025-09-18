@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2025_08_27_124501) do
+ActiveRecord::Schema[7.0].define(version: 2025_09_18_154851) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
   enable_extension "vector"
@@ -223,6 +223,45 @@ ActiveRecord::Schema[7.0].define(version: 2025_08_27_124501) do
     t.index ["muslim"], name: "index_name_mappings_on_muslim"
   end
 
+  create_table "numbering_labels", force: :cascade do |t|
+    t.integer "numbering_system_id", null: false
+    t.string "system_code", null: false
+    t.string "label", null: false
+    t.string "locale"
+    t.string "applies_to"
+    t.text "description"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["numbering_system_id", "system_code"], name: "index_numbering_labels_on_numbering_system_id_and_system_code", unique: true
+  end
+
+  create_table "numbering_maps", force: :cascade do |t|
+    t.integer "numbering_system_id", null: false
+    t.string "unit_id", null: false
+    t.string "work_code", null: false
+    t.string "l1"
+    t.string "l2"
+    t.string "l3"
+    t.integer "n_book"
+    t.integer "n_chapter"
+    t.integer "n_verse"
+    t.string "n_sub"
+    t.string "status"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["numbering_system_id", "unit_id"], name: "index_numbering_maps_on_numbering_system_id_and_unit_id", unique: true
+    t.index ["work_code"], name: "index_numbering_maps_on_work_code"
+  end
+
+  create_table "numbering_systems", force: :cascade do |t|
+    t.string "code", null: false
+    t.string "name", null: false
+    t.text "description"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["code"], name: "index_numbering_systems_on_code", unique: true
+  end
+
   create_table "peers", force: :cascade do |t|
     t.bigint "user_id", null: false
     t.bigint "peer_id", null: false
@@ -293,6 +332,8 @@ ActiveRecord::Schema[7.0].define(version: 2025_08_27_124501) do
   add_foreign_key "evidences", "claims"
   add_foreign_key "follows", "users"
   add_foreign_key "follows", "users", column: "followed_user"
+  add_foreign_key "numbering_labels", "numbering_systems"
+  add_foreign_key "numbering_maps", "numbering_systems"
   add_foreign_key "peers", "users"
   add_foreign_key "peers", "users", column: "peer_id"
   add_foreign_key "theories", "users"
