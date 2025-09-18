@@ -66,6 +66,19 @@ body {
 @import 'components/checkout';
 @import 'components/sidebar';
 
+// Admin styles
+@import 'admin/canon_book_inclusions';
+@import 'admin/canon_work_preferences';
+@import 'admin/canons';
+@import 'admin/claims';
+@import 'admin/families_for_foundations';
+@import 'admin/families_seed';
+@import 'admin/foundations_only';
+@import 'admin/languages';
+@import 'admin/master_books';
+@import 'admin/name_mappings';
+@import 'admin/users';
+
 // Headings
 h1, .heading-h1 {
   font-family: $font-family;
