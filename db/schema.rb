@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2025_09_18_154851) do
+ActiveRecord::Schema[7.0].define(version: 2025_09_18_160653) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
   enable_extension "vector"
@@ -53,6 +53,15 @@ ActiveRecord::Schema[7.0].define(version: 2025_09_18_154851) do
     t.datetime "updated_at", null: false
     t.index ["canon_id", "work_code"], name: "index_canon_book_inclusions_on_canon_id_and_work_code", unique: true
     t.index ["canon_id"], name: "index_canon_book_inclusions_on_canon_id"
+  end
+
+  create_table "canon_maps", id: false, force: :cascade do |t|
+    t.string "canon_id", limit: 64, null: false
+    t.string "unit_id", limit: 26, null: false
+    t.integer "sequence_index", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["canon_id", "unit_id"], name: "idx_canon_maps_primary", unique: true
   end
 
   create_table "canon_work_preferences", id: false, force: :cascade do |t|
@@ -287,6 +296,48 @@ ActiveRecord::Schema[7.0].define(version: 2025_09_18_154851) do
     t.index ["reasonable_type", "reasonable_id", "source"], name: "index_reasonings_on_reasonable_and_source", unique: true
   end
 
+  create_table "source_registries", primary_key: "source_id", id: { type: :string, limit: 26 }, force: :cascade do |t|
+    t.string "name", limit: 256, null: false
+    t.string "publisher", limit: 256
+    t.string "contact", limit: 256
+    t.string "license", limit: 256
+    t.text "url"
+    t.string "version", limit: 64
+    t.string "checksum_sha256", limit: 64
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "text_payloads", primary_key: "payload_id", id: { type: :string, limit: 26 }, force: :cascade do |t|
+    t.string "unit_id", limit: 26, null: false
+    t.string "language", limit: 8, null: false
+    t.string "script", limit: 8, null: false
+    t.string "edition_id", limit: 128, null: false
+    t.string "layer", limit: 32, null: false
+    t.text "content", null: false
+    t.jsonb "meta"
+    t.string "checksum_sha256", limit: 64, null: false
+    t.string "source_id", limit: 26, null: false
+    t.string "license", limit: 256, null: false
+    t.string "version", limit: 64
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["unit_id", "edition_id", "layer", "language"], name: "idx_text_payloads_unique", unique: true
+  end
+
+  create_table "text_units", primary_key: "unit_id", id: { type: :string, limit: 26 }, force: :cascade do |t|
+    t.string "tradition", limit: 32, null: false
+    t.string "work_code", limit: 32, null: false
+    t.string "division_code", limit: 64, null: false
+    t.integer "chapter", null: false
+    t.integer "verse", null: false
+    t.string "subref", limit: 16
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["tradition", "division_code", "chapter", "verse", "subref"], name: "idx_text_units_unique", unique: true
+  end
+
   create_table "theories", force: :cascade do |t|
     t.bigint "user_id", null: false
     t.string "title", null: false
@@ -324,6 +375,7 @@ ActiveRecord::Schema[7.0].define(version: 2025_09_18_154851) do
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "canon_book_inclusions", "canons"
+  add_foreign_key "canon_maps", "text_units", column: "unit_id", primary_key: "unit_id"
   add_foreign_key "canon_work_preferences", "canons"
   add_foreign_key "challenges", "claims"
   add_foreign_key "challenges", "evidences"
@@ -336,5 +388,7 @@ ActiveRecord::Schema[7.0].define(version: 2025_09_18_154851) do
   add_foreign_key "numbering_maps", "numbering_systems"
   add_foreign_key "peers", "users"
   add_foreign_key "peers", "users", column: "peer_id"
+  add_foreign_key "text_payloads", "source_registries", column: "source_id", primary_key: "source_id"
+  add_foreign_key "text_payloads", "text_units", column: "unit_id", primary_key: "unit_id"
   add_foreign_key "theories", "users"
 end

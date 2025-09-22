@@ -44,6 +44,7 @@ Rails.application.routes.draw do
   get 'lsv', to: 'static#lsv'
   get 'faq', to: 'static#faq'
   get '/mission', to: 'static#mission'
+  get '/sources', to: 'static#sources'
   get 'feeds', to: 'feeds#index'
   get 'feeds/infinite', to: 'feeds#infinite'
   get 'contact', to: 'static#contact'

@@ -7,6 +7,7 @@ class StaticController < ApplicationController
   def lsv; end
   def faq; end
   def mission; end
+  def sources; end
 
   def contact
   end

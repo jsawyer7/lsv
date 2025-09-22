@@ -40,7 +40,10 @@
 
   <div class="nav-section-title">Sources</div>
   <div class="nav-items nav-sources">
-    <a href="#" class="nav-item upcoming"><%= image_tag 'source-icon.png', alt: '', class: 'nav-icon', size: '22x22' %><span class="nav-text">Quran</span></a>
+    <%= link_to sources_path, class: "nav-item #{'active' if current_page?(sources_path)}" do %>
+      <%= image_tag 'source-icon.png', alt: '', class: 'nav-icon', size: '22x22' %>
+      <span class="nav-text">Sources & Attribution</span>
+    <% end %>
     <a href="#" class="nav-item upcoming"><%= image_tag 'source-icon.png', alt: '', class: 'nav-icon', size: '22x22' %><span class="nav-text">Catholic Bible</span></a>
     <a href="#" class="nav-item upcoming"><%= image_tag 'sourses-icon.png', alt: '', class: 'nav-icon', size: '22x22' %><span class="nav-text">Add New Source</span></a>
   </div>
