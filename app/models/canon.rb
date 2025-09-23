@@ -6,8 +6,8 @@ class Canon < ApplicationRecord
   validates :is_official, inclusion: { in: [true, false] }
 
   # Associations
-  has_many :canon_book_inclusions, dependent: :destroy
-  has_many :canon_work_preferences, dependent: :destroy
+  has_many :canon_book_inclusions, dependent: :delete_all
+  has_many :canon_work_preferences, dependent: :delete_all
 
   # Through associations to master_books
   has_many :included_books, through: :canon_book_inclusions, source: :master_book
