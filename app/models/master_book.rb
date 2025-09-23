@@ -3,10 +3,10 @@ class MasterBook < ApplicationRecord
   validates :title, presence: true
   validates :family_code, presence: true
   validates :origin_lang, presence: true
-  
+
   # Canon associations
-  has_many :canon_book_inclusions, foreign_key: 'work_code', primary_key: 'code', dependent: :destroy
-  has_many :canon_work_preferences, foreign_key: 'work_code', primary_key: 'code', dependent: :destroy
+  has_many :canon_book_inclusions, foreign_key: 'work_code', primary_key: 'code', dependent: :delete_all
+  has_many :canon_work_preferences, foreign_key: 'work_code', primary_key: 'code', dependent: :delete_all
 
   # Through associations to canons
   has_many :included_in_canons, through: :canon_book_inclusions, source: :canon

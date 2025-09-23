@@ -9,7 +9,7 @@ class FoundationsOnly < ApplicationRecord
   validates :pub_range, presence: true
   validates :is_active, inclusion: { in: [true, false] }
    # Canon associations
-   has_many :canon_work_preferences, foreign_key: 'foundation_code', primary_key: 'code', dependent: :destroy
+   has_many :canon_work_preferences, foreign_key: 'foundation_code', primary_key: 'code', dependent: :delete_all
 
 
   scope :active, -> { where(is_active: true) }

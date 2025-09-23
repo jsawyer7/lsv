@@ -116,5 +116,29 @@
         <div data-i18n="Canon Preferences">Canon Preferences</div>
       <% end %>
     </li>
+
+    <!-- Numbering Systems -->
+    <li class="menu-item <%= 'active' if controller_name == 'numbering_systems' %>">
+      <%= link_to admin_numbering_systems_path, class: "menu-link" do %>
+        <i class="menu-icon icon-base ri ri-list-numbers"></i>
+        <div data-i18n="Numbering Systems">Numbering Systems</div>
+      <% end %>
+    </li>
+
+    <!-- Numbering Labels -->
+    <li class="menu-item <%= 'active' if controller_name == 'numbering_labels' %>">
+      <%= link_to admin_numbering_labels_path, class: "menu-link" do %>
+        <i class="menu-icon icon-base ri ri-price-tag-3-line"></i>
+        <div data-i18n="Numbering Labels">Numbering Labels</div>
+      <% end %>
+    </li>
+
+    <!-- Numbering Maps -->
+    <li class="menu-item <%= 'active' if controller_name == 'numbering_maps' %>">
+      <%= link_to admin_numbering_maps_path, class: "menu-link" do %>
+        <i class="menu-icon icon-base ri ri-map-pin-line"></i>
+        <div data-i18n="Numbering Maps">Numbering Maps</div>
+      <% end %>
+    </li>
   </ul>
 </aside>
