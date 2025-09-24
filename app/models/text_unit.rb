@@ -1,6 +1,6 @@
 class TextUnit < ApplicationRecord
   self.primary_key = 'unit_id'
-  
+
   validates :unit_id, presence: true, uniqueness: true
   validates :tradition, presence: true
   validates :work_code, presence: true
@@ -8,15 +8,15 @@ class TextUnit < ApplicationRecord
   validates :chapter, presence: true, numericality: { only_integer: true, greater_than: 0 }
   validates :verse, presence: true, numericality: { only_integer: true, greater_than: 0 }
   validates :tradition, uniqueness: { scope: [:division_code, :chapter, :verse, :subref] }
-  
+
   # Associations
   has_many :canon_maps, foreign_key: 'unit_id', primary_key: 'unit_id', dependent: :destroy
   has_many :text_payloads, foreign_key: 'unit_id', primary_key: 'unit_id', dependent: :destroy
-  
+
   # Canonical identifiers for Quran
   QURAN_TRADITION = 'quran'
   QURAN_WORK_CODE = 'QURAN'
-  
+
   # Surah names mapping (canonical transliterated names)
   SURAH_NAMES = {
     1 => 'AlFatiha',
@@ -134,8 +134,16 @@ class TextUnit < ApplicationRecord
     113 => 'AlFalaq',
     114 => 'AnNas'
   }.freeze
-  
+
   def self.surah_name(surah_number)
     SURAH_NAMES[surah_number]
+  end
+
+  def self.ransackable_attributes(auth_object = nil)
+    ["unit_id", "tradition", "work_code", "division_code", "chapter", "verse", "subref", "created_at", "updated_at"]
+  end
+
+  def self.ransackable_associations(auth_object = nil)
+    ["canon_maps", "text_payloads"]
   end
 end

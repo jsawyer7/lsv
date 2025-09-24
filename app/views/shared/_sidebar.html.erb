@@ -140,5 +140,37 @@
         <div data-i18n="Numbering Maps">Numbering Maps</div>
       <% end %>
     </li>
+
+    <!-- Text Units -->
+    <li class="menu-item <%= 'active' if controller_name == 'text_units' %>">
+      <%= link_to admin_text_units_path, class: "menu-link" do %>
+        <i class="menu-icon icon-base ri ri-file-text-line"></i>
+        <div data-i18n="Text Units">Text Units</div>
+      <% end %>
+    </li>
+
+    <!-- Canon Maps -->
+    <li class="menu-item <%= 'active' if controller_name == 'canon_maps' %>">
+      <%= link_to admin_canon_maps_path, class: "menu-link" do %>
+        <i class="menu-icon icon-base ri ri-map-2-line"></i>
+        <div data-i18n="Canon Maps">Canon Maps</div>
+      <% end %>
+    </li>
+
+    <!-- Text Payloads -->
+    <li class="menu-item <%= 'active' if controller_name == 'text_payloads' %>">
+      <%= link_to admin_text_payloads_path, class: "menu-link" do %>
+        <i class="menu-icon icon-base ri ri-file-download-line"></i>
+        <div data-i18n="Text Payloads">Text Payloads</div>
+      <% end %>
+    </li>
+
+    <!-- Source Registries -->
+    <li class="menu-item <%= 'active' if controller_name == 'source_registries' %>">
+      <%= link_to admin_source_registries_path, class: "menu-link" do %>
+        <i class="menu-icon icon-base ri ri-database-line"></i>
+        <div data-i18n="Source Registries">Source Registries</div>
+      <% end %>
+    </li>
   </ul>
 </aside>
