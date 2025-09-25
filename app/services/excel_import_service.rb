@@ -36,7 +36,7 @@ class ExcelImportService
         model: CanonWorkPreference,
         columns: ['canon_id', 'work_code', 'foundation_code', 'numbering_system_code', 'notes']
       },
-      # Phase 2 tables - Numbering System Management
+      # Phase 2 tables - Numbering System Management (order matters for dependencies)
       'numbering_system.xlsx' => {
         model: NumberingSystem,
         columns: ['code', 'name', 'description']
@@ -122,7 +122,13 @@ class ExcelImportService
           if header == 'numbering_system_id' && !value.nil?
             # Map numbering system codes to IDs
             numbering_system = NumberingSystem.find_by(code: value.to_s)
-            value = numbering_system.id if numbering_system
+            if numbering_system
+              value = numbering_system.id
+            else
+              # Set to nil and let validation handle it gracefully
+              puts "  Warning: NumberingSystem with code '#{value}' not found, setting to nil"
+              value = nil
+            end
           end
 
           # Handle integer conversion for display_order
@@ -159,6 +165,12 @@ class ExcelImportService
             end
           elsif model_class == NumberingLabel
             # NumberingLabel has composite key (numbering_system_id, system_code)
+            # Skip if numbering_system_id is nil (missing dependency)
+            if record_data['numbering_system_id'].nil?
+              puts "  Skipped: System ID is nil for code #{record_data['system_code']} (missing NumberingSystem dependency)"
+              next
+            end
+
             existing_record = model_class.find_by(
               numbering_system_id: record_data['numbering_system_id'],
               system_code: record_data['system_code']
