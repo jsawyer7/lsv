@@ -10,11 +10,6 @@ class CanonMap < ApplicationRecord
   # Canonical identifiers for Quran
   QURAN_CANON_ID = 'quran_hafs_uthmani'
 
-  # Override primary_key to return a string for Active Admin compatibility
-  def self.primary_key
-    'id'
-  end
-
   def self.ransackable_attributes(auth_object = nil)
     ["canon_id", "unit_id", "sequence_index", "created_at", "updated_at"]
   end
@@ -33,10 +28,6 @@ class CanonMap < ApplicationRecord
     "#{canon_id}|#{unit_id}"
   end
 
-  # Override id method to return composite key as string for Active Admin
-  def id
-    "#{canon_id}|#{unit_id}"
-  end
 
   # Custom finder method for Active Admin
   def self.find_by_param(param)
