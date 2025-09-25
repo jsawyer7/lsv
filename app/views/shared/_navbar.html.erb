@@ -49,6 +49,13 @@
   </div>
 
   <div class="nav-items nav-settings">
+    <% if user_signed_in? && current_user.admin? %>
+      <%= link_to admin_root_path, class: "nav-item #{'active' if request.path.start_with?('/admin')}" do %>
+        <i class="fas fa-shield-alt nav-icon" style="font-size: 22px; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;"></i>
+        <span class="nav-text">Admin Dashboard</span>
+      <% end %>
+    <% end %>
+    
     <%= link_to edit_settings_path, class: "nav-item #{'active' if request.path.start_with?('/settings')}" do %>
       <%= image_tag 'settings-icon.png', alt: '', class: 'nav-icon', size: '22x22' %>
       <span class="nav-text">Settings</span>
