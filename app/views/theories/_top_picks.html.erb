@@ -1,28 +1,50 @@
 <div class="theories-top-picks">
   <h4>Top Picks</h4>
-  <div class="tp-user">
-    <div class="tp-user-main">
-      <img src="/assets/default-avatar.png" class="tp-avatar" />
-      <span class="tp-name">Albert Flores <span class="tp-dot">•</span> <a class="tp-follow">Follow</a></span>
+  <% if @top_picks&.any? %>
+    <% @top_picks.each do |claim| %>
+      <div class="tp-user">
+        <div class="tp-user-main">
+          <% if claim.user.avatar.attached? %>
+            <%= image_tag claim.user.avatar, class: "tp-avatar" %>
+          <% else %>
+            <img src="/assets/default-avatar.png" class="tp-avatar" />
+          <% end %>
+          <span class="tp-name">
+            <%= claim.user.full_name.presence || claim.user.email.split('@').first.titleize %>
+            <% if claim.user.role == 'moderator' || claim.user.role == 'admin' %>
+              <i class="fa fa-check-circle tp-verified"></i>
+            <% end %>
+            <% if user_signed_in? && current_user != claim.user %>
+              <span class="tp-dot">•</span>
+              <% if current_user.following.include?(claim.user) %>
+                <span class="tp-following">Following</span>
+              <% else %>
+                <%= link_to "Follow", follows_path(followed_user_id: claim.user.id), method: :post, class: "tp-follow" %>
+              <% end %>
+            <% end %>
+          </span>
+        </div>
+        <div class="tp-title">
+          <% if claim.respond_to?(:content) %>
+            <%= truncate(claim.content, length: 60) %>
+          <% else %>
+            <%= truncate(claim.title, length: 60) %>
+          <% end %>
+        </div>
+        <div class="tp-date">
+          <%= claim.created_at.strftime("%d %b, %Y") %>
+        </div>
+      </div>
+    <% end %>
+  <% else %>
+    <div class="tp-user">
+      <div class="tp-user-main">
+        <img src="/assets/default-avatar.png" class="tp-avatar" />
+        <span class="tp-name">No top picks yet</span>
+      </div>
+      <div class="tp-title">Be the first to publish a fact!</div>
+      <div class="tp-date">Start contributing today</div>
     </div>
-    <div class="tp-title">Submission and Obedience as Pathways to Divinity</div>
-    <div class="tp-date">10 May, 2025</div>
-  </div>
-  <div class="tp-user">
-    <div class="tp-user-main">
-      <img src="/assets/default-avatar.png" class="tp-avatar" />
-      <span class="tp-name">Jacob Jones <i class="fa fa-check-circle tp-verified"></i></span>
-    </div>
-    <div class="tp-title">Submission and Obedience as Pathways to Divinity</div>
-    <div class="tp-date">10 May, 2025</div>
-  </div>
-  <div class="tp-user">
-    <div class="tp-user-main">
-      <img src="/assets/default-avatar.png" class="tp-avatar" />
-      <span class="tp-name">Savannah Nguyen <i class="fa fa-check-circle tp-verified"></i></span>
-    </div>
-    <div class="tp-title">Submission and Obedience as Pathways to Divinity</div>
-    <div class="tp-date">10 May, 2025</div>
-  </div>
+  <% end %>
   <div class="tp-show-more">Show more</div>
 </div> 

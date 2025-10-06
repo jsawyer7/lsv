@@ -1,28 +1,46 @@
 <div class="theories-who-to-follow">
   <h4>Who to Follow</h4>
-  <div class="wtf-user">
-    <img src="/assets/default-avatar.png" class="wtf-avatar" />
-    <div class="wtf-info">
-      <span class="wtf-name">Wade Warren <i class="fa fa-check-circle wtf-verified"></i></span>
-      <span class="wtf-meta">214 followers <span class="wtf-star">★ 4.7</span></span>
+  <% if @who_to_follow&.any? %>
+    <% @who_to_follow.each do |user| %>
+      <div class="wtf-user">
+        <% if user.avatar.attached? %>
+          <%= image_tag user.avatar, class: "wtf-avatar" %>
+        <% else %>
+          <img src="/assets/default-avatar.png" class="wtf-avatar" />
+        <% end %>
+        <div class="wtf-info">
+          <span class="wtf-name">
+            <%= user.full_name.presence || user.email.split('@').first.titleize %>
+            <% if user.role == 'moderator' || user.role == 'admin' %>
+              <i class="fa fa-check-circle wtf-verified"></i>
+            <% end %>
+          </span>
+          <span class="wtf-meta">
+            <%= pluralize(user.followers.count, 'follower') %>
+            <% if user.claims.published_facts.any? %>
+              <span class="wtf-star">★ <%= sprintf("%.1f", user.claims.published_facts.count * 0.1 + 4.0) %></span>
+            <% end %>
+          </span>
+        </div>
+        <% if user_signed_in? && current_user != user %>
+          <% if current_user.following.include?(user) %>
+            <button class="wtf-follow-btn wtf-following">Following</button>
+          <% else %>
+            <%= link_to "Follow", follows_path(followed_user_id: user.id), method: :post, class: "wtf-follow-btn" %>
+          <% end %>
+        <% else %>
+          <button class="wtf-follow-btn">Follow</button>
+        <% end %>
+      </div>
+    <% end %>
+  <% else %>
+    <div class="wtf-user">
+      <img src="/assets/default-avatar.png" class="wtf-avatar" />
+      <div class="wtf-info">
+        <span class="wtf-name">No users to follow yet</span>
+        <span class="wtf-meta">Be the first to join!</span>
+      </div>
     </div>
-    <button class="wtf-follow-btn">Follow</button>
-  </div>
-  <div class="wtf-user">
-    <img src="/assets/default-avatar.png" class="wtf-avatar" />
-    <div class="wtf-info">
-      <span class="wtf-name">Wade Warren <i class="fa fa-check-circle wtf-verified"></i></span>
-      <span class="wtf-meta">214 followers <span class="wtf-star">★ 4.7</span></span>
-    </div>
-    <button class="wtf-follow-btn">Follow</button>
-  </div>
-  <div class="wtf-user">
-    <img src="/assets/default-avatar.png" class="wtf-avatar" />
-    <div class="wtf-info">
-      <span class="wtf-name">Wade Warren <i class="fa fa-check-circle wtf-verified"></i></span>
-      <span class="wtf-meta">214 followers <span class="wtf-star">★ 4.7</span></span>
-    </div>
-    <button class="wtf-follow-btn">Follow</button>
-  </div>
+  <% end %>
   <div class="wtf-show-more">Show more</div>
 </div> 
