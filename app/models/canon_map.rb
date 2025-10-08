@@ -1,4 +1,8 @@
 class CanonMap < ApplicationRecord
+  # Since this table has no id column, we need to handle primary key differently
+  # We'll use a virtual primary key approach for ActiveAdmin compatibility
+  self.primary_key = 'canon_id'
+
   validates :canon_id, presence: true
   validates :unit_id, presence: true
   validates :sequence_index, presence: true, numericality: { only_integer: true, greater_than: 0 }
@@ -23,15 +27,28 @@ class CanonMap < ApplicationRecord
     @model_name ||= ActiveModel::Name.new(self, nil, "CanonMap")
   end
 
+  # Override id method to return canon_id for ActiveAdmin compatibility
+  def id
+    canon_id
+  end
+
   # Custom method to generate a unique identifier for Active Admin
   def to_param
     "#{canon_id}|#{unit_id}"
   end
 
-
   # Custom finder method for Active Admin
   def self.find_by_param(param)
     canon_id, unit_id = param.split('|', 2)
     find_by(canon_id: canon_id, unit_id: unit_id)
+  end
+
+  # Override find method to handle our custom primary key
+  def self.find(id)
+    if id.include?('|')
+      find_by_param(id)
+    else
+      find_by(canon_id: id)
+    end
   end
 end

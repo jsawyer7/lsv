@@ -19,6 +19,11 @@ ActiveAdmin.register CanonMap do
         super
       end
     end
+
+    # Override the resource method to return our found resource
+    def resource
+      @canon_map ||= find_resource
+    end
   end
 
   index do
@@ -158,7 +163,7 @@ ActiveAdmin.register CanonMap do
           para "View detailed information about this canon map", class: "text-muted mb-0"
         end
         div class: "d-flex gap-2" do
-          link_to "Edit Canon Map", edit_admin_canon_map_path(canon_map), class: "btn btn-primary"
+          link_to "Edit Canon Map", edit_admin_canon_map_path(resource), class: "btn btn-primary"
           link_to "Back to Canon Maps", admin_canon_maps_path, class: "btn btn-outline-secondary"
         end
       end
@@ -172,11 +177,11 @@ ActiveAdmin.register CanonMap do
             div class: "materio-avatar" do
               i class: "ri ri-map-pin-line text-primary", style: "font-size: 2rem;"
             end
-            h3 class: "mb-2" do canon_map.canon_id end
+            h3 class: "mb-2" do resource.canon_id end
             div class: "d-flex justify-content-center gap-2 mb-3" do
-              span class: "badge bg-primary fs-6" do "Sequence #{canon_map.sequence_index}" end
+              span class: "badge bg-primary fs-6" do "Sequence #{resource.sequence_index}" end
             end
-            para class: "text-muted mb-0" do canon_map.unit_id end
+            para class: "text-muted mb-0" do resource.unit_id end
           end
         end
       end
@@ -197,7 +202,7 @@ ActiveAdmin.register CanonMap do
                   i class: "ri ri-list-numbers text-primary me-3 fs-4"
                   div do
                     div class: "text-muted small" do "Canon ID" end
-                    div class: "fw-semibold" do canon_map.canon_id end
+                    div class: "fw-semibold" do resource.canon_id end
                   end
                 end
               end
@@ -206,13 +211,13 @@ ActiveAdmin.register CanonMap do
                   i class: "ri ri-hashtag text-primary me-3 fs-4"
                   div do
                     div class: "text-muted small" do "Unit ID" end
-                    div class: "fw-semibold" do canon_map.unit_id end
+                    div class: "fw-semibold" do resource.unit_id end
                   end
                 end
               end
               div class: "col-md-6" do
                 div class: "materio-metric-card" do
-                  div class: "materio-metric-value" do canon_map.sequence_index end
+                  div class: "materio-metric-value" do resource.sequence_index end
                   div class: "materio-metric-label" do "Sequence Index" end
                 end
               end
@@ -221,12 +226,12 @@ ActiveAdmin.register CanonMap do
                   i class: "ri ri-calendar-line text-primary me-3 fs-4"
                   div do
                     div class: "text-muted small" do "Created" end
-                    div class: "fw-semibold" do canon_map.created_at.strftime("%B %d, %Y") end
+                    div class: "fw-semibold" do resource.created_at.strftime("%B %d, %Y") end
                   end
                 end
               end
               # Related Text Unit Information
-              if canon_map.text_unit
+              if resource.text_unit
                 div class: "col-12" do
                   div class: "p-3 bg-light rounded" do
                     div class: "text-muted small mb-2" do
@@ -235,20 +240,20 @@ ActiveAdmin.register CanonMap do
                     end
                     div class: "row g-2" do
                       div class: "col-md-6" do
-                        div class: "fw-semibold" do "Tradition: #{canon_map.text_unit.tradition}" end
+                        div class: "fw-semibold" do "Tradition: #{resource.text_unit.tradition}" end
                       end
                       div class: "col-md-6" do
-                        div class: "fw-semibold" do "Work: #{canon_map.text_unit.work_code}" end
+                        div class: "fw-semibold" do "Work: #{resource.text_unit.work_code}" end
                       end
                       div class: "col-md-6" do
-                        div class: "fw-semibold" do "Chapter: #{canon_map.text_unit.chapter}" end
+                        div class: "fw-semibold" do "Chapter: #{resource.text_unit.chapter}" end
                       end
                       div class: "col-md-6" do
-                        div class: "fw-semibold" do "Verse: #{canon_map.text_unit.verse}" end
+                        div class: "fw-semibold" do "Verse: #{resource.text_unit.verse}" end
                       end
                     end
                     div class: "mt-2" do
-                      link_to "View Full Text Unit Details", admin_text_unit_path(canon_map.text_unit), class: "btn btn-outline-primary btn-sm"
+                      link_to "View Full Text Unit Details", admin_text_unit_path(resource.text_unit), class: "btn btn-outline-primary btn-sm"
                     end
                   end
                 end
