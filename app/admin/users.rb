@@ -206,35 +206,41 @@ ActiveAdmin.register User do
 
   form do |f|
 
-    # Page Header
-    div class: "d-flex justify-content-between align-items-center mb-4" do
-      div do
-        h1 "Edit User", class: "mb-1 fw-bold text-dark"
-        p "Update user information and permissions", class: "text-muted mb-0"
-      end
-      div class: "d-flex gap-2" do
-        link_to "Back to Users", admin_users_path, class: "btn btn-outline-secondary px-3 py-2"
+    # Dynamic header based on action
+    div class: "page-header mb-4" do
+      div class: "d-flex justify-content-between align-items-center" do
+        div do
+          if f.object.new_record?
+            h1 "Create User", class: "mb-2 text-primary"
+            para "Add new user to the system", class: "text-muted mb-0"
+          else
+            h1 "Edit User", class: "mb-2 text-primary"
+            para "Update user information and permissions", class: "text-muted mb-0"
+          end
+        end
+        div do
+          link_to "Back to Users", admin_users_path, class: "btn btn-outline-secondary"
+        end
       end
     end
 
-    # Main Form Content
-    div class: "materio-form-card" do
-      div class: "materio-form-header" do
-        h5 class: "mb-0 fw-semibold" do
-          i class: "ri ri-edit-line me-2"
+    div class: "card" do
+      div class: "card-header bg-primary text-white" do
+        h5 class: "mb-0" do
+          i class: "ri ri-user-settings-line me-2"
           "User Information"
         end
       end
-      div class: "card-body p-4" do
-    f.inputs do
+      div class: "card-body p-5" do
+        f.inputs do
           # Email Display (Read-only)
           div class: "materio-form-group" do
             div class: "materio-form-label" do
               i class: "ri ri-mail-line me-2"
-              "Email Address"
+              span "1. Email Address"
             end
-            div class: "materio-user-info" do
-              div class: "materio-user-avatar" do
+            div class: "materio-user-info d-flex align-items-center p-3 bg-light rounded" do
+              div class: "materio-user-avatar me-3" do
                 f.object.email.first.upcase
               end
               div do
@@ -248,7 +254,7 @@ ActiveAdmin.register User do
           div class: "materio-form-group" do
             div class: "materio-form-label" do
               i class: "ri ri-user-line me-2"
-              "Full Name"
+              span "2. Full Name"
             end
             f.input :full_name,
                     class: "materio-form-control",
@@ -263,22 +269,32 @@ ActiveAdmin.register User do
           div class: "materio-form-group" do
             div class: "materio-form-label" do
               i class: "ri ri-shield-user-line me-2"
-              "User Role"
+              span "3. User Role"
             end
             f.input :role,
                     as: :select,
                     collection: User.roles.keys.map { |role| [role.titleize, role] },
-                    class: "materio-form-control materio-form-select",
+                    class: "materio-form-control",
                     label: false,
-                    input_html: { class: "materio-form-control materio-form-select" }
+                    input_html: {
+                      class: "materio-form-control",
+                      placeholder: "Select user role..."
+                    }
           end
         end
-        # Actions Section
+
+        # Actions Section with dynamic button text
         div class: "mt-4 pt-4 border-top" do
           div class: "d-flex justify-content-end gap-3" do
-            f.action :submit,
-                     label: "Update User",
-                     class: "materio-btn-primary"
+            if f.object.new_record?
+              f.action :submit,
+                       label: "Create User",
+                       class: "materio-btn-primary"
+            else
+              f.action :submit,
+                       label: "Update User",
+                       class: "materio-btn-primary"
+            end
             f.action :cancel,
                      label: "Cancel",
                      class: "materio-btn-secondary"
