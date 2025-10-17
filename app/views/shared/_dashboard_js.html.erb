@@ -41,40 +41,133 @@
       });
     }
 
-    // User profile dropdown
-    const userProfile = document.querySelector('.user-profile');
-    const dropdownMenu = document.querySelector('.dropdown-menu');
-    
-    if (userProfile && dropdownMenu) {
-      userProfile.addEventListener('click', function() {
-        dropdownMenu.classList.toggle('show');
-      });
-
-      // Close dropdown when clicking outside
-      document.addEventListener('click', function(event) {
-        if (!userProfile.contains(event.target) && dropdownMenu.classList.contains('show')) {
-          dropdownMenu.classList.remove('show');
+    // Facebook-style dropdown system with smooth animations
+    class DropdownManager {
+      constructor() {
+        this.userProfile = document.querySelector('.user-profile');
+        this.userInfo = document.querySelector('.user-info');
+        this.dropdownMenu = document.querySelector('.dropdown-menu');
+        this.settingsParent = document.querySelector('.dropdown-parent');
+        this.settingsSubmenu = document.querySelector('.dropdown-submenu');
+        
+        this.isDropdownOpen = false;
+        this.isSubmenuOpen = false;
+        this.animationTimeout = null;
+        
+        this.init();
+      }
+      
+      init() {
+        this.bindEvents();
+      }
+      
+      bindEvents() {
+        // Main dropdown toggle
+        if (this.userInfo && this.dropdownMenu) {
+          this.userInfo.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.toggleDropdown();
+          });
         }
-      });
-    }
-
-    // Dropdown menu functionality
-    const userInfo = document.querySelector('.user-info');
-    
-    if (userInfo && dropdownMenu) {
-      userInfo.addEventListener('click', function(e) {
-        e.stopPropagation();
-        userInfo.classList.toggle('active');
-        dropdownMenu.classList.toggle('show');
-      });
-
-      // Close dropdown when clicking outside
-      document.addEventListener('click', function(e) {
-        if (!userInfo.contains(e.target)) {
-          userInfo.classList.remove('active');
-          dropdownMenu.classList.remove('show');
+        
+        // Settings submenu click functionality (Facebook-style)
+        if (this.settingsParent && this.settingsSubmenu) {
+          this.settingsParent.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.showSubmenu();
+          });
         }
-      });
+        
+        // Back button functionality
+        const backBtn = document.querySelector('.settings-back-btn');
+        if (backBtn) {
+          backBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.closeSubmenu();
+          });
+        }
+        
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', (e) => {
+          if (!this.userProfile?.contains(e.target)) {
+            this.closeAllDropdowns();
+          }
+        });
+        
+        // Close on escape key
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape') {
+            this.closeAllDropdowns();
+          }
+        });
+        
+        // Prevent submenu from closing when clicking inside it
+        if (this.settingsSubmenu) {
+          this.settingsSubmenu.addEventListener('click', (e) => {
+            e.stopPropagation();
+          });
+        }
+      }
+      
+      toggleDropdown() {
+        if (this.isDropdownOpen) {
+          this.closeAllDropdowns();
+        } else {
+          this.showDropdown();
+        }
+      }
+      
+      showDropdown() {
+        this.clearAnimationTimeout();
+        this.dropdownMenu?.classList.add('show');
+        this.userInfo?.classList.add('active');
+        this.isDropdownOpen = true;
+      }
+      
+      hideDropdown() {
+        this.dropdownMenu?.classList.remove('show');
+        this.userInfo?.classList.remove('active');
+        this.isDropdownOpen = false;
+        this.closeSubmenu();
+      }
+      
+      showSubmenu() {
+        this.clearAnimationTimeout();
+        this.settingsSubmenu?.classList.add('show');
+        this.isSubmenuOpen = true;
+        
+        // Position the submenu properly
+        if (this.settingsSubmenu) {
+          const rect = this.settingsParent.getBoundingClientRect();
+          const submenu = this.settingsSubmenu;
+          submenu.style.right = '0';
+          submenu.style.top = '0';
+        }
+      }
+      
+      hideSubmenu() {
+        this.settingsSubmenu?.classList.remove('show');
+        this.isSubmenuOpen = false;
+      }
+      
+      closeSubmenu() {
+        this.hideSubmenu();
+      }
+      
+      closeAllDropdowns() {
+        this.hideDropdown();
+        this.closeSubmenu();
+      }
+      
+      clearAnimationTimeout() {
+        if (this.animationTimeout) {
+          clearTimeout(this.animationTimeout);
+          this.animationTimeout = null;
+        }
+      }
     }
+    
+    // Initialize the dropdown manager
+    new DropdownManager();
   });
 </script> 
