@@ -45,11 +45,36 @@
             <div class="user-profile">
               <% if user_signed_in? %>
                 <div class="user-info" data-action="click->dropdown#toggle">
-                  <span class="nav-text"><%= current_user.full_name&.titleize || current_user.email %></span>
+                  <div class="user-details">
+                    <span class="user-name"><%= current_user.full_name&.titleize || current_user.email.split('@').first.titleize %></span>
+                    <span class="user-email"><%= current_user.email %></span>
+                  </div>
                   <i class="fas fa-chevron-down dropdown-icon"></i>
                 </div>
 
                 <div class="dropdown-menu" data-dropdown-target="menu">
+                  <div class="dropdown-item dropdown-parent" data-action="click->dropdown#toggleSubmenu">
+                    <i class="fas fa-cog"></i>
+                    <span>Settings</span>
+                    <i class="fas fa-chevron-right dropdown-arrow"></i>
+                    
+                    <div class="dropdown-submenu" data-dropdown-target="submenu">
+                      <div class="settings-header">
+                        <button class="settings-back-btn" data-action="click->dropdown#closeSubmenu">
+                          <i class="fas fa-arrow-left"></i>
+                        </button>
+                      </div>
+                      
+                      <ul class="settings-menu">
+                        <li class="<%= 'active' if local_assigns[:active] == 'edit' %>"><%= link_to(edit_settings_path, data: { turbo: false }, class: 'settings-menu-link') do %><%= image_tag('edit-profile.png', class: 'settings-menu-icon') %> Edit Profile<% end %></li>
+                        <li class="upcoming"><span class="settings-menu-link"><%= image_tag('security.png', class: 'settings-menu-icon') %> Security</span></li>
+                        <li class="<%= 'active' if local_assigns[:active] == 'notifications' %>"><%= link_to(notifications_settings_path, data: { turbo: false }, class: 'settings-menu-link') do %><%= image_tag('settings-notification.png', class: 'settings-menu-icon') %> Notifications<% end %></li>
+                        <li class="upcoming"><span class="settings-menu-link"><%= image_tag('subscription.png', class: 'settings-menu-icon') %> Subscription</span></li>
+                        <li class="upcoming"><span class="settings-menu-link"><%= image_tag('delete-profile.png', class: 'settings-menu-icon') %> Delete Profile</span></li>
+                      </ul>
+                    </div>
+                  </div>
+                  <div class="dropdown-divider"></div>
                   <%= button_to destroy_user_session_path, method: :delete, class: "dropdown-item" do %>
                     <i class="fas fa-sign-out-alt"></i>
                     <span>Log Out</span>

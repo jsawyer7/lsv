@@ -162,6 +162,7 @@
   background: #e3f0ff;
   font-weight: 600;
 }
+
 .settings-menu li:hover .settings-menu-link {
   color: #2196f3;
   background: #f5faff;
@@ -171,9 +172,6 @@
   transition: filter 0.2s;
 }
 .settings-menu li.active .settings-menu-link .settings-menu-icon {
-  filter: brightness(0) saturate(100%) invert(41%) sepia(92%) saturate(747%) hue-rotate(181deg) brightness(97%) contrast(101%) !important;
-}
-.settings-menu li:hover:not(.active) .settings-menu-link .settings-menu-icon {
   filter: brightness(0) saturate(100%) invert(41%) sepia(92%) saturate(747%) hue-rotate(181deg) brightness(97%) contrast(101%) !important;
 }
 .settings-menu li {
@@ -201,12 +199,6 @@
   border-left: none;
   border-radius: 8px;
   min-width: 235px;
-}
-.settings-menu li:hover {
-  background: #f5faff;
-  color: #2196f3;
-  border-left: none;
-  border-radius: 8px;
 }
 .settings-menu li.active .settings-menu-icon {
   filter: none;
