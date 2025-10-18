@@ -47,8 +47,6 @@
         this.userProfile = document.querySelector('.user-profile');
         this.userInfo = document.querySelector('.user-info');
         this.dropdownMenu = document.querySelector('.dropdown-menu');
-        this.settingsParent = document.querySelector('.dropdown-parent');
-        this.settingsSubmenu = document.querySelector('.dropdown-submenu');
         
         this.isDropdownOpen = false;
         this.isSubmenuOpen = false;
@@ -71,11 +69,21 @@
         }
         
         // Settings submenu click functionality (Facebook-style)
-        if (this.settingsParent && this.settingsSubmenu) {
-          this.settingsParent.addEventListener('click', (e) => {
+        const settingsParent = document.querySelector('.dropdown-parent');
+        if (settingsParent) {
+          settingsParent.addEventListener('click', (e) => {
+            console.log('Settings clicked');
             e.stopPropagation();
             this.showSubmenu();
+            
+            // Visual test - change background color temporarily
+            settingsParent.style.backgroundColor = '#e3f0ff';
+            setTimeout(() => {
+              settingsParent.style.backgroundColor = '';
+            }, 1000);
           });
+        } else {
+          console.log('Settings parent not found');
         }
         
         // Back button functionality
@@ -102,8 +110,9 @@
         });
         
         // Prevent submenu from closing when clicking inside it
-        if (this.settingsSubmenu) {
-          this.settingsSubmenu.addEventListener('click', (e) => {
+        const submenuContent = document.querySelector('.submenu-content');
+        if (submenuContent) {
+          submenuContent.addEventListener('click', (e) => {
             e.stopPropagation();
           });
         }
@@ -126,6 +135,8 @@
       
       hideDropdown() {
         this.dropdownMenu?.classList.remove('show');
+        this.dropdownMenu?.classList.remove('submenu-active');
+        this.dropdownMenu?.classList.remove('submenu-open');
         this.userInfo?.classList.remove('active');
         this.isDropdownOpen = false;
         this.closeSubmenu();
@@ -133,20 +144,22 @@
       
       showSubmenu() {
         this.clearAnimationTimeout();
-        this.settingsSubmenu?.classList.add('show');
-        this.isSubmenuOpen = true;
+        console.log('showSubmenu called');
         
-        // Position the submenu properly
-        if (this.settingsSubmenu) {
-          const rect = this.settingsParent.getBoundingClientRect();
-          const submenu = this.settingsSubmenu;
-          submenu.style.right = '0';
-          submenu.style.top = '0';
-        }
+        // Simple approach - add class immediately
+        this.dropdownMenu?.classList.add('submenu-active');
+        console.log('Added submenu-active class');
+        console.log('Dropdown classes:', this.dropdownMenu?.classList.toString());
+        
+        this.isSubmenuOpen = true;
       }
       
       hideSubmenu() {
-        this.settingsSubmenu?.classList.remove('show');
+        this.clearAnimationTimeout();
+        
+        // Remove morphing class immediately for smooth transition back
+        this.dropdownMenu?.classList.remove('submenu-active');
+        this.dropdownMenu?.classList.remove('submenu-open');
         this.isSubmenuOpen = false;
       }
       
