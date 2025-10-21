@@ -22,6 +22,32 @@
           <% end %>
         </div>
       </div>
+
+      <div class="settings-background-section-row">
+        <div class="settings-background-info">
+          <div class="settings-background-preview">
+            <% if @user.background_image_url.present? %>
+              <%= image_tag(@user.background_image_url, class: 'settings-background-img') %>
+            <% end %>
+            <div class="settings-background-placeholder" style="<%= 'display: none;' if @user.background_image_url.present? %>">
+              <i class="fas fa-image"></i>
+              <span>No background image</span>
+            </div>
+          </div>
+          <div class="settings-background-texts">
+            <div class="settings-background-label">Your background</div>
+            <div class="settings-background-hint">PNG or JPG no bigger than 2MB in size.</div>
+          </div>
+        </div>
+        <div class="settings-background-actions-row">
+          <input type="hidden" id="remove-background-field" name="remove_background_image" value="false" />
+          <input type="file" id="background-upload-input" name="user[background_image]" accept="image/png,image/jpg,image/jpeg" style="display:none;" />
+          <button type="button" class="settings-background-update" onclick="document.getElementById('background-upload-input').click();">Upload</button>
+          <% if @user.background_image.attached? %>
+            <button type="button" class="settings-background-delete" onclick="removeBackgroundAndPreviewAndSubmit()">Delete</button>
+          <% end %>
+        </div>
+      </div>
       <div class="settings-form-group">
         <%= f.label :full_name, 'Your Name' %>
         <%= f.text_field :full_name, class: 'settings-input', required: true %>
@@ -47,6 +73,12 @@
     <div class="loader-container">
       <div class="loader"></div>
       <p class="loader-text">Processing your avatar...</p>
+    </div>
+  </div>
+  <div id="background-loader" class="processing-overlay" style="display:none;z-index:10000;">
+    <div class="loader-container">
+      <div class="loader"></div>
+      <p class="loader-text">Processing your background image...</p>
     </div>
   </div>
   <%= render 'shared/settings_js' %>

@@ -42,8 +42,10 @@ class User < ApplicationRecord
   before_create :set_default_role
 
   has_one_attached :avatar
+  has_one_attached :background_image
   validates :about, length: { maximum: 1000 }
   validate :avatar_type_and_size
+  validate :background_image_type_and_size
 
   # Helper method to get avatar URL that works in both development and production
   def avatar_url
@@ -51,6 +53,15 @@ class User < ApplicationRecord
       Rails.application.routes.url_helpers.rails_blob_url(avatar, only_path: true)
     elsif self[:avatar_url].present?
       self[:avatar_url]
+    else
+      nil
+    end
+  end
+
+  # Helper method to get background image URL
+  def background_image_url
+    if background_image.attached?
+      Rails.application.routes.url_helpers.rails_blob_url(background_image, only_path: true)
     else
       nil
     end
