@@ -45,6 +45,17 @@ class User < ApplicationRecord
   validates :about, length: { maximum: 1000 }
   validate :avatar_type_and_size
 
+  # Helper method to get avatar URL that works in both development and production
+  def avatar_url
+    if avatar.attached?
+      Rails.application.routes.url_helpers.rails_blob_url(avatar, only_path: true)
+    elsif self[:avatar_url].present?
+      self[:avatar_url]
+    else
+      nil
+    end
+  end
+
   def active_for_authentication?
     super && (confirmed? || provider.present?)
   end
