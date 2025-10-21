@@ -6,18 +6,60 @@ function hideAvatarLoader() {
   document.getElementById('avatar-loader').style.display = 'none';
 }
 function removeAvatarAndPreviewAndSubmit() {
-  var preview = document.querySelector('.settings-avatar-img-lg');
-  if (preview) {
-    preview.src = '/assets/default-avatar.png';
+  // Show confirmation dialog
+  if (confirm('Are you sure you want to delete your avatar? This action cannot be undone.')) {
+    var preview = document.querySelector('.settings-avatar-img-lg');
+    if (preview) {
+      preview.src = '/assets/default-avatar.png';
+    }
+    document.getElementById('remove-avatar-field').value = 'true';
+    showAvatarLoader();
+    document.getElementById('avatar-upload-input').closest('form').submit();
   }
-  document.getElementById('remove-avatar-field').value = 'true';
-  showAvatarLoader();
-  document.getElementById('avatar-upload-input').closest('form').submit();
 }
 document.getElementById('avatar-upload-input').addEventListener('change', function() {
   document.getElementById('remove-avatar-field').value = 'false';
   showAvatarLoader();
   this.closest('form').submit();
 });
-document.addEventListener('DOMContentLoaded', hideAvatarLoader);
+
+// Background image functionality
+function showBackgroundLoader() {
+  document.getElementById('background-loader').style.display = 'flex';
+}
+
+function hideBackgroundLoader() {
+  document.getElementById('background-loader').style.display = 'none';
+}
+
+function removeBackgroundAndPreviewAndSubmit() {
+  // Show confirmation dialog
+  if (confirm('Are you sure you want to delete your background image? This action cannot be undone.')) {
+    // Hide the background image and show placeholder
+    var preview = document.querySelector('.settings-background-img');
+    var placeholder = document.querySelector('.settings-background-placeholder');
+    
+    if (preview) {
+      preview.style.display = 'none';
+    }
+    if (placeholder) {
+      placeholder.style.display = 'flex';
+    }
+    
+    document.getElementById('remove-background-field').value = 'true';
+    showBackgroundLoader();
+    document.getElementById('background-upload-input').closest('form').submit();
+  }
+}
+
+document.getElementById('background-upload-input').addEventListener('change', function() {
+  document.getElementById('remove-background-field').value = 'false';
+  showBackgroundLoader();
+  this.closest('form').submit();
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+  hideAvatarLoader();
+  hideBackgroundLoader();
+});
 </script> 

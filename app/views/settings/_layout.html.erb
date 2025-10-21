@@ -1,7 +1,7 @@
 <div class="settings-main">
   <div class="settings-header-section">
     <h2 class="settings-title">Settings</h2>
-    <div class="settings-profile-banner"></div>
+    <div class="settings-profile-banner" style="<%= 'background-image: url(' + @user.background_image_url + ');' if @user.background_image_url.present? %>"></div>
     <div class="settings-profile-header">
       <div class="settings-profile-avatar">
         <%= image_tag(@user.avatar_url.presence || 'default-avatar.png', class: 'settings-avatar-img') %>
