@@ -4,7 +4,7 @@
     <div class="settings-profile-banner"></div>
     <div class="settings-profile-header">
       <div class="settings-profile-avatar">
-        <%= image_tag(@user.avatar.attached? ? url_for(@user.avatar) : 'default-avatar.png', class: 'settings-avatar-img') %>
+        <%= image_tag(@user.avatar_url.presence || 'default-avatar.png', class: 'settings-avatar-img') %>
       </div>
       <div class="settings-profile-info">
         <div class="settings-profile-name"><%= @user.full_name || @user.email %></div>
