@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2025_10_17_175442) do
+ActiveRecord::Schema[7.0].define(version: 2025_10_24_113642) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
   enable_extension "vector"
@@ -51,6 +51,36 @@ ActiveRecord::Schema[7.0].define(version: 2025_10_17_175442) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["user_id"], name: "index_ai_evidence_usages_on_user_id"
+  end
+
+  create_table "books", force: :cascade do |t|
+    t.text "code", null: false
+    t.text "std_name", null: false
+    t.text "description"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["code"], name: "index_books_on_code", unique: true
+  end
+
+  create_table "canon_books", force: :cascade do |t|
+    t.bigint "canon_id", null: false
+    t.bigint "book_id", null: false
+    t.integer "seq_no", null: false
+    t.boolean "included_bool", default: true, null: false
+    t.text "description"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["book_id"], name: "index_canon_books_on_book_id"
+    t.index ["canon_id"], name: "index_canon_books_on_canon_id"
+  end
+
+  create_table "canons", force: :cascade do |t|
+    t.text "code", null: false
+    t.text "name", null: false
+    t.text "description"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["code"], name: "index_canons_on_code", unique: true
   end
 
   create_table "challenges", force: :cascade do |t|
@@ -177,6 +207,15 @@ ActiveRecord::Schema[7.0].define(version: 2025_10_17_175442) do
     t.index ["user_id"], name: "index_follows_on_user_id"
   end
 
+  create_table "languages", force: :cascade do |t|
+    t.text "code", null: false
+    t.text "name", null: false
+    t.text "description"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["code"], name: "index_languages_on_code", unique: true
+  end
+
   create_table "name_mappings", force: :cascade do |t|
     t.string "internal_id", null: false
     t.string "jewish"
@@ -219,6 +258,19 @@ ActiveRecord::Schema[7.0].define(version: 2025_10_17_175442) do
     t.index ["reasonable_type", "reasonable_id", "source"], name: "index_reasonings_on_reasonable_and_source", unique: true
   end
 
+  create_table "sources", force: :cascade do |t|
+    t.text "code", null: false
+    t.text "name", null: false
+    t.text "description"
+    t.bigint "language_id", null: false
+    t.jsonb "rights_json"
+    t.text "provenance"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["code"], name: "index_sources_on_code", unique: true
+    t.index ["language_id"], name: "index_sources_on_language_id"
+  end
+
   create_table "theories", force: :cascade do |t|
     t.bigint "user_id", null: false
     t.string "title", null: false
@@ -256,6 +308,8 @@ ActiveRecord::Schema[7.0].define(version: 2025_10_17_175442) do
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "ai_evidence_usages", "users"
+  add_foreign_key "canon_books", "books"
+  add_foreign_key "canon_books", "canons"
   add_foreign_key "challenges", "claims"
   add_foreign_key "challenges", "evidences"
   add_foreign_key "challenges", "users"
@@ -269,5 +323,6 @@ ActiveRecord::Schema[7.0].define(version: 2025_10_17_175442) do
   add_foreign_key "follows", "users", column: "followed_user"
   add_foreign_key "peers", "users"
   add_foreign_key "peers", "users", column: "peer_id"
+  add_foreign_key "sources", "languages"
   add_foreign_key "theories", "users"
 end

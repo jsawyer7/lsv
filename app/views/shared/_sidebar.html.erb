@@ -48,5 +48,45 @@
       <% end %>
     </li>
 
+    <!-- Languages -->
+    <li class="menu-item <%= 'active' if controller_name == 'languages' %>">
+      <%= link_to admin_languages_path, class: "menu-link" do %>
+        <i class="menu-icon icon-base ri ri-translate"></i>
+        <div data-i18n="Languages">Languages</div>
+      <% end %>
+    </li>
+
+    <!-- Sources -->
+    <li class="menu-item <%= 'active' if controller_name == 'sources' %>">
+      <%= link_to admin_sources_path, class: "menu-link" do %>
+        <i class="menu-icon icon-base ri ri-book-line"></i>
+        <div data-i18n="Sources">Sources</div>
+      <% end %>
+    </li>
+
+    <!-- Books -->
+    <li class="menu-item <%= 'active' if controller_name == 'books' %>">
+      <%= link_to admin_books_path, class: "menu-link" do %>
+        <i class="menu-icon icon-base ri ri-book-open-line"></i>
+        <div data-i18n="Books">Books</div>
+      <% end %>
+    </li>
+
+    <!-- Canons -->
+    <li class="menu-item <%= 'active' if controller_name == 'canons' %>">
+      <%= link_to admin_canons_path, class: "menu-link" do %>
+        <i class="menu-icon icon-base ri ri-list-check"></i>
+        <div data-i18n="Canons">Canons</div>
+      <% end %>
+    </li>
+
+    <!-- Canon Books -->
+    <li class="menu-item <%= 'active' if controller_name == 'canon_books' %>">
+      <%= link_to admin_canon_books_path, class: "menu-link" do %>
+        <i class="menu-icon icon-base ri ri-list-check-2"></i>
+        <div data-i18n="Canon Books">Canon Books</div>
+      <% end %>
+    </li>
+
   </ul>
 </aside>
