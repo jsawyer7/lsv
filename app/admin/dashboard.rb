@@ -83,6 +83,125 @@ ActiveAdmin.register_page "Dashboard" do
         end
       end
 
+      # Second Row - New Tables Metrics
+      div class: "row mt-4" do
+        div class: "col-md-3" do
+          div class: "card" do
+            div class: "card-body" do
+              div class: "d-flex justify-content-between align-items-start" do
+                div do
+                  h6 "Languages", class: "card-title text-muted mb-1"
+                  h3 Language.count, class: "text-primary mb-0"
+                  small "Available languages", class: "text-muted"
+                end
+                div class: "avatar avatar-sm bg-primary rounded-circle d-flex align-items-center justify-content-center" do
+                  i class: "ri ri-translate text-white"
+                end
+              end
+            end
+          end
+        end
+
+        div class: "col-md-3" do
+          div class: "card" do
+            div class: "card-body" do
+              div class: "d-flex justify-content-between align-items-start" do
+                div do
+                  h6 "Sources", class: "card-title text-muted mb-1"
+                  h3 Source.count, class: "text-success mb-0"
+                  small "Textual sources", class: "text-muted"
+                end
+                div class: "avatar avatar-sm bg-success rounded-circle d-flex align-items-center justify-content-center" do
+                  i class: "ri ri-book-line text-white"
+                end
+              end
+            end
+          end
+        end
+
+        div class: "col-md-3" do
+          div class: "card" do
+            div class: "card-body" do
+              div class: "d-flex justify-content-between align-items-start" do
+                div do
+                  h6 "Books", class: "card-title text-muted mb-1"
+                  h3 Book.count, class: "text-warning mb-0"
+                  small "Biblical books", class: "text-muted"
+                end
+                div class: "avatar avatar-sm bg-warning rounded-circle d-flex align-items-center justify-content-center" do
+                  i class: "ri ri-book-open-line text-white"
+                end
+              end
+            end
+          end
+        end
+
+        div class: "col-md-3" do
+          div class: "card" do
+            div class: "card-body" do
+              div class: "d-flex justify-content-between align-items-start" do
+                div do
+                  h6 "Canons", class: "card-title text-muted mb-1"
+                  h3 Canon.count, class: "text-danger mb-0"
+                  small "Religious canons", class: "text-muted"
+                end
+                div class: "avatar avatar-sm bg-danger rounded-circle d-flex align-items-center justify-content-center" do
+                  i class: "ri ri-list-check text-white"
+                end
+              end
+            end
+          end
+        end
+      end
+
+      # Third Row - Canon Books Metric
+      div class: "row mt-4" do
+        div class: "col-md-3" do
+          div class: "card" do
+            div class: "card-body" do
+              div class: "d-flex justify-content-between align-items-start" do
+                div do
+                  h6 "Canon Books", class: "card-title text-muted mb-1"
+                  h3 CanonBook.count, class: "text-info mb-0"
+                  small "Canon-book relationships", class: "text-muted"
+                end
+                div class: "avatar avatar-sm bg-info rounded-circle d-flex align-items-center justify-content-center" do
+                  i class: "ri ri-list-check-2 text-white"
+                end
+              end
+            end
+          end
+        end
+
+        div class: "col-md-9" do
+          div class: "card" do
+            div class: "card-body" do
+              h5 "Quick Stats", class: "card-title"
+              div class: "row" do
+                div class: "col-md-4" do
+                  div class: "text-center" do
+                    h4 Language.count, class: "text-primary mb-1"
+                    small "Languages", class: "text-muted"
+                  end
+                end
+                div class: "col-md-4" do
+                  div class: "text-center" do
+                    h4 Source.count, class: "text-success mb-1"
+                    small "Sources", class: "text-muted"
+                  end
+                end
+                div class: "col-md-4" do
+                  div class: "text-center" do
+                    h4 Book.count, class: "text-warning mb-1"
+                    small "Books", class: "text-muted"
+                  end
+                end
+              end
+            end
+          end
+        end
+      end
+
       # Middle Row - Charts
       div class: "row mt-4" do
         div class: "col-md-6" do
