@@ -66,6 +66,28 @@
         <%= f.label :about, 'About' %>
         <%= f.text_area :about, class: 'settings-textarea', rows: 3 %>
       </div>
+      
+      <div class="settings-form-group">
+        <%= f.label :naming_preference, 'Naming Preference' %>
+        <div class="settings-preference-options">
+          <div class="settings-preference-option">
+            <%= f.radio_button :naming_preference, 'hebrew_aramaic', id: 'settings_hebrew_aramaic' %>
+            <%= f.label :naming_preference_hebrew_aramaic, 'Hebrew/Aramaic', for: 'settings_hebrew_aramaic' %>
+            <span class="settings-preference-desc">Traditional biblical names and terminology</span>
+          </div>
+          <div class="settings-preference-option">
+            <%= f.radio_button :naming_preference, 'greco_latin_english', id: 'settings_greco_latin_english' %>
+            <%= f.label :naming_preference_greco_latin_english, 'Greco-Latin/English', for: 'settings_greco_latin_english' %>
+            <span class="settings-preference-desc">Western scholarly conventions</span>
+          </div>
+          <div class="settings-preference-option">
+            <%= f.radio_button :naming_preference, 'arabic', id: 'settings_arabic' %>
+            <%= f.label :naming_preference_arabic, 'Arabic', for: 'settings_arabic' %>
+            <span class="settings-preference-desc">Islamic scholarly traditions</span>
+          </div>
+        </div>
+      </div>
+      
       <%= f.submit 'Update Profile', class: 'settings-update-btn' %>
     <% end %>
   </div>

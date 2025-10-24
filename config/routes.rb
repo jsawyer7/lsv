@@ -15,6 +15,10 @@ Rails.application.routes.draw do
   end
 
   get 'dashboard', to: 'dashboard#index'
+
+  # Onboarding routes
+  patch 'onboarding', to: 'onboarding#update'
+
   resources :claims, only: [:new, :create, :show, :index, :edit, :update, :destroy]
 
   resources :claims do
