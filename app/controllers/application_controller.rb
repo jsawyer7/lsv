@@ -3,6 +3,7 @@ class ApplicationController < ActionController::Base
 
   protect_from_forgery with: :exception
   before_action :configure_permitted_parameters, if: :devise_controller?
+  before_action :check_onboarding_completion, if: :user_signed_in?
 
   rescue_from Pundit::NotAuthorizedError, with: :user_not_authorized
 
@@ -14,6 +15,14 @@ class ApplicationController < ActionController::Base
   end
 
   private
+
+  def check_onboarding_completion
+    return if controller_name == 'onboarding' || controller_name == 'devise'
+
+    unless current_user.onboarding_complete?
+      @show_onboarding_modal = true
+    end
+  end
 
   def user_not_authorized
     flash[:alert] = "You are not authorized to perform this action."

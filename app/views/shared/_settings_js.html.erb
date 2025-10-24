@@ -18,9 +18,32 @@ function removeAvatarAndPreviewAndSubmit() {
   }
 }
 document.getElementById('avatar-upload-input').addEventListener('change', function() {
-  document.getElementById('remove-avatar-field').value = 'false';
-  showAvatarLoader();
-  this.closest('form').submit();
+  const file = this.files[0];
+  if (file) {
+    // Clear any existing errors
+    clearError('avatar');
+    
+    // Check file size (800KB = 800 * 1024 bytes)
+    const maxSize = 800 * 1024;
+    if (file.size > maxSize) {
+      const fileSizeKB = Math.round(file.size / 1024);
+      showError(`Avatar image must be smaller than 800KB. Your file is ${fileSizeKB}KB. Please compress the image and try again.`, 'avatar');
+      this.value = ''; // Clear the input
+      return;
+    }
+    
+    // Check file type
+    const allowedTypes = ['image/png', 'image/jpg', 'image/jpeg'];
+    if (!allowedTypes.includes(file.type)) {
+      showError('Avatar must be a PNG or JPG image. Please select a valid image file.', 'avatar');
+      this.value = ''; // Clear the input
+      return;
+    }
+    
+    document.getElementById('remove-avatar-field').value = 'false';
+    showAvatarLoader();
+    this.closest('form').submit();
+  }
 });
 
 // Background image functionality
@@ -53,10 +76,83 @@ function removeBackgroundAndPreviewAndSubmit() {
 }
 
 document.getElementById('background-upload-input').addEventListener('change', function() {
-  document.getElementById('remove-background-field').value = 'false';
-  showBackgroundLoader();
-  this.closest('form').submit();
+  const file = this.files[0];
+  if (file) {
+    // Clear any existing errors
+    clearError('background');
+    
+    // Check file size (2MB = 2 * 1024 * 1024 bytes)
+    const maxSize = 2 * 1024 * 1024;
+    if (file.size > maxSize) {
+      const fileSizeMB = Math.round(file.size / (1024 * 1024) * 10) / 10;
+      showError(`Background image must be smaller than 2MB. Your file is ${fileSizeMB}MB. Please compress the image and try again.`, 'background');
+      this.value = ''; // Clear the input
+      return;
+    }
+    
+    // Check file type
+    const allowedTypes = ['image/png', 'image/jpg', 'image/jpeg'];
+    if (!allowedTypes.includes(file.type)) {
+      showError('Background image must be a PNG or JPG image. Please select a valid image file.', 'background');
+      this.value = ''; // Clear the input
+      return;
+    }
+    
+    document.getElementById('remove-background-field').value = 'false';
+    showBackgroundLoader();
+    this.closest('form').submit();
+  }
 });
+
+// Error display functions
+function showError(message, type = 'avatar') {
+  // Remove any existing error messages
+  const existingError = document.querySelector(`.${type}-error-message`);
+  if (existingError) {
+    existingError.remove();
+  }
+  
+  // Create error message element
+  const errorDiv = document.createElement('div');
+  errorDiv.className = `${type}-error-message`;
+  errorDiv.style.cssText = `
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #dc2626;
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-top: 8px;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  `;
+  
+  errorDiv.innerHTML = `
+    <i class="fas fa-exclamation-triangle" style="color: #dc2626;"></i>
+    <span>${message}</span>
+  `;
+  
+  // Insert after the upload button
+  const uploadButton = document.querySelector(`.settings-${type}-update`);
+  if (uploadButton) {
+    uploadButton.parentNode.insertBefore(errorDiv, uploadButton.nextSibling);
+    
+    // Auto-remove after 10 seconds
+    setTimeout(() => {
+      if (errorDiv.parentNode) {
+        errorDiv.remove();
+      }
+    }, 10000);
+  }
+}
+
+function clearError(type = 'avatar') {
+  const existingError = document.querySelector(`.${type}-error-message`);
+  if (existingError) {
+    existingError.remove();
+  }
+}
 
 document.addEventListener('DOMContentLoaded', function() {
   hideAvatarLoader();

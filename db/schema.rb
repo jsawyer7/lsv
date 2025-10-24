@@ -54,36 +54,6 @@ ActiveRecord::Schema[7.0].define(version: 2025_10_30_114000) do
     t.index ["user_id"], name: "index_ai_evidence_usages_on_user_id"
   end
 
-  create_table "books", force: :cascade do |t|
-    t.text "code", null: false
-    t.text "std_name", null: false
-    t.text "description"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["code"], name: "index_books_on_code", unique: true
-  end
-
-  create_table "canon_books", force: :cascade do |t|
-    t.bigint "canon_id", null: false
-    t.bigint "book_id", null: false
-    t.integer "seq_no", null: false
-    t.boolean "included_bool", default: true, null: false
-    t.text "description"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["book_id"], name: "index_canon_books_on_book_id"
-    t.index ["canon_id"], name: "index_canon_books_on_canon_id"
-  end
-
-  create_table "canons", force: :cascade do |t|
-    t.text "code", null: false
-    t.text "name", null: false
-    t.text "description"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["code"], name: "index_canons_on_code", unique: true
-  end
-
   create_table "challenges", force: :cascade do |t|
     t.text "text", null: false
     t.string "status", default: "pending"
@@ -392,6 +362,7 @@ ActiveRecord::Schema[7.0].define(version: 2025_10_30_114000) do
     t.integer "role"
     t.text "about"
     t.string "phone"
+    t.integer "naming_preference", default: 0
     t.index ["confirmation_token"], name: "index_users_on_confirmation_token", unique: true
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
@@ -400,8 +371,6 @@ ActiveRecord::Schema[7.0].define(version: 2025_10_30_114000) do
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "ai_evidence_usages", "users"
-  add_foreign_key "canon_books", "books"
-  add_foreign_key "canon_books", "canons"
   add_foreign_key "challenges", "claims"
   add_foreign_key "challenges", "evidences"
   add_foreign_key "challenges", "users"
