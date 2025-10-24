@@ -1,0 +1,52 @@
+<aside id="layout-menu" class="layout-menu menu-vertical menu">
+  <!-- Brand -->
+  <div class="app-brand demo">
+    <%= link_to admin_dashboard_path, class: "app-brand-link gap-xl-0 gap-2" do %>
+      <span class="app-brand-logo demo me-1">
+        <%= image_tag "verifaith-logo.png", alt: "VeriFaith Logo", height: 24 %>
+      </span>
+    <% end %>
+
+    <a href="javascript:void(0);" class="layout-menu-toggle menu-link text-large ms-auto">
+      <i class="menu-toggle-icon d-xl-inline-block align-middle"></i>
+    </a>
+  </div>
+
+  <div class="menu-inner-shadow"></div>
+
+  <!-- Menu -->
+  <ul class="menu-inner py-1">
+    <!-- Dashboard -->
+    <li class="menu-item <%= 'active open' if current_page?(admin_dashboard_path) %>">
+      <%= link_to admin_dashboard_path, class: "menu-link" do %>
+        <i class="menu-icon icon-base ri ri-home-smile-line"></i>
+        <div data-i18n="Dashboard">Dashboard</div>
+      <% end %>
+    </li>
+
+    <!-- Claims -->
+    <li class="menu-item <%= 'active' if controller_name == 'claims' %>">
+      <%= link_to admin_claims_path, class: "menu-link" do %>
+        <i class="menu-icon icon-base ri ri-file-text-line"></i>
+        <div data-i18n="Claims">Claims</div>
+      <% end %>
+    </li>
+
+    <!-- Users -->
+    <li class="menu-item <%= 'active' if controller_name == 'users' %>">
+      <%= link_to admin_users_path, class: "menu-link" do %>
+        <i class="menu-icon icon-base ri ri-user-line"></i>
+        <div data-i18n="Users">Users</div>
+      <% end %>
+    </li>
+
+    <!-- Name Mappings -->
+    <li class="menu-item <%= 'active' if controller_name == 'name_mappings' %>">
+      <%= link_to admin_name_mappings_path, class: "menu-link" do %>
+        <i class="menu-icon icon-base ri ri-links-line"></i>
+        <div data-i18n="Name Mappings">Name Mappings</div>
+      <% end %>
+    </li>
+
+  </ul>
+</aside>

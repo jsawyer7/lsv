@@ -1,0 +1,165 @@
+/* Materio Sidebar Styling */
+.layout-menu {
+  background: #f8f9fa !important;
+  border-right: 1px solid #e9ecef;
+  box-shadow: 2px 0 8px rgba(0,0,0,0.1);
+  width: 260px;
+  min-height: 100vh;
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 1000;
+}
+
+.app-brand {
+  padding: 1.5rem 1.5rem 1rem;
+  border-bottom: 1px solid #e9ecef;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.app-brand-link {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  color: #566a7f;
+}
+
+.app-brand-logo {
+  margin-right: 0.75rem;
+}
+
+.app-brand-text {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #566a7f;
+}
+
+.menu-inner {
+  padding: 0.5rem 0;
+}
+
+.menu-item {
+  margin: 0.125rem 1rem;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
+  list-style: none;
+}
+
+.menu-item:hover {
+  background: #e9ecef;
+}
+
+.menu-item.active {
+  background: #696cff !important;
+  color: #fff;
+}
+
+.menu-item.active .menu-link {
+  color: #fff !important;
+}
+
+.menu-item.active .menu-icon {
+  color: #fff !important;
+}
+
+.menu-link {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  text-decoration: none;
+  color: #566a7f;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
+  font-weight: 500;
+  width: 100%;
+}
+
+.menu-link:hover {
+  background: #e9ecef;
+  color: #566a7f;
+  text-decoration: none;
+}
+
+.menu-icon {
+  font-size: 1.25rem;
+  margin-right: 0.75rem;
+  color: #566a7f;
+  width: 1.5rem;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.menu-link div {
+  font-weight: 500;
+  font-size: 0.875rem;
+  color: inherit;
+  flex-grow: 1;
+}
+
+.layout-menu-toggle {
+  color: #566a7f;
+  text-decoration: none;
+  padding: 0.5rem;
+  border-radius: 0.375rem;
+  transition: all 0.2s ease;
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+}
+
+.layout-menu-toggle:hover {
+  background: #e9ecef;
+  color: #566a7f;
+}
+
+/* Active state styling */
+.menu-item.active .menu-link:hover {
+  background: #696cff !important;
+  color: #fff !important;
+}
+
+.menu-item.active .menu-icon {
+  color: #fff !important;
+}
+
+/* Menu item spacing and typography */
+.menu-item {
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+/* Hover effects */
+.menu-item:hover .menu-link {
+  background: #e9ecef;
+}
+
+.menu-item:hover .menu-icon {
+  color: #566a7f;
+}
+
+/* Menu inner shadow */
+.menu-inner-shadow {
+  height: 1px;
+  background: #e9ecef;
+  margin: 0 1rem 0.5rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1200px) {
+  .layout-menu {
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+  }
+  
+  .layout-menu.show {
+    transform: translateX(0);
+  }
+}
