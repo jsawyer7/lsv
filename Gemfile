@@ -73,8 +73,12 @@ gem 'omniauth-facebook'
 # Admin Interface
 gem 'activeadmin'
 gem 'sassc-rails'
-
+gem 'chargebee'
 # Authorization
 gem 'pundit'
 
 gem "kaminari", "~> 1.2"
+
+# PDF generation
+gem 'prawn'
+gem 'prawn-table'

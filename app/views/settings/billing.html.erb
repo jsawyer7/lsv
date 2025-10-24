@@ -1,0 +1,77 @@
+<div class="billing-page">
+  <div class="billing-header">
+    <h2 class="billing-title">Billing History</h2>
+    <div class="billing-actions">
+      <div class="billing-search">
+        <div class="search-container">
+          <i class="fas fa-search search-icon"></i>
+          <input type="text" placeholder="Search billing history..." class="search-input">
+        </div>
+      </div>
+      <%= button_to "Refresh", refresh_billing_settings_path, method: :post, class: "btn btn-refresh", data: { disable_with: "Refreshing..." } %>
+    </div>
+  </div>
+
+  <div class="billing-table-container">
+    <% if @billing_history.any? %>
+      <table class="billing-table">
+        <thead>
+          <tr>
+            <th>Plan Name</th>
+            <th>Purchase Date</th>
+            <th>Ending Date</th>
+            <th>Status</th>
+            <th>Amount</th>
+            <th>Invoice</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @billing_history.each do |invoice| %>
+            <tr>
+              <td class="plan-name">
+                <%= invoice.plan_name %>
+              </td>
+              <td class="purchase-date">
+                <%= invoice.purchase_date&.strftime("%m/%d/%Y") %>
+              </td>
+              <td class="ending-date">
+                <%= invoice.ending_date&.strftime("%m/%d/%Y") %>
+              </td>
+              <td class="status">
+                <span class="status-badge status-<%= invoice.status&.downcase %>">
+                  <%= invoice.status&.titleize %>
+                </span>
+              </td>
+              <td class="amount">
+                $<%= "%.2f" % invoice.amount %>
+              </td>
+              <td class="invoice">
+                <%= link_to "Download PDF", download_invoice_settings_path(invoice.chargebee_id), class: "invoice-link" %>
+              </td>
+              <td class="action">
+                <div class="action-menu">
+                  <i class="fas fa-ellipsis-v action-icon"></i>
+                  <div class="action-dropdown">
+                    <%= link_to "Download PDF", download_invoice_settings_path(invoice.chargebee_id), class: "action-item" %>
+                    <a href="#" class="action-item">View Details</a>
+                    <a href="#" class="action-item">Contact Support</a>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% else %>
+      <div class="no-billing-history">
+        <div class="no-billing-content">
+          <i class="fas fa-receipt"></i>
+          <h3>No Billing History</h3>
+          <p>You don't have any billing history yet. Your invoices will appear here once you have an active subscription.</p>
+          <%= link_to "View Plans", subscription_settings_path, class: "btn btn-primary" %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>

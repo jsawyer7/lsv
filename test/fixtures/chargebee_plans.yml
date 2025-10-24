@@ -1,0 +1,19 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  chargebee_id: MyString
+  name: MyString
+  description: MyText
+  price: 9.99
+  billing_cycle: MyString
+  status: MyString
+  metadata: 
+
+two:
+  chargebee_id: MyString
+  name: MyString
+  description: MyText
+  price: 9.99
+  billing_cycle: MyString
+  status: MyString
+  metadata: 
