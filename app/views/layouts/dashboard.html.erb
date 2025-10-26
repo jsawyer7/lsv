@@ -103,13 +103,13 @@
                         <% end %>
                       </div>
                       
-                      <div class="settings-menu-item upcoming">
-                        <div class="settings-menu-link">
+                      <div class="settings-menu-item <%= 'active' if local_assigns[:active] == 'subscription' %>">
+                        <%= link_to(subscription_settings_path, data: { turbo: false }, class: 'settings-menu-link') do %>
                           <div class="settings-icon-wrapper">
                             <%= image_tag('Subscription.svg', class: 'settings-menu-icon') %>
                           </div>
                           <span class="settings-text">Subscription</span>
-                        </div>
+                        <% end %>
                       </div>
                       
                       <div class="settings-menu-item upcoming">
