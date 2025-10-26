@@ -12,22 +12,5 @@
       </div>
     </div>
   </div>
-  <div class="settings-content">
-    <div class="settings-sidebar">
-      <div class="settings-sidebar-heading">Account Settings</div>
-      <ul class="settings-menu">
-        <li class="<%= 'active' if local_assigns[:active] == 'edit' %>"><%= link_to(edit_settings_path, data: { turbo: false }, class: 'settings-menu-link') do %><%= image_tag('edit-profile.png', class: 'settings-menu-icon') %> Edit Profile<% end %></li>
-        <li class="upcoming"><span class="settings-menu-link"><%= image_tag('security.png', class: 'settings-menu-icon') %> Security</span></li>
-        <li class="<%= 'active' if local_assigns[:active] == 'notifications' %>"><%= link_to(notifications_settings_path, data: { turbo: false }, class: 'settings-menu-link') do %><%= image_tag('settings-notification.png', class: 'settings-menu-icon') %> Notifications<% end %></li>
-        <li class="<%= 'active' if local_assigns[:active] == 'subscription' %>"><%= link_to(subscription_settings_path, data: { turbo: false }, class: 'settings-menu-link') do %><%= image_tag('subscription.png', class: 'settings-menu-icon') %> Subscription<% end %></li>
-        <li class="upcoming"><span class="settings-menu-link"><%= image_tag('delete-profile.png', class: 'settings-menu-icon') %> Delete Profile</span></li>
-        <li class="logout-li <%= 'active' if local_assigns[:active] == 'logout' %>">
-          <%= button_to destroy_user_session_path, method: :delete, class: 'settings-logout-btn', form: { data: { turbo: false }, style: 'all:unset;display:block;width:100%;height:100%;padding:0;margin:0;' } do %>
-            <%= image_tag('logout.png', class: 'settings-menu-icon logout-icon') %> Log Out
-          <% end %>
-        </li>
-      </ul>
-    </div>
     <%= yield %>
-  </div>
 </div> 

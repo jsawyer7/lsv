@@ -223,6 +223,16 @@ class User < ApplicationRecord
     end
   end
 
+  def background_image_type_and_size
+    return unless background_image.attached?
+    if !background_image.content_type.in?(%w[image/png image/jpg image/jpeg])
+      errors.add(:background_image, 'must be a PNG or JPG')
+    end
+    if background_image.byte_size > 800.kilobytes
+      errors.add(:background_image, 'size must be less than 800KB')
+    end
+  end
+
   def current_entitlements
     @current_entitlements ||= fetch_current_entitlements
   end
