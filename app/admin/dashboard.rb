@@ -202,6 +202,65 @@ ActiveAdmin.register_page "Dashboard" do
         end
       end
 
+      # Fourth Row - Text Unit Types and Text Contents Metrics
+      div class: "row mt-4" do
+        div class: "col-md-3" do
+          div class: "card" do
+            div class: "card-body" do
+              div class: "d-flex justify-content-between align-items-start" do
+                div do
+                  h6 "Text Unit Types", class: "card-title text-muted mb-1"
+                  h3 TextUnitType.count, class: "text-warning mb-0"
+                  small "Available unit types", class: "text-muted"
+                end
+                div class: "avatar avatar-sm bg-warning rounded-circle d-flex align-items-center justify-content-center" do
+                  i class: "ri ri-list-check-3 text-white"
+                end
+              end
+            end
+          end
+        end
+
+        div class: "col-md-3" do
+          div class: "card" do
+            div class: "card-body" do
+              div class: "d-flex justify-content-between align-items-start" do
+                div do
+                  h6 "Text Contents", class: "card-title text-muted mb-1"
+                  h3 TextContent.count, class: "text-success mb-0"
+                  small "Text content entries", class: "text-muted"
+                end
+                div class: "avatar avatar-sm bg-success rounded-circle d-flex align-items-center justify-content-center" do
+                  i class: "ri ri-file-text-line text-white"
+                end
+              end
+            end
+          end
+        end
+
+        div class: "col-md-6" do
+          div class: "card" do
+            div class: "card-body" do
+              h5 "Text Content Stats", class: "card-title"
+              div class: "row" do
+                div class: "col-md-6" do
+                  div class: "text-center" do
+                    h4 TextUnitType.count, class: "text-warning mb-1"
+                    small "Unit Types", class: "text-muted"
+                  end
+                end
+                div class: "col-md-6" do
+                  div class: "text-center" do
+                    h4 TextContent.count, class: "text-success mb-1"
+                    small "Text Contents", class: "text-muted"
+                  end
+                end
+              end
+            end
+          end
+        end
+      end
+
       # Middle Row - Charts
       div class: "row mt-4" do
         div class: "col-md-6" do

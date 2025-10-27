@@ -10,8 +10,9 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2025_10_24_113642) do
+ActiveRecord::Schema[7.0].define(version: 2025_10_27_193004) do
   # These are extensions that must be enabled in order to support this database
+  enable_extension "pgcrypto"
   enable_extension "plpgsql"
   enable_extension "vector"
 
@@ -271,6 +272,55 @@ ActiveRecord::Schema[7.0].define(version: 2025_10_24_113642) do
     t.index ["language_id"], name: "index_sources_on_language_id"
   end
 
+  create_table "text_contents", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.bigint "source_id", null: false
+    t.bigint "book_id", null: false
+    t.bigint "text_unit_type_id", null: false
+    t.bigint "language_id", null: false
+    t.uuid "parent_unit_id"
+    t.integer "chapter_number"
+    t.integer "verse_number"
+    t.integer "unit_number"
+    t.text "content", null: false
+    t.string "unit_key", limit: 255, null: false
+    t.boolean "canon_catholic", default: false, null: false
+    t.boolean "canon_protestant", default: false, null: false
+    t.boolean "canon_lutheran", default: false, null: false
+    t.boolean "canon_anglican", default: false, null: false
+    t.boolean "canon_greek_orthodox", default: false, null: false
+    t.boolean "canon_russian_orthodox", default: false, null: false
+    t.boolean "canon_georgian_orthodox", default: false, null: false
+    t.boolean "canon_western_orthodox", default: false, null: false
+    t.boolean "canon_coptic", default: false, null: false
+    t.boolean "canon_armenian", default: false, null: false
+    t.boolean "canon_ethiopian", default: false, null: false
+    t.boolean "canon_syriac", default: false, null: false
+    t.boolean "canon_church_east", default: false, null: false
+    t.boolean "canon_judaic", default: false, null: false
+    t.boolean "canon_samaritan", default: false, null: false
+    t.boolean "canon_lds", default: false, null: false
+    t.boolean "canon_quran", default: false, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["book_id"], name: "index_text_contents_on_book_id"
+    t.index ["chapter_number", "verse_number"], name: "index_text_contents_on_chapter_number_and_verse_number"
+    t.index ["language_id"], name: "index_text_contents_on_language_id"
+    t.index ["parent_unit_id"], name: "index_text_contents_on_parent_unit_id"
+    t.index ["source_id", "book_id"], name: "index_text_contents_on_source_id_and_book_id"
+    t.index ["source_id"], name: "index_text_contents_on_source_id"
+    t.index ["text_unit_type_id"], name: "index_text_contents_on_text_unit_type_id"
+    t.index ["unit_key"], name: "index_text_contents_on_unit_key", unique: true
+  end
+
+  create_table "text_unit_types", force: :cascade do |t|
+    t.text "code", null: false
+    t.text "name", null: false
+    t.text "description"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["code"], name: "index_text_unit_types_on_code", unique: true
+  end
+
   create_table "theories", force: :cascade do |t|
     t.bigint "user_id", null: false
     t.string "title", null: false
@@ -324,5 +374,9 @@ ActiveRecord::Schema[7.0].define(version: 2025_10_24_113642) do
   add_foreign_key "peers", "users"
   add_foreign_key "peers", "users", column: "peer_id"
   add_foreign_key "sources", "languages"
+  add_foreign_key "text_contents", "books"
+  add_foreign_key "text_contents", "languages"
+  add_foreign_key "text_contents", "sources"
+  add_foreign_key "text_contents", "text_unit_types"
   add_foreign_key "theories", "users"
 end

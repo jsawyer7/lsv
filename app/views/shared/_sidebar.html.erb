@@ -88,5 +88,21 @@
       <% end %>
     </li>
 
+    <!-- Text Unit Types -->
+    <li class="menu-item <%= 'active' if controller_name == 'text_unit_types' %>">
+      <%= link_to admin_text_unit_types_path, class: "menu-link" do %>
+        <i class="menu-icon icon-base ri ri-list-check-3"></i>
+        <div data-i18n="Text Unit Types">Text Unit Types</div>
+      <% end %>
+    </li>
+
+    <!-- Text Contents -->
+    <li class="menu-item <%= 'active' if controller_name == 'text_contents' %>">
+      <%= link_to admin_text_contents_path, class: "menu-link" do %>
+        <i class="menu-icon icon-base ri ri-file-text-line"></i>
+        <div data-i18n="Text Contents">Text Contents</div>
+      <% end %>
+    </li>
+
   </ul>
 </aside>
