@@ -3,16 +3,31 @@
     <div class="claim-header">
       <h2><%= @claim.fact? ? 'Fact Details' : 'Claim Details' %></h2>
       
-      <!-- Tradition Preference Selector -->
-      <div class="tradition-selector">
-        <label for="tradition-select">Name Tradition:</label>
-        <select id="tradition-select" onchange="changeTradition(this.value)">
-          <option value="actual" <%= 'selected' if @tradition == 'actual' %>>Actual</option>
-          <option value="jewish" <%= 'selected' if @tradition == 'jewish' %>>Jewish</option>
-          <option value="christian" <%= 'selected' if @tradition == 'christian' %>>Christian</option>
-          <option value="muslim" <%= 'selected' if @tradition == 'muslim' %>>Muslim</option>
-          <option value="ethiopian" <%= 'selected' if @tradition == 'ethiopian' %>>Ethiopian</option>
-        </select>
+      <!-- Naming Preference Display -->
+      <div class="naming-preference-display">
+        <label>Displaying names in:</label>
+        <span class="preference-badge">
+          <% if current_user&.naming_preference.present? %>
+            <% case current_user.naming_preference %>
+            <% when 'hebrew_aramaic' %>
+              Hebrew/Aramaic
+            <% when 'greco_latin_english' %>
+              Greco-Latin/English
+            <% when 'arabic' %>
+              Arabic
+            <% end %>
+          <% else %>
+            Default
+          <% end %>
+        </span>
+        <small class="preference-note">
+          <% if current_user&.naming_preference.present? %>
+            Change your naming preference in 
+            <%= link_to "Settings", edit_settings_path, class: "settings-link" %>
+          <% else %>
+            <%= link_to "Set your naming preference", edit_settings_path, class: "settings-link" %>
+          <% end %>
+        </small>
       </div>
     </div>
     <div class="claim-details-list">

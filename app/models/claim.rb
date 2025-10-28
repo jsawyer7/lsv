@@ -43,6 +43,14 @@ class Claim < ApplicationRecord
     end
   end
 
+  # Get content with names normalized for current user's naming preference
+  def content_for_user(user)
+    return content unless user&.naming_preference.present?
+
+    tradition = user.tradition_for_naming_preference
+    content_for_tradition(tradition)
+  end
+
   # Get all evidence content with names normalized for a specific tradition
   def evidence_content_for_tradition(tradition = 'actual')
     evidences.map do |evidence|
@@ -54,6 +62,14 @@ class Claim < ApplicationRecord
     end.join("\n\n")
   end
 
+  # Get all evidence content with names normalized for current user's naming preference
+  def evidence_content_for_user(user)
+    return evidence_content_for_tradition('actual') unless user&.naming_preference.present?
+
+    tradition = user.tradition_for_naming_preference
+    evidence_content_for_tradition(tradition)
+  end
+
   # Get all reasoning content with names normalized for a specific tradition
   def reasoning_content_for_tradition(tradition = 'actual')
     reasonings.map do |reasoning|
@@ -63,6 +79,14 @@ class Claim < ApplicationRecord
         reasoning.response
       end
     end.join("\n\n")
+  end
+
+  # Get all reasoning content with names normalized for current user's naming preference
+  def reasoning_content_for_user(user)
+    return reasoning_content_for_tradition('actual') unless user&.naming_preference.present?
+
+    tradition = user.tradition_for_naming_preference
+    reasoning_content_for_tradition(tradition)
   end
 
   # Normalize content and save

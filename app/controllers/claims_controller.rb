@@ -192,7 +192,12 @@ class ClaimsController < ApplicationController
   end
 
   def show
-    @tradition = params[:tradition] || 'actual'
+    # Use user's naming preference if available, otherwise fall back to tradition parameter
+    if current_user&.naming_preference.present?
+      @tradition = current_user.tradition_for_naming_preference
+    else
+      @tradition = params[:tradition] || 'actual'
+    end
   end
 
   def edit; end

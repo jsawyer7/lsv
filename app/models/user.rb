@@ -38,8 +38,12 @@ class User < ApplicationRecord
     admin: 2
   }
 
-  # Naming preference is now a reference to the languages table
-  belongs_to :naming_preference_language, class_name: 'Language', foreign_key: 'naming_preference', optional: true
+  # Define naming preferences
+  enum naming_preference: {
+    hebrew_aramaic: 0,
+    greco_latin_english: 1,
+    arabic: 2
+  }
 
 
   # Set default role before creation
@@ -49,7 +53,7 @@ class User < ApplicationRecord
   has_one_attached :background_image
   validates :about, length: { maximum: 1000 }
   # Only validate naming preference for existing users who are trying to perform actions that require it
-  validates :naming_preference_id, presence: true, if: :requires_naming_preference?
+  validates :naming_preference, presence: true, if: :requires_naming_preference?
   validate :avatar_type_and_size
   validate :background_image_type_and_size
 
@@ -79,7 +83,21 @@ class User < ApplicationRecord
 
   # Check if user has completed onboarding (has set naming preference)
   def onboarding_complete?
-    naming_preference_id.present?
+    naming_preference.present?
+  end
+
+  # Map naming preference to tradition for name translation
+  def tradition_for_naming_preference
+    case naming_preference
+    when 'hebrew_aramaic'
+      'jewish'
+    when 'greco_latin_english'
+      'christian'
+    when 'arabic'
+      'muslim'
+    else
+      'actual' # default fallback
+    end
   end
 
   # Check if the current action requires naming preference validation
@@ -88,7 +106,7 @@ class User < ApplicationRecord
     return false if new_record?
 
     # Don't validate if user is just updating basic profile info without changing naming preference
-    return false if persisted? && !naming_preference_id_changed? && !naming_preference_id_was.present?
+    return false if persisted? && !naming_preference_changed? && !naming_preference_was.present?
 
     # For now, be permissive - only validate when explicitly needed
     # This can be enhanced later to check specific actions that require naming preference
@@ -145,7 +163,7 @@ class User < ApplicationRecord
       confirmed_at
       provider
       uid
-      naming_preference_id
+      naming_preference
     ]
   end
 
@@ -165,7 +183,8 @@ class User < ApplicationRecord
   end
 
   def can_generate_ai_evidence?
-    has_entitlement?('ai_evidence_limitation')
+    # Allow AI evidence generation for all users (free service)
+    true
   end
 
   def ai_evidence_limit
@@ -173,29 +192,28 @@ class User < ApplicationRecord
   end
 
   def ai_evidence_remaining
-    return 0 unless can_generate_ai_evidence?
-
-    limit = ai_evidence_limit
-    return Float::INFINITY if limit.to_s.downcase == 'unlimited' || limit.to_i >= 999999
-
-    used = ai_evidence_used_this_month
-    [limit.to_i - used, 0].max
+    # Return unlimited for all users (free service)
+    Float::INFINITY
   end
 
   def can_access_api?
-    has_entitlement?('api_access') && get_entitlement_value('api_access') == 'true'
+    # Allow API access for all users (free service)
+    true
   end
 
   def has_priority_support?
-    has_entitlement?('priority_support') && get_entitlement_value('priority_support') == 'true'
+    # Allow priority support for all users (free service)
+    true
   end
 
   def can_access_advanced_analytics?
-    has_entitlement?('advanced_analytics') && get_entitlement_value('advanced_analytics') == 'true'
+    # Allow advanced analytics for all users (free service)
+    true
   end
 
   def can_use_custom_integrations?
-    has_entitlement?('custom_integrations') && get_entitlement_value('custom_integrations') == 'true'
+    # Allow custom integrations for all users (free service)
+    true
   end
 
   def ai_evidence_used_this_month

@@ -2,17 +2,17 @@
   <div class="onboarding-modal">
     <div class="onboarding-header">
       <h2>Welcome to VeriFaith!</h2>
-      <p>Please select your preferred language convention to get started.</p>
+      <p>Please select your preferred naming convention to get started.</p>
     </div>
     
     <%= form_with url: onboarding_path, method: :patch, local: false, class: "onboarding-form", id: "onboarding-form" do |f| %>
       <div class="preference-options">
-        <% @languages.each do |language| %>
+        <% @naming_preferences.each do |preference| %>
           <div class="preference-option">
-            <input type="radio" id="<%= language.code %>" name="naming_preference" value="<%= language.id %>" required>
-            <label for="<%= language.code %>" class="preference-label">
-              <div class="preference-title"><%= language.name %></div>
-              <div class="preference-description"><%= language.code.upcase %> - <%= language.name %> language</div>
+            <input type="radio" id="<%= preference[:id] %>" name="naming_preference" value="<%= preference[:id] %>" required>
+            <label for="<%= preference[:id] %>" class="preference-label">
+              <div class="preference-title"><%= preference[:name] %></div>
+              <div class="preference-description"><%= preference[:description] %></div>
             </label>
           </div>
         <% end %>
