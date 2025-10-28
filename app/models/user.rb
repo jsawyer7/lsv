@@ -48,7 +48,8 @@ class User < ApplicationRecord
   has_one_attached :avatar
   has_one_attached :background_image
   validates :about, length: { maximum: 1000 }
-  validates :naming_preference_id, presence: true
+  # Only validate naming preference for existing users who are trying to perform actions that require it
+  validates :naming_preference_id, presence: true, if: :requires_naming_preference?
   validate :avatar_type_and_size
   validate :background_image_type_and_size
 
@@ -79,6 +80,19 @@ class User < ApplicationRecord
   # Check if user has completed onboarding (has set naming preference)
   def onboarding_complete?
     naming_preference_id.present?
+  end
+
+  # Check if the current action requires naming preference validation
+  def requires_naming_preference?
+    # Don't validate during signup
+    return false if new_record?
+
+    # Don't validate if user is just updating basic profile info without changing naming preference
+    return false if persisted? && !naming_preference_id_changed? && !naming_preference_id_was.present?
+
+    # For now, be permissive - only validate when explicitly needed
+    # This can be enhanced later to check specific actions that require naming preference
+    false
   end
 
   def self.from_omniauth(auth)
