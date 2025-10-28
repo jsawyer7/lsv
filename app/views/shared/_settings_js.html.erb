@@ -6,16 +6,21 @@ function hideAvatarLoader() {
   document.getElementById('avatar-loader').style.display = 'none';
 }
 function removeAvatarAndPreviewAndSubmit() {
-  // Show confirmation dialog
-  if (confirm('Are you sure you want to delete your avatar? This action cannot be undone.')) {
-    var preview = document.querySelector('.settings-avatar-img-lg');
-    if (preview) {
-      preview.src = '/assets/default-avatar.png';
+  console.log('removeAvatarAndPreviewAndSubmit called');
+  // Show custom confirmation modal
+  showConfirmationModal(
+    'Are you sure you want to delete your avatar?',
+    function() {
+      console.log('Avatar deletion confirmed');
+      var preview = document.querySelector('.settings-avatar-img-lg');
+      if (preview) {
+        preview.src = '/assets/default-avatar.png';
+      }
+      document.getElementById('remove-avatar-field').value = 'true';
+      showAvatarLoader();
+      document.getElementById('avatar-upload-input').closest('form').submit();
     }
-    document.getElementById('remove-avatar-field').value = 'true';
-    showAvatarLoader();
-    document.getElementById('avatar-upload-input').closest('form').submit();
-  }
+  );
 }
 document.getElementById('avatar-upload-input').addEventListener('change', function() {
   const file = this.files[0];
@@ -56,23 +61,28 @@ function hideBackgroundLoader() {
 }
 
 function removeBackgroundAndPreviewAndSubmit() {
-  // Show confirmation dialog
-  if (confirm('Are you sure you want to delete your background image? This action cannot be undone.')) {
-    // Hide the background image and show placeholder
-    var preview = document.querySelector('.settings-background-img');
-    var placeholder = document.querySelector('.settings-background-placeholder');
-    
-    if (preview) {
-      preview.style.display = 'none';
+  console.log('removeBackgroundAndPreviewAndSubmit called');
+  // Show custom confirmation modal
+  showConfirmationModal(
+    'Are you sure you want to delete your background image?',
+    function() {
+      console.log('Background deletion confirmed');
+      // Hide the background image and show placeholder
+      var preview = document.querySelector('.settings-background-img');
+      var placeholder = document.querySelector('.settings-background-placeholder');
+      
+      if (preview) {
+        preview.style.display = 'none';
+      }
+      if (placeholder) {
+        placeholder.style.display = 'flex';
+      }
+      
+      document.getElementById('remove-background-field').value = 'true';
+      showBackgroundLoader();
+      document.getElementById('background-upload-input').closest('form').submit();
     }
-    if (placeholder) {
-      placeholder.style.display = 'flex';
-    }
-    
-    document.getElementById('remove-background-field').value = 'true';
-    showBackgroundLoader();
-    document.getElementById('background-upload-input').closest('form').submit();
-  }
+  );
 }
 
 document.getElementById('background-upload-input').addEventListener('change', function() {
@@ -153,6 +163,71 @@ function clearError(type = 'avatar') {
     existingError.remove();
   }
 }
+
+// Custom Confirmation Modal Functions
+function showConfirmationModal(message, onConfirm) {
+  console.log('showConfirmationModal called with message:', message);
+  const modal = document.getElementById('confirmation-modal');
+  const messageElement = document.getElementById('confirmation-message');
+  const confirmBtn = document.getElementById('confirmation-confirm-btn');
+  
+  console.log('Modal elements found:', {
+    modal: !!modal,
+    messageElement: !!messageElement,
+    confirmBtn: !!confirmBtn
+  });
+  
+  if (!modal || !messageElement || !confirmBtn) {
+    console.error('Modal elements not found!');
+    return;
+  }
+  
+  // Set the message
+  messageElement.textContent = message;
+  
+  // Remove any existing event listeners
+  const newConfirmBtn = confirmBtn.cloneNode(true);
+  confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+  
+  // Add new event listener
+  newConfirmBtn.addEventListener('click', function() {
+    console.log('Confirm button clicked');
+    closeConfirmationModal();
+    onConfirm();
+  });
+  
+  // Show the modal with smooth animation
+  console.log('Adding show class to modal');
+  modal.classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeConfirmationModal() {
+  const modal = document.getElementById('confirmation-modal');
+  modal.classList.remove('show');
+  
+  // Wait for animation to complete before hiding
+  setTimeout(() => {
+    document.body.style.overflow = '';
+  }, 250);
+}
+
+// Close modal when clicking overlay
+document.addEventListener('click', function(e) {
+  if (e.target.classList.contains('confirmation-overlay')) {
+    closeConfirmationModal();
+  }
+});
+
+// Close modal with Escape key
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    const modal = document.getElementById('confirmation-modal');
+    if (modal.classList.contains('show')) {
+      closeConfirmationModal();
+    }
+  }
+});
 
 document.addEventListener('DOMContentLoaded', function() {
   hideAvatarLoader();

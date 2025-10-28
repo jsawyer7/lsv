@@ -95,5 +95,30 @@
       <p class="loader-text">Processing your background image...</p>
     </div>
   </div>
+
+  <!-- Custom Confirmation Modal -->
+  <div id="confirmation-modal" class="confirmation-modal">
+    <div class="confirmation-overlay"></div>
+    <div class="confirmation-dialog">
+      <div class="confirmation-header">
+        <h3 class="confirmation-title">Confirm Action</h3>
+        <button class="confirmation-close" onclick="closeConfirmationModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="confirmation-body">
+        <div class="confirmation-icon">
+          <i class="fas fa-exclamation-triangle"></i>
+        </div>
+        <p class="confirmation-message" id="confirmation-message">Are you sure you want to delete this item?</p>
+        <p class="confirmation-warning">This action cannot be undone.</p>
+      </div>
+      <div class="confirmation-footer">
+        <button class="confirmation-btn confirmation-btn-cancel" onclick="closeConfirmationModal()">Cancel</button>
+        <button class="confirmation-btn confirmation-btn-confirm" id="confirmation-confirm-btn">Confirm</button>
+      </div>
+    </div>
+  </div>
+
   <%= render 'shared/settings_js' %>
 <% end %> 

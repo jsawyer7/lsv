@@ -86,10 +86,10 @@
           console.log('Settings parent not found');
         }
         
-        // Back button functionality
-        const backBtn = document.querySelector('.settings-back-btn');
-        if (backBtn) {
-          backBtn.addEventListener('click', (e) => {
+        // Back button functionality - make entire header clickable
+        const settingsHeader = document.querySelector('.settings-header');
+        if (settingsHeader) {
+          settingsHeader.addEventListener('click', (e) => {
             e.stopPropagation();
             this.closeSubmenu();
           });
