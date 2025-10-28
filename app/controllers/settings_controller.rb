@@ -8,6 +8,7 @@ class SettingsController < ApplicationController
 
   def edit
     # @user is set by before_action
+    # @languages is set by ApplicationController
   end
 
   def update
@@ -541,7 +542,7 @@ class SettingsController < ApplicationController
   end
 
   def user_params
-    params.require(:user).permit(:full_name, :phone, :email, :about, :avatar, :avatar_cache, :remove_avatar, :background_image, :remove_background_image, :naming_preference)
+    params.require(:user).permit(:full_name, :phone, :email, :about, :avatar, :avatar_cache, :remove_avatar, :background_image, :remove_background_image, :naming_preference_id)
   end
 
   def clean_plan_name(plan_name)

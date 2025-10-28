@@ -2,34 +2,20 @@
   <div class="onboarding-modal">
     <div class="onboarding-header">
       <h2>Welcome to VeriFaith!</h2>
-      <p>Please select your preferred naming convention to get started.</p>
+      <p>Please select your preferred language convention to get started.</p>
     </div>
     
     <%= form_with url: onboarding_path, method: :patch, local: false, class: "onboarding-form", id: "onboarding-form" do |f| %>
       <div class="preference-options">
-        <div class="preference-option">
-          <input type="radio" id="hebrew_aramaic" name="naming_preference" value="hebrew_aramaic" required>
-          <label for="hebrew_aramaic" class="preference-label">
-            <div class="preference-title">Hebrew/Aramaic</div>
-            <div class="preference-description">Traditional biblical names and terminology</div>
-          </label>
-        </div>
-        
-        <div class="preference-option">
-          <input type="radio" id="greco_latin_english" name="naming_preference" value="greco_latin_english" required>
-          <label for="greco_latin_english" class="preference-label">
-            <div class="preference-title">Greco-Latin/English</div>
-            <div class="preference-description">Western scholarly conventions</div>
-          </label>
-        </div>
-        
-        <div class="preference-option">
-          <input type="radio" id="arabic" name="naming_preference" value="arabic" required>
-          <label for="arabic" class="preference-label">
-            <div class="preference-title">Arabic</div>
-            <div class="preference-description">Islamic scholarly traditions</div>
-          </label>
-        </div>
+        <% @languages.each do |language| %>
+          <div class="preference-option">
+            <input type="radio" id="<%= language.code %>" name="naming_preference" value="<%= language.id %>" required>
+            <label for="<%= language.code %>" class="preference-label">
+              <div class="preference-title"><%= language.name %></div>
+              <div class="preference-description"><%= language.code.upcase %> - <%= language.name %> language</div>
+            </label>
+          </div>
+        <% end %>
       </div>
       
       <div class="onboarding-actions">
