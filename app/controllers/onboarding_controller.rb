@@ -3,11 +3,12 @@ class OnboardingController < ApplicationController
 
   def show
     # Show the onboarding modal content
+    # @languages is set by ApplicationController
     render partial: 'onboarding/modal'
   end
 
   def update
-    if current_user.update(naming_preference: params[:naming_preference])
+    if current_user.update(naming_preference_id: params[:naming_preference])
       render json: {
         success: true,
         message: 'Welcome! Your preferences have been set.',

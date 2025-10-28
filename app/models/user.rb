@@ -38,12 +38,9 @@ class User < ApplicationRecord
     admin: 2
   }
 
-  # Define naming preferences
-  enum naming_preference: {
-    hebrew_aramaic: 0,
-    greco_latin_english: 1,
-    arabic: 2
-  }
+  # Naming preference is now a reference to the languages table
+  belongs_to :naming_preference_language, class_name: 'Language', foreign_key: 'naming_preference', optional: true
+
 
   # Set default role before creation
   before_create :set_default_role
@@ -51,7 +48,7 @@ class User < ApplicationRecord
   has_one_attached :avatar
   has_one_attached :background_image
   validates :about, length: { maximum: 1000 }
-  validates :naming_preference, presence: true
+  validates :naming_preference_id, presence: true
   validate :avatar_type_and_size
   validate :background_image_type_and_size
 
@@ -81,7 +78,7 @@ class User < ApplicationRecord
 
   # Check if user has completed onboarding (has set naming preference)
   def onboarding_complete?
-    naming_preference.present?
+    naming_preference_id.present?
   end
 
   def self.from_omniauth(auth)
@@ -134,7 +131,7 @@ class User < ApplicationRecord
       confirmed_at
       provider
       uid
-      naming_preference
+      naming_preference_id
     ]
   end
 
