@@ -183,12 +183,25 @@
         background: #f8fafc;
         border-radius: 12px 12px 0 0;
         position: relative;
+        cursor: pointer;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+        &:hover {
+          .settings-back-btn {
+            color: #1e293b;
+            transform: translateX(-2px);
+            
+            i {
+              transform: translateX(-2px);
+            }
+          }
+        }
 
         .settings-back-btn {
           background: none;
           border: none;
           cursor: pointer;
-          padding: 8px 12px;
+          padding: 0;
           border-radius: 8px;
           transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
           display: flex;
@@ -198,21 +211,13 @@
           font-size: 14px;
           font-weight: 500;
           position: relative;
-
-          &:hover {
-            background-color: #e2e8f0;
-            color: #1e293b;
-            transform: translateX(-2px);
-          }
+          width: 100%;
+          height: 100%;
 
           i {
             font-size: 16px;
             color: #1e293b;
             transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-          }
-
-          &:hover i {
-            transform: translateX(-2px);
           }
         }
       }

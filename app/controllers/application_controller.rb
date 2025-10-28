@@ -4,7 +4,7 @@ class ApplicationController < ActionController::Base
   protect_from_forgery with: :exception
   before_action :configure_permitted_parameters, if: :devise_controller?
   before_action :check_onboarding_completion, if: :user_signed_in?
-  before_action :set_languages, if: :user_signed_in?
+  before_action :set_languages, if: :user_signed_in?, unless: :admin_controller?
 
   rescue_from Pundit::NotAuthorizedError, with: :user_not_authorized
 
@@ -32,5 +32,9 @@ class ApplicationController < ActionController::Base
 
   def set_languages
     @languages = Language.all.order(:name)
+  end
+
+  def admin_controller?
+    controller_path.start_with?('admin/')
   end
 end
