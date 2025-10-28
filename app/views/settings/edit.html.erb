@@ -68,13 +68,13 @@
       </div>
       
       <div class="settings-form-group">
-        <%= f.label :naming_preference_id, 'Language Preference' %>
+        <%= f.label :naming_preference, 'Naming Preference' %>
         <div class="settings-preference-options">
-          <% @languages.each do |language| %>
+          <% @naming_preferences.each do |preference| %>
             <div class="settings-preference-option">
-              <%= f.radio_button :naming_preference_id, language.id, id: "settings_#{language.code}" %>
-              <%= f.label "naming_preference_id_#{language.id}", language.name, for: "settings_#{language.code}" %>
-              <span class="settings-preference-desc"><%= language.code.upcase %> - <%= language.name %> language</span>
+              <%= f.radio_button :naming_preference, preference[:id], id: "settings_#{preference[:id]}" %>
+              <%= f.label "naming_preference_#{preference[:id]}", preference[:name], for: "settings_#{preference[:id]}" %>
+              <span class="settings-preference-desc"><%= preference[:description] %></span>
             </div>
           <% end %>
         </div>

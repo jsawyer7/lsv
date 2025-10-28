@@ -392,10 +392,9 @@ ActiveRecord::Schema[7.0].define(version: 2025_10_30_114000) do
     t.integer "role"
     t.text "about"
     t.string "phone"
-    t.bigint "naming_preference_id"
+    t.integer "naming_preference"
     t.index ["confirmation_token"], name: "index_users_on_confirmation_token", unique: true
     t.index ["email"], name: "index_users_on_email", unique: true
-    t.index ["naming_preference_id"], name: "index_users_on_naming_preference_id"
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
   end
 
@@ -427,5 +426,4 @@ ActiveRecord::Schema[7.0].define(version: 2025_10_30_114000) do
   add_foreign_key "text_translations", "languages", column: "language_target_id"
   add_foreign_key "text_translations", "text_contents"
   add_foreign_key "theories", "users"
-  add_foreign_key "users", "languages", column: "naming_preference_id"
 end

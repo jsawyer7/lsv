@@ -71,10 +71,10 @@ Rails.application.configure do
   config.assets.digest = false
   config.assets.compile = true
   config.assets.check_precompiled_asset = false
-  
+
   # Add this to clear the cache before each request
   config.sass.cache = false
-  
+
   # Disable asset caching
   config.assets.configure do |env|
     env.cache = ActiveSupport::Cache::NullStore.new

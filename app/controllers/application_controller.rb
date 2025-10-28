@@ -5,6 +5,7 @@ class ApplicationController < ActionController::Base
   before_action :configure_permitted_parameters, if: :devise_controller?
   before_action :check_onboarding_completion, if: :user_signed_in?
   before_action :set_languages, if: :user_signed_in?, unless: :admin_controller?
+  before_action :set_naming_preferences, if: :user_signed_in?, unless: :admin_controller?
 
   rescue_from Pundit::NotAuthorizedError, with: :user_not_authorized
 
@@ -32,6 +33,29 @@ class ApplicationController < ActionController::Base
 
   def set_languages
     @languages = Language.all.order(:name)
+  end
+
+  def set_naming_preferences
+    @naming_preferences = [
+      {
+        id: 'hebrew_aramaic',
+        name: 'Hebrew/Aramaic',
+        description: 'Traditional Hebrew and Aramaic names (Yeshua, Mashiach, etc.)',
+        languages: ['Hebrew', 'Aramaic']
+      },
+      {
+        id: 'greco_latin_english',
+        name: 'Greco-Latin/English',
+        description: 'Greek, Latin, and English names (Jesus, Messiah, etc.)',
+        languages: ['Greek', 'Latin', 'English']
+      },
+      {
+        id: 'arabic',
+        name: 'Arabic',
+        description: 'Arabic names (Isa, Masih, etc.)',
+        languages: ['Arabic']
+      }
+    ]
   end
 
   def admin_controller?

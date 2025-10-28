@@ -8,7 +8,8 @@ class OnboardingController < ApplicationController
   end
 
   def update
-    if current_user.update(naming_preference_id: params[:naming_preference])
+    # Store the naming preference using enum
+    if current_user.update(naming_preference: params[:naming_preference])
       render json: {
         success: true,
         message: 'Welcome! Your preferences have been set.',
