@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2025_10_27_193004) do
+ActiveRecord::Schema[7.0].define(version: 2025_10_28_232400) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -172,6 +172,15 @@ ActiveRecord::Schema[7.0].define(version: 2025_10_27_193004) do
     t.index ["user_id"], name: "index_claims_on_user_id"
   end
 
+  create_table "directions", force: :cascade do |t|
+    t.text "code", null: false
+    t.text "name", null: false
+    t.text "description"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["code"], name: "index_directions_on_code", unique: true
+  end
+
   create_table "evidences", force: :cascade do |t|
     t.bigint "claim_id", null: false
     t.text "content"
@@ -214,7 +223,19 @@ ActiveRecord::Schema[7.0].define(version: 2025_10_27_193004) do
     t.text "description"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "direction_id"
+    t.text "script"
+    t.text "font_stack"
+    t.boolean "has_joining", default: false
+    t.boolean "uses_diacritics", default: false
+    t.boolean "has_cantillation", default: false
+    t.boolean "has_ayah_markers", default: false
+    t.boolean "native_digits", default: false
+    t.text "unicode_normalization", default: "NFC"
+    t.text "shaping_engine"
+    t.boolean "punctuation_mirroring", default: false
     t.index ["code"], name: "index_languages_on_code", unique: true
+    t.index ["direction_id"], name: "index_languages_on_direction_id"
   end
 
   create_table "name_mappings", force: :cascade do |t|
@@ -268,8 +289,10 @@ ActiveRecord::Schema[7.0].define(version: 2025_10_27_193004) do
     t.text "provenance"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "text_unit_type_id"
     t.index ["code"], name: "index_sources_on_code", unique: true
     t.index ["language_id"], name: "index_sources_on_language_id"
+    t.index ["text_unit_type_id"], name: "index_sources_on_text_unit_type_id"
   end
 
   create_table "text_contents", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -278,9 +301,8 @@ ActiveRecord::Schema[7.0].define(version: 2025_10_27_193004) do
     t.bigint "text_unit_type_id", null: false
     t.bigint "language_id", null: false
     t.uuid "parent_unit_id"
-    t.integer "chapter_number"
-    t.integer "verse_number"
-    t.integer "unit_number"
+    t.integer "unit_group"
+    t.integer "unit"
     t.text "content", null: false
     t.string "unit_key", limit: 255, null: false
     t.boolean "canon_catholic", default: false, null: false
@@ -303,12 +325,12 @@ ActiveRecord::Schema[7.0].define(version: 2025_10_27_193004) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["book_id"], name: "index_text_contents_on_book_id"
-    t.index ["chapter_number", "verse_number"], name: "index_text_contents_on_chapter_number_and_verse_number"
     t.index ["language_id"], name: "index_text_contents_on_language_id"
     t.index ["parent_unit_id"], name: "index_text_contents_on_parent_unit_id"
     t.index ["source_id", "book_id"], name: "index_text_contents_on_source_id_and_book_id"
     t.index ["source_id"], name: "index_text_contents_on_source_id"
     t.index ["text_unit_type_id"], name: "index_text_contents_on_text_unit_type_id"
+    t.index ["unit_group", "unit"], name: "index_text_contents_on_unit_group_and_unit"
     t.index ["unit_key"], name: "index_text_contents_on_unit_key", unique: true
   end
 
@@ -371,9 +393,11 @@ ActiveRecord::Schema[7.0].define(version: 2025_10_27_193004) do
   add_foreign_key "evidences", "claims"
   add_foreign_key "follows", "users"
   add_foreign_key "follows", "users", column: "followed_user"
+  add_foreign_key "languages", "directions"
   add_foreign_key "peers", "users"
   add_foreign_key "peers", "users", column: "peer_id"
   add_foreign_key "sources", "languages"
+  add_foreign_key "sources", "text_unit_types"
   add_foreign_key "text_contents", "books"
   add_foreign_key "text_contents", "languages"
   add_foreign_key "text_contents", "sources"

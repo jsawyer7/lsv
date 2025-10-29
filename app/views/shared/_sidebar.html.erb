@@ -40,15 +40,23 @@
       <% end %>
     </li>
 
-    <!-- Name Mappings -->
-    <li class="menu-item <%= 'active' if controller_name == 'name_mappings' %>">
-      <%= link_to admin_name_mappings_path, class: "menu-link" do %>
-        <i class="menu-icon icon-base ri ri-links-line"></i>
-        <div data-i18n="Name Mappings">Name Mappings</div>
-      <% end %>
-    </li>
+        <!-- Name Mappings -->
+        <li class="menu-item <%= 'active' if controller_name == 'name_mappings' %>">
+          <%= link_to admin_name_mappings_path, class: "menu-link" do %>
+            <i class="menu-icon icon-base ri ri-links-line"></i>
+            <div data-i18n="Name Mappings">Name Mappings</div>
+          <% end %>
+        </li>
 
-    <!-- Languages -->
+        <!-- Directions -->
+        <li class="menu-item <%= 'active' if controller_name == 'directions' %>">
+          <%= link_to admin_directions_path, class: "menu-link" do %>
+            <i class="menu-icon icon-base ri ri-text-direction-l"></i>
+            <div data-i18n="Directions">Directions</div>
+          <% end %>
+        </li>
+
+        <!-- Languages -->
     <li class="menu-item <%= 'active' if controller_name == 'languages' %>">
       <%= link_to admin_languages_path, class: "menu-link" do %>
         <i class="menu-icon icon-base ri ri-translate"></i>

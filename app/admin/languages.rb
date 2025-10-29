@@ -1,5 +1,7 @@
 ActiveAdmin.register Language do
-  permit_params :code, :name, :description
+  permit_params :code, :name, :description, :direction_id, :script, :font_stack,
+                :has_joining, :uses_diacritics, :has_cantillation, :has_ayah_markers,
+                :native_digits, :unicode_normalization, :shaping_engine, :punctuation_mirroring
 
   # Custom page title
   menu label: "Languages", priority: 5
@@ -148,6 +150,135 @@ ActiveAdmin.register Language do
                       placeholder: "Enter description (e.g., 'Koine Greek, NT manuscripts')...",
                       rows: 3
                     }
+          end
+
+          div class: "materio-form-group" do
+            div class: "materio-form-label" do
+              i class: "ri ri-text-direction-l me-2"
+              span "Direction"
+            end
+            f.input :direction_id,
+                    as: :select,
+                    collection: Direction.ordered.map { |dir| [dir.display_name, dir.id] },
+                    class: "materio-form-control",
+                    label: false,
+                    input_html: {
+                      class: "materio-form-control",
+                      style: "width: 100%; max-width: 500px;"
+                    }
+          end
+
+          div class: "row" do
+            div class: "col-md-6" do
+              div class: "materio-form-group" do
+                div class: "materio-form-label" do
+                  i class: "ri ri-font-size me-2"
+                  span "Script"
+                end
+                f.input :script,
+                        as: :string,
+                        class: "materio-form-control",
+                        label: false,
+                        input_html: {
+                          class: "materio-form-control",
+                          style: "width: 100%; max-width: 500px;",
+                          placeholder: "e.g., Arabic, Hebrew, Greek, Ethiopic..."
+                        }
+              end
+            end
+            div class: "col-md-6" do
+              div class: "materio-form-group" do
+                div class: "materio-form-label" do
+                  i class: "ri ri-font-sans me-2"
+                  span "Font Stack"
+                end
+                f.input :font_stack,
+                        as: :text,
+                        class: "materio-form-control",
+                        label: false,
+                        input_html: {
+                          class: "materio-form-control",
+                          style: "width: 100%; max-width: 500px;",
+                          placeholder: "e.g., 'SBL Hebrew, Ezra SIL, serif'",
+                          rows: 2
+                        }
+              end
+            end
+          end
+
+          div class: "row" do
+            div class: "col-md-6" do
+              div class: "materio-form-group" do
+                div class: "materio-form-label" do
+                  i class: "ri ri-text me-2"
+                  span "Unicode Normalization"
+                end
+                f.input :unicode_normalization,
+                        as: :select,
+                        collection: [['NFC', 'NFC'], ['NFD', 'NFD'], ['NFKC', 'NFKC'], ['NFKD', 'NFKD']],
+                        class: "materio-form-control",
+                        label: false,
+                        input_html: {
+                          class: "materio-form-control",
+                          style: "width: 100%; max-width: 500px;"
+                        }
+              end
+            end
+            div class: "col-md-6" do
+              div class: "materio-form-group" do
+                div class: "materio-form-label" do
+                  i class: "ri ri-shape me-2"
+                  span "Shaping Engine"
+                end
+                f.input :shaping_engine,
+                        as: :string,
+                        class: "materio-form-control",
+                        label: false,
+                        input_html: {
+                          class: "materio-form-control",
+                          style: "width: 100%; max-width: 500px;",
+                          placeholder: "e.g., HarfBuzz, ICU..."
+                        }
+              end
+            end
+          end
+
+          # Script-specific features checkboxes
+          div class: "materio-form-group" do
+            div class: "materio-form-label mb-3" do
+              i class: "ri ri-settings-3 me-2"
+              span "Script-Specific Features"
+            end
+            div class: "row" do
+              div class: "col-md-6" do
+                div class: "form-check" do
+                  f.check_box :has_joining, class: "form-check-input"
+                  f.label :has_joining, "Has Joining (Arabic, Syriac)", class: "form-check-label"
+                end
+                div class: "form-check" do
+                  f.check_box :uses_diacritics, class: "form-check-input"
+                  f.label :uses_diacritics, "Uses Diacritics (Arabic, Hebrew, Greek)", class: "form-check-label"
+                end
+                div class: "form-check" do
+                  f.check_box :has_cantillation, class: "form-check-input"
+                  f.label :has_cantillation, "Has Cantillation (Hebrew)", class: "form-check-label"
+                end
+              end
+              div class: "col-md-6" do
+                div class: "form-check" do
+                  f.check_box :has_ayah_markers, class: "form-check-input"
+                  f.label :has_ayah_markers, "Has Ayah Markers (Quran)", class: "form-check-label"
+                end
+                div class: "form-check" do
+                  f.check_box :native_digits, class: "form-check-input"
+                  f.label :native_digits, "Uses Native Digits (Arabic-Indic)", class: "form-check-label"
+                end
+                div class: "form-check" do
+                  f.check_box :punctuation_mirroring, class: "form-check-input"
+                  f.label :punctuation_mirroring, "Punctuation Mirroring (RTL)", class: "form-check-label"
+                end
+              end
+            end
           end
         end
 

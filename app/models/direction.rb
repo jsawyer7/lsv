@@ -1,6 +1,5 @@
-class TextUnitType < ApplicationRecord
-  has_many :sources, dependent: :nullify
-  has_many :text_contents, dependent: :destroy
+class Direction < ApplicationRecord
+  has_many :languages, dependent: :nullify
   
   validates :code, presence: true, uniqueness: true
   validates :name, presence: true
@@ -16,6 +15,6 @@ class TextUnitType < ApplicationRecord
   end
 
   def self.ransackable_associations(auth_object = nil)
-    ["sources", "text_contents"]
+    ["languages"]
   end
 end

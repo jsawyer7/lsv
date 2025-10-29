@@ -70,8 +70,8 @@ class TextContent < ApplicationRecord
      "canon_coptic", "canon_ethiopian", "canon_georgian_orthodox", "canon_greek_orthodox", 
      "canon_judaic", "canon_lds", "canon_lutheran", "canon_protestant", "canon_quran", 
      "canon_russian_orthodox", "canon_samaritan", "canon_syriac", "canon_western_orthodox", 
-     "chapter_number", "content", "created_at", "id", "language_id", "parent_unit_id", 
-     "source_id", "text_unit_type_id", "unit_key", "unit_number", "updated_at", "verse_number"]
+     "unit_group", "content", "created_at", "id", "language_id", "parent_unit_id", 
+     "source_id", "text_unit_type_id", "unit_key", "unit", "updated_at"]
   end
 
   def self.ransackable_associations(auth_object = nil)

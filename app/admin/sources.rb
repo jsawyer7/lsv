@@ -1,5 +1,5 @@
 ActiveAdmin.register Source do
-  permit_params :code, :name, :description, :language_id, :rights_json, :provenance
+  permit_params :code, :name, :description, :language_id, :text_unit_type_id, :rights_json, :provenance
 
   # Custom page title
   menu label: "Sources", priority: 6
@@ -7,6 +7,14 @@ ActiveAdmin.register Source do
   # Force custom layout
   controller do
     layout "active_admin_custom"
+    
+    # Add JSON response for AJAX requests
+    def show
+      respond_to do |format|
+        format.html
+        format.json { render json: resource.as_json(include: [:language, :text_unit_type]) }
+      end
+    end
   end
 
   # Add action items for CRUD operations
@@ -149,6 +157,23 @@ ActiveAdmin.register Source do
                       class: "materio-form-control",
                       style: "width: 100%; max-width: 500px;",
                       placeholder: "Select language..."
+                    }
+          end
+
+          div class: "materio-form-group" do
+            div class: "materio-form-label" do
+              i class: "ri ri-list-check me-2"
+              span "Text Unit Type"
+            end
+            f.input :text_unit_type_id,
+                    as: :select,
+                    collection: TextUnitType.ordered.map { |type| [type.display_name, type.id] },
+                    class: "materio-form-control",
+                    label: false,
+                    input_html: {
+                      class: "materio-form-control",
+                      style: "width: 100%; max-width: 500px;",
+                      placeholder: "Select text unit type..."
                     }
           end
 
