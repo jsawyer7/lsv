@@ -38,16 +38,16 @@ class ApplicationController < ActionController::Base
   def set_naming_preferences
     @naming_preferences = [
       {
+        id: 'greco_latin_english',
+        name: 'English',
+        description: 'English names (Jesus, Messiah, etc.)',
+        languages: ['English']
+      },
+      {
         id: 'hebrew_aramaic',
         name: 'Hebrew/Aramaic',
         description: 'Traditional Hebrew and Aramaic names (Yeshua, Mashiach, etc.)',
         languages: ['Hebrew', 'Aramaic']
-      },
-      {
-        id: 'greco_latin_english',
-        name: 'Greco-Latin/English',
-        description: 'Greek, Latin, and English names (Jesus, Messiah, etc.)',
-        languages: ['Greek', 'Latin', 'English']
       },
       {
         id: 'arabic',
