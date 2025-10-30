@@ -1,0 +1,89 @@
+<div class="onboarding-overlay" id="onboarding-modal">
+  <div class="onboarding-modal">
+    <div class="onboarding-header">
+      <h2>Welcome to VeriFaith!</h2>
+      <p>Please select your preferred naming convention to get started.</p>
+    </div>
+    
+    <%= form_with url: onboarding_path, method: :patch, local: false, class: "onboarding-form", id: "onboarding-form" do |f| %>
+      <div class="preference-options">
+        <% @naming_preferences.each do |preference| %>
+          <div class="preference-option">
+            <input type="radio" id="<%= preference[:id] %>" name="naming_preference" value="<%= preference[:id] %>" required>
+            <label for="<%= preference[:id] %>" class="preference-label">
+              <div class="preference-title"><%= preference[:name] %></div>
+              <div class="preference-description"><%= preference[:description] %></div>
+            </label>
+          </div>
+        <% end %>
+      </div>
+      
+      <div class="onboarding-actions">
+        <button type="submit" class="btn-primary" id="onboarding-submit">Continue</button>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('onboarding-modal');
+    const form = document.getElementById('onboarding-form');
+    const submitBtn = document.getElementById('onboarding-submit');
+    
+    // Prevent closing the modal by clicking outside or pressing escape
+    modal.addEventListener('click', function(e) {
+      if (e.target === modal) {
+        e.preventDefault();
+      }
+    });
+    
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+      }
+    });
+    
+    // Handle form submission
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Setting up...';
+      
+      const formData = new FormData(form);
+      
+      fetch(form.action, {
+        method: 'PATCH',
+        body: formData,
+        headers: {
+          'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content,
+          'Accept': 'application/json'
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          // Show success message briefly
+          submitBtn.textContent = 'Success!';
+          submitBtn.style.backgroundColor = '#28a745';
+          
+          setTimeout(() => {
+            window.location.href = data.redirect_url;
+          }, 1000);
+        } else {
+          // Show error message
+          alert(data.message);
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Continue';
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred. Please try again.');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Continue';
+      });
+    });
+  });
+</script>

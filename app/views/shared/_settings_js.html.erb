@@ -6,18 +6,213 @@ function hideAvatarLoader() {
   document.getElementById('avatar-loader').style.display = 'none';
 }
 function removeAvatarAndPreviewAndSubmit() {
-  var preview = document.querySelector('.settings-avatar-img-lg');
-  if (preview) {
-    preview.src = '/assets/default-avatar.png';
-  }
-  document.getElementById('remove-avatar-field').value = 'true';
-  showAvatarLoader();
-  document.getElementById('avatar-upload-input').closest('form').submit();
+  console.log('removeAvatarAndPreviewAndSubmit called');
+  // Show custom confirmation modal
+  showConfirmationModal(
+    'Are you sure you want to delete your avatar?',
+    function() {
+      console.log('Avatar deletion confirmed');
+      var preview = document.querySelector('.settings-avatar-img-lg');
+      if (preview) {
+        preview.src = '/assets/default-avatar.png';
+      }
+      document.getElementById('remove-avatar-field').value = 'true';
+      showAvatarLoader();
+      document.getElementById('avatar-upload-input').closest('form').submit();
+    }
+  );
 }
 document.getElementById('avatar-upload-input').addEventListener('change', function() {
-  document.getElementById('remove-avatar-field').value = 'false';
-  showAvatarLoader();
-  this.closest('form').submit();
+  const file = this.files[0];
+  if (file) {
+    // Clear any existing errors
+    clearError('avatar');
+    
+    // Check file type (size limit removed - images will be automatically compressed)
+    const allowedTypes = ['image/png', 'image/jpg', 'image/jpeg'];
+    if (!allowedTypes.includes(file.type)) {
+      showError('Avatar must be a PNG or JPG image. Please select a valid image file.', 'avatar');
+      this.value = ''; // Clear the input
+      return;
+    }
+    
+    document.getElementById('remove-avatar-field').value = 'false';
+    showAvatarLoader();
+    this.closest('form').submit();
+  }
 });
-document.addEventListener('DOMContentLoaded', hideAvatarLoader);
+
+// Background image functionality
+function showBackgroundLoader() {
+  document.getElementById('background-loader').style.display = 'flex';
+}
+
+function hideBackgroundLoader() {
+  document.getElementById('background-loader').style.display = 'none';
+}
+
+function removeBackgroundAndPreviewAndSubmit() {
+  console.log('removeBackgroundAndPreviewAndSubmit called');
+  // Show custom confirmation modal
+  showConfirmationModal(
+    'Are you sure you want to delete your background image?',
+    function() {
+      console.log('Background deletion confirmed');
+      // Hide the background image and show placeholder
+      var preview = document.querySelector('.settings-background-img');
+      var placeholder = document.querySelector('.settings-background-placeholder');
+      
+      if (preview) {
+        preview.style.display = 'none';
+      }
+      if (placeholder) {
+        placeholder.style.display = 'flex';
+      }
+      
+      document.getElementById('remove-background-field').value = 'true';
+      showBackgroundLoader();
+      document.getElementById('background-upload-input').closest('form').submit();
+    }
+  );
+}
+
+document.getElementById('background-upload-input').addEventListener('change', function() {
+  const file = this.files[0];
+  if (file) {
+    // Clear any existing errors
+    clearError('background');
+    
+    // Check file type (size limit removed - images will be automatically compressed)
+    const allowedTypes = ['image/png', 'image/jpg', 'image/jpeg'];
+    if (!allowedTypes.includes(file.type)) {
+      showError('Background image must be a PNG or JPG image. Please select a valid image file.', 'background');
+      this.value = ''; // Clear the input
+      return;
+    }
+    
+    document.getElementById('remove-background-field').value = 'false';
+    showBackgroundLoader();
+    this.closest('form').submit();
+  }
+});
+
+// Error display functions
+function showError(message, type = 'avatar') {
+  // Remove any existing error messages
+  const existingError = document.querySelector(`.${type}-error-message`);
+  if (existingError) {
+    existingError.remove();
+  }
+  
+  // Create error message element
+  const errorDiv = document.createElement('div');
+  errorDiv.className = `${type}-error-message`;
+  errorDiv.style.cssText = `
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #dc2626;
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-top: 8px;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  `;
+  
+  errorDiv.innerHTML = `
+    <i class="fas fa-exclamation-triangle" style="color: #dc2626;"></i>
+    <span>${message}</span>
+  `;
+  
+  // Insert after the upload button
+  const uploadButton = document.querySelector(`.settings-${type}-update`);
+  if (uploadButton) {
+    uploadButton.parentNode.insertBefore(errorDiv, uploadButton.nextSibling);
+    
+    // Auto-remove after 10 seconds
+    setTimeout(() => {
+      if (errorDiv.parentNode) {
+        errorDiv.remove();
+      }
+    }, 10000);
+  }
+}
+
+function clearError(type = 'avatar') {
+  const existingError = document.querySelector(`.${type}-error-message`);
+  if (existingError) {
+    existingError.remove();
+  }
+}
+
+// Custom Confirmation Modal Functions
+function showConfirmationModal(message, onConfirm) {
+  console.log('showConfirmationModal called with message:', message);
+  const modal = document.getElementById('confirmation-modal');
+  const messageElement = document.getElementById('confirmation-message');
+  const confirmBtn = document.getElementById('confirmation-confirm-btn');
+  
+  console.log('Modal elements found:', {
+    modal: !!modal,
+    messageElement: !!messageElement,
+    confirmBtn: !!confirmBtn
+  });
+  
+  if (!modal || !messageElement || !confirmBtn) {
+    console.error('Modal elements not found!');
+    return;
+  }
+  
+  // Set the message
+  messageElement.textContent = message;
+  
+  // Remove any existing event listeners
+  const newConfirmBtn = confirmBtn.cloneNode(true);
+  confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+  
+  // Add new event listener
+  newConfirmBtn.addEventListener('click', function() {
+    console.log('Confirm button clicked');
+    closeConfirmationModal();
+    onConfirm();
+  });
+  
+  // Show the modal with smooth animation
+  console.log('Adding show class to modal');
+  modal.classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeConfirmationModal() {
+  const modal = document.getElementById('confirmation-modal');
+  modal.classList.remove('show');
+  
+  // Wait for animation to complete before hiding
+  setTimeout(() => {
+    document.body.style.overflow = '';
+  }, 250);
+}
+
+// Close modal when clicking overlay
+document.addEventListener('click', function(e) {
+  if (e.target.classList.contains('confirmation-overlay')) {
+    closeConfirmationModal();
+  }
+});
+
+// Close modal with Escape key
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    const modal = document.getElementById('confirmation-modal');
+    if (modal.classList.contains('show')) {
+      closeConfirmationModal();
+    }
+  }
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+  hideAvatarLoader();
+  hideBackgroundLoader();
+});
 </script> 

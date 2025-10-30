@@ -8,6 +8,7 @@ class SettingsController < ApplicationController
 
   def edit
     # @user is set by before_action
+    # @languages is set by ApplicationController
   end
 
   def update
@@ -19,7 +20,14 @@ class SettingsController < ApplicationController
       @user.avatar.attach(params[:user][:avatar])
     end
 
-    if params[:user] && @user.update(user_params.except(:avatar))
+    # Remove background image if requested
+    if params[:remove_background_image] == "true"
+      @user.background_image.purge
+    elsif params[:user] && params[:user][:background_image]
+      @user.background_image.attach(params[:user][:background_image])
+    end
+
+    if params[:user] && @user.update(user_params.except(:avatar, :background_image))
       redirect_to edit_settings_path, notice: 'Profile updated successfully.'
     else
       render :edit
@@ -534,7 +542,7 @@ class SettingsController < ApplicationController
   end
 
   def user_params
-    params.require(:user).permit(:full_name, :phone, :email, :about, :avatar, :avatar_cache, :remove_avatar)
+    params.require(:user).permit(:full_name, :phone, :email, :about, :avatar, :avatar_cache, :remove_avatar, :background_image, :remove_background_image, :naming_preference)
   end
 
   def clean_plan_name(plan_name)

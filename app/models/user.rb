@@ -38,15 +38,102 @@ class User < ApplicationRecord
     admin: 2
   }
 
+  # Define naming preferences
+  enum naming_preference: {
+    hebrew_aramaic: 0,
+    greco_latin_english: 1,
+    arabic: 2
+  }
+
+
   # Set default role before creation
   before_create :set_default_role
 
   has_one_attached :avatar
+  has_one_attached :background_image
   validates :about, length: { maximum: 1000 }
+  # Only validate naming preference for existing users who are trying to perform actions that require it
+  validates :naming_preference, presence: true, if: :requires_naming_preference?
   validate :avatar_type_and_size
+  validate :background_image_type_and_size
+
+  # Helper method to get avatar URL that works in both development and production
+  def avatar_url
+    if avatar.attached?
+      # Use compressed version for better performance
+      compressed_avatar = avatar.variant(resize_to_limit: [300, 300], quality: 85)
+      Rails.application.routes.url_helpers.rails_blob_url(compressed_avatar, only_path: true)
+    elsif self[:avatar_url].present?
+      self[:avatar_url]
+    else
+      nil
+    end
+  end
+
+  # Helper method to get background image URL
+  def background_image_url
+    if background_image.attached?
+      # Use compressed version for better performance
+      compressed_bg = background_image.variant(resize_to_limit: [1200, 600], quality: 80)
+      Rails.application.routes.url_helpers.rails_blob_url(compressed_bg, only_path: true)
+    else
+      nil
+    end
+  end
+
+  # Helper methods to get original full-size images when needed
+  def avatar_url_original
+    if avatar.attached?
+      Rails.application.routes.url_helpers.rails_blob_url(avatar, only_path: true)
+    elsif self[:avatar_url].present?
+      self[:avatar_url]
+    else
+      nil
+    end
+  end
+
+  def background_image_url_original
+    if background_image.attached?
+      Rails.application.routes.url_helpers.rails_blob_url(background_image, only_path: true)
+    else
+      nil
+    end
+  end
 
   def active_for_authentication?
     super && (confirmed? || provider.present?)
+  end
+
+  # Check if user has completed onboarding (has set naming preference)
+  def onboarding_complete?
+    naming_preference.present?
+  end
+
+  # Map naming preference to tradition for name translation
+  def tradition_for_naming_preference
+    case naming_preference
+    when 'hebrew_aramaic'
+      'jewish'
+    when 'greco_latin_english'
+      'christian'
+    when 'arabic'
+      'muslim'
+    else
+      'actual' # default fallback
+    end
+  end
+
+  # Check if the current action requires naming preference validation
+  def requires_naming_preference?
+    # Don't validate during signup
+    return false if new_record?
+
+    # Don't validate if user is just updating basic profile info without changing naming preference
+    return false if persisted? && !naming_preference_changed? && !naming_preference_was.present?
+
+    # For now, be permissive - only validate when explicitly needed
+    # This can be enhanced later to check specific actions that require naming preference
+    false
   end
 
   def self.from_omniauth(auth)
@@ -99,6 +186,7 @@ class User < ApplicationRecord
       confirmed_at
       provider
       uid
+      naming_preference
     ]
   end
 
@@ -118,7 +206,8 @@ class User < ApplicationRecord
   end
 
   def can_generate_ai_evidence?
-    has_entitlement?('ai_evidence_limitation')
+    # Allow AI evidence generation for all users (free service)
+    true
   end
 
   def ai_evidence_limit
@@ -126,29 +215,28 @@ class User < ApplicationRecord
   end
 
   def ai_evidence_remaining
-    return 0 unless can_generate_ai_evidence?
-
-    limit = ai_evidence_limit
-    return Float::INFINITY if limit.to_s.downcase == 'unlimited' || limit.to_i >= 999999
-
-    used = ai_evidence_used_this_month
-    [limit.to_i - used, 0].max
+    # Return unlimited for all users (free service)
+    Float::INFINITY
   end
 
   def can_access_api?
-    has_entitlement?('api_access') && get_entitlement_value('api_access') == 'true'
+    # Allow API access for all users (free service)
+    true
   end
 
   def has_priority_support?
-    has_entitlement?('priority_support') && get_entitlement_value('priority_support') == 'true'
+    # Allow priority support for all users (free service)
+    true
   end
 
   def can_access_advanced_analytics?
-    has_entitlement?('advanced_analytics') && get_entitlement_value('advanced_analytics') == 'true'
+    # Allow advanced analytics for all users (free service)
+    true
   end
 
   def can_use_custom_integrations?
-    has_entitlement?('custom_integrations') && get_entitlement_value('custom_integrations') == 'true'
+    # Allow custom integrations for all users (free service)
+    true
   end
 
   def ai_evidence_used_this_month
@@ -182,9 +270,15 @@ class User < ApplicationRecord
     if !avatar.content_type.in?(%w[image/png image/jpg image/jpeg])
       errors.add(:avatar, 'must be a PNG or JPG')
     end
-    if avatar.byte_size > 800.kilobytes
-      errors.add(:avatar, 'size must be less than 800KB')
+    # Size limit removed - images will be automatically compressed
+  end
+
+  def background_image_type_and_size
+    return unless background_image.attached?
+    if !background_image.content_type.in?(%w[image/png image/jpg image/jpeg])
+      errors.add(:background_image, 'must be a PNG or JPG')
     end
+    # Size limit removed - images will be automatically compressed
   end
 
   def current_entitlements

@@ -41,40 +41,146 @@
       });
     }
 
-    // User profile dropdown
-    const userProfile = document.querySelector('.user-profile');
-    const dropdownMenu = document.querySelector('.dropdown-menu');
-    
-    if (userProfile && dropdownMenu) {
-      userProfile.addEventListener('click', function() {
-        dropdownMenu.classList.toggle('show');
-      });
-
-      // Close dropdown when clicking outside
-      document.addEventListener('click', function(event) {
-        if (!userProfile.contains(event.target) && dropdownMenu.classList.contains('show')) {
-          dropdownMenu.classList.remove('show');
+    // Facebook-style dropdown system with smooth animations
+    class DropdownManager {
+      constructor() {
+        this.userProfile = document.querySelector('.user-profile');
+        this.userInfo = document.querySelector('.user-info');
+        this.dropdownMenu = document.querySelector('.dropdown-menu');
+        
+        this.isDropdownOpen = false;
+        this.isSubmenuOpen = false;
+        this.animationTimeout = null;
+        
+        this.init();
+      }
+      
+      init() {
+        this.bindEvents();
+      }
+      
+      bindEvents() {
+        // Main dropdown toggle
+        if (this.userInfo && this.dropdownMenu) {
+          this.userInfo.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.toggleDropdown();
+          });
         }
-      });
-    }
-
-    // Dropdown menu functionality
-    const userInfo = document.querySelector('.user-info');
-    
-    if (userInfo && dropdownMenu) {
-      userInfo.addEventListener('click', function(e) {
-        e.stopPropagation();
-        userInfo.classList.toggle('active');
-        dropdownMenu.classList.toggle('show');
-      });
-
-      // Close dropdown when clicking outside
-      document.addEventListener('click', function(e) {
-        if (!userInfo.contains(e.target)) {
-          userInfo.classList.remove('active');
-          dropdownMenu.classList.remove('show');
+        
+        // Settings submenu click functionality (Facebook-style)
+        const settingsParent = document.querySelector('.dropdown-parent');
+        if (settingsParent) {
+          settingsParent.addEventListener('click', (e) => {
+            console.log('Settings clicked');
+            e.stopPropagation();
+            this.showSubmenu();
+            
+            // Visual test - change background color temporarily
+            settingsParent.style.backgroundColor = '#e3f0ff';
+            setTimeout(() => {
+              settingsParent.style.backgroundColor = '';
+            }, 1000);
+          });
+        } else {
+          console.log('Settings parent not found');
         }
-      });
+        
+        // Back button functionality - make entire header clickable
+        const settingsHeader = document.querySelector('.settings-header');
+        if (settingsHeader) {
+          settingsHeader.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.closeSubmenu();
+          });
+        }
+        
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', (e) => {
+          if (!this.userProfile?.contains(e.target)) {
+            this.closeAllDropdowns();
+          }
+        });
+        
+        // Close on escape key
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape') {
+            this.closeAllDropdowns();
+          }
+        });
+        
+        // Prevent submenu from closing when clicking inside it
+        const submenuContent = document.querySelector('.submenu-content');
+        if (submenuContent) {
+          submenuContent.addEventListener('click', (e) => {
+            e.stopPropagation();
+          });
+        }
+      }
+      
+      toggleDropdown() {
+        if (this.isDropdownOpen) {
+          this.closeAllDropdowns();
+        } else {
+          this.showDropdown();
+        }
+      }
+      
+      showDropdown() {
+        this.clearAnimationTimeout();
+        this.dropdownMenu?.classList.add('show');
+        this.userInfo?.classList.add('active');
+        this.isDropdownOpen = true;
+      }
+      
+      hideDropdown() {
+        this.dropdownMenu?.classList.remove('show');
+        this.dropdownMenu?.classList.remove('submenu-active');
+        this.dropdownMenu?.classList.remove('submenu-open');
+        this.userInfo?.classList.remove('active');
+        this.isDropdownOpen = false;
+        this.closeSubmenu();
+      }
+      
+      showSubmenu() {
+        this.clearAnimationTimeout();
+        console.log('showSubmenu called');
+        
+        // Simple approach - add class immediately
+        this.dropdownMenu?.classList.add('submenu-active');
+        console.log('Added submenu-active class');
+        console.log('Dropdown classes:', this.dropdownMenu?.classList.toString());
+        
+        this.isSubmenuOpen = true;
+      }
+      
+      hideSubmenu() {
+        this.clearAnimationTimeout();
+        
+        // Remove morphing class immediately for smooth transition back
+        this.dropdownMenu?.classList.remove('submenu-active');
+        this.dropdownMenu?.classList.remove('submenu-open');
+        this.isSubmenuOpen = false;
+      }
+      
+      closeSubmenu() {
+        this.hideSubmenu();
+      }
+      
+      closeAllDropdowns() {
+        this.hideDropdown();
+        this.closeSubmenu();
+      }
+      
+      clearAnimationTimeout() {
+        if (this.animationTimeout) {
+          clearTimeout(this.animationTimeout);
+          this.animationTimeout = null;
+        }
+      }
     }
+    
+    // Initialize the dropdown manager
+    new DropdownManager();
   });
 </script> 
