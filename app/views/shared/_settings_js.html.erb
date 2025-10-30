@@ -28,16 +28,7 @@ document.getElementById('avatar-upload-input').addEventListener('change', functi
     // Clear any existing errors
     clearError('avatar');
     
-    // Check file size (800KB = 800 * 1024 bytes)
-    const maxSize = 800 * 1024;
-    if (file.size > maxSize) {
-      const fileSizeKB = Math.round(file.size / 1024);
-      showError(`Avatar image must be smaller than 800KB. Your file is ${fileSizeKB}KB. Please compress the image and try again.`, 'avatar');
-      this.value = ''; // Clear the input
-      return;
-    }
-    
-    // Check file type
+    // Check file type (size limit removed - images will be automatically compressed)
     const allowedTypes = ['image/png', 'image/jpg', 'image/jpeg'];
     if (!allowedTypes.includes(file.type)) {
       showError('Avatar must be a PNG or JPG image. Please select a valid image file.', 'avatar');
@@ -91,16 +82,7 @@ document.getElementById('background-upload-input').addEventListener('change', fu
     // Clear any existing errors
     clearError('background');
     
-    // Check file size (2MB = 2 * 1024 * 1024 bytes)
-    const maxSize = 2 * 1024 * 1024;
-    if (file.size > maxSize) {
-      const fileSizeMB = Math.round(file.size / (1024 * 1024) * 10) / 10;
-      showError(`Background image must be smaller than 2MB. Your file is ${fileSizeMB}MB. Please compress the image and try again.`, 'background');
-      this.value = ''; // Clear the input
-      return;
-    }
-    
-    // Check file type
+    // Check file type (size limit removed - images will be automatically compressed)
     const allowedTypes = ['image/png', 'image/jpg', 'image/jpeg'];
     if (!allowedTypes.includes(file.type)) {
       showError('Background image must be a PNG or JPG image. Please select a valid image file.', 'background');

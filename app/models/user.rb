@@ -60,7 +60,9 @@ class User < ApplicationRecord
   # Helper method to get avatar URL that works in both development and production
   def avatar_url
     if avatar.attached?
-      Rails.application.routes.url_helpers.rails_blob_url(avatar, only_path: true)
+      # Use compressed version for better performance
+      compressed_avatar = avatar.variant(resize_to_limit: [300, 300], quality: 85)
+      Rails.application.routes.url_helpers.rails_blob_url(compressed_avatar, only_path: true)
     elsif self[:avatar_url].present?
       self[:avatar_url]
     else
@@ -70,6 +72,27 @@ class User < ApplicationRecord
 
   # Helper method to get background image URL
   def background_image_url
+    if background_image.attached?
+      # Use compressed version for better performance
+      compressed_bg = background_image.variant(resize_to_limit: [1200, 600], quality: 80)
+      Rails.application.routes.url_helpers.rails_blob_url(compressed_bg, only_path: true)
+    else
+      nil
+    end
+  end
+
+  # Helper methods to get original full-size images when needed
+  def avatar_url_original
+    if avatar.attached?
+      Rails.application.routes.url_helpers.rails_blob_url(avatar, only_path: true)
+    elsif self[:avatar_url].present?
+      self[:avatar_url]
+    else
+      nil
+    end
+  end
+
+  def background_image_url_original
     if background_image.attached?
       Rails.application.routes.url_helpers.rails_blob_url(background_image, only_path: true)
     else
@@ -247,9 +270,7 @@ class User < ApplicationRecord
     if !avatar.content_type.in?(%w[image/png image/jpg image/jpeg])
       errors.add(:avatar, 'must be a PNG or JPG')
     end
-    if avatar.byte_size > 800.kilobytes
-      errors.add(:avatar, 'size must be less than 800KB')
-    end
+    # Size limit removed - images will be automatically compressed
   end
 
   def background_image_type_and_size
@@ -257,9 +278,7 @@ class User < ApplicationRecord
     if !background_image.content_type.in?(%w[image/png image/jpg image/jpeg])
       errors.add(:background_image, 'must be a PNG or JPG')
     end
-    if background_image.byte_size > 800.kilobytes
-      errors.add(:background_image, 'size must be less than 800KB')
-    end
+    # Size limit removed - images will be automatically compressed
   end
 
   def current_entitlements
