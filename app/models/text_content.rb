@@ -5,13 +5,14 @@ class TextContent < ApplicationRecord
   belongs_to :language
   belongs_to :parent_unit, class_name: 'TextContent', optional: true
   has_many :child_units, class_name: 'TextContent', foreign_key: 'parent_unit_id', dependent: :destroy
+  has_many :text_translations, dependent: :destroy
   
   validates :source, presence: true
   validates :book, presence: true
   validates :text_unit_type, presence: true
   validates :language, presence: true
   validates :content, presence: true
-  validates :unit_key, presence: true, uniqueness: true
+  validates :unit_key, presence: true, uniqueness: { scope: [:source_id, :book_id] }
   
   # Canon validations
   validates :canon_catholic, inclusion: { in: [true, false] }
@@ -31,6 +32,8 @@ class TextContent < ApplicationRecord
   validates :canon_samaritan, inclusion: { in: [true, false] }
   validates :canon_lds, inclusion: { in: [true, false] }
   validates :canon_quran, inclusion: { in: [true, false] }
+  
+  before_validation :normalize_content_and_punctuation
   
   scope :by_source, ->(source_id) { where(source_id: source_id) }
   scope :by_book, ->(book_id) { where(book_id: book_id) }
@@ -76,5 +79,20 @@ class TextContent < ApplicationRecord
 
   def self.ransackable_associations(auth_object = nil)
     ["book", "child_units", "language", "parent_unit", "source", "text_unit_type"]
+  end
+
+  private
+
+  def normalize_content_and_punctuation
+    return if content.nil?
+
+    normalized = content.to_s.strip
+    normalized = normalized.unicode_normalize(:nfc)
+    # Normalize Greek punctuation
+    normalized = normalized.gsub(";", "\u037E") # Greek question mark
+    normalized = normalized.gsub("\u00B7", "\u0387") # Greek ano teleia
+    # Collapse internal whitespace
+    normalized = normalized.gsub(/\s+/, ' ')
+    self.content = normalized
   end
 end

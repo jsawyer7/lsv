@@ -6,7 +6,7 @@ ActiveAdmin.register TextContent do
                 :canon_western_orthodox, :canon_coptic, :canon_armenian, :canon_ethiopian,
                 :canon_syriac, :canon_church_east, :canon_judaic, :canon_samaritan,
                 :canon_lds, :canon_quran
-  menu label: "Text Contents", priority: 11
+  menu parent: "Data Tables", label: "Text Contents", priority: 8
   controller { layout "active_admin_custom" }
 
   # Add filters
@@ -70,6 +70,7 @@ ActiveAdmin.register TextContent do
       end
       div class: "card-body" do
         div class: "row g-3" do
+          # Source
           div class: "col-md-3" do
             label "Source", class: "form-label"
             select class: "form-select", id: "quick-source-filter" do
@@ -79,6 +80,17 @@ ActiveAdmin.register TextContent do
               end
             end
           end
+          # Canon
+          div class: "col-md-2" do
+            label "Canon", class: "form-label"
+            select class: "form-select", id: "quick-canon-filter", 'data-keys': Canon.ordered.map { |c| c.code.to_s.parameterize.underscore }.to_json do
+              option "All Canons", value: ""
+              Canon.ordered.each do |canon|
+                option canon.name, value: canon.code.to_s.parameterize.underscore
+              end
+            end
+          end
+          # Book
           div class: "col-md-3" do
             label "Book", class: "form-label"
             select class: "form-select", id: "quick-book-filter" do
@@ -88,23 +100,15 @@ ActiveAdmin.register TextContent do
               end
             end
           end
+          # Unit Group
           div class: "col-md-2" do
-            label "Chapter/Group", class: "form-label"
+            label "Unit Group (e.g., Chapter)", class: "form-label"
             input type: "number", class: "form-control", id: "quick-chapter-filter", placeholder: "e.g., 1"
           end
+          # Unit
           div class: "col-md-2" do
-            label "Verse/Unit", class: "form-label"
+            label "Unit (e.g., Verse)", class: "form-label"
             input type: "number", class: "form-control", id: "quick-verse-filter", placeholder: "e.g., 5"
-          end
-          div class: "col-md-2" do
-            label "Canon", class: "form-label"
-            select class: "form-select", id: "quick-canon-filter" do
-              option "All Canons", value: ""
-              option "Catholic", value: "catholic"
-              option "Protestant", value: "protestant"
-              option "Orthodox", value: "orthodox"
-              option "Quran", value: "quran"
-            end
           end
         end
         div class: "row mt-3" do
@@ -193,11 +197,7 @@ ActiveAdmin.register TextContent do
             if (chapter && chapter !== '') params.append('q[unit_group_eq]', chapter);
             if (verse && verse !== '') params.append('q[unit_eq]', verse);
             if (canon && canon !== '' && canon !== 'All Canons') {
-              if (canon === 'orthodox') {
-                params.append('q[canon_greek_orthodox_true]', '1');
-              } else {
-                params.append('q[canon_' + canon + '_true]', '1');
-              }
+              params.append('q[canon_' + canon + '_true]', '1');
             }
             
             console.log('Final URL:', url + (params.toString() ? '?' + params.toString() : ''));
@@ -234,6 +234,15 @@ ActiveAdmin.register TextContent do
         }
         if (verseParam) {
           document.getElementById('quick-verse-filter').value = verseParam;
+        }
+        // Preselect canon if present in URL (keys provided by data-keys on the select)
+        const canonSelect = document.getElementById('quick-canon-filter');
+        const canonKeys = canonSelect ? JSON.parse(canonSelect.dataset.keys || '[]') : [];
+        for (const key of canonKeys) {
+          if (urlParams.get(`q[canon_${key}_true]`) === '1') {
+            if (canonSelect) canonSelect.value = key;
+            break;
+          }
         }
       });
       "
@@ -343,6 +352,7 @@ ActiveAdmin.register TextContent do
                 div class: "materio-form-label" do
                   i class: "ri ri-sort-asc me-2"
                   span "Unit Group"
+                  span " (e.g., Chapter)", class: "text-muted ms-2 small"
                 end
                 f.input :unit_group,
                         as: :number,
@@ -359,6 +369,7 @@ ActiveAdmin.register TextContent do
                 div class: "materio-form-label" do
                   i class: "ri ri-sort-asc me-2"
                   span "Unit"
+                  span " (e.g., Verse)", class: "text-muted ms-2 small"
                 end
                 f.input :unit,
                         as: :number,
@@ -485,6 +496,23 @@ ActiveAdmin.register TextContent do
               end
             end
           end
+          # Preview section
+          div class: "materio-card mt-4" do
+            div class: "materio-header" do
+              h5 class: "mb-0 fw-semibold" do
+                i class: "ri ri-eye-line me-2"
+                "Preview"
+              end
+            end
+            div class: "card-body" do
+              div id: "tc-preview-path", class: "mb-2 fw-semibold" do
+                ""
+              end
+              div id: "tc-preview-content", class: "p-3 rounded border bg-light" do
+                ""
+              end
+            end
+          end
         end
         div class: "mt-4 pt-4 border-top" do
           div class: "d-flex justify-content-end gap-3" do
@@ -499,7 +527,7 @@ ActiveAdmin.register TextContent do
       end
     end
 
-    # Add JavaScript to handle source selection and unit key generation
+    # Add JavaScript to handle source selection, unit key generation, normalization, and preview
     script do
       raw "
       document.addEventListener('DOMContentLoaded', function() {
@@ -507,6 +535,7 @@ ActiveAdmin.register TextContent do
         const bookSelect = document.querySelector('select[name=\"text_content[book_id]\"]');
         const unitGroupInput = document.querySelector('input[name=\"text_content[unit_group]\"]');
         const unitInput = document.querySelector('input[name=\"text_content[unit]\"]');
+        const contentInput = document.querySelector('textarea[name=\"text_content[content]\"]');
         
         const textUnitTypeDisplay = document.getElementById('text-unit-type-display');
         const textUnitTypeHidden = document.getElementById('text-unit-type-hidden');
@@ -514,6 +543,8 @@ ActiveAdmin.register TextContent do
         const languageHidden = document.getElementById('language-hidden');
         const unitKeyDisplay = document.getElementById('unit-key-display');
         const unitKeyHidden = document.getElementById('unit-key-hidden');
+        const previewPath = document.getElementById('tc-preview-path');
+        const previewContent = document.getElementById('tc-preview-content');
 
         // Function to generate unit key
         function generateUnitKey() {
@@ -549,6 +580,33 @@ ActiveAdmin.register TextContent do
           }
         }
 
+        function normalizeGreekPunctuation(text) {
+          if (!text) return '';
+          let t = text.trim();
+          if (t.normalize) t = t.normalize('NFC');
+          t = t.replace(/;/g, '\\u037E');
+          t = t.replace(/\\u00B7/g, '\\u0387');
+          t = t.replace(/\\s+/g, ' ');
+          return t;
+        }
+
+        function updatePreview() {
+          const sourceText = sourceSelect ? (sourceSelect.options[sourceSelect.selectedIndex]?.text || '') : '';
+          const bookText = bookSelect ? (bookSelect.options[bookSelect.selectedIndex]?.text || '') : '';
+          const langText = languageDisplay ? languageDisplay.textContent : '';
+          const ug = unitGroupInput?.value || '';
+          const u = unitInput?.value || '';
+          const content = normalizeGreekPunctuation(contentInput?.value || '');
+
+          const parts = [];
+          if (sourceText) parts.push(sourceText.split('(')[0].trim());
+          if (langText && langText.indexOf('Select a source') === -1) parts.push(langText.split('(')[0].trim());
+          if (bookText) parts.push(bookText.split('(')[0].trim());
+          if (ug) parts.push(ug + (u ? ':' + u : ''));
+          if (previewPath) previewPath.textContent = parts.join(' \u2192 ');
+          if (previewContent) previewContent.textContent = content;
+        }
+
         // Function to handle source selection
         function handleSourceChange() {
           const sourceId = sourceSelect.value;
@@ -575,6 +633,7 @@ ActiveAdmin.register TextContent do
                 
                 // Regenerate unit key after source change
                 generateUnitKey();
+                updatePreview();
               })
               .catch(error => {
                 console.error('Error fetching source data:', error);
@@ -587,6 +646,7 @@ ActiveAdmin.register TextContent do
             languageDisplay.textContent = 'Select a source to see the language';
             languageHidden.value = '';
             generateUnitKey();
+            updatePreview();
           }
         }
 
@@ -596,19 +656,36 @@ ActiveAdmin.register TextContent do
         }
         
         if (bookSelect) {
-          bookSelect.addEventListener('change', generateUnitKey);
+          bookSelect.addEventListener('change', function(){ generateUnitKey(); updatePreview(); });
         }
         
         if (unitGroupInput) {
-          unitGroupInput.addEventListener('input', generateUnitKey);
+          unitGroupInput.addEventListener('input', function(){ generateUnitKey(); updatePreview(); });
         }
         
         if (unitInput) {
-          unitInput.addEventListener('input', generateUnitKey);
+          unitInput.addEventListener('input', function(){ generateUnitKey(); updatePreview(); });
+        }
+
+        if (contentInput) {
+          contentInput.addEventListener('input', function(){ updatePreview(); });
         }
         
+        // On edit, if a source is already selected, hydrate dependent fields
+        if (sourceSelect && sourceSelect.value) {
+          handleSourceChange();
+        }
         // Generate initial unit key if form is being edited
         generateUnitKey();
+        updatePreview();
+
+        // Normalize on submit
+        const form = document.querySelector('form');
+        if (form && contentInput) {
+          form.addEventListener('submit', function(){
+            contentInput.value = normalizeGreekPunctuation(contentInput.value);
+          });
+        }
       });
       "
     end

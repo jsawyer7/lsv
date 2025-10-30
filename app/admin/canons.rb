@@ -2,7 +2,7 @@ ActiveAdmin.register Canon do
   permit_params :code, :name, :description
 
   # Custom page title
-  menu label: "Canons", priority: 8
+  menu parent: "Data Tables", label: "Canons", priority: 5
 
   # Force custom layout
   controller do

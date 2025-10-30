@@ -2,7 +2,7 @@ ActiveAdmin.register Book do
   permit_params :code, :std_name, :description
 
   # Custom page title
-  menu label: "Books", priority: 7
+  menu parent: "Data Tables", label: "Books", priority: 4
 
   # Force custom layout
   controller do

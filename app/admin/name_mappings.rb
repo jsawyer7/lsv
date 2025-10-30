@@ -1,4 +1,5 @@
 ActiveAdmin.register NameMapping do
+  menu parent: "Data Tables", label: "Name Mappings", priority: 10
   permit_params :internal_id, :jewish, :christian, :muslim, :actual, :ethiopian
 
   # Force custom layout

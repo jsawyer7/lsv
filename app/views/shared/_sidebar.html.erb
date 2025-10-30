@@ -40,76 +40,69 @@
       <% end %>
     </li>
 
-        <!-- Name Mappings -->
+        
+
+    <% data_tables_controllers = %w[directions languages sources books canons canon_books text_unit_types text_contents name_mappings text_translations] %>
+    <% data_tables_active = data_tables_controllers.include?(controller_name) %>
+
+    <!-- Data Tables (Collapsible Group) -->
+    <li class="menu-item <%= 'open active' if data_tables_active %>">
+      <a class="menu-link menu-toggle" href="javascript:void(0);">
+        <i class="menu-icon icon-base ri ri-book-2-line"></i>
+        <div data-i18n="Data Tables">Data Tables</div>
+      </a>
+      <ul class="menu-sub">
         <li class="menu-item <%= 'active' if controller_name == 'name_mappings' %>">
           <%= link_to admin_name_mappings_path, class: "menu-link" do %>
-            <i class="menu-icon icon-base ri ri-links-line"></i>
             <div data-i18n="Name Mappings">Name Mappings</div>
           <% end %>
         </li>
-
-        <!-- Directions -->
         <li class="menu-item <%= 'active' if controller_name == 'directions' %>">
           <%= link_to admin_directions_path, class: "menu-link" do %>
-            <i class="menu-icon icon-base ri ri-text-direction-l"></i>
             <div data-i18n="Directions">Directions</div>
           <% end %>
         </li>
-
-        <!-- Languages -->
-    <li class="menu-item <%= 'active' if controller_name == 'languages' %>">
-      <%= link_to admin_languages_path, class: "menu-link" do %>
-        <i class="menu-icon icon-base ri ri-translate"></i>
-        <div data-i18n="Languages">Languages</div>
-      <% end %>
-    </li>
-
-    <!-- Sources -->
-    <li class="menu-item <%= 'active' if controller_name == 'sources' %>">
-      <%= link_to admin_sources_path, class: "menu-link" do %>
-        <i class="menu-icon icon-base ri ri-book-line"></i>
-        <div data-i18n="Sources">Sources</div>
-      <% end %>
-    </li>
-
-    <!-- Books -->
-    <li class="menu-item <%= 'active' if controller_name == 'books' %>">
-      <%= link_to admin_books_path, class: "menu-link" do %>
-        <i class="menu-icon icon-base ri ri-book-open-line"></i>
-        <div data-i18n="Books">Books</div>
-      <% end %>
-    </li>
-
-    <!-- Canons -->
-    <li class="menu-item <%= 'active' if controller_name == 'canons' %>">
-      <%= link_to admin_canons_path, class: "menu-link" do %>
-        <i class="menu-icon icon-base ri ri-list-check"></i>
-        <div data-i18n="Canons">Canons</div>
-      <% end %>
-    </li>
-
-    <!-- Canon Books -->
-    <li class="menu-item <%= 'active' if controller_name == 'canon_books' %>">
-      <%= link_to admin_canon_books_path, class: "menu-link" do %>
-        <i class="menu-icon icon-base ri ri-list-check-2"></i>
-        <div data-i18n="Canon Books">Canon Books</div>
-      <% end %>
-    </li>
-
-    <!-- Text Unit Types -->
-    <li class="menu-item <%= 'active' if controller_name == 'text_unit_types' %>">
-      <%= link_to admin_text_unit_types_path, class: "menu-link" do %>
-        <i class="menu-icon icon-base ri ri-list-check-3"></i>
-        <div data-i18n="Text Unit Types">Text Unit Types</div>
-      <% end %>
-    </li>
-
-    <!-- Text Contents -->
-    <li class="menu-item <%= 'active' if controller_name == 'text_contents' %>">
-      <%= link_to admin_text_contents_path, class: "menu-link" do %>
-        <i class="menu-icon icon-base ri ri-file-text-line"></i>
-        <div data-i18n="Text Contents">Text Contents</div>
-      <% end %>
+        <li class="menu-item <%= 'active' if controller_name == 'languages' %>">
+          <%= link_to admin_languages_path, class: "menu-link" do %>
+            <div data-i18n="Languages">Languages</div>
+          <% end %>
+        </li>
+        <li class="menu-item <%= 'active' if controller_name == 'sources' %>">
+          <%= link_to admin_sources_path, class: "menu-link" do %>
+            <div data-i18n="Sources">Sources</div>
+          <% end %>
+        </li>
+        <li class="menu-item <%= 'active' if controller_name == 'books' %>">
+          <%= link_to admin_books_path, class: "menu-link" do %>
+            <div data-i18n="Books">Books</div>
+          <% end %>
+        </li>
+        <li class="menu-item <%= 'active' if controller_name == 'canons' %>">
+          <%= link_to admin_canons_path, class: "menu-link" do %>
+            <div data-i18n="Canons">Canons</div>
+          <% end %>
+        </li>
+        <li class="menu-item <%= 'active' if controller_name == 'canon_books' %>">
+          <%= link_to admin_canon_books_path, class: "menu-link" do %>
+            <div data-i18n="Canon Books">Canon Books</div>
+          <% end %>
+        </li>
+        <li class="menu-item <%= 'active' if controller_name == 'text_unit_types' %>">
+          <%= link_to admin_text_unit_types_path, class: "menu-link" do %>
+            <div data-i18n="Text Unit Types">Text Unit Types</div>
+          <% end %>
+        </li>
+        <li class="menu-item <%= 'active' if controller_name == 'text_contents' %>">
+          <%= link_to admin_text_contents_path, class: "menu-link" do %>
+            <div data-i18n="Text Contents">Text Contents</div>
+          <% end %>
+        </li>
+        <li class="menu-item <%= 'active' if controller_name == 'text_translations' %>">
+          <%= link_to admin_text_translations_path, class: "menu-link" do %>
+            <div data-i18n="Text Translations">Text Translations</div>
+          <% end %>
+        </li>
+      </ul>
     </li>
 
   </ul>

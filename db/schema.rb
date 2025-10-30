@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2025_10_28_232400) do
+ActiveRecord::Schema[7.0].define(version: 2025_10_30_114000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -327,11 +327,31 @@ ActiveRecord::Schema[7.0].define(version: 2025_10_28_232400) do
     t.index ["book_id"], name: "index_text_contents_on_book_id"
     t.index ["language_id"], name: "index_text_contents_on_language_id"
     t.index ["parent_unit_id"], name: "index_text_contents_on_parent_unit_id"
+    t.index ["source_id", "book_id", "unit_key"], name: "index_text_contents_on_source_book_unit_key", unique: true
     t.index ["source_id", "book_id"], name: "index_text_contents_on_source_id_and_book_id"
     t.index ["source_id"], name: "index_text_contents_on_source_id"
     t.index ["text_unit_type_id"], name: "index_text_contents_on_text_unit_type_id"
     t.index ["unit_group", "unit"], name: "index_text_contents_on_unit_group_and_unit"
-    t.index ["unit_key"], name: "index_text_contents_on_unit_key", unique: true
+  end
+
+  create_table "text_translations", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "text_content_id", null: false
+    t.bigint "language_target_id", null: false
+    t.text "word_for_word_translation", null: false
+    t.text "ai_translation", null: false
+    t.text "ai_explanation", null: false
+    t.string "ai_model_name", limit: 100
+    t.decimal "ai_confidence_score", precision: 4, scale: 3
+    t.integer "revision_number", default: 1, null: false
+    t.boolean "is_latest", default: true, null: false
+    t.datetime "confirmed_at"
+    t.string "confirmed_by", limit: 100
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["language_target_id"], name: "index_text_translations_on_language_target_id"
+    t.index ["text_content_id", "is_latest"], name: "index_text_translations_on_content_latest"
+    t.index ["text_content_id", "revision_number"], name: "index_text_translations_on_content_and_revision", unique: true
   end
 
   create_table "text_unit_types", force: :cascade do |t|
@@ -402,5 +422,7 @@ ActiveRecord::Schema[7.0].define(version: 2025_10_28_232400) do
   add_foreign_key "text_contents", "languages"
   add_foreign_key "text_contents", "sources"
   add_foreign_key "text_contents", "text_unit_types"
+  add_foreign_key "text_translations", "languages", column: "language_target_id"
+  add_foreign_key "text_translations", "text_contents"
   add_foreign_key "theories", "users"
 end

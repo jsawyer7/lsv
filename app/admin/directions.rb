@@ -1,6 +1,6 @@
 ActiveAdmin.register Direction do
   permit_params :code, :name, :description
-  menu label: "Directions", priority: 4
+  menu parent: "Data Tables", label: "Directions", priority: 1
   controller { layout "active_admin_custom" }
 
   action_item :new_direction, only: :index do

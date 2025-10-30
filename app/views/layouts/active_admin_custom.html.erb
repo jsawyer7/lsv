@@ -28,6 +28,11 @@
     <style>
       /* Hide Active Admin elements immediately to prevent flash */
       #header, #header h1, #header h1 a, #utility_nav, #title_bar, #title_bar_left, #title_bar_right, .breadcrumb, #active_admin_content .sidebar, #active_admin_content .sidebar_section, .sidebar, .sidebar_section, #sidebar, #sidebar_sections, #sidebar_sections_wrapper, #sidebar_sections_wrapper .sidebar_section, #sidebar_sections_wrapper .sidebar_section h3, #sidebar_sections_wrapper .sidebar_section ul, #sidebar_sections_wrapper .sidebar_section li, #sidebar_sections_wrapper .sidebar_section a, #active_admin_content .sidebar_sections, #active_admin_content .sidebar_sections .sidebar_section, #active_admin_content .sidebar_sections .sidebar_section h3, #active_admin_content .sidebar_sections .sidebar_section ul, #active_admin_content .sidebar_sections .sidebar_section li, #active_admin_content .sidebar_sections .sidebar_section a, #active_admin_content .content_wrapper .sidebar, #active_admin_content .content_wrapper .main_content .sidebar, #active_admin_content .content_wrapper .main_content .sidebar_section, #active_admin_content .content_wrapper .main_content .sidebar_section ul, #active_admin_content .content_wrapper .main_content .sidebar_section li, #active_admin_content .content_wrapper .main_content .sidebar_section a { display: none !important; }
+
+      /* Collapsible menu behavior */
+      #layout-menu .menu-item .menu-sub { display: none; padding-left: 1.75rem; }
+      #layout-menu .menu-item.open > .menu-sub { display: block; }
+    </style>
     </style>
 
     <!-- Core CSS -->
@@ -173,6 +178,19 @@
     <script src="https://cdn.jsdelivr.net/npm/@rails/ujs@7.0.4/dist/rails-ujs.min.js"></script>
     <script>
       Rails.start();
+    </script>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        var toggles = document.querySelectorAll('#layout-menu .menu-item > a.menu-toggle');
+        toggles.forEach(function(t) {
+          t.addEventListener('click', function(e) {
+            e.preventDefault();
+            var li = this.closest('.menu-item');
+            if (li) { li.classList.toggle('open'); }
+          });
+        });
+      });
     </script>
     
   </body>

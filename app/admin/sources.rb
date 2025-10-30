@@ -2,7 +2,7 @@ ActiveAdmin.register Source do
   permit_params :code, :name, :description, :language_id, :text_unit_type_id, :rights_json, :provenance
 
   # Custom page title
-  menu label: "Sources", priority: 6
+  menu parent: "Data Tables", label: "Sources", priority: 3
 
   # Force custom layout
   controller do

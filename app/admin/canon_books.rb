@@ -2,7 +2,7 @@ ActiveAdmin.register CanonBook do
   permit_params :canon_id, :book_id, :seq_no, :included_bool, :description
 
   # Custom page title
-  menu label: "Canon Books", priority: 9
+  menu parent: "Data Tables", label: "Canon Books", priority: 6
 
   # Force custom layout
   controller do

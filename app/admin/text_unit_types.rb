@@ -1,6 +1,6 @@
 ActiveAdmin.register TextUnitType do
   permit_params :code, :name, :description
-  menu label: "Text Unit Types", priority: 10
+  menu parent: "Data Tables", label: "Text Unit Types", priority: 7
   controller { layout "active_admin_custom" }
 
   action_item :new_text_unit_type, only: :index do

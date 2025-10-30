@@ -4,7 +4,7 @@ ActiveAdmin.register Language do
                 :native_digits, :unicode_normalization, :shaping_engine, :punctuation_mirroring
 
   # Custom page title
-  menu label: "Languages", priority: 5
+  menu parent: "Data Tables", label: "Languages", priority: 2
 
   # Force custom layout
   controller do
