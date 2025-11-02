@@ -5,10 +5,11 @@ class DuplicateClaimDetectorService
   POSSIBLE_MATCH_THRESHOLD = 0.75
   MAX_SIMILAR_CLAIMS = 20
 
-  def initialize(claim_text, evidence_texts = [], current_claim = nil)
+  def initialize(claim_text, evidence_texts = [], current_claim = nil, user = nil)
     @claim_text = clean_claim_text(claim_text.to_s.strip)
     @evidence_texts = Array(evidence_texts).compact
     @current_claim = current_claim
+    @user = user
     @embedding_service = ClaimEmbeddingService.new(@claim_text)
     @name_normalization_service = NameNormalizationService.new
   end
@@ -69,7 +70,7 @@ class DuplicateClaimDetectorService
     # Normalize the current claim text
     normalized_text = @name_normalization_service.normalize_text(@claim_text)
     normalized_hash = Digest::SHA256.hexdigest(normalized_text.downcase.strip)
-    
+
     return [] if normalized_hash.blank?
 
     # Find claims with the same normalized content
@@ -89,11 +90,11 @@ class DuplicateClaimDetectorService
 
     # Find claims that have any matching tradition hashes
     matching_claims = []
-    
+
     published_facts = Claim.where(published: true, fact: true)
                           .where.not(id: @current_claim&.id)
                           .where.not(tradition_hashes: [nil, ''])
-    
+
     published_facts.includes(:user, :evidences).find_each do |claim|
       claim_hashes = claim.tradition_hashes
       next if claim_hashes.empty?
@@ -116,20 +117,20 @@ class DuplicateClaimDetectorService
 
   def generate_tradition_hashes_for_text(normalized_text)
     hashes = {}
-    
+
     # Get all name mappings
     name_mappings = NameMapping.all
-    
+
     # Generate hashes for each tradition
     ['actual', 'jewish', 'christian', 'muslim', 'ethiopian'].each do |tradition|
       # Denormalize the text for this tradition
       denormalized_text = @name_normalization_service.denormalize_text(normalized_text, tradition)
-      
+
       # Generate hash for this tradition's version
       hash = Digest::SHA256.hexdigest(denormalized_text.downcase.strip)
       hashes[tradition] = hash
     end
-    
+
     hashes
   end
 
@@ -209,7 +210,7 @@ class DuplicateClaimDetectorService
   def serialize_claim(claim)
     {
       id: claim.id,
-      content: claim.content,
+      content: claim.content_for_user(@user),
       created_at: claim.created_at,
       user: {
         full_name: claim.user&.full_name,

@@ -11,7 +11,7 @@
       <%= link_to claim_path(claim), class: "claim-card" do %>
         <div class="claim-content">
           <p class="claim-text">
-            <%= truncate(claim.content, length: 64) %>
+            <%= truncate(claim.content_for_user(current_user), length: 64) %>
           </p>
           <span class="badge badge-<%= claim_status_class(claim.result) %>">
             <%= claim.result %>

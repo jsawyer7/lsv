@@ -45,7 +45,7 @@ class ClaimsController < ApplicationController
       clean_claim_text = clean_claim_text_for_duplicate_detection(params[:claim][:content])
 
       # Check for duplicates using the cleaned claim text
-      detector = DuplicateClaimDetectorService.new(clean_claim_text)
+      detector = DuplicateClaimDetectorService.new(clean_claim_text, [], nil, current_user)
       duplicates = detector.detect_duplicates
 
       render json: {

@@ -16,7 +16,8 @@ class UsersController < ApplicationController
     claims = user.claims.order(created_at: :desc).offset((page - 1) * per_page).limit(per_page)
     render json: {
       claims: claims.map { |claim|
-        claim.as_json(only: [:id, :content, :created_at, :user_id]).merge(
+        claim.as_json(only: [:id, :created_at, :user_id]).merge(
+          content: claim.content_for_user(current_user),
           user: {
             full_name: claim.user&.full_name,
             email: claim.user&.email
