@@ -38,7 +38,7 @@
             <span class="my-claim-badge draft">Draft</span>
           <% end %>
         </div>
-        <div class="my-claim-content"><%= truncate(claim.content, length: 220) %></div>
+        <div class="my-claim-content"><%= truncate(claim.content_for_user(current_user), length: 220) %></div>
         <div class="my-claim-card-footer">
           <% if claim.state == 'draft' %>
             <%= link_to edit_claim_path(claim), class: 'my-claim-edit-link' do %>

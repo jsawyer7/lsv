@@ -12,7 +12,7 @@
   </div>
   
   <div class="duplicate-claim-content">
-    <%= claim.content %>
+    <%= claim.content_for_user(current_user) %>
   </div>
   
   <% if claim.evidences.any? %>
