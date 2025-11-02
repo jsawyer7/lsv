@@ -1,6 +1,6 @@
 ActiveAdmin.register TextContent do
   permit_params :source_id, :book_id, :text_unit_type_id, :language_id, :parent_unit_id,
-                :unit_group, :unit, :content, :unit_key,
+                :unit_group, :unit, :content, :unit_key, :word_for_word_translation, :lsv_literal_reconstruction,
                 :canon_catholic, :canon_protestant, :canon_lutheran, :canon_anglican,
                 :canon_greek_orthodox, :canon_russian_orthodox, :canon_georgian_orthodox,
                 :canon_western_orthodox, :canon_coptic, :canon_armenian, :canon_ethiopian,
@@ -413,85 +413,101 @@ ActiveAdmin.register TextContent do
                     }
           end
 
-          # Canon checkboxes in a grid
+          div class: "materio-form-group" do
+            div class: "materio-form-label" do
+              i class: "ri ri-text-wrap me-2"
+              span "LSV Literal Reconstruction"
+            end
+            f.input :lsv_literal_reconstruction,
+                    as: :text,
+                    class: "materio-form-control",
+                    label: false,
+                    input_html: {
+                      class: "materio-form-control",
+                      style: "width: 100%; max-width: 500px;",
+                      placeholder: "Enter LSV literal reconstruction...",
+                      rows: 4
+                    }
+          end
+
+          # Word-for-Word Translation Table
+          div class: "materio-card mt-4" do
+            div class: "materio-header" do
+              h5 class: "mb-0 fw-semibold" do
+                i class: "ri ri-translate-2 me-2"
+                "Word-for-Word Translation"
+              end
+            end
+            div class: "card-body" do
+              div id: "word-for-word-table-container" do
+                if f.object.word_for_word_array.present?
+                  table class: "table table-striped" do
+                    thead class: "table-dark" do
+                      tr do
+                        th "#{f.object.language.name} word"
+                        th "Literal meaning"
+                        th "Confidence (1–100)"
+                        th "Notes"
+                      end
+                    end
+                    tbody do
+                      f.object.word_for_word_array.each do |word|
+                        tr do
+                          td class: "fw-semibold" do word['word'] || word[:word] || '' end
+                          td do word['literal_meaning'] || word[:literal_meaning] || '' end
+                          td do word['confidence'] || word[:confidence] || '' end
+                          td class: "small text-muted" do word['notes'] || word[:notes] || '' end
+                        end
+                      end
+                    end
+                  end
+                else
+                  p class: "text-muted" do "No word-for-word translation available. This will be populated by AI during import." end
+                end
+              end
+              div class: "mt-3" do
+                f.input :word_for_word_translation,
+                        as: :text,
+                        label: "Word-for-Word JSON (for editing)",
+                        input_html: {
+                          rows: 5,
+                          class: "form-control font-monospace small",
+                          placeholder: '[{"word": "In", "literal_meaning": "in / within", "confidence": 100, "notes": "Fixed Latin preposition—no ambiguity."}, ...]',
+                          style: "width: 100%; max-width: 800px;"
+                        }
+              end
+            end
+          end
+
+          # Canon checkboxes in a grid - dynamically show only canons that exist in database
           div class: "materio-form-group" do
             div class: "materio-form-label mb-3" do
               i class: "ri ri-list-check me-2"
               span "Canon Assignments"
             end
             div class: "row" do
-              div class: "col-md-4" do
-                div class: "form-check" do
-                  f.check_box :canon_catholic, class: "form-check-input"
-                  f.label :canon_catholic, "Catholic", class: "form-check-label"
-                end
-                div class: "form-check" do
-                  f.check_box :canon_protestant, class: "form-check-input"
-                  f.label :canon_protestant, "Protestant", class: "form-check-label"
-                end
-                div class: "form-check" do
-                  f.check_box :canon_lutheran, class: "form-check-input"
-                  f.label :canon_lutheran, "Lutheran", class: "form-check-label"
-                end
-                div class: "form-check" do
-                  f.check_box :canon_anglican, class: "form-check-input"
-                  f.label :canon_anglican, "Anglican", class: "form-check-label"
-                end
-                div class: "form-check" do
-                  f.check_box :canon_greek_orthodox, class: "form-check-input"
-                  f.label :canon_greek_orthodox, "Greek Orthodox", class: "form-check-label"
-                end
+              # Get all canons from database and map to TextContent fields
+              existing_canons = Canon.ordered.all.select do |canon|
+                TextContent::CODE_TO_CANON_FIELD.key?(canon.code)
               end
-              div class: "col-md-4" do
-                div class: "form-check" do
-                  f.check_box :canon_russian_orthodox, class: "form-check-input"
-                  f.label :canon_russian_orthodox, "Russian Orthodox", class: "form-check-label"
-                end
-                div class: "form-check" do
-                  f.check_box :canon_georgian_orthodox, class: "form-check-input"
-                  f.label :canon_georgian_orthodox, "Georgian Orthodox", class: "form-check-label"
-                end
-                div class: "form-check" do
-                  f.check_box :canon_western_orthodox, class: "form-check-input"
-                  f.label :canon_western_orthodox, "Western Orthodox", class: "form-check-label"
-                end
-                div class: "form-check" do
-                  f.check_box :canon_coptic, class: "form-check-input"
-                  f.label :canon_coptic, "Coptic", class: "form-check-label"
-                end
-                div class: "form-check" do
-                  f.check_box :canon_armenian, class: "form-check-input"
-                  f.label :canon_armenian, "Armenian", class: "form-check-label"
-                end
-              end
-              div class: "col-md-4" do
-                div class: "form-check" do
-                  f.check_box :canon_ethiopian, class: "form-check-input"
-                  f.label :canon_ethiopian, "Ethiopian", class: "form-check-label"
-                end
-                div class: "form-check" do
-                  f.check_box :canon_syriac, class: "form-check-input"
-                  f.label :canon_syriac, "Syriac", class: "form-check-label"
-                end
-                div class: "form-check" do
-                  f.check_box :canon_church_east, class: "form-check-input"
-                  f.label :canon_church_east, "Church of the East", class: "form-check-label"
-                end
-                div class: "form-check" do
-                  f.check_box :canon_judaic, class: "form-check-input"
-                  f.label :canon_judaic, "Judaic", class: "form-check-label"
-                end
-                div class: "form-check" do
-                  f.check_box :canon_samaritan, class: "form-check-input"
-                  f.label :canon_samaritan, "Samaritan", class: "form-check-label"
-                end
-                div class: "form-check" do
-                  f.check_box :canon_lds, class: "form-check-input"
-                  f.label :canon_lds, "LDS", class: "form-check-label"
-                end
-                div class: "form-check" do
-                  f.check_box :canon_quran, class: "form-check-input"
-                  f.label :canon_quran, "Quran", class: "form-check-label"
+              
+              # Split into columns (approximately equal distribution)
+              cols = 3
+              per_col = (existing_canons.length.to_f / cols).ceil
+              
+              cols.times do |col_idx|
+                div class: "col-md-4" do
+                  start_idx = col_idx * per_col
+                  end_idx = start_idx + per_col - 1
+                  existing_canons[start_idx..end_idx].each do |canon|
+                    field = TextContent::CODE_TO_CANON_FIELD[canon.code]
+                    next unless field # Skip if no mapping exists
+                    
+                    div class: "form-check" do
+                      f.check_box field, class: "form-check-input"
+                      f.label field, canon.name, class: "form-check-label"
+                    end
+                  end
                 end
               end
             end
@@ -686,6 +702,53 @@ ActiveAdmin.register TextContent do
             contentInput.value = normalizeGreekPunctuation(contentInput.value);
           });
         }
+
+        // Word-for-word translation table update
+        const wordForWordInput = document.querySelector('textarea[name=\"text_content[word_for_word_translation]\"]');
+        const wordForWordContainer = document.getElementById('word-for-word-table-container');
+        
+        function updateWordForWordTable() {
+          if (!wordForWordInput || !wordForWordContainer) return;
+          
+          const jsonText = wordForWordInput.value.trim();
+          if (!jsonText) {
+            wordForWordContainer.innerHTML = '<p class=\"text-muted\">No word-for-word translation available. Enter JSON array in the field below.</p>';
+            return;
+          }
+          
+          try {
+            const words = JSON.parse(jsonText);
+            if (!Array.isArray(words)) {
+              wordForWordContainer.innerHTML = '<p class=\"text-danger\">JSON must be an array of word objects.</p>';
+              return;
+            }
+            
+            if (words.length === 0) {
+              wordForWordContainer.innerHTML = '<p class=\"text-muted\">Word array is empty.</p>';
+              return;
+            }
+            
+            const languageName = languageDisplay ? languageDisplay.textContent.split('(')[0].trim() : 'Source';
+            let tableHTML = '<table class=\"table table-striped\"><thead class=\"table-dark\"><tr><th>' + languageName + ' word</th><th>Literal meaning</th><th>Confidence (1–100)</th><th>Notes</th></tr></thead><tbody>';
+            
+            words.forEach(function(word) {
+              tableHTML += '<tr><td class=\"fw-semibold\">' + (word.word || '') + '</td>';
+              tableHTML += '<td>' + (word.literal_meaning || '') + '</td>';
+              tableHTML += '<td>' + (word.confidence || '') + '</td>';
+              tableHTML += '<td class=\"small text-muted\">' + (word.notes || '') + '</td></tr>';
+            });
+            
+            tableHTML += '</tbody></table>';
+            wordForWordContainer.innerHTML = tableHTML;
+          } catch (e) {
+            wordForWordContainer.innerHTML = '<p class=\"text-danger\">Invalid JSON: ' + e.message + '</p>';
+          }
+        }
+        
+        if (wordForWordInput) {
+          wordForWordInput.addEventListener('input', updateWordForWordTable);
+          updateWordForWordTable();
+        }
       });
       "
     end
@@ -759,6 +822,57 @@ ActiveAdmin.register TextContent do
                   div class: "fw-semibold text-dark" do resource.content end
                 end
               end
+              div class: "col-12" do
+                div class: "materio-info-item" do
+                  div class: "text-muted small fw-semibold mb-2" do
+                    i class: "ri ri-text-wrap me-2"
+                    "LSV Literal Reconstruction"
+                  end
+                  div class: "fw-semibold text-dark" do
+                    if resource.lsv_literal_reconstruction.present?
+                      resource.lsv_literal_reconstruction
+                    else
+                      span class: "text-muted" do "No LSV literal reconstruction provided" end
+                    end
+                  end
+                end
+              end
+            end
+          end
+        end
+
+        # Word-for-Word Translation Table
+        div class: "materio-card mt-4" do
+          div class: "materio-header" do
+            h5 class: "mb-0 fw-semibold" do
+              i class: "ri ri-translate-2 me-2"
+              "Word-for-Word Translation"
+            end
+          end
+          div class: "card-body" do
+            if resource.word_for_word_array.present?
+              table class: "table table-striped" do
+                thead class: "table-dark" do
+                  tr do
+                    th "#{resource.language.name} word"
+                    th "Literal meaning"
+                    th "Confidence (1–100)"
+                    th "Notes"
+                  end
+                end
+                tbody do
+                  resource.word_for_word_array.each do |word|
+                    tr do
+                      td class: "fw-semibold" do word['word'] || word[:word] || '' end
+                      td do word['literal_meaning'] || word[:literal_meaning] || '' end
+                      td do word['confidence'] || word[:confidence] || '' end
+                      td class: "small text-muted" do word['notes'] || word[:notes] || '' end
+                    end
+                  end
+                end
+              end
+            else
+              p class: "text-muted" do "No word-for-word translation available." end
             end
           end
         end

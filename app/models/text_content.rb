@@ -46,26 +46,48 @@ class TextContent < ApplicationRecord
     "#{book.std_name} - #{text_unit_type.name} - #{unit_key}"
   end
   
+  # Mapping from Canon table codes to TextContent canon fields
+  # This maps what codes exist in your canons table to the TextContent boolean fields
+  CODE_TO_CANON_FIELD = {
+    'CATH' => :canon_catholic,
+    'PROT' => :canon_protestant,
+    'ETH' => :canon_ethiopian,
+    'JEW' => :canon_judaic,
+    'ORTH' => :canon_greek_orthodox,
+    # Add more mappings as you add canons
+    'CHR_LUTHERAN' => :canon_lutheran,
+    'CHR_ANGLICAN' => :canon_anglican,
+    'CHR_GREEK_ORTH' => :canon_greek_orthodox,
+    'CHR_RUSSIAN_ORTH' => :canon_russian_orthodox,
+    'CHR_GEORGIAN_ORTH' => :canon_georgian_orthodox,
+    'CHR_WESTERN_ORTH' => :canon_western_orthodox,
+    'CHR_COPTIC' => :canon_coptic,
+    'CHR_ARMENIAN' => :canon_armenian,
+    'CHR_ETHIOPIAN' => :canon_ethiopian,
+    'CHR_SYRIAC' => :canon_syriac,
+    'CHR_CHURCH_EAST' => :canon_church_east,
+    'HEB_SAMARITAN' => :canon_samaritan,
+    'CHR_LDS' => :canon_lds,
+    'ISL_QURAN' => :canon_quran
+  }.freeze
+
+  # Reverse mapping for display
+  CANON_FIELD_TO_CODE = CODE_TO_CANON_FIELD.invert.freeze
+
   def canon_list
     canons = []
-    canons << "Catholic" if canon_catholic
-    canons << "Protestant" if canon_protestant
-    canons << "Lutheran" if canon_lutheran
-    canons << "Anglican" if canon_anglican
-    canons << "Greek Orthodox" if canon_greek_orthodox
-    canons << "Russian Orthodox" if canon_russian_orthodox
-    canons << "Georgian Orthodox" if canon_georgian_orthodox
-    canons << "Western Orthodox" if canon_western_orthodox
-    canons << "Coptic" if canon_coptic
-    canons << "Armenian" if canon_armenian
-    canons << "Ethiopian" if canon_ethiopian
-    canons << "Syriac" if canon_syriac
-    canons << "Church of the East" if canon_church_east
-    canons << "Judaic" if canon_judaic
-    canons << "Samaritan" if canon_samaritan
-    canons << "LDS" if canon_lds
-    canons << "Quran" if canon_quran
+    CODE_TO_CANON_FIELD.each do |code, field|
+      if send(field)
+        canon = Canon.find_by(code: code)
+        canons << (canon ? canon.name : code)
+      end
+    end
     canons.join(", ")
+  end
+
+  def word_for_word_array
+    return [] if word_for_word_translation.blank?
+    word_for_word_translation.is_a?(Array) ? word_for_word_translation : []
   end
 
   def self.ransackable_attributes(auth_object = nil)
@@ -74,7 +96,8 @@ class TextContent < ApplicationRecord
      "canon_judaic", "canon_lds", "canon_lutheran", "canon_protestant", "canon_quran", 
      "canon_russian_orthodox", "canon_samaritan", "canon_syriac", "canon_western_orthodox", 
      "unit_group", "content", "created_at", "id", "language_id", "parent_unit_id", 
-     "source_id", "text_unit_type_id", "unit_key", "unit", "updated_at"]
+     "source_id", "text_unit_type_id", "unit_key", "unit", "updated_at", "word_for_word_translation",
+     "lsv_literal_reconstruction"]
   end
 
   def self.ransackable_associations(auth_object = nil)

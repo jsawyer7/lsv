@@ -4,7 +4,6 @@ class TextTranslation < ApplicationRecord
 
   validates :text_content, presence: true
   validates :language_target, presence: true
-  validates :word_for_word_translation, presence: true
   validates :ai_translation, presence: true
   validates :ai_explanation, presence: true
   validates :revision_number, presence: true, numericality: { only_integer: true, greater_than: 0 }
@@ -18,7 +17,7 @@ class TextTranslation < ApplicationRecord
     [
       "ai_confidence_score", "ai_model_name", "ai_translation", "ai_explanation", "created_at",
       "id", "is_latest", "language_target_id", "notes", "revision_number", "text_content_id",
-      "updated_at", "word_for_word_translation", "confirmed_at", "confirmed_by"
+      "updated_at", "confirmed_at", "confirmed_by", "summary_and_differences"
     ]
   end
 

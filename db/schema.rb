@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2025_10_30_114000) do
+ActiveRecord::Schema[7.0].define(version: 2025_10_30_130000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -324,6 +324,8 @@ ActiveRecord::Schema[7.0].define(version: 2025_10_30_114000) do
     t.boolean "canon_quran", default: false, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.jsonb "word_for_word_translation", default: []
+    t.text "lsv_literal_reconstruction"
     t.index ["book_id"], name: "index_text_contents_on_book_id"
     t.index ["language_id"], name: "index_text_contents_on_language_id"
     t.index ["parent_unit_id"], name: "index_text_contents_on_parent_unit_id"
@@ -337,7 +339,6 @@ ActiveRecord::Schema[7.0].define(version: 2025_10_30_114000) do
   create_table "text_translations", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "text_content_id", null: false
     t.bigint "language_target_id", null: false
-    t.text "word_for_word_translation", null: false
     t.text "ai_translation", null: false
     t.text "ai_explanation", null: false
     t.string "ai_model_name", limit: 100
@@ -349,6 +350,7 @@ ActiveRecord::Schema[7.0].define(version: 2025_10_30_114000) do
     t.text "notes"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.text "summary_and_differences"
     t.index ["language_target_id"], name: "index_text_translations_on_language_target_id"
     t.index ["text_content_id", "is_latest"], name: "index_text_translations_on_content_latest"
     t.index ["text_content_id", "revision_number"], name: "index_text_translations_on_content_and_revision", unique: true

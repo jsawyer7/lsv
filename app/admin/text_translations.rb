@@ -1,7 +1,7 @@
 ActiveAdmin.register TextTranslation do
-  permit_params :text_content_id, :language_target_id, :word_for_word_translation, :ai_translation,
+  permit_params :text_content_id, :language_target_id, :ai_translation,
                 :ai_explanation, :ai_model_name, :ai_confidence_score, :revision_number, :is_latest,
-                :confirmed_at, :confirmed_by, :notes
+                :confirmed_at, :confirmed_by, :notes, :summary_and_differences
 
   menu parent: "Data Tables", label: "Text Translations", priority: 9
   controller { layout "active_admin_custom" }
@@ -94,18 +94,31 @@ ActiveAdmin.register TextTranslation do
         end
         f.inputs do
           div class: "row" do
-            div class: "col-md-6" do
-              div class: "materio-form-group" do
-                div class: "materio-form-label" do
-                  i class: "ri ri-hashtag me-2"
-                  span "Text Content"
-                end
-                f.input :text_content_id, as: :string, label: false, input_html: { placeholder: "Paste Text Content UUID", style: "width: 100%; max-width: 500px;" }
-                div class: "small text-muted mt-1" do
-                  "Unit: #{f.object.text_content&.unit_key || '-'}"
+              div class: "col-md-6" do
+                div class: "materio-form-group" do
+                  div class: "materio-form-label" do
+                    i class: "ri ri-hashtag me-2"
+                    span "Text Content"
+                  end
+                  f.input :text_content_id,
+                          as: :select,
+                          collection: TextContent.ordered.limit(1000).map { |tc| ["#{tc.unit_key} - #{tc.source.name} - #{tc.book.std_name}", tc.id] },
+                          label: false,
+                          input_html: {
+                            class: "materio-form-control",
+                            style: "width: 100%; max-width: 500px;",
+                            id: "text-content-select"
+                          },
+                          prompt: "Select a Text Content..."
+                  div class: "small text-muted mt-2", id: "text-content-unit-display" do
+                    if f.object.text_content
+                      "Unit Key: #{f.object.text_content.unit_key}"
+                    else
+                      "Select a text content above"
+                    end
+                  end
                 end
               end
-            end
             div class: "col-md-6" do
               div class: "materio-form-group" do
                 div class: "materio-form-label" do
@@ -119,16 +132,8 @@ ActiveAdmin.register TextTranslation do
 
           div class: "materio-form-group" do
             div class: "materio-form-label" do
-              i class: "ri ri-file-text-line me-2"
-              span "Word-for-Word Translation"
-            end
-            f.input :word_for_word_translation, as: :text, label: false, input_html: { rows: 3, style: "width: 100%; max-width: 800px;" }
-          end
-
-          div class: "materio-form-group" do
-            div class: "materio-form-label" do
               i class: "ri ri-robot-line me-2"
-              span "AI Translation"
+              span "AI's LSV translation"
             end
             f.input :ai_translation, as: :text, label: false, input_html: { rows: 3, style: "width: 100%; max-width: 800px;" }
           end
@@ -136,7 +141,7 @@ ActiveAdmin.register TextTranslation do
           div class: "materio-form-group" do
             div class: "materio-form-label" do
               i class: "ri ri-chat-1-line me-2"
-              span "AI Explanation"
+              span "AI assessment of the Writer's intended meaning"
             end
             f.input :ai_explanation, as: :text, label: false, input_html: { rows: 4, style: "width: 100%; max-width: 800px;" }
           end
@@ -208,6 +213,14 @@ ActiveAdmin.register TextTranslation do
             end
             f.input :notes, as: :text, label: false, input_html: { rows: 3, style: "width: 100%; max-width: 800px;" }
           end
+
+          div class: "materio-form-group" do
+            div class: "materio-form-label" do
+              i class: "ri ri-file-list-3-line me-2"
+              span "Summary and differences from main theologies"
+            end
+            f.input :summary_and_differences, as: :text, label: false, input_html: { rows: 5, style: "width: 100%; max-width: 800px;", placeholder: "Enter summary and differences from main theologies..." }
+          end
         end
         div class: "mt-4 pt-4 border-top" do
           div class: "d-flex justify-content-end gap-3" do
@@ -221,6 +234,39 @@ ActiveAdmin.register TextTranslation do
         end
       end
     end
+
+    # JavaScript to update unit key display when text content is selected
+    script do
+      raw "
+      document.addEventListener('DOMContentLoaded', function() {
+        const textContentSelect = document.getElementById('text-content-select');
+        const unitDisplay = document.getElementById('text-content-unit-display');
+        
+        if (textContentSelect && unitDisplay) {
+          textContentSelect.addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            if (selectedOption && selectedOption.value) {
+              // Extract unit key from the option text (format: 'unit_key - source - book')
+              const optionText = selectedOption.text;
+              const parts = optionText.split(' - ');
+              if (parts.length > 0) {
+                unitDisplay.textContent = 'Unit Key: ' + parts[0];
+              } else {
+                unitDisplay.textContent = 'Unit Key: ' + selectedOption.value;
+              }
+            } else {
+              unitDisplay.textContent = 'Select a text content above';
+            }
+          });
+          
+          // Update on page load if already selected
+          if (textContentSelect.value) {
+            textContentSelect.dispatchEvent(new Event('change'));
+          }
+        }
+      });
+      "
+    end
   end
 
   show do
@@ -232,11 +278,12 @@ ActiveAdmin.register TextTranslation do
       row :ai_model_name
       row :ai_confidence_score
       row :word_for_word_translation
-      row :ai_translation
-      row :ai_explanation
+      row "AI's LSV translation" do |tt| tt.ai_translation end
+      row "AI assessment of the Writer's intended meaning" do |tt| tt.ai_explanation end
       row :confirmed_at
       row :confirmed_by
       row :notes
+      row "Summary and differences from main theologies" do |tt| tt.summary_and_differences end
       row :created_at
       row :updated_at
     end
