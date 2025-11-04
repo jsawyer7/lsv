@@ -17,32 +17,160 @@
   font-weight: 700;
   margin-bottom: 18px;
 }
+.settings-profile-banner-wrapper {
+  position: relative;
+  width: 100%;
+}
+
 .settings-profile-banner {
   width: 100%;
   height: 200px;
   background: url(asset-path('settings-banner.png')) center/cover no-repeat;
   border-radius: 10px;
   margin-bottom: 0;
+  position: relative;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  z-index: 1;
+  
+  &:hover {
+    opacity: 0.95;
+    
+    .settings-banner-delete-btn {
+      opacity: 1;
+      visibility: visible;
+    }
+  }
 }
+
+// Edit cover photo button on banner (bottom-right) - permanently visible with text
+.settings-banner-edit-btn {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  transition: all 0.2s ease;
+  opacity: 1;
+  visibility: visible;
+  z-index: 10;
+  
+  &:hover {
+    background: rgba(0, 0, 0, 0.75);
+    transform: translateY(-2px);
+  }
+  
+  i {
+    margin: 0;
+    font-size: 16px;
+  }
+  
+  span {
+    white-space: nowrap;
+  }
+}
+
+// Delete button on banner (top-right)
+.settings-banner-delete-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(239, 68, 68, 0.9);
+  border: 2px solid #fff;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  transition: all 0.2s ease;
+  opacity: 0;
+  visibility: hidden;
+  z-index: 10;
+  
+  &:hover {
+    background: rgba(220, 38, 38, 0.95);
+    transform: scale(1.1);
+  }
+}
+
 .settings-profile-header {
   display: flex;
   align-items: center;
   gap: 18px;
   margin-top: -20px;
   margin-bottom: 18px;
+  position: relative;
+  z-index: 2;
 }
+
+.settings-profile-avatar-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
 .settings-profile-avatar {
   width: 80px;
   height: 80px;
   border-radius: 50%;
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+  position: relative;
+  z-index: 3;
+  background: #fff;
 }
+
 .settings-avatar-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   border-radius: 50%;
+}
+
+// Camera button overlapping the header avatar (bottom-right, always visible)
+.settings-profile-avatar-camera-btn {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 27px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  border: 2px solid #fff;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  transition: all 0.2s ease;
+  z-index: 5;
+  
+  &:hover {
+    background: rgba(0, 0, 0, 0.75);
+    transform: scale(1.05);
+  }
+  
+  i {
+    margin: 0;
+  }
 }
 .settings-profile-info {
   display: flex;
@@ -325,6 +453,173 @@
   }
 }
 
+// Avatar Options Modal
+.avatar-options-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10001;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &.show {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .avatar-options-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    opacity: 0;
+    transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  &.show .avatar-options-overlay {
+    opacity: 1;
+  }
+
+  .avatar-options-dialog {
+    position: relative;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    max-width: 400px;
+    width: 90%;
+    max-height: 90vh;
+    overflow: hidden;
+    transform: translateY(20px) scale(0.95);
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  &.show .avatar-options-dialog {
+    transform: translateY(0) scale(1);
+  }
+
+  .avatar-options-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid #e2e8f0;
+
+    .avatar-options-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #1e293b;
+      margin: 0;
+    }
+
+    .avatar-options-close {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 8px;
+      color: #64748b;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background: #f1f5f9;
+        color: #1e293b;
+      }
+
+      i {
+        font-size: 16px;
+      }
+    }
+  }
+
+  .avatar-options-body {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+
+    .avatar-options-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 14px 20px;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: none;
+      width: 100%;
+
+      i {
+        font-size: 18px;
+      }
+
+      span {
+        font-weight: 500;
+      }
+
+      &.avatar-options-upload-btn {
+        background: #2196f3;
+        color: white;
+
+        i {
+          color: white;
+        }
+
+        span {
+          color: white;
+        }
+
+        &:hover {
+          background: #1976d2;
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+          color: white;
+
+          i {
+            color: white;
+          }
+
+          span {
+            color: white;
+          }
+        }
+
+        &:active {
+          transform: translateY(0);
+        }
+      }
+
+      &.avatar-options-delete-btn {
+        background: #f8fafc;
+        color: #ef4444;
+        border: 1px solid #fee2e2;
+
+        &:hover {
+          background: #fee2e2;
+          color: #dc2626;
+          border-color: #fecaca;
+          transform: translateY(-1px);
+        }
+
+        &:active {
+          transform: translateY(0);
+        }
+      }
+    }
+  }
+}
+
 .settings-menu li.active .settings-menu-link {
   color: #2196f3;
   background: #e3f0ff;
@@ -412,14 +707,31 @@
   gap: 16px;
 }
 
+.settings-background-preview-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
 .settings-background-preview {
-  width: 200px;
-  height: 100px;
-  border-radius: 8px;
+  width: 400px;
+  height: 200px;
+  border-radius: 12px;
   overflow: hidden;
   border: 2px solid #e3f0ff;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   position: relative;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  
+  &:hover {
+    opacity: 0.95;
+    
+    .settings-background-edit-btn,
+    .settings-background-delete-overlay {
+      opacity: 1;
+      visibility: visible;
+    }
+  }
 }
 
 .settings-background-img {
@@ -442,6 +754,85 @@
   i {
     font-size: 20px;
     margin-bottom: 4px;
+  }
+}
+
+// Edit cover photo button overlay (Facebook-style)
+.settings-background-edit-btn {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+  opacity: 0;
+  visibility: hidden;
+  z-index: 10;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  
+  &:hover {
+    background: rgba(0, 0, 0, 0.75);
+    transform: translateY(-2px);
+  }
+  
+  i {
+    font-size: 16px;
+    margin: 0;
+  }
+  
+  span {
+    white-space: nowrap;
+  }
+}
+
+// Show button when there's no background image (placeholder visible)
+.settings-background-preview:has(.settings-background-placeholder:not([style*="display: none"])) {
+  .settings-background-edit-btn {
+    opacity: 1;
+    visibility: visible;
+    background: #1877f2;
+    
+    &:hover {
+      background: #166fe5;
+    }
+  }
+}
+
+// Delete button overlay on background
+.settings-background-delete-overlay {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(239, 68, 68, 0.9);
+  border: 2px solid #fff;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  transition: all 0.2s ease;
+  opacity: 0;
+  visibility: hidden;
+  z-index: 10;
+  
+  &:hover {
+    background: rgba(220, 38, 38, 0.95);
+    transform: scale(1.1);
   }
 }
 
@@ -503,6 +894,13 @@
   background: #ef4444;
   color: #fff;
 }
+.settings-avatar-preview-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .settings-avatar-preview {
   width: 64px;
   height: 64px;
@@ -510,12 +908,42 @@
   overflow: hidden;
   border: 2px solid #e3f0ff;
   box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  position: relative;
 }
+
 .settings-avatar-img-lg {
   width: 100%;
   height: 100%;
   object-fit: cover;
   border-radius: 50%;
+}
+
+// Camera button on the side of avatar (always visible)
+.settings-avatar-camera-side-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  border: 2px solid #fff;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  
+  &:hover {
+    background: rgba(0, 0, 0, 0.75);
+    transform: scale(1.05);
+  }
+  
+  i {
+    margin: 0;
+  }
 }
 .settings-avatar-actions {
   display: flex;
