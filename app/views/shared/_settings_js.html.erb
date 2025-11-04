@@ -211,6 +211,126 @@ document.addEventListener('keydown', function(e) {
   }
 });
 
+// Banner background image upload handler
+const bannerBackgroundInput = document.getElementById('banner-background-upload-input');
+if (bannerBackgroundInput) {
+  bannerBackgroundInput.addEventListener('change', function() {
+    const file = this.files[0];
+    if (file) {
+      // Clear any existing errors
+      clearError('background');
+      
+      // Check file type
+      const allowedTypes = ['image/png', 'image/jpg', 'image/jpeg'];
+      if (!allowedTypes.includes(file.type)) {
+        showError('Background image must be a PNG or JPG image. Please select a valid image file.', 'background');
+        this.value = '';
+        return;
+      }
+      
+      // Find the form in the edit page
+      const form = document.querySelector('.settings-form');
+      if (form) {
+        // Set the remove field to false
+        const removeField = form.querySelector('#remove-background-field');
+        if (removeField) {
+          removeField.value = 'false';
+        }
+        
+        // Clone the file to the form's input
+        const formInput = form.querySelector('#background-upload-input');
+        if (formInput) {
+          const dataTransfer = new DataTransfer();
+          dataTransfer.items.add(file);
+          formInput.files = dataTransfer.files;
+        }
+        
+        showBackgroundLoader();
+        form.submit();
+      }
+    }
+  });
+}
+
+function removeBannerBackgroundAndSubmit() {
+  showConfirmationModal(
+    'Are you sure you want to delete your background image?',
+    function() {
+      // Find the form in the edit page
+      const form = document.querySelector('.settings-form');
+      if (form) {
+        const removeField = form.querySelector('#remove-background-field');
+        if (removeField) {
+          removeField.value = 'true';
+        }
+        
+        showBackgroundLoader();
+        form.submit();
+      }
+    }
+  );
+}
+
+// Avatar Options Modal Functions
+function showAvatarOptionsModal() {
+  const modal = document.getElementById('avatar-options-modal');
+  if (modal) {
+    modal.classList.add('show');
+    document.body.style.overflow = 'hidden';
+  }
+}
+
+function closeAvatarOptionsModal() {
+  const modal = document.getElementById('avatar-options-modal');
+  if (modal) {
+    modal.classList.remove('show');
+    document.body.style.overflow = '';
+  }
+}
+
+function uploadAvatarFromModal() {
+  closeAvatarOptionsModal();
+  document.getElementById('avatar-upload-input').click();
+}
+
+function deleteAvatarFromModal() {
+  closeAvatarOptionsModal();
+  showConfirmationModal(
+    'Are you sure you want to remove your profile picture?',
+    function() {
+      console.log('Avatar deletion confirmed');
+      var preview = document.querySelector('.settings-avatar-img-lg');
+      if (preview) {
+        preview.src = '/assets/default-avatar.png';
+      }
+      var avatarImg = document.querySelector('.settings-avatar-img');
+      if (avatarImg) {
+        avatarImg.src = '/assets/default-avatar.png';
+      }
+      document.getElementById('remove-avatar-field').value = 'true';
+      showAvatarLoader();
+      document.querySelector('.settings-form').submit();
+    }
+  );
+}
+
+// Close avatar options modal when clicking overlay
+document.addEventListener('click', function(e) {
+  if (e.target.classList.contains('avatar-options-overlay')) {
+    closeAvatarOptionsModal();
+  }
+});
+
+// Close avatar options modal with Escape key
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    const modal = document.getElementById('avatar-options-modal');
+    if (modal && modal.classList.contains('show')) {
+      closeAvatarOptionsModal();
+    }
+  }
+});
+
 document.addEventListener('DOMContentLoaded', function() {
   hideAvatarLoader();
   hideBackgroundLoader();
