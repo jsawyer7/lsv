@@ -3,51 +3,10 @@
     <h3 class="settings-section-title">Profile Details</h3>
     <p class="settings-section-desc">You have full control to manage your own account setting.</p>
     <%= form_with model: @user, url: settings_path, local: true, html: { multipart: true, class: 'settings-form' } do |f| %>
-      <div class="settings-avatar-section-row">
-        <div class="settings-avatar-info">
-          <div class="settings-avatar-preview">
-            <%= image_tag(@user.avatar_url.presence || 'default-avatar.png', class: 'settings-avatar-img-lg') %>
-          </div>
-          <div class="settings-avatar-texts">
-            <div class="settings-avatar-label">Your avatar</div>
-            <div class="settings-avatar-hint">PNG or JPG</div>
-          </div>
-        </div>
-        <div class="settings-avatar-actions-row">
-          <input type="hidden" id="remove-avatar-field" name="remove_avatar" value="false" />
-          <input type="file" id="avatar-upload-input" name="user[avatar]" accept="image/png,image/jpg,image/jpeg" style="display:none;" />
-          <button type="button" class="settings-avatar-update" onclick="document.getElementById('avatar-upload-input').click();">Upload</button>
-          <% if @user.avatar.attached? %>
-            <button type="button" class="settings-avatar-delete" onclick="removeAvatarAndPreviewAndSubmit()">Delete</button>
-          <% end %>
-        </div>
-      </div>
-
-      <div class="settings-background-section-row">
-        <div class="settings-background-info">
-          <div class="settings-background-preview">
-            <% if @user.background_image_url.present? %>
-              <%= image_tag(@user.background_image_url, class: 'settings-background-img') %>
-            <% end %>
-            <div class="settings-background-placeholder" style="<%= 'display: none;' if @user.background_image_url.present? %>">
-              <i class="fas fa-image"></i>
-              <span>No background image</span>
-            </div>
-          </div>
-          <div class="settings-background-texts">
-            <div class="settings-background-label">Your background</div>
-            <div class="settings-background-hint">PNG or JPG</div>
-          </div>
-        </div>
-        <div class="settings-background-actions-row">
-          <input type="hidden" id="remove-background-field" name="remove_background_image" value="false" />
-          <input type="file" id="background-upload-input" name="user[background_image]" accept="image/png,image/jpg,image/jpeg" style="display:none;" />
-          <button type="button" class="settings-background-update" onclick="document.getElementById('background-upload-input').click();">Upload</button>
-          <% if @user.background_image.attached? %>
-            <button type="button" class="settings-background-delete" onclick="removeBackgroundAndPreviewAndSubmit()">Delete</button>
-          <% end %>
-        </div>
-      </div>
+      <input type="hidden" id="remove-avatar-field" name="remove_avatar" value="false" />
+      <input type="hidden" id="remove-background-field" name="remove_background_image" value="false" />
+      <input type="file" id="avatar-upload-input" name="user[avatar]" accept="image/png,image/jpg,image/jpeg" style="display:none;" />
+      <input type="file" id="background-upload-input" name="user[background_image]" accept="image/png,image/jpg,image/jpeg" style="display:none;" />
       <div class="settings-form-group">
         <%= f.label :full_name, 'Your Name' %>
         <%= f.text_field :full_name, class: 'settings-input', required: true %>
@@ -93,6 +52,31 @@
     <div class="loader-container">
       <div class="loader"></div>
       <p class="loader-text">Processing your background image...</p>
+    </div>
+  </div>
+
+  <!-- Avatar Options Modal -->
+  <div id="avatar-options-modal" class="avatar-options-modal">
+    <div class="avatar-options-overlay" onclick="closeAvatarOptionsModal()"></div>
+    <div class="avatar-options-dialog">
+      <div class="avatar-options-header">
+        <h3 class="avatar-options-title">Update Profile Picture</h3>
+        <button class="avatar-options-close" onclick="closeAvatarOptionsModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="avatar-options-body">
+        <button type="button" class="avatar-options-btn avatar-options-upload-btn" onclick="uploadAvatarFromModal();">
+          <i class="fas fa-upload"></i>
+          <span>Upload Photo</span>
+        </button>
+        <% if @user.avatar.attached? %>
+          <button type="button" class="avatar-options-btn avatar-options-delete-btn" onclick="deleteAvatarFromModal();">
+            <i class="fas fa-trash"></i>
+            <span>Remove Photo</span>
+          </button>
+        <% end %>
+      </div>
     </div>
   </div>
 
