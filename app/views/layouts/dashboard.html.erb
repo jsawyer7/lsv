@@ -54,27 +54,6 @@
                 <div class="dropdown-menu">
                   <!-- Main dropdown content -->
                   <div class="dropdown-content main-content">
-                    <div class="dropdown-item dropdown-parent">
-                      <i class="fas fa-cog"></i>
-                      <span>Settings</span>
-                      <i class="fas fa-chevron-right dropdown-arrow"></i>
-                    </div>
-                    <div class="dropdown-divider"></div>
-                    <%= button_to destroy_user_session_path, method: :delete, class: "dropdown-item" do %>
-                      <i class="fas fa-sign-out-alt"></i>
-                      <span>Log Out</span>
-                    <% end %>
-                  </div>
-                  
-                  <!-- Submenu content (hidden by default) -->
-                  <div class="dropdown-content submenu-content">
-                    <div class="settings-header">
-                      <button class="settings-back-btn">
-                        <i class="fas fa-arrow-left"></i>
-                        <span>Back</span>
-                      </button>
-                    </div>
-                    
                     <div class="settings-menu-container">
                       <div class="settings-menu-item <%= 'active' if local_assigns[:active] == 'edit' %>">
                         <%= link_to(edit_settings_path, data: { turbo: false }, class: 'settings-menu-link') do %>
@@ -114,6 +93,10 @@
                       
                       <%# Delete Profile option removed %>
                     </div>
+                    <%= button_to destroy_user_session_path, method: :delete, class: "dropdown-item" do %>
+                      <i class="fas fa-sign-out-alt"></i>
+                      <span>Log Out</span>
+                    <% end %>
                   </div>
                 </div>
               <% else %>
