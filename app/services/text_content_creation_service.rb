@@ -16,20 +16,25 @@ class TextContentCreationService
   end
 
   def create_next
-    # Step 1: Resolve source
-    source = Source.find_by(name: @source_name)
+    # Step 1: Resolve source (use unscoped to avoid default scope issues)
+    source = Source.unscoped.find_by(name: @source_name)
     unless source
-      return error_response("Unknown source_name: #{@source_name}")
+      # Try case-insensitive search as fallback
+      source = Source.unscoped.where('name ILIKE ?', @source_name).first
+      unless source
+        return error_response("Unknown source_name: #{@source_name}")
+      end
     end
 
-    # Step 2: Resolve current book
-    current_book = Book.find_by(code: @current_book_code)
+    # Step 2: Resolve current book (use unscoped to avoid default scope issues)
+    current_book = Book.unscoped.find_by(code: @current_book_code)
     unless current_book
       return error_response("Unknown book_code: #{@current_book_code}")
     end
 
     # Step 3: Verify current verse exists in text_contents (or create first one)
-    current_text_content = TextContent.find_by(
+    # Use unscoped to avoid default scope ordering
+    current_text_content = TextContent.unscoped.find_by(
       source_id: source.id,
       book_id: current_book.id,
       unit_group: @current_chapter,
@@ -166,7 +171,7 @@ class TextContentCreationService
       return { status: 'complete' } if next_index >= BOOK_ORDER.length
 
       next_book_code = BOOK_ORDER[next_index]
-      next_book = Book.find_by(code: next_book_code)
+      next_book = Book.unscoped.find_by(code: next_book_code)
       return { status: 'error', error: "Next book #{next_book_code} not found" } unless next_book
 
       return {
@@ -182,8 +187,8 @@ class TextContentCreationService
   end
 
   def create_text_content_record(source:, book:, chapter:, verse:)
-    # Check if already exists (idempotent)
-    existing = TextContent.find_by(
+    # Check if already exists (idempotent) - use unscoped to avoid default scope ordering
+    existing = TextContent.unscoped.find_by(
       source_id: source.id,
       book_id: book.id,
       unit_group: chapter,
@@ -200,8 +205,8 @@ class TextContentCreationService
     # Build unit_key
     unit_key = build_unit_key(source.code, book.code, chapter, verse)
 
-    # Get required associations
-    text_unit_type = source.text_unit_type || TextUnitType.find_by(code: 'BIB_VERSE')
+    # Get required associations (use unscoped to avoid default scope issues)
+    text_unit_type = source.text_unit_type || TextUnitType.unscoped.find_by(code: 'BIB_VERSE')
     language = source.language
 
     unless text_unit_type && language
