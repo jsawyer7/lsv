@@ -17,13 +17,35 @@ class TextContentCreationService
 
   def create_next
     # Step 1: Resolve source (use unscoped to avoid default scope issues)
-    source = Source.unscoped.find_by(name: @source_name)
+    source = nil
+    
+    # Strategy 1: Try to find by ID if source_name is numeric
+    if @source_name.to_i.to_s == @source_name
+      source = Source.unscoped.find_by(id: @source_name.to_i)
+    end
+    
+    # Strategy 2: Exact match by name
+    source ||= Source.unscoped.find_by(name: @source_name)
+    
+    # Strategy 3: Case-insensitive exact match
+    source ||= Source.unscoped.where('LOWER(TRIM(name)) = LOWER(TRIM(?))', @source_name).first
+    
+    # Strategy 4: Try to find by code if source_name looks like a code
+    if @source_name.match?(/^[A-Z_]+$/)
+      source ||= Source.unscoped.find_by(code: @source_name)
+    end
+    
+    # Strategy 5: Partial match (contains)
+    source ||= Source.unscoped.where('name ILIKE ?', "%#{@source_name}%").first
+    
+    # Strategy 6: Try matching key words (Westcott, Hort, 1881)
+    if @source_name.include?('Westcott') || @source_name.include?('Hort') || @source_name.include?('1881')
+      source ||= Source.unscoped.where('name ILIKE ? OR name ILIKE ? OR name ILIKE ?', 
+                                        '%Westcott%', '%Hort%', '%1881%').first
+    end
+    
     unless source
-      # Try case-insensitive search as fallback
-      source = Source.unscoped.where('name ILIKE ?', @source_name).first
-      unless source
-        return error_response("Unknown source_name: #{@source_name}")
-      end
+      return error_response("Unknown source_name: #{@source_name}. Available sources: #{Source.unscoped.pluck(:name).join(', ')}")
     end
 
     # Step 2: Resolve current book (use unscoped to avoid default scope issues)

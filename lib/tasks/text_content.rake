@@ -1,7 +1,8 @@
 namespace :text_content do
-  desc "Create all text content records for a source and book (e.g., John)"
+  desc "Create all text content records for a source and book (e.g., John). source_name can be ID (e.g., '1') or name"
   task :create_all, [:source_name, :book_code] => :environment do |t, args|
-    source_name = args[:source_name] || "Greek New Testament (Westcott–Hort 1881)"
+    # Allow source_name to be an ID (e.g., "1") or a name
+    source_name = args[:source_name] || "1"  # Default to ID 1 for production
     book_code = args[:book_code] || "JHN"
     
     puts "=" * 80
