@@ -10,6 +10,8 @@ ActiveAdmin.register Language do
   controller do
     layout "active_admin_custom"
   end
+  
+  config.sort_order = 'created_at_asc'
 
   # Add action items for CRUD operations
   action_item :new_language, only: :index do

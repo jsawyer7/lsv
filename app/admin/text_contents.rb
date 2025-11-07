@@ -43,8 +43,8 @@ ActiveAdmin.register TextContent do
   config.per_page = 50
   config.max_per_page = 1000
 
-  # Add sorting
-  config.sort_order = 'unit_key_asc'
+  # Add sorting - default to created_at ascending (oldest first, newest last)
+  config.sort_order = 'created_at_asc'
 
   action_item :new_text_content, only: :index do
     link_to "Add Text Content", new_admin_text_content_path, class: "btn btn-primary"

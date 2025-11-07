@@ -9,6 +9,7 @@ class CanonBook < ApplicationRecord
   
   validates :book_id, uniqueness: { scope: :canon_id }
   
+  default_scope { order(created_at: :asc) }
   scope :included, -> { where(included_bool: true) }
   scope :excluded, -> { where(included_bool: false) }
   scope :ordered, -> { order(:seq_no) }

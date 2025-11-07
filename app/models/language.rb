@@ -5,6 +5,7 @@ class Language < ApplicationRecord
   validates :code, presence: true, uniqueness: true
   validates :name, presence: true
   
+  default_scope { order(created_at: :asc) }
   scope :ordered, -> { order(:name) }
   scope :by_direction, ->(direction_id) { where(direction_id: direction_id) }
   scope :ltr_languages, -> { joins(:direction).where(directions: { code: 'LTR' }) }

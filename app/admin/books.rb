@@ -8,6 +8,8 @@ ActiveAdmin.register Book do
   controller do
     layout "active_admin_custom"
   end
+  
+  config.sort_order = 'created_at_asc'
 
   # Add action items for CRUD operations
   action_item :new_book, only: :index do

@@ -2,6 +2,8 @@ ActiveAdmin.register TextUnitType do
   permit_params :code, :name, :description
   menu parent: "Data Tables", label: "Text Unit Types", priority: 7
   controller { layout "active_admin_custom" }
+  
+  config.sort_order = 'created_at_asc'
 
   action_item :new_text_unit_type, only: :index do
     link_to "Add Text Unit Type", new_admin_text_unit_type_path, class: "btn btn-primary"

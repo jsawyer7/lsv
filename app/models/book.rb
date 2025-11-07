@@ -5,6 +5,7 @@ class Book < ApplicationRecord
   validates :code, presence: true, uniqueness: true
   validates :std_name, presence: true
   
+  default_scope { order(created_at: :asc) }
   scope :ordered, -> { order(:std_name) }
   
   def display_name

@@ -5,6 +5,8 @@ ActiveAdmin.register TextTranslation do
 
   menu parent: "Data Tables", label: "Text Translations", priority: 9
   controller { layout "active_admin_custom" }
+  
+  config.sort_order = 'created_at_asc'
 
   filter :text_content_id, label: "Text Content UUID"
   filter :language_target, as: :select, collection: -> { Language.ordered.map { |l| [l.display_name, l.id] } }, label: "Target Language"

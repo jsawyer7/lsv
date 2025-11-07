@@ -16,6 +16,8 @@ ActiveAdmin.register Source do
       end
     end
   end
+  
+  config.sort_order = 'created_at_asc'
 
   # Add action items for CRUD operations
   action_item :new_source, only: :index do

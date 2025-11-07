@@ -10,6 +10,7 @@ class TextTranslation < ApplicationRecord
   validates :ai_confidence_score, numericality: { greater_than_or_equal_to: 0, less_than_or_equal_to: 1 }, allow_nil: true
   validates :text_content_id, uniqueness: { scope: :revision_number }
 
+  default_scope { order(created_at: :asc) }
   scope :latest, -> { where(is_latest: true) }
   scope :for_content, ->(id) { where(text_content_id: id) }
 

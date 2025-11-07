@@ -6,6 +6,7 @@ class Source < ApplicationRecord
   validates :name, presence: true
   validates :language, presence: true
   
+  default_scope { order(created_at: :asc) }
   scope :ordered, -> { order(:name) }
   scope :by_language, ->(language_id) { where(language_id: language_id) }
   

@@ -37,12 +37,15 @@ class TextContent < ApplicationRecord
   
   before_validation :normalize_content_and_punctuation
   
+  default_scope { order(created_at: :asc) }
+  
   scope :by_source, ->(source_id) { where(source_id: source_id) }
   scope :by_book, ->(book_id) { where(book_id: book_id) }
   scope :by_text_unit_type, ->(text_unit_type_id) { where(text_unit_type_id: text_unit_type_id) }
   scope :by_language, ->(language_id) { where(language_id: language_id) }
   scope :by_canon, ->(canon_name) { where("#{canon_name}" => true) }
   scope :ordered, -> { order(:unit_key) }
+  scope :ordered_by_created_at, -> { order(created_at: :desc) }
   
   def display_name
     "#{book.std_name} - #{text_unit_type.name} - #{unit_key}"

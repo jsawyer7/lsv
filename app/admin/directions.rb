@@ -2,6 +2,8 @@ ActiveAdmin.register Direction do
   permit_params :code, :name, :description
   menu parent: "Data Tables", label: "Directions", priority: 1
   controller { layout "active_admin_custom" }
+  
+  config.sort_order = 'created_at_asc'
 
   action_item :new_direction, only: :index do
     link_to "Add Direction", new_admin_direction_path, class: "btn btn-primary"
