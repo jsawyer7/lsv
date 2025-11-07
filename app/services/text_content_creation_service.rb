@@ -49,9 +49,36 @@ class TextContentCreationService
     end
 
     # Step 2: Resolve current book (use unscoped to avoid default scope issues)
+    current_book = nil
+    
+    # Strategy 1: Try to find by code
     current_book = Book.unscoped.find_by(code: @current_book_code)
+    
+    # Strategy 2: Try case-insensitive code match
+    current_book ||= Book.unscoped.where('LOWER(code) = LOWER(?)', @current_book_code).first
+    
+    # Strategy 3: Handle common code variations (JHN -> JOH, etc.)
+    code_variations = {
+      'JHN' => ['JOH', 'JOHN'],
+      'JOH' => ['JHN', 'JOHN'],
+      'JOHN' => ['JHN', 'JOH']
+    }
+    if code_variations[@current_book_code]
+      code_variations[@current_book_code].each do |variant|
+        current_book ||= Book.unscoped.find_by(code: variant)
+        break if current_book
+      end
+    end
+    
+    # Strategy 4: Try to find by std_name if code doesn't match
+    current_book ||= Book.unscoped.where('LOWER(std_name) = LOWER(?)', @current_book_code).first
+    
+    # Strategy 5: Try partial match on std_name
+    current_book ||= Book.unscoped.where('std_name ILIKE ?', "%#{@current_book_code}%").first
+    
     unless current_book
-      return error_response("Unknown book_code: #{@current_book_code}")
+      available_books = Book.unscoped.limit(20).pluck(:code, :std_name).map { |c, n| "#{c} (#{n})" }.join(', ')
+      return error_response("Unknown book_code: #{@current_book_code}. Available books: #{available_books}")
     end
 
     # Step 3: Verify current verse exists in text_contents (or create first one)
@@ -194,6 +221,8 @@ class TextContentCreationService
 
       next_book_code = BOOK_ORDER[next_index]
       next_book = Book.unscoped.find_by(code: next_book_code)
+      # Try case-insensitive if exact match fails
+      next_book ||= Book.unscoped.where('LOWER(code) = LOWER(?)', next_book_code).first
       return { status: 'error', error: "Next book #{next_book_code} not found" } unless next_book
 
       return {

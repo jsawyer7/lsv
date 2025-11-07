@@ -3,11 +3,27 @@ namespace :text_content do
   task :create_all, [:source_name, :book_code] => :environment do |t, args|
     # Allow source_name to be an ID (e.g., "1") or a name
     source_name = args[:source_name] || "1"  # Default to ID 1 for production
-    book_code = args[:book_code] || "JHN"
+    # Default book code - try JOH first (production), fallback to JHN
+    book_code = args[:book_code] || (Book.unscoped.find_by(code: 'JOH') ? 'JOH' : 'JHN')
     
     puts "=" * 80
     puts "Creating all text content records for #{source_name} - Book: #{book_code}"
     puts "=" * 80
+    puts ""
+    
+    # Ensure book exists, create if it doesn't
+    book = Book.unscoped.find_by(code: book_code)
+    unless book
+      puts "Book '#{book_code}' not found. Creating it..."
+      book = Book.create!(
+        code: book_code,
+        std_name: book_code == 'JHN' ? 'John' : book_code,
+        description: "Book #{book_code}"
+      )
+      puts "✓ Created book: #{book.code} - #{book.std_name}"
+    else
+      puts "✓ Using existing book: #{book.code} - #{book.std_name}"
+    end
     puts ""
     
     # Start with chapter 1, verse 1
