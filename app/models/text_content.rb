@@ -11,8 +11,10 @@ class TextContent < ApplicationRecord
   validates :book, presence: true
   validates :text_unit_type, presence: true
   validates :language, presence: true
-  validates :content, presence: true
+  validates :content, presence: true, unless: :allow_empty_content?
   validates :unit_key, presence: true, uniqueness: { scope: [:source_id, :book_id] }
+  
+  attr_accessor :allow_empty_content
   
   # Canon validations
   validates :canon_catholic, inclusion: { in: [true, false] }
@@ -106,10 +108,16 @@ class TextContent < ApplicationRecord
 
   private
 
+  def allow_empty_content?
+    allow_empty_content == true
+  end
+
   def normalize_content_and_punctuation
-    return if content.nil?
+    return if content.nil? || content.blank?
 
     normalized = content.to_s.strip
+    return if normalized.empty? # Allow empty content for initial creation
+
     normalized = normalized.unicode_normalize(:nfc)
     # Normalize Greek punctuation
     normalized = normalized.gsub(";", "\u037E") # Greek question mark

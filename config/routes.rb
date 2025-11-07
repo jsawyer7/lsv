@@ -102,4 +102,10 @@ Rails.application.routes.draw do
       get :infinite
     end
   end
+
+  # API routes for Text Content creation
+  namespace :api do
+    post '/text-content/create-next', to: 'text_contents#create_next'
+    post '/text-content/ai-validate-structure', to: 'text_contents#ai_validate_structure'
+  end
 end

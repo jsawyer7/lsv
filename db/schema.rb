@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2025_10_30_130000) do
+ActiveRecord::Schema[7.0].define(version: 2025_10_30_140000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -293,6 +293,24 @@ ActiveRecord::Schema[7.0].define(version: 2025_10_30_130000) do
     t.index ["code"], name: "index_sources_on_code", unique: true
     t.index ["language_id"], name: "index_sources_on_language_id"
     t.index ["text_unit_type_id"], name: "index_sources_on_text_unit_type_id"
+  end
+
+  create_table "text_content_api_logs", force: :cascade do |t|
+    t.uuid "text_content_id"
+    t.string "source_name", null: false
+    t.string "book_code", null: false
+    t.integer "chapter"
+    t.integer "verse"
+    t.string "action", null: false
+    t.text "request_payload"
+    t.text "response_payload"
+    t.string "status", null: false
+    t.text "error_message"
+    t.string "ai_model_name"
+    t.datetime "created_at", null: false
+    t.index ["created_at"], name: "index_text_content_api_logs_on_created_at"
+    t.index ["source_name", "book_code", "chapter", "verse"], name: "idx_tc_api_logs_location"
+    t.index ["text_content_id"], name: "index_text_content_api_logs_on_text_content_id"
   end
 
   create_table "text_contents", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
