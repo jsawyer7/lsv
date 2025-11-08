@@ -11,7 +11,7 @@ class TextContent < ApplicationRecord
   validates :book, presence: true
   validates :text_unit_type, presence: true
   validates :language, presence: true
-  validates :content, presence: true, unless: :allow_empty_content?
+  # Content validation removed - allow blank content for editing
   validates :unit_key, presence: true, uniqueness: { scope: [:source_id, :book_id] }
   
   attr_accessor :allow_empty_content
@@ -110,10 +110,6 @@ class TextContent < ApplicationRecord
   end
 
   private
-
-  def allow_empty_content?
-    allow_empty_content == true
-  end
 
   def normalize_content_and_punctuation
     return if content.nil? || content.blank?

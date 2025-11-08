@@ -341,7 +341,7 @@ ActiveAdmin.setup do |config|
   # By default, the footer shows the current Active Admin version. You can
   # override the content of the footer here.
   #
-  config.footer = "Verifaith Admin Panel"
+  config.footer = ""
 
   # == Sorting
   #

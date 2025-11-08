@@ -7,7 +7,99 @@ ActiveAdmin.register TextContent do
                 :canon_syriac, :canon_church_east, :canon_judaic, :canon_samaritan,
                 :canon_lds, :canon_quran
   menu parent: "Data Tables", label: "Text Contents", priority: 8
-  controller { layout "active_admin_custom" }
+  
+  controller do
+    layout "active_admin_custom"
+    
+    def scoped_collection
+      super.includes(:source, :book, :text_unit_type, :language)
+           .joins(:book)
+           .order('books.std_name ASC, text_contents.unit_group ASC NULLS LAST, text_contents.unit ASC NULLS LAST')
+    end
+    
+    def create
+      @text_content = TextContent.new(resource_params)
+      
+      # Regenerate unit_key if needed
+      if @text_content.source && @text_content.book && @text_content.unit_group && @text_content.unit
+        @text_content.unit_key = build_unit_key(@text_content)
+      end
+      
+      if @text_content.save
+        redirect_to admin_text_content_path(@text_content), notice: "Text Content was successfully created."
+      else
+        # Don't set flash - errors will be shown via f.object.errors in the form
+        render :new, status: :unprocessable_entity
+      end
+    end
+    
+    def update
+      @text_content = resource
+      update_params = resource_params.to_h.symbolize_keys
+      
+      # Determine the final book (new or existing)
+      final_book_id = update_params[:book_id] || @text_content.book_id
+      final_book = Book.find_by(id: final_book_id)
+      
+      # Determine final source (new or existing)
+      final_source_id = update_params[:source_id] || @text_content.source_id
+      final_source = Source.find_by(id: final_source_id)
+      
+      # Determine final unit_group and unit
+      final_unit_group = update_params[:unit_group] || @text_content.unit_group
+      final_unit = update_params[:unit] || @text_content.unit
+      
+      # Regenerate unit_key if any key component changed
+      if final_source && final_book && final_unit_group && final_unit
+        new_unit_key = build_unit_key_for_record(final_source.code, final_book.code, final_unit_group, final_unit)
+        
+        # Check if new unit_key already exists for a different record
+        existing = TextContent.unscoped.find_by(
+          source_id: final_source_id,
+          book_id: final_book_id,
+          unit_key: new_unit_key
+        )
+        
+        if existing && existing.id != @text_content.id
+          @text_content.errors.add(:base, "Cannot update: A Text Content record already exists with unit_key '#{new_unit_key}' for this source (#{final_source.name}) and book (#{final_book.std_name}) combination. Please choose a different book or adjust the unit group/unit values.")
+          render :edit, status: :unprocessable_entity
+          return
+        end
+        
+        update_params[:unit_key] = new_unit_key
+      end
+      
+      if @text_content.update(update_params)
+        redirect_to admin_text_content_path(@text_content), notice: "Text Content was successfully updated."
+      else
+        # Don't set flash - errors will be shown via f.object.errors in the form
+        render :edit, status: :unprocessable_entity
+      end
+    end
+    
+    private
+    
+    def build_unit_key(text_content)
+      return nil unless text_content.source && text_content.book && text_content.unit_group && text_content.unit
+      "#{text_content.source.code}|#{text_content.book.code}|#{text_content.unit_group}|#{text_content.unit}"
+    end
+    
+    def build_unit_key_for_record(source_code, book_code, unit_group, unit)
+      "#{source_code}|#{book_code}|#{unit_group}|#{unit}"
+    end
+    
+    def resource_params
+      params.require(:text_content).permit(
+        :source_id, :book_id, :text_unit_type_id, :language_id, :parent_unit_id,
+        :unit_group, :unit, :content, :unit_key, :word_for_word_translation, :lsv_literal_reconstruction,
+        :canon_catholic, :canon_protestant, :canon_lutheran, :canon_anglican,
+        :canon_greek_orthodox, :canon_russian_orthodox, :canon_georgian_orthodox,
+        :canon_western_orthodox, :canon_coptic, :canon_armenian, :canon_ethiopian,
+        :canon_syriac, :canon_church_east, :canon_judaic, :canon_samaritan,
+        :canon_lds, :canon_quran
+      )
+    end
+  end
 
   # Add filters
   filter :source, as: :select, collection: -> { Source.ordered.map { |s| [s.display_name, s.id] } }
@@ -43,8 +135,9 @@ ActiveAdmin.register TextContent do
   config.per_page = 50
   config.max_per_page = 1000
 
-  # Add sorting - default to created_at ascending (oldest first, newest last)
-  config.sort_order = 'created_at_asc'
+  # Add sorting - default to Book -> Chapter -> Verse (hierarchical)
+  # Sorting is handled in scoped_collection
+  config.sort_order = ''
 
   action_item :new_text_content, only: :index do
     link_to "Add Text Content", new_admin_text_content_path, class: "btn btn-primary"
@@ -83,10 +176,13 @@ ActiveAdmin.register TextContent do
           # Canon
           div class: "col-md-2" do
             label "Canon", class: "form-label"
-            select class: "form-select", id: "quick-canon-filter", 'data-keys': Canon.ordered.map { |c| c.code.to_s.parameterize.underscore }.to_json do
+            select class: "form-select", id: "quick-canon-filter", 'data-mappings': TextContent::CODE_TO_CANON_FIELD.to_json do
               option "All Canons", value: ""
               Canon.ordered.each do |canon|
-                option canon.name, value: canon.code.to_s.parameterize.underscore
+                field_name = TextContent::CODE_TO_CANON_FIELD[canon.code.to_s]
+                if field_name
+                  option canon.name, value: field_name.to_s
+                end
               end
             end
           end
@@ -123,10 +219,10 @@ ActiveAdmin.register TextContent do
     table class: "table table-striped table-hover" do
       thead class: "table-dark" do
         tr do
-          th "Unit Key"
           th "Source"
           th "Book"
-          th "Type"
+          th "Chapter"
+          th "Verse"
           th "Content Preview"
           th "Canons"
           th "Actions", class: "text-end"
@@ -136,16 +232,16 @@ ActiveAdmin.register TextContent do
         text_contents.each do |text_content|
           tr do
             td do
-              span class: "badge bg-primary" do text_content.unit_key end
-            end
-            td do
               span class: "fw-semibold" do text_content.source.name end
             end
             td do
               span class: "fw-semibold" do text_content.book.std_name end
             end
             td do
-              span class: "badge bg-info" do text_content.text_unit_type.name end
+              span class: "badge bg-info" do text_content.unit_group || "-" end
+            end
+            td do
+              span class: "badge bg-info" do text_content.unit || "-" end
             end
             td do
               span class: "text-muted" do truncate(text_content.content, length: 50) end
@@ -161,11 +257,11 @@ ActiveAdmin.register TextContent do
                 end
               end
             end
-            td class: "text-end" do
-              div class: "btn-group" do
-                link_to "View", admin_text_content_path(text_content), class: "btn btn-sm btn-outline-primary"
-                link_to "Edit", edit_admin_text_content_path(text_content), class: "btn btn-sm btn-outline-secondary"
-              end
+            td do
+              raw("<div class='d-flex gap-2'>
+                <a href='#{admin_text_content_path(text_content)}' class='btn btn-sm btn-outline-primary'>View</a>
+                <a href='#{edit_admin_text_content_path(text_content)}' class='btn btn-sm btn-outline-secondary'>Edit</a>
+              </div>")
             end
           end
         end
@@ -185,19 +281,42 @@ ActiveAdmin.register TextContent do
             const bookId = document.getElementById('quick-book-filter').value;
             const chapter = document.getElementById('quick-chapter-filter').value;
             const verse = document.getElementById('quick-verse-filter').value;
-            const canon = document.getElementById('quick-canon-filter').value;
+            const canonField = document.getElementById('quick-canon-filter').value;
             
-            console.log('Filter values:', { sourceId, bookId, chapter, verse, canon });
+            console.log('Filter values:', { sourceId, bookId, chapter, verse, canonField });
             
             let url = window.location.pathname;
             const params = new URLSearchParams();
             
-            if (sourceId && sourceId !== '') params.append('q[source_id_eq]', sourceId);
-            if (bookId && bookId !== '' && bookId !== 'All Books') params.append('q[book_id_eq]', bookId);
-            if (chapter && chapter !== '') params.append('q[unit_group_eq]', chapter);
-            if (verse && verse !== '') params.append('q[unit_eq]', verse);
-            if (canon && canon !== '' && canon !== 'All Canons') {
-              params.append('q[canon_' + canon + '_true]', '1');
+            // Source filter - use integer ID
+            if (sourceId && sourceId !== '' && sourceId !== 'All Sources') {
+              params.append('q[source_id_eq]', sourceId);
+            }
+            
+            // Book filter - use integer ID
+            if (bookId && bookId !== '' && bookId !== 'All Books') {
+              params.append('q[book_id_eq]', bookId);
+            }
+            
+            // Chapter filter - convert to integer for proper comparison
+            if (chapter && chapter !== '') {
+              const chapterNum = parseInt(chapter, 10);
+              if (!isNaN(chapterNum)) {
+                params.append('q[unit_group_eq]', chapterNum.toString());
+              }
+            }
+            
+            // Verse filter - convert to integer for proper comparison
+            if (verse && verse !== '') {
+              const verseNum = parseInt(verse, 10);
+              if (!isNaN(verseNum)) {
+                params.append('q[unit_eq]', verseNum.toString());
+              }
+            }
+            
+            // Canon filter - use the actual field name (e.g., canon_catholic, canon_protestant)
+            if (canonField && canonField !== '' && canonField !== 'All Canons') {
+              params.append('q[' + canonField + '_true]', '1');
             }
             
             console.log('Final URL:', url + (params.toString() ? '?' + params.toString() : ''));
@@ -212,6 +331,12 @@ ActiveAdmin.register TextContent do
         
         if (clearBtn) {
           clearBtn.addEventListener('click', function() {
+            // Reset all filter inputs
+            document.getElementById('quick-source-filter').value = '';
+            document.getElementById('quick-book-filter').value = '';
+            document.getElementById('quick-chapter-filter').value = '';
+            document.getElementById('quick-verse-filter').value = '';
+            document.getElementById('quick-canon-filter').value = '';
             window.location.href = window.location.pathname;
           });
         }
@@ -235,13 +360,18 @@ ActiveAdmin.register TextContent do
         if (verseParam) {
           document.getElementById('quick-verse-filter').value = verseParam;
         }
-        // Preselect canon if present in URL (keys provided by data-keys on the select)
+        
+        // Preselect canon if present in URL - check all canon fields
         const canonSelect = document.getElementById('quick-canon-filter');
-        const canonKeys = canonSelect ? JSON.parse(canonSelect.dataset.keys || '[]') : [];
-        for (const key of canonKeys) {
-          if (urlParams.get(`q[canon_${key}_true]`) === '1') {
-            if (canonSelect) canonSelect.value = key;
-            break;
+        if (canonSelect) {
+          const canonMappings = JSON.parse(canonSelect.dataset.mappings || '{}');
+          // Check each canon field in the URL
+          for (const [code, fieldName] of Object.entries(canonMappings)) {
+            const fieldParam = `q[${fieldName}_true]`;
+            if (urlParams.get(fieldParam) === '1') {
+              canonSelect.value = fieldName;
+              break;
+            }
           }
         }
       });
@@ -277,6 +407,22 @@ ActiveAdmin.register TextContent do
         style do
           raw "ol { list-style: none; counter-reset: none; } ol li { counter-increment: none; } ol li::before { content: none; }"
         end
+        
+        # Display validation errors only (flash messages are shown in layout)
+        if f.object.errors.any?
+          div class: "alert alert-danger", role: "alert" do
+            h5 class: "alert-heading mb-2" do
+              i class: "ri ri-error-warning-line me-2"
+              "Please fix the following errors:"
+            end
+            ul class: "mb-0" do
+              f.object.errors.full_messages.uniq.each do |message|
+                li message
+              end
+            end
+          end
+        end
+        
         f.inputs do
           div class: "row" do
             div class: "col-md-6" do
@@ -512,23 +658,6 @@ ActiveAdmin.register TextContent do
               end
             end
           end
-          # Preview section
-          div class: "materio-card mt-4" do
-            div class: "materio-header" do
-              h5 class: "mb-0 fw-semibold" do
-                i class: "ri ri-eye-line me-2"
-                "Preview"
-              end
-            end
-            div class: "card-body" do
-              div id: "tc-preview-path", class: "mb-2 fw-semibold" do
-                ""
-              end
-              div id: "tc-preview-content", class: "p-3 rounded border bg-light" do
-                ""
-              end
-            end
-          end
         end
         div class: "mt-4 pt-4 border-top" do
           div class: "d-flex justify-content-end gap-3" do
@@ -559,8 +688,6 @@ ActiveAdmin.register TextContent do
         const languageHidden = document.getElementById('language-hidden');
         const unitKeyDisplay = document.getElementById('unit-key-display');
         const unitKeyHidden = document.getElementById('unit-key-hidden');
-        const previewPath = document.getElementById('tc-preview-path');
-        const previewContent = document.getElementById('tc-preview-content');
 
         // Function to generate unit key
         function generateUnitKey() {
@@ -606,23 +733,6 @@ ActiveAdmin.register TextContent do
           return t;
         }
 
-        function updatePreview() {
-          const sourceText = sourceSelect ? (sourceSelect.options[sourceSelect.selectedIndex]?.text || '') : '';
-          const bookText = bookSelect ? (bookSelect.options[bookSelect.selectedIndex]?.text || '') : '';
-          const langText = languageDisplay ? languageDisplay.textContent : '';
-          const ug = unitGroupInput?.value || '';
-          const u = unitInput?.value || '';
-          const content = normalizeGreekPunctuation(contentInput?.value || '');
-
-          const parts = [];
-          if (sourceText) parts.push(sourceText.split('(')[0].trim());
-          if (langText && langText.indexOf('Select a source') === -1) parts.push(langText.split('(')[0].trim());
-          if (bookText) parts.push(bookText.split('(')[0].trim());
-          if (ug) parts.push(ug + (u ? ':' + u : ''));
-          if (previewPath) previewPath.textContent = parts.join(' \u2192 ');
-          if (previewContent) previewContent.textContent = content;
-        }
-
         // Function to handle source selection
         function handleSourceChange() {
           const sourceId = sourceSelect.value;
@@ -649,7 +759,6 @@ ActiveAdmin.register TextContent do
                 
                 // Regenerate unit key after source change
                 generateUnitKey();
-                updatePreview();
               })
               .catch(error => {
                 console.error('Error fetching source data:', error);
@@ -662,7 +771,6 @@ ActiveAdmin.register TextContent do
             languageDisplay.textContent = 'Select a source to see the language';
             languageHidden.value = '';
             generateUnitKey();
-            updatePreview();
           }
         }
 
@@ -672,19 +780,15 @@ ActiveAdmin.register TextContent do
         }
         
         if (bookSelect) {
-          bookSelect.addEventListener('change', function(){ generateUnitKey(); updatePreview(); });
+          bookSelect.addEventListener('change', function(){ generateUnitKey(); });
         }
         
         if (unitGroupInput) {
-          unitGroupInput.addEventListener('input', function(){ generateUnitKey(); updatePreview(); });
+          unitGroupInput.addEventListener('input', function(){ generateUnitKey(); });
         }
         
         if (unitInput) {
-          unitInput.addEventListener('input', function(){ generateUnitKey(); updatePreview(); });
-        }
-
-        if (contentInput) {
-          contentInput.addEventListener('input', function(){ updatePreview(); });
+          unitInput.addEventListener('input', function(){ generateUnitKey(); });
         }
         
         // On edit, if a source is already selected, hydrate dependent fields
@@ -693,7 +797,6 @@ ActiveAdmin.register TextContent do
         }
         // Generate initial unit key if form is being edited
         generateUnitKey();
-        updatePreview();
 
         // Normalize on submit
         const form = document.querySelector('form');
@@ -841,41 +944,6 @@ ActiveAdmin.register TextContent do
           end
         end
 
-        # Word-for-Word Translation Table
-        div class: "materio-card mt-4" do
-          div class: "materio-header" do
-            h5 class: "mb-0 fw-semibold" do
-              i class: "ri ri-translate-2 me-2"
-              "Word-for-Word Translation"
-            end
-          end
-          div class: "card-body" do
-            if resource.word_for_word_array.present?
-              table class: "table table-striped" do
-                thead class: "table-dark" do
-                  tr do
-                    th "#{resource.language.name} word"
-                    th "Literal meaning"
-                    th "Confidence (1–100)"
-                    th "Notes"
-                  end
-                end
-                tbody do
-                  resource.word_for_word_array.each do |word|
-                    tr do
-                      td class: "fw-semibold" do word['word'] || word[:word] || '' end
-                      td do word['literal_meaning'] || word[:literal_meaning] || '' end
-                      td do word['confidence'] || word[:confidence] || '' end
-                      td class: "small text-muted" do word['notes'] || word[:notes] || '' end
-                    end
-                  end
-                end
-              end
-            else
-              p class: "text-muted" do "No word-for-word translation available." end
-            end
-          end
-        end
       end
       div class: "col-lg-4" do
         div class: "materio-metric-card materio-metric-card-light" do
