@@ -18,7 +18,7 @@ ActiveAdmin.register TextContent do
     end
     
     def create
-      @text_content = TextContent.new(resource_params)
+      @text_content = TextContent.new(resource_params.first || {})
       
       # Regenerate unit_key if needed
       if @text_content.source && @text_content.book && @text_content.unit_group && @text_content.unit
@@ -35,7 +35,7 @@ ActiveAdmin.register TextContent do
     
     def update
       @text_content = resource
-      update_params = resource_params.to_h.symbolize_keys
+      update_params = (resource_params.first || {}).to_h.symbolize_keys
       
       # Determine the final book (new or existing)
       final_book_id = update_params[:book_id] || @text_content.book_id
@@ -89,7 +89,8 @@ ActiveAdmin.register TextContent do
     end
     
     def resource_params
-      params.require(:text_content).permit(
+      text_content_params = params[:text_content] || {}
+      permitted = ActionController::Parameters.new(text_content_params).permit(
         :source_id, :book_id, :text_unit_type_id, :language_id, :parent_unit_id,
         :unit_group, :unit, :content, :unit_key, :word_for_word_translation, :lsv_literal_reconstruction,
         :canon_catholic, :canon_protestant, :canon_lutheran, :canon_anglican,
@@ -98,6 +99,8 @@ ActiveAdmin.register TextContent do
         :canon_syriac, :canon_church_east, :canon_judaic, :canon_samaritan,
         :canon_lds, :canon_quran
       )
+      # ActiveAdmin expects resource_params to return an array
+      [permitted]
     end
   end
 
