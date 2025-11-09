@@ -1,11 +1,7 @@
 ActiveAdmin.register TextContent do
   permit_params :source_id, :book_id, :text_unit_type_id, :language_id, :parent_unit_id,
                 :unit_group, :unit, :content, :unit_key, :word_for_word_translation, :lsv_literal_reconstruction,
-                :canon_catholic, :canon_protestant, :canon_lutheran, :canon_anglican,
-                :canon_greek_orthodox, :canon_russian_orthodox, :canon_georgian_orthodox,
-                :canon_western_orthodox, :canon_coptic, :canon_armenian, :canon_ethiopian,
-                :canon_syriac, :canon_church_east, :canon_judaic, :canon_samaritan,
-                :canon_lds, :canon_quran
+                canon_ids: []
   menu parent: "Data Tables", label: "Text Contents", priority: 8
   
   controller do
@@ -18,7 +14,10 @@ ActiveAdmin.register TextContent do
     end
     
     def create
-      @text_content = TextContent.new(resource_params.first || {})
+      params_hash = (resource_params.first || {}).to_h.symbolize_keys
+      canon_ids = params_hash.delete(:canon_ids) || []
+      
+      @text_content = TextContent.new(params_hash)
       
       # Regenerate unit_key if needed
       if @text_content.source && @text_content.book && @text_content.unit_group && @text_content.unit
@@ -26,6 +25,8 @@ ActiveAdmin.register TextContent do
       end
       
       if @text_content.save
+        # Assign canons
+        @text_content.canon_ids = canon_ids.reject(&:blank?).map(&:to_i)
         redirect_to admin_text_content_path(@text_content), notice: "Text Content was successfully created."
       else
         # Don't set flash - errors will be shown via f.object.errors in the form
@@ -36,6 +37,7 @@ ActiveAdmin.register TextContent do
     def update
       @text_content = resource
       update_params = (resource_params.first || {}).to_h.symbolize_keys
+      canon_ids = update_params.delete(:canon_ids) || []
       
       # Determine the final book (new or existing)
       final_book_id = update_params[:book_id] || @text_content.book_id
@@ -70,6 +72,8 @@ ActiveAdmin.register TextContent do
       end
       
       if @text_content.update(update_params)
+        # Update canons
+        @text_content.canon_ids = canon_ids.reject(&:blank?).map(&:to_i)
         redirect_to admin_text_content_path(@text_content), notice: "Text Content was successfully updated."
       else
         # Don't set flash - errors will be shown via f.object.errors in the form
@@ -89,16 +93,22 @@ ActiveAdmin.register TextContent do
     end
     
     def resource_params
-      text_content_params = params[:text_content] || {}
-      permitted = ActionController::Parameters.new(text_content_params).permit(
-        :source_id, :book_id, :text_unit_type_id, :language_id, :parent_unit_id,
-        :unit_group, :unit, :content, :unit_key, :word_for_word_translation, :lsv_literal_reconstruction,
-        :canon_catholic, :canon_protestant, :canon_lutheran, :canon_anglican,
-        :canon_greek_orthodox, :canon_russian_orthodox, :canon_georgian_orthodox,
-        :canon_western_orthodox, :canon_coptic, :canon_armenian, :canon_ethiopian,
-        :canon_syriac, :canon_church_east, :canon_judaic, :canon_samaritan,
-        :canon_lds, :canon_quran
-      )
+      text_content_params = params[:text_content]
+      
+      if text_content_params.is_a?(ActionController::Parameters)
+        permitted = text_content_params.permit(
+          :source_id, :book_id, :text_unit_type_id, :language_id, :parent_unit_id,
+          :unit_group, :unit, :content, :unit_key, :word_for_word_translation, :lsv_literal_reconstruction,
+          canon_ids: []
+        )
+      else
+        permitted = ActionController::Parameters.new(text_content_params || {}).permit(
+          :source_id, :book_id, :text_unit_type_id, :language_id, :parent_unit_id,
+          :unit_group, :unit, :content, :unit_key, :word_for_word_translation, :lsv_literal_reconstruction,
+          canon_ids: []
+        )
+      end
+      
       # ActiveAdmin expects resource_params to return an array
       [permitted]
     end
@@ -114,24 +124,8 @@ ActiveAdmin.register TextContent do
   filter :unit_key, label: "Unit Key"
   filter :content, label: "Content"
   
-  # Canon filters
-  filter :canon_catholic, label: "Catholic Canon"
-  filter :canon_protestant, label: "Protestant Canon"
-  filter :canon_lutheran, label: "Lutheran Canon"
-  filter :canon_anglican, label: "Anglican Canon"
-  filter :canon_greek_orthodox, label: "Greek Orthodox Canon"
-  filter :canon_russian_orthodox, label: "Russian Orthodox Canon"
-  filter :canon_georgian_orthodox, label: "Georgian Orthodox Canon"
-  filter :canon_western_orthodox, label: "Western Orthodox Canon"
-  filter :canon_coptic, label: "Coptic Canon"
-  filter :canon_armenian, label: "Armenian Canon"
-  filter :canon_ethiopian, label: "Ethiopian Canon"
-  filter :canon_syriac, label: "Syriac Canon"
-  filter :canon_church_east, label: "Church of the East Canon"
-  filter :canon_judaic, label: "Judaic Canon"
-  filter :canon_samaritan, label: "Samaritan Canon"
-  filter :canon_lds, label: "LDS Canon"
-  filter :canon_quran, label: "Quran Canon"
+  # Canon filter using association
+  filter :canons, as: :select, collection: -> { Canon.ordered.map { |c| [c.name, c.id] } }, label: "Canon"
 
   # Configure pagination for large datasets
   config.paginate = true
@@ -179,13 +173,10 @@ ActiveAdmin.register TextContent do
           # Canon
           div class: "col-md-2" do
             label "Canon", class: "form-label"
-            select class: "form-select", id: "quick-canon-filter", 'data-mappings': TextContent::CODE_TO_CANON_FIELD.to_json do
+            select class: "form-select", id: "quick-canon-filter" do
               option "All Canons", value: ""
               Canon.ordered.each do |canon|
-                field_name = TextContent::CODE_TO_CANON_FIELD[canon.code.to_s]
-                if field_name
-                  option canon.name, value: field_name.to_s
-                end
+                option canon.name, value: canon.id
               end
             end
           end
@@ -317,9 +308,9 @@ ActiveAdmin.register TextContent do
               }
             }
             
-            // Canon filter - use the actual field name (e.g., canon_catholic, canon_protestant)
+            // Canon filter - use canon association
             if (canonField && canonField !== '' && canonField !== 'All Canons') {
-              params.append('q[' + canonField + '_true]', '1');
+              params.append('q[canons_id_eq]', canonField);
             }
             
             console.log('Final URL:', url + (params.toString() ? '?' + params.toString() : ''));
@@ -364,17 +355,12 @@ ActiveAdmin.register TextContent do
           document.getElementById('quick-verse-filter').value = verseParam;
         }
         
-        // Preselect canon if present in URL - check all canon fields
+        // Preselect canon if present in URL
         const canonSelect = document.getElementById('quick-canon-filter');
         if (canonSelect) {
-          const canonMappings = JSON.parse(canonSelect.dataset.mappings || '{}');
-          // Check each canon field in the URL
-          for (const [code, fieldName] of Object.entries(canonMappings)) {
-            const fieldParam = `q[${fieldName}_true]`;
-            if (urlParams.get(fieldParam) === '1') {
-              canonSelect.value = fieldName;
-              break;
-            }
+          const canonIdParam = urlParams.get('q[canons_id_eq]');
+          if (canonIdParam) {
+            canonSelect.value = canonIdParam;
           }
         }
       });
@@ -635,10 +621,8 @@ ActiveAdmin.register TextContent do
               span "Canon Assignments"
             end
             div class: "row" do
-              # Get all canons from database and map to TextContent fields
-              existing_canons = Canon.ordered.all.select do |canon|
-                TextContent::CODE_TO_CANON_FIELD.key?(canon.code)
-              end
+              # Get all canons from database
+              existing_canons = Canon.ordered.all
               
               # Split into columns (approximately equal distribution)
               cols = 3
@@ -649,12 +633,18 @@ ActiveAdmin.register TextContent do
                   start_idx = col_idx * per_col
                   end_idx = start_idx + per_col - 1
                   existing_canons[start_idx..end_idx].each do |canon|
-                    field = TextContent::CODE_TO_CANON_FIELD[canon.code]
-                    next unless field # Skip if no mapping exists
-                    
                     div class: "form-check" do
-                      f.check_box field, class: "form-check-input"
-                      f.label field, canon.name, class: "form-check-label"
+                      checked = f.object.canon_ids.include?(canon.id)
+                      checkbox_id = "text_content_canon_ids_#{canon.id}"
+                      raw("
+                        <input type='checkbox' 
+                               name='text_content[canon_ids][]' 
+                               value='#{canon.id}' 
+                               id='#{checkbox_id}' 
+                               class='form-check-input' 
+                               #{'checked' if checked}>
+                        <label for='#{checkbox_id}' class='form-check-label'>#{canon.name}</label>
+                      ")
                     end
                   end
                 end

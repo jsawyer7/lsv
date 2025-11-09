@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2025_10_30_140000) do
+ActiveRecord::Schema[7.0].define(version: 2025_11_09_191342) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -73,6 +73,16 @@ ActiveRecord::Schema[7.0].define(version: 2025_10_30_140000) do
     t.datetime "updated_at", null: false
     t.index ["book_id"], name: "index_canon_books_on_book_id"
     t.index ["canon_id"], name: "index_canon_books_on_canon_id"
+  end
+
+  create_table "canon_text_contents", force: :cascade do |t|
+    t.uuid "text_content_id", null: false
+    t.bigint "canon_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["canon_id"], name: "index_canon_text_contents_on_canon_id"
+    t.index ["text_content_id", "canon_id"], name: "index_canon_text_contents_on_text_content_id_and_canon_id", unique: true
+    t.index ["text_content_id"], name: "index_canon_text_contents_on_text_content_id"
   end
 
   create_table "canons", force: :cascade do |t|
@@ -323,23 +333,6 @@ ActiveRecord::Schema[7.0].define(version: 2025_10_30_140000) do
     t.integer "unit"
     t.text "content", null: false
     t.string "unit_key", limit: 255, null: false
-    t.boolean "canon_catholic", default: false, null: false
-    t.boolean "canon_protestant", default: false, null: false
-    t.boolean "canon_lutheran", default: false, null: false
-    t.boolean "canon_anglican", default: false, null: false
-    t.boolean "canon_greek_orthodox", default: false, null: false
-    t.boolean "canon_russian_orthodox", default: false, null: false
-    t.boolean "canon_georgian_orthodox", default: false, null: false
-    t.boolean "canon_western_orthodox", default: false, null: false
-    t.boolean "canon_coptic", default: false, null: false
-    t.boolean "canon_armenian", default: false, null: false
-    t.boolean "canon_ethiopian", default: false, null: false
-    t.boolean "canon_syriac", default: false, null: false
-    t.boolean "canon_church_east", default: false, null: false
-    t.boolean "canon_judaic", default: false, null: false
-    t.boolean "canon_samaritan", default: false, null: false
-    t.boolean "canon_lds", default: false, null: false
-    t.boolean "canon_quran", default: false, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.jsonb "word_for_word_translation", default: []
@@ -423,6 +416,8 @@ ActiveRecord::Schema[7.0].define(version: 2025_10_30_140000) do
   add_foreign_key "ai_evidence_usages", "users"
   add_foreign_key "canon_books", "books"
   add_foreign_key "canon_books", "canons"
+  add_foreign_key "canon_text_contents", "canons"
+  add_foreign_key "canon_text_contents", "text_contents"
   add_foreign_key "challenges", "claims"
   add_foreign_key "challenges", "evidences"
   add_foreign_key "challenges", "users"

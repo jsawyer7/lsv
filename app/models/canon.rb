@@ -1,6 +1,8 @@
 class Canon < ApplicationRecord
   has_many :canon_books, dependent: :destroy
   has_many :books, through: :canon_books
+  has_many :canon_text_contents, dependent: :destroy
+  has_many :text_contents, through: :canon_text_contents
   
   validates :code, presence: true, uniqueness: true
   validates :name, presence: true
@@ -21,6 +23,6 @@ class Canon < ApplicationRecord
   end
 
   def self.ransackable_associations(auth_object = nil)
-    ["canon_books", "books"]
+    ["canon_books", "books", "canon_text_contents", "text_contents"]
   end
 end
