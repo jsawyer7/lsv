@@ -80,6 +80,65 @@
     </div>
   </div>
 
+  <!-- Image Cropping Modal -->
+  <div id="image-crop-modal" class="image-crop-modal">
+    <div class="image-crop-overlay" onclick="closeImageCropModal()"></div>
+    <div class="image-crop-dialog">
+      <div class="image-crop-header">
+        <h3 class="image-crop-title">Crop Your Image</h3>
+        <button class="image-crop-close" onclick="closeImageCropModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="image-crop-body">
+        <div class="image-crop-main">
+          <div class="image-crop-container-wrapper">
+            <div class="image-crop-container">
+              <img id="image-crop-preview" src="" alt="Crop preview" style="max-width: 100%; display: block;">
+            </div>
+            <div class="image-crop-drag-hint">
+              <i class="fas fa-arrows-alt"></i>
+              <span>Drag to reposition</span>
+            </div>
+          </div>
+        </div>
+        <div class="image-crop-controls">
+          <div class="image-crop-control-group">
+            <div class="image-crop-rotation-controls">
+              <button type="button" class="image-crop-rotate-btn" onclick="rotateImage(-90)" title="Rotate counter-clockwise">
+                <i class="fas fa-undo"></i>
+              </button>
+              <button type="button" class="image-crop-rotate-btn" onclick="rotateImage(90)" title="Rotate clockwise">
+                <i class="fas fa-redo"></i>
+              </button>
+            </div>
+            <div class="image-crop-zoom-controls">
+              <button type="button" id="image-crop-zoom-minus-btn" class="image-crop-zoom-btn" onclick="zoomImage(-0.1)">
+                <i class="fas fa-minus"></i>
+              </button>
+              <div class="image-crop-zoom-slider-wrapper">
+                <input type="range" id="image-crop-zoom-slider" class="image-crop-zoom-slider" min="0" max="2" step="0.1" value="1" oninput="updateZoom(this.value)">
+                <label for="image-crop-zoom-slider" class="image-crop-zoom-label">Zoom</label>
+              </div>
+              <button type="button" id="image-crop-zoom-plus-btn" class="image-crop-zoom-btn" onclick="zoomImage(0.1)">
+                <i class="fas fa-plus"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="image-crop-footer">
+        <button type="button" class="image-crop-btn image-crop-cancel-btn" onclick="closeImageCropModal()">
+          Cancel
+        </button>
+        <button type="button" class="image-crop-btn image-crop-save-btn" onclick="saveCroppedImage()">
+          <i class="fas fa-check"></i>
+          Save & Upload
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Custom Confirmation Modal -->
   <div id="confirmation-modal" class="confirmation-modal">
     <div class="confirmation-overlay"></div>
