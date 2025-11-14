@@ -17,32 +17,160 @@
   font-weight: 700;
   margin-bottom: 18px;
 }
+.settings-profile-banner-wrapper {
+  position: relative;
+  width: 100%;
+}
+
 .settings-profile-banner {
   width: 100%;
-  height: 200px;
+  height: 350px;
   background: url(asset-path('settings-banner.png')) center/cover no-repeat;
   border-radius: 10px;
   margin-bottom: 0;
+  position: relative;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  z-index: 1;
+  
+  &:hover {
+    opacity: 0.95;
+    
+    .settings-banner-delete-btn {
+      opacity: 1;
+      visibility: visible;
+    }
+  }
 }
+
+// Edit cover photo button on banner (bottom-right) - permanently visible with text
+.settings-banner-edit-btn {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  transition: all 0.2s ease;
+  opacity: 1;
+  visibility: visible;
+  z-index: 10;
+  
+  &:hover {
+    background: rgba(0, 0, 0, 0.75);
+    transform: translateY(-2px);
+  }
+  
+  i {
+    margin: 0;
+    font-size: 16px;
+  }
+  
+  span {
+    white-space: nowrap;
+  }
+}
+
+// Delete button on banner (top-right)
+.settings-banner-delete-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(239, 68, 68, 0.9);
+  border: 2px solid #fff;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  transition: all 0.2s ease;
+  opacity: 0;
+  visibility: hidden;
+  z-index: 10;
+  
+  &:hover {
+    background: rgba(220, 38, 38, 0.95);
+    transform: scale(1.1);
+  }
+}
+
 .settings-profile-header {
   display: flex;
   align-items: center;
   gap: 18px;
   margin-top: -20px;
   margin-bottom: 18px;
+  position: relative;
+  z-index: 2;
 }
+
+.settings-profile-avatar-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
 .settings-profile-avatar {
   width: 80px;
   height: 80px;
   border-radius: 50%;
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+  position: relative;
+  z-index: 3;
+  background: #fff;
 }
+
 .settings-avatar-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   border-radius: 50%;
+}
+
+// Camera button overlapping the header avatar (bottom-right, always visible)
+.settings-profile-avatar-camera-btn {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 27px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  border: 2px solid #fff;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  transition: all 0.2s ease;
+  z-index: 5;
+  
+  &:hover {
+    background: rgba(0, 0, 0, 0.75);
+    transform: scale(1.05);
+  }
+  
+  i {
+    margin: 0;
+  }
 }
 .settings-profile-info {
   display: flex;
@@ -325,6 +453,1126 @@
   }
 }
 
+// Avatar Options Modal
+.avatar-options-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10001;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &.show {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .avatar-options-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    opacity: 0;
+    transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  &.show .avatar-options-overlay {
+    opacity: 1;
+  }
+
+  .avatar-options-dialog {
+    position: relative;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    max-width: 400px;
+    width: 90%;
+    max-height: 90vh;
+    overflow: hidden;
+    transform: translateY(20px) scale(0.95);
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  &.show .avatar-options-dialog {
+    transform: translateY(0) scale(1);
+  }
+
+  .avatar-options-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid #e2e8f0;
+
+    .avatar-options-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #1e293b;
+      margin: 0;
+    }
+
+    .avatar-options-close {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 8px;
+      color: #64748b;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background: #f1f5f9;
+        color: #1e293b;
+      }
+
+      i {
+        font-size: 16px;
+      }
+    }
+  }
+
+  .avatar-options-body {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+
+    .avatar-options-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 14px 20px;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: none;
+      width: 100%;
+
+      i {
+        font-size: 18px;
+      }
+
+      span {
+        font-weight: 500;
+      }
+
+      &.avatar-options-upload-btn {
+        background: #2196f3;
+        color: white;
+
+        i {
+          color: white;
+        }
+
+        span {
+          color: white;
+        }
+
+        &:hover {
+          background: #1976d2;
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+          color: white;
+
+          i {
+            color: white;
+          }
+
+          span {
+            color: white;
+          }
+        }
+
+        &:active {
+          transform: translateY(0);
+        }
+      }
+
+      &.avatar-options-delete-btn {
+        background: #f8fafc;
+        color: #ef4444;
+        border: 1px solid #fee2e2;
+
+        &:hover {
+          background: #fee2e2;
+          color: #dc2626;
+          border-color: #fecaca;
+          transform: translateY(-1px);
+        }
+
+        &:active {
+          transform: translateY(0);
+        }
+      }
+    }
+  }
+}
+
+// Image Crop Modal
+.image-crop-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10002;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &.show {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .image-crop-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    opacity: 0;
+    transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  &.show .image-crop-overlay {
+    opacity: 1;
+  }
+
+  .image-crop-dialog {
+    position: relative;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    max-width: 600px;
+    width: 90%;
+    max-height: 90vh;
+    overflow: hidden;
+    transform: translateY(20px) scale(0.95);
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+  }
+
+  &.show .image-crop-dialog {
+    transform: translateY(0) scale(1);
+  }
+
+  .image-crop-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid #e2e8f0;
+
+    .image-crop-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #1e293b;
+      margin: 0;
+    }
+
+    .image-crop-close {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 8px;
+      color: #64748b;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background: #f1f5f9;
+        color: #1e293b;
+      }
+
+      i {
+        font-size: 16px;
+      }
+    }
+  }
+
+  .image-crop-body {
+    padding: 0;
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    background: #f5f5f5;
+
+    .image-crop-main {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 24px;
+      min-height: 400px;
+      position: relative;
+      background: #e5e5e5;
+
+      .image-crop-container-wrapper {
+        position: relative;
+        width: 100%;
+        max-width: 500px;
+        margin: 0 auto;
+
+        .image-crop-container {
+          width: 100%;
+          max-width: 100%;
+          position: relative;
+          background: #e5e5e5;
+          border-radius: 8px;
+          overflow: visible;
+
+          img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+          }
+        }
+
+        .image-crop-drag-hint {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          background: rgba(0, 0, 0, 0.7);
+          color: white;
+          padding: 12px 20px;
+          border-radius: 8px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 14px;
+          pointer-events: none;
+          z-index: 10;
+          transition: opacity 0.3s ease, visibility 0.3s ease;
+          opacity: 0;
+          visibility: hidden;
+
+          i {
+            font-size: 16px;
+          }
+        }
+      }
+    }
+
+    .image-crop-controls {
+      padding: 20px 24px;
+      background: white;
+      border-top: 1px solid #e2e8f0;
+
+      .image-crop-control-group {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 32px;
+        flex-wrap: wrap;
+
+        .image-crop-rotation-controls {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+
+          .image-crop-rotate-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 1px solid #e2e8f0;
+            background: white;
+            color: #64748b;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+
+            &:hover {
+              background: #f1f5f9;
+              border-color: #cbd5e1;
+              color: #1e293b;
+              transform: scale(1.05);
+            }
+
+            &:active {
+              transform: scale(0.95);
+            }
+
+            i {
+              font-size: 16px;
+            }
+          }
+        }
+
+        .image-crop-zoom-controls {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+
+          .image-crop-zoom-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 1px solid #e2e8f0;
+            background: white;
+            color: #64748b;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+
+            &:hover:not(:disabled) {
+              background: #f1f5f9;
+              border-color: #cbd5e1;
+              color: #1e293b;
+            }
+
+            &:active:not(:disabled) {
+              transform: scale(0.95);
+            }
+
+            &:disabled {
+              opacity: 0.5;
+              cursor: not-allowed;
+              background: #f8fafc;
+              border-color: #e2e8f0;
+              color: #94a3b8;
+            }
+
+            i {
+              font-size: 14px;
+            }
+          }
+
+          .image-crop-zoom-slider-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            min-width: 200px;
+
+            .image-crop-zoom-slider {
+              width: 100%;
+              height: 6px;
+              border-radius: 3px;
+              background: #e2e8f0;
+              outline: none;
+              -webkit-appearance: none;
+              appearance: none;
+
+              &::-webkit-slider-thumb {
+                -webkit-appearance: none;
+                appearance: none;
+                width: 18px;
+                height: 18px;
+                border-radius: 50%;
+                background: #2196f3;
+                cursor: pointer;
+                border: 2px solid white;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+                transition: all 0.2s ease;
+
+                &:hover {
+                  transform: scale(1.1);
+                  box-shadow: 0 2px 6px rgba(33, 150, 243, 0.4);
+                }
+              }
+
+              &::-moz-range-thumb {
+                width: 18px;
+                height: 18px;
+                border-radius: 50%;
+                background: #2196f3;
+                cursor: pointer;
+                border: 2px solid white;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+                transition: all 0.2s ease;
+
+                &:hover {
+                  transform: scale(1.1);
+                  box-shadow: 0 2px 6px rgba(33, 150, 243, 0.4);
+                }
+              }
+
+              &::-webkit-slider-runnable-track {
+                height: 6px;
+                background: linear-gradient(to right, #2196f3 0%, #2196f3 var(--slider-progress, 50%), #e2e8f0 var(--slider-progress, 50%), #e2e8f0 100%);
+                border-radius: 3px;
+              }
+
+              &::-moz-range-track {
+                height: 6px;
+                background: #e2e8f0;
+                border-radius: 3px;
+              }
+            }
+
+            .image-crop-zoom-label {
+              font-size: 12px;
+              color: #64748b;
+              font-weight: 500;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  .image-crop-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 16px 24px;
+    border-top: 1px solid #e2e8f0;
+    background: #f8fafc;
+
+    .image-crop-btn {
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      &.image-crop-cancel-btn {
+        background: white;
+        color: #64748b;
+        border: 1px solid #e2e8f0;
+
+        &:hover {
+          background: #f1f5f9;
+          color: #1e293b;
+          border-color: #cbd5e1;
+        }
+      }
+
+      &.image-crop-save-btn {
+        background: #2196f3;
+        color: white;
+        border: 1px solid #2196f3;
+
+        &:hover {
+          background: #1976d2;
+          border-color: #1976d2;
+          transform: translateY(-1px);
+          box-shadow: 0 4px 8px rgba(33, 150, 243, 0.3);
+        }
+
+        &:active {
+          transform: translateY(0);
+        }
+
+        i {
+          font-size: 14px;
+        }
+      }
+    }
+  }
+}
+
+// Cropper.js custom styles - Circular crop appearance
+.image-crop-container .cropper-container {
+  direction: ltr;
+}
+
+.image-crop-container .cropper-view-box {
+  outline: none;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.image-crop-container .cropper-face {
+  background-color: rgba(0, 0, 0, 0.4);
+  opacity: 1;
+  border-radius: 50%;
+}
+
+// Create circular mask effect - overlay on the cropper container
+.image-crop-container-wrapper {
+  position: relative;
+  overflow: hidden;
+  
+  // Circular overlay mask
+  &::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%;
+    height: 100%;
+    max-width: 500px;
+    max-height: 500px;
+    border-radius: 50%;
+    box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
+    pointer-events: none;
+    z-index: 3;
+  }
+}
+
+.image-crop-container .cropper-view-box {
+  border: 3px solid #2196f3;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.3);
+}
+
+.image-crop-container .cropper-line {
+  display: none;
+}
+
+.image-crop-container .cropper-point {
+  background-color: #2196f3;
+  width: 12px;
+  height: 12px;
+  border: 2px solid white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  border-radius: 50%;
+}
+
+.image-crop-container .cropper-point.point-se {
+  cursor: nwse-resize;
+  bottom: -6px;
+  right: -6px;
+}
+
+.image-crop-container .cropper-point.point-sw {
+  cursor: nesw-resize;
+  bottom: -6px;
+  left: -6px;
+}
+
+.image-crop-container .cropper-point.point-nw {
+  cursor: nwse-resize;
+  top: -6px;
+  left: -6px;
+}
+
+.image-crop-container .cropper-point.point-ne {
+  cursor: nesw-resize;
+  top: -6px;
+  right: -6px;
+}
+
+.image-crop-container .cropper-point.point-n,
+.image-crop-container .cropper-point.point-s {
+  cursor: ns-resize;
+  display: none;
+}
+
+.image-crop-container .cropper-point.point-e,
+.image-crop-container .cropper-point.point-w {
+  cursor: ew-resize;
+  display: none;
+}
+
+// Make the crop box circular
+.image-crop-container .cropper-crop-box {
+  border-radius: 50%;
+}
+
+// Hide the guides for a cleaner circular look
+.image-crop-container .cropper-dashed {
+  display: none;
+}
+
+// Background Image Crop Modal (Rectangular/Wide)
+.background-crop-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10002;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &.show {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .background-crop-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    opacity: 0;
+    transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  &.show .background-crop-overlay {
+    opacity: 1;
+  }
+
+  .background-crop-dialog {
+    position: relative;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    max-width: 900px;
+    width: 90%;
+    max-height: 90vh;
+    overflow: hidden;
+    transform: translateY(20px) scale(0.95);
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+  }
+
+  &.show .background-crop-dialog {
+    transform: translateY(0) scale(1);
+  }
+
+  .background-crop-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid #e2e8f0;
+
+    .background-crop-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #1e293b;
+      margin: 0;
+    }
+
+    .background-crop-close {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 8px;
+      color: #64748b;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background: #f1f5f9;
+        color: #1e293b;
+      }
+
+      i {
+        font-size: 16px;
+      }
+    }
+  }
+
+  .background-crop-body {
+    padding: 0;
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    background: #f5f5f5;
+
+    .background-crop-main {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 24px;
+      min-height: 400px;
+      position: relative;
+      background: #e5e5e5;
+
+      .background-crop-container-wrapper {
+        position: relative;
+        width: 100%;
+        max-width: 800px;
+        margin: 0 auto;
+
+        .background-crop-container {
+          width: 100%;
+          max-width: 100%;
+          position: relative;
+          background: #e5e5e5;
+          border-radius: 8px;
+          overflow: visible;
+
+          img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+          }
+        }
+
+        .background-crop-drag-hint {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          background: rgba(0, 0, 0, 0.7);
+          color: white;
+          padding: 12px 20px;
+          border-radius: 8px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 14px;
+          pointer-events: none;
+          z-index: 10;
+          transition: opacity 0.3s ease, visibility 0.3s ease;
+          opacity: 0;
+          visibility: hidden;
+
+          i {
+            font-size: 16px;
+          }
+        }
+      }
+    }
+
+    .background-crop-controls {
+      padding: 20px 24px;
+      background: white;
+      border-top: 1px solid #e2e8f0;
+
+      .background-crop-control-group {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 32px;
+        flex-wrap: wrap;
+
+        .background-crop-rotation-controls {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+
+          .background-crop-rotate-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 1px solid #e2e8f0;
+            background: white;
+            color: #64748b;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+
+            &:hover {
+              background: #f1f5f9;
+              border-color: #cbd5e1;
+              color: #1e293b;
+              transform: scale(1.05);
+            }
+
+            &:active {
+              transform: scale(0.95);
+            }
+
+            i {
+              font-size: 16px;
+            }
+          }
+        }
+
+        .background-crop-zoom-controls {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+
+          .background-crop-zoom-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 1px solid #e2e8f0;
+            background: white;
+            color: #64748b;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+
+            &:hover:not(:disabled) {
+              background: #f1f5f9;
+              border-color: #cbd5e1;
+              color: #1e293b;
+            }
+
+            &:active:not(:disabled) {
+              transform: scale(0.95);
+            }
+
+            &:disabled {
+              opacity: 0.5;
+              cursor: not-allowed;
+              background: #f8fafc;
+              border-color: #e2e8f0;
+              color: #94a3b8;
+            }
+
+            i {
+              font-size: 14px;
+            }
+          }
+
+          .background-crop-zoom-slider-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            min-width: 200px;
+
+            .background-crop-zoom-slider {
+              width: 100%;
+              height: 6px;
+              border-radius: 3px;
+              background: #e2e8f0;
+              outline: none;
+              -webkit-appearance: none;
+              appearance: none;
+
+              &::-webkit-slider-thumb {
+                -webkit-appearance: none;
+                appearance: none;
+                width: 18px;
+                height: 18px;
+                border-radius: 50%;
+                background: #2196f3;
+                cursor: pointer;
+                border: 2px solid white;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+                transition: all 0.2s ease;
+
+                &:hover {
+                  transform: scale(1.1);
+                  box-shadow: 0 2px 6px rgba(33, 150, 243, 0.4);
+                }
+              }
+
+              &::-moz-range-thumb {
+                width: 18px;
+                height: 18px;
+                border-radius: 50%;
+                background: #2196f3;
+                cursor: pointer;
+                border: 2px solid white;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+                transition: all 0.2s ease;
+
+                &:hover {
+                  transform: scale(1.1);
+                  box-shadow: 0 2px 6px rgba(33, 150, 243, 0.4);
+                }
+              }
+
+              &::-webkit-slider-runnable-track {
+                height: 6px;
+                background: linear-gradient(to right, #2196f3 0%, #2196f3 var(--slider-progress, 50%), #e2e8f0 var(--slider-progress, 50%), #e2e8f0 100%);
+                border-radius: 3px;
+              }
+
+              &::-moz-range-track {
+                height: 6px;
+                background: #e2e8f0;
+                border-radius: 3px;
+              }
+            }
+
+            .background-crop-zoom-label {
+              font-size: 12px;
+              color: #64748b;
+              font-weight: 500;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  .background-crop-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 16px 24px;
+    border-top: 1px solid #e2e8f0;
+    background: #f8fafc;
+
+    .background-crop-btn {
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      &.background-crop-cancel-btn {
+        background: white;
+        color: #64748b;
+        border: 1px solid #e2e8f0;
+
+        &:hover {
+          background: #f1f5f9;
+          color: #1e293b;
+          border-color: #cbd5e1;
+        }
+      }
+
+      &.background-crop-save-btn {
+        background: #2196f3;
+        color: white;
+        border: 1px solid #2196f3;
+
+        &:hover {
+          background: #1976d2;
+          border-color: #1976d2;
+          transform: translateY(-1px);
+          box-shadow: 0 4px 8px rgba(33, 150, 243, 0.3);
+        }
+
+        &:active {
+          transform: translateY(0);
+        }
+
+        i {
+          font-size: 14px;
+        }
+      }
+    }
+  }
+}
+
+// Background Cropper.js custom styles - Rectangular crop appearance
+.background-crop-container .cropper-container {
+  direction: ltr;
+}
+
+.background-crop-container .cropper-view-box {
+  outline: none;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 3px solid #2196f3;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.3);
+}
+
+.background-crop-container .cropper-face {
+  background-color: rgba(0, 0, 0, 0.4);
+  opacity: 1;
+  border-radius: 4px;
+}
+
+// Create rectangular mask effect for background
+.background-crop-container-wrapper {
+  position: relative;
+  overflow: hidden;
+  
+  // Rectangular overlay mask - 3.5:1 aspect ratio to match banner display (350px height)
+  &::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%;
+    height: 100%;
+    max-width: 1400px;
+    max-height: 400px;
+    aspect-ratio: 3.5;
+    border-radius: 4px;
+    box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
+    pointer-events: none;
+    z-index: 3;
+  }
+}
+
+.background-crop-container .cropper-line {
+  display: none;
+}
+
+.background-crop-container .cropper-point {
+  background-color: #2196f3;
+  width: 12px;
+  height: 12px;
+  border: 2px solid white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  border-radius: 50%;
+}
+
+.background-crop-container .cropper-point.point-se {
+  cursor: nwse-resize;
+  bottom: -6px;
+  right: -6px;
+}
+
+.background-crop-container .cropper-point.point-sw {
+  cursor: nesw-resize;
+  bottom: -6px;
+  left: -6px;
+}
+
+.background-crop-container .cropper-point.point-nw {
+  cursor: nwse-resize;
+  top: -6px;
+  left: -6px;
+}
+
+.background-crop-container .cropper-point.point-ne {
+  cursor: nesw-resize;
+  top: -6px;
+  right: -6px;
+}
+
+.background-crop-container .cropper-point.point-n,
+.background-crop-container .cropper-point.point-s {
+  cursor: ns-resize;
+  display: none;
+}
+
+.background-crop-container .cropper-point.point-e,
+.background-crop-container .cropper-point.point-w {
+  cursor: ew-resize;
+  display: none;
+}
+
+// Make the crop box rectangular for background
+.background-crop-container .cropper-crop-box {
+  border-radius: 4px;
+}
+
+// Hide the guides for a cleaner rectangular look
+.background-crop-container .cropper-dashed {
+  display: none;
+}
+
 .settings-menu li.active .settings-menu-link {
   color: #2196f3;
   background: #e3f0ff;
@@ -412,14 +1660,31 @@
   gap: 16px;
 }
 
+.settings-background-preview-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
 .settings-background-preview {
-  width: 200px;
-  height: 100px;
-  border-radius: 8px;
+  width: 400px;
+  height: 200px;
+  border-radius: 12px;
   overflow: hidden;
   border: 2px solid #e3f0ff;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   position: relative;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  
+  &:hover {
+    opacity: 0.95;
+    
+    .settings-background-edit-btn,
+    .settings-background-delete-overlay {
+      opacity: 1;
+      visibility: visible;
+    }
+  }
 }
 
 .settings-background-img {
@@ -442,6 +1707,85 @@
   i {
     font-size: 20px;
     margin-bottom: 4px;
+  }
+}
+
+// Edit cover photo button overlay (Facebook-style)
+.settings-background-edit-btn {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+  opacity: 0;
+  visibility: hidden;
+  z-index: 10;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  
+  &:hover {
+    background: rgba(0, 0, 0, 0.75);
+    transform: translateY(-2px);
+  }
+  
+  i {
+    font-size: 16px;
+    margin: 0;
+  }
+  
+  span {
+    white-space: nowrap;
+  }
+}
+
+// Show button when there's no background image (placeholder visible)
+.settings-background-preview:has(.settings-background-placeholder:not([style*="display: none"])) {
+  .settings-background-edit-btn {
+    opacity: 1;
+    visibility: visible;
+    background: #1877f2;
+    
+    &:hover {
+      background: #166fe5;
+    }
+  }
+}
+
+// Delete button overlay on background
+.settings-background-delete-overlay {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(239, 68, 68, 0.9);
+  border: 2px solid #fff;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  transition: all 0.2s ease;
+  opacity: 0;
+  visibility: hidden;
+  z-index: 10;
+  
+  &:hover {
+    background: rgba(220, 38, 38, 0.95);
+    transform: scale(1.1);
   }
 }
 
@@ -503,6 +1847,13 @@
   background: #ef4444;
   color: #fff;
 }
+.settings-avatar-preview-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .settings-avatar-preview {
   width: 64px;
   height: 64px;
@@ -510,12 +1861,42 @@
   overflow: hidden;
   border: 2px solid #e3f0ff;
   box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  position: relative;
 }
+
 .settings-avatar-img-lg {
   width: 100%;
   height: 100%;
   object-fit: cover;
   border-radius: 50%;
+}
+
+// Camera button on the side of avatar (always visible)
+.settings-avatar-camera-side-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  border: 2px solid #fff;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  
+  &:hover {
+    background: rgba(0, 0, 0, 0.75);
+    transform: scale(1.05);
+  }
+  
+  i {
+    margin: 0;
+  }
 }
 .settings-avatar-actions {
   display: flex;
