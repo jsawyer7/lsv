@@ -139,6 +139,65 @@
     </div>
   </div>
 
+  <!-- Background Image Cropping Modal -->
+  <div id="background-crop-modal" class="background-crop-modal">
+    <div class="background-crop-overlay" onclick="closeBackgroundCropModal()"></div>
+    <div class="background-crop-dialog">
+      <div class="background-crop-header">
+        <h3 class="background-crop-title">Crop Your Background Image</h3>
+        <button class="background-crop-close" onclick="closeBackgroundCropModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="background-crop-body">
+        <div class="background-crop-main">
+          <div class="background-crop-container-wrapper">
+            <div class="background-crop-container">
+              <img id="background-crop-preview" src="" alt="Background crop preview" style="max-width: 100%; display: block;">
+            </div>
+            <div class="background-crop-drag-hint">
+              <i class="fas fa-arrows-alt"></i>
+              <span>Drag to reposition</span>
+            </div>
+          </div>
+        </div>
+        <div class="background-crop-controls">
+          <div class="background-crop-control-group">
+            <div class="background-crop-rotation-controls">
+              <button type="button" class="background-crop-rotate-btn" onclick="rotateBackgroundImage(-90)" title="Rotate counter-clockwise">
+                <i class="fas fa-undo"></i>
+              </button>
+              <button type="button" class="background-crop-rotate-btn" onclick="rotateBackgroundImage(90)" title="Rotate clockwise">
+                <i class="fas fa-redo"></i>
+              </button>
+            </div>
+            <div class="background-crop-zoom-controls">
+              <button type="button" id="background-crop-zoom-minus-btn" class="background-crop-zoom-btn" onclick="zoomBackgroundImage(-0.1)">
+                <i class="fas fa-minus"></i>
+              </button>
+              <div class="background-crop-zoom-slider-wrapper">
+                <input type="range" id="background-crop-zoom-slider" class="background-crop-zoom-slider" min="0" max="2" step="0.1" value="1" oninput="updateBackgroundZoom(this.value)">
+                <label for="background-crop-zoom-slider" class="background-crop-zoom-label">Zoom</label>
+              </div>
+              <button type="button" id="background-crop-zoom-plus-btn" class="background-crop-zoom-btn" onclick="zoomBackgroundImage(0.1)">
+                <i class="fas fa-plus"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="background-crop-footer">
+        <button type="button" class="background-crop-btn background-crop-cancel-btn" onclick="closeBackgroundCropModal()">
+          Cancel
+        </button>
+        <button type="button" class="background-crop-btn background-crop-save-btn" onclick="saveCroppedBackgroundImage()">
+          <i class="fas fa-check"></i>
+          Save & Upload
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Custom Confirmation Modal -->
   <div id="confirmation-modal" class="confirmation-modal">
     <div class="confirmation-overlay"></div>

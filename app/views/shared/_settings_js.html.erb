@@ -25,9 +25,14 @@ function removeAvatarAndPreviewAndSubmit() {
 // Global variable to store cropper instance
 let avatarCropper = null;
 let selectedAvatarFile = null;
+let backgroundCropper = null;
+let selectedBackgroundFile = null;
 let lastSliderValue = 1; // Track last slider value for smooth zoom
+let lastBackgroundSliderValue = 1; // Track last slider value for background zoom
 let isUserDraggingSlider = false; // Track if user is actively dragging the slider
+let isUserDraggingBackgroundSlider = false; // Track if user is actively dragging the background slider
 let isUsingZoomButtons = false; // Track if user is using zoom buttons
+let isUsingBackgroundZoomButtons = false; // Track if user is using background zoom buttons
 
 document.getElementById('avatar-upload-input').addEventListener('change', function() {
   const file = this.files[0];
@@ -99,9 +104,11 @@ document.getElementById('background-upload-input').addEventListener('change', fu
       return;
     }
     
-    document.getElementById('remove-background-field').value = 'false';
-    showBackgroundLoader();
-    this.closest('form').submit();
+    // Store the selected file
+    selectedBackgroundFile = file;
+    
+    // Show the cropping modal instead of submitting immediately
+    showBackgroundCropModal(file);
   }
 });
 
@@ -237,26 +244,11 @@ if (bannerBackgroundInput) {
         return;
       }
       
-      // Find the form in the edit page
-      const form = document.querySelector('.settings-form');
-      if (form) {
-        // Set the remove field to false
-        const removeField = form.querySelector('#remove-background-field');
-        if (removeField) {
-          removeField.value = 'false';
-        }
-        
-        // Clone the file to the form's input
-        const formInput = form.querySelector('#background-upload-input');
-        if (formInput) {
-          const dataTransfer = new DataTransfer();
-          dataTransfer.items.add(file);
-          formInput.files = dataTransfer.files;
-        }
-        
-        showBackgroundLoader();
-        form.submit();
-      }
+      // Store the selected file
+      selectedBackgroundFile = file;
+      
+      // Show the cropping modal instead of submitting immediately
+      showBackgroundCropModal(file);
     }
   });
 }
@@ -763,6 +755,416 @@ document.addEventListener('keydown', function(e) {
     if (modal && modal.classList.contains('show')) {
       closeImageCropModal();
     }
+    const backgroundModal = document.getElementById('background-crop-modal');
+    if (backgroundModal && backgroundModal.classList.contains('show')) {
+      closeBackgroundCropModal();
+    }
+  }
+});
+
+// Background Image Cropping Modal Functions
+function showBackgroundCropModal(file) {
+  const modal = document.getElementById('background-crop-modal');
+  const preview = document.getElementById('background-crop-preview');
+  
+  if (!modal || !preview) {
+    // Fallback to old behavior if modal doesn't exist
+    document.getElementById('remove-background-field').value = 'false';
+    showBackgroundLoader();
+    document.getElementById('background-upload-input').closest('form').submit();
+    return;
+  }
+  
+  // Create object URL for the image
+  const imageUrl = URL.createObjectURL(file);
+  preview.src = imageUrl;
+  
+  // Show the modal
+  modal.classList.add('show');
+  document.body.style.overflow = 'hidden';
+  
+  // Initialize cropper after image loads
+  const initializeBackgroundCropper = function() {
+    // Destroy existing cropper if any
+    if (backgroundCropper) {
+      backgroundCropper.destroy();
+      backgroundCropper = null;
+    }
+    
+    // Initialize new cropper with 3.5:1 aspect ratio for background images
+    // Banner is 350px high, and on typical desktop widths (~1200px) this gives us ~3.5:1 ratio
+    // This ensures the cropped image will display properly in the banner without being cut off
+    backgroundCropper = new Cropper(preview, {
+      aspectRatio: 3.5, // Matches banner display ratio (approximately 1200:350)
+      viewMode: 1,
+      dragMode: 'move',
+      autoCropArea: 0.8,
+      restore: false,
+      guides: true,
+      center: true,
+      highlight: false,
+      cropBoxMovable: true,
+      cropBoxResizable: true,
+      toggleDragModeOnDblclick: false,
+      minCropBoxWidth: 350,
+      minCropBoxHeight: 100,
+      zoomable: true,
+      scalable: false,
+      rotatable: true,
+      ready: function() {
+        // Reset slider tracking
+        lastBackgroundSliderValue = 1;
+        isUserDraggingBackgroundSlider = false;
+        isUsingBackgroundZoomButtons = false;
+        
+        // Add event listeners to track slider dragging
+        const zoomSlider = document.getElementById('background-crop-zoom-slider');
+        if (zoomSlider) {
+          // Track when user starts dragging
+          zoomSlider.addEventListener('mousedown', function() {
+            isUserDraggingBackgroundSlider = true;
+          });
+          zoomSlider.addEventListener('touchstart', function() {
+            isUserDraggingBackgroundSlider = true;
+          });
+          
+          // Track when user stops dragging
+          zoomSlider.addEventListener('mouseup', function() {
+            setTimeout(() => {
+              isUserDraggingBackgroundSlider = false;
+            }, 100);
+          });
+          zoomSlider.addEventListener('touchend', function() {
+            setTimeout(() => {
+              isUserDraggingBackgroundSlider = false;
+            }, 100);
+          });
+        }
+        
+        // Update zoom slider when cropper is ready
+        updateBackgroundZoomSlider();
+        updateBackgroundZoomSliderProgress();
+        updateBackgroundZoomButtonsState();
+        // Show drag hint initially
+        showBackgroundDragHint();
+      },
+      crop: function() {
+        // Hide drag hint when user starts interacting
+        hideBackgroundDragHint();
+        // Update zoom slider progress on crop
+        updateBackgroundZoomSliderProgress();
+      },
+      zoom: function() {
+        // Only update slider if user is not actively dragging or using buttons
+        if (!isUserDraggingBackgroundSlider && !isUsingBackgroundZoomButtons) {
+          updateBackgroundZoomSlider();
+          updateBackgroundZoomSliderProgress();
+        }
+      }
+    });
+    
+    // Update zoom slider value
+    updateBackgroundZoomSlider();
+  };
+  
+  // Check if image is already loaded
+  if (preview.complete) {
+    // Image already loaded, initialize immediately
+    setTimeout(initializeBackgroundCropper, 100);
+  } else {
+    // Wait for image to load
+    preview.onload = initializeBackgroundCropper;
+  }
+}
+
+function closeBackgroundCropModal() {
+  const modal = document.getElementById('background-crop-modal');
+  if (modal) {
+    modal.classList.remove('show');
+    document.body.style.overflow = '';
+    
+    // Clean up cropper
+    if (backgroundCropper) {
+      backgroundCropper.destroy();
+      backgroundCropper = null;
+    }
+    
+    // Clean up object URL
+    const preview = document.getElementById('background-crop-preview');
+    if (preview && preview.src) {
+      URL.revokeObjectURL(preview.src);
+      preview.src = '';
+    }
+    
+    // Clear file input
+    const fileInput = document.getElementById('background-upload-input');
+    if (fileInput) {
+      fileInput.value = '';
+    }
+    
+    // Reset slider tracking
+    lastBackgroundSliderValue = 1;
+    selectedBackgroundFile = null;
+  }
+}
+
+function saveCroppedBackgroundImage() {
+  if (!backgroundCropper || !selectedBackgroundFile) {
+    closeBackgroundCropModal();
+    return;
+  }
+  
+  // Get cropped canvas with 3.5:1 aspect ratio (1400x400 to match banner display)
+  const canvas = backgroundCropper.getCroppedCanvas({
+    width: 1400,
+    height: 400,
+    imageSmoothingEnabled: true,
+    imageSmoothingQuality: 'high',
+  });
+  
+  if (!canvas) {
+    showError('Failed to crop image. Please try again.', 'background');
+    closeBackgroundCropModal();
+    return;
+  }
+  
+  // Convert canvas to blob
+  canvas.toBlob(function(blob) {
+    if (!blob) {
+      showError('Failed to process image. Please try again.', 'background');
+      closeBackgroundCropModal();
+      return;
+    }
+    
+    // Create a File object from the blob with the original filename
+    const croppedFile = new File([blob], selectedBackgroundFile.name, {
+      type: selectedBackgroundFile.type,
+      lastModified: Date.now()
+    });
+    
+    // Get the form
+    const form = document.querySelector('.settings-form');
+    if (!form) {
+      showError('Form not found. Please try again.', 'background');
+      closeBackgroundCropModal();
+      return;
+    }
+    
+    // Get form action URL
+    const formAction = form.action || form.getAttribute('action') || '/settings';
+    
+    // Get CSRF token
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || 
+                     document.querySelector('input[name="authenticity_token"]')?.value || 
+                     form.querySelector('input[name="authenticity_token"]')?.value;
+    
+    if (!csrfToken) {
+      showError('Security token not found. Please refresh the page and try again.', 'background');
+      closeBackgroundCropModal();
+      return;
+    }
+    
+    // Create FormData from the form
+    const formData = new FormData(form);
+    
+    // Remove existing background image if any
+    formData.delete('user[background_image]');
+    
+    // Add the cropped file
+    formData.append('user[background_image]', croppedFile);
+    
+    // Set remove_background_image to false
+    formData.set('remove_background_image', 'false');
+    
+    // Ensure CSRF token is in FormData (Rails expects it as a form field)
+    const authToken = form.querySelector('input[name="authenticity_token"]');
+    if (authToken) {
+      formData.set('authenticity_token', authToken.value);
+    }
+    
+    // Close the cropping modal
+    closeBackgroundCropModal();
+    
+    // Show loader
+    showBackgroundLoader();
+    
+    // Submit form via fetch
+    fetch(formAction, {
+      method: 'PATCH',
+      body: formData,
+      headers: {
+        'X-CSRF-Token': csrfToken,
+        'X-Requested-With': 'XMLHttpRequest'
+      },
+      credentials: 'same-origin'
+    })
+    .then(response => {
+      if (response.redirected) {
+        // If redirected, follow the redirect
+        window.location.href = response.url;
+      } else if (response.ok) {
+        // If successful, reload the page to show the new background
+        window.location.reload();
+      } else {
+        throw new Error('Upload failed with status: ' + response.status);
+      }
+    })
+    .catch(error => {
+      console.error('Error uploading image:', error);
+      hideBackgroundLoader();
+      showError('Failed to upload image. Please try again.', 'background');
+    });
+  }, selectedBackgroundFile.type, 0.95); // Use original file type and high quality
+}
+
+// Background rotation function
+function rotateBackgroundImage(degrees) {
+  if (backgroundCropper) {
+    backgroundCropper.rotate(degrees);
+  }
+}
+
+// Background zoom functions
+function zoomBackgroundImage(ratio) {
+  if (backgroundCropper) {
+    const zoomSlider = document.getElementById('background-crop-zoom-slider');
+    if (zoomSlider) {
+      const currentValue = parseFloat(zoomSlider.value) ?? 1;
+      
+      // Check limits before zooming
+      if (ratio > 0 && currentValue >= 2) {
+        return;
+      }
+      if (ratio < 0 && currentValue <= 0) {
+        return;
+      }
+      
+      isUsingBackgroundZoomButtons = true;
+      
+      // Adjust slider value based on zoom ratio
+      const newValue = Math.max(0, Math.min(2, currentValue + (ratio * 2)));
+      
+      // Update slider value BEFORE zooming to prevent reset
+      zoomSlider.value = newValue;
+      lastBackgroundSliderValue = newValue;
+      updateBackgroundZoomSliderProgress();
+      updateBackgroundZoomButtonsState();
+    }
+    
+    // Apply zoom
+    backgroundCropper.zoom(ratio);
+    
+    // Reset flag after a short delay
+    setTimeout(() => {
+      isUsingBackgroundZoomButtons = false;
+    }, 150);
+  }
+}
+
+function updateBackgroundZoom(value) {
+  if (backgroundCropper) {
+    isUserDraggingBackgroundSlider = true;
+    const sliderValue = parseFloat(value);
+    
+    // Calculate the difference from the last slider value
+    const sliderDiff = sliderValue - lastBackgroundSliderValue;
+    
+    // Map slider difference to zoom ratio
+    const zoomRatio = sliderDiff * 0.5;
+    
+    // Apply zoom if there's a meaningful change
+    if (Math.abs(zoomRatio) > 0.01) {
+      backgroundCropper.zoom(zoomRatio);
+      lastBackgroundSliderValue = sliderValue;
+    }
+    
+    // Always update progress bar and button states
+    updateBackgroundZoomSliderProgress();
+    updateBackgroundZoomButtonsState();
+    
+    // Reset flag after a short delay
+    setTimeout(() => {
+      isUserDraggingBackgroundSlider = false;
+    }, 100);
+  }
+}
+
+function updateBackgroundZoomSliderProgress() {
+  const zoomSlider = document.getElementById('background-crop-zoom-slider');
+  if (zoomSlider) {
+    const sliderValue = parseFloat(zoomSlider.value) ?? 1;
+    const progress = Math.max(0, Math.min(100, (sliderValue / 2) * 100));
+    zoomSlider.style.setProperty('--slider-progress', progress + '%');
+    
+    // Also update button states
+    updateBackgroundZoomButtonsState();
+  }
+}
+
+function updateBackgroundZoomSlider() {
+  if (backgroundCropper && !isUserDraggingBackgroundSlider && !isUsingBackgroundZoomButtons) {
+    const zoomSlider = document.getElementById('background-crop-zoom-slider');
+    if (zoomSlider) {
+      lastBackgroundSliderValue = parseFloat(zoomSlider.value) ?? 1;
+      updateBackgroundZoomSliderProgress();
+    }
+  }
+}
+
+// Update background zoom buttons state
+function updateBackgroundZoomButtonsState() {
+  const zoomSlider = document.getElementById('background-crop-zoom-slider');
+  const minusBtn = document.getElementById('background-crop-zoom-minus-btn');
+  const plusBtn = document.getElementById('background-crop-zoom-plus-btn');
+  
+  if (zoomSlider && minusBtn && plusBtn) {
+    const sliderValue = parseFloat(zoomSlider.value) ?? 1;
+    
+    // Disable minus button if at minimum (0)
+    if (sliderValue <= 0) {
+      minusBtn.disabled = true;
+      minusBtn.style.opacity = '0.5';
+      minusBtn.style.cursor = 'not-allowed';
+    } else {
+      minusBtn.disabled = false;
+      minusBtn.style.opacity = '1';
+      minusBtn.style.cursor = 'pointer';
+    }
+    
+    // Disable plus button if at maximum (2)
+    if (sliderValue >= 2) {
+      plusBtn.disabled = true;
+      plusBtn.style.opacity = '0.5';
+      plusBtn.style.cursor = 'not-allowed';
+    } else {
+      plusBtn.disabled = false;
+      plusBtn.style.opacity = '1';
+      plusBtn.style.cursor = 'pointer';
+    }
+  }
+}
+
+// Show/hide background drag hint
+function showBackgroundDragHint() {
+  const dragHint = document.querySelector('.background-crop-drag-hint');
+  if (dragHint) {
+    dragHint.style.opacity = '1';
+    dragHint.style.visibility = 'visible';
+  }
+}
+
+function hideBackgroundDragHint() {
+  const dragHint = document.querySelector('.background-crop-drag-hint');
+  if (dragHint) {
+    dragHint.style.opacity = '0';
+    dragHint.style.visibility = 'hidden';
+  }
+}
+
+// Close background crop modal when clicking overlay
+document.addEventListener('click', function(e) {
+  if (e.target.classList.contains('background-crop-overlay')) {
+    closeBackgroundCropModal();
   }
 });
 
