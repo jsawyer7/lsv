@@ -143,5 +143,139 @@ namespace :text_content do
       end
     end
   end
+  
+  desc "Clean up extra verses beyond expected counts. Use DRY_RUN=false to actually delete (default: DRY_RUN=true)"
+  task :cleanup_extra_verses, [:source_name, :book_code] => :environment do |t, args|
+    source_name = args[:source_name] || "1"  # Default to ID 10 (Westcott-Hort)
+    book_code = args[:book_code] || "JOH"
+    dry_run = ENV['DRY_RUN'] != 'false'  # Default to dry run for safety
+    
+    puts "=" * 80
+    puts "Cleaning up extra verses for #{source_name} - Book: #{book_code}"
+    puts "Mode: #{dry_run ? 'DRY RUN (no deletions)' : 'LIVE (will delete)'}"
+    puts "=" * 80
+    puts ""
+    
+    # Resolve source
+    source = nil
+    if source_name.to_i.to_s == source_name
+      source = Source.unscoped.find_by(id: source_name.to_i)
+    end
+    source ||= Source.unscoped.find_by(name: source_name)
+    source ||= Source.unscoped.where('name ILIKE ?', "%#{source_name}%").first
+    
+    unless source
+      puts "✗ Source not found: #{source_name}"
+      exit 1
+    end
+    
+    puts "✓ Source: #{source.name} (ID: #{source.id})"
+    
+    # Resolve book
+    book = Book.unscoped.find_by(code: book_code)
+    book ||= Book.unscoped.where('LOWER(code) = LOWER(?)', book_code).first
+    
+    unless book
+      puts "✗ Book not found: #{book_code}"
+      exit 1
+    end
+    
+    puts "✓ Book: #{book.std_name} (#{book.code})"
+    puts ""
+    
+    # Get all records for this source and book
+    all_records = TextContent.unscoped.where(
+      source_id: source.id,
+      book_id: book.id
+    ).order(:unit_group, :unit)
+    
+    # Group by chapter
+    records_by_chapter = all_records.group_by(&:unit_group)
+    
+    total_extra = 0
+    chapters_with_issues = []
+    
+    records_by_chapter.each do |chapter, records|
+      expected_count = VerseCountReference.expected_verses(book.code, chapter)
+      
+      if expected_count.nil?
+        puts "⚠ Chapter #{chapter}: No expected count defined (found #{records.count} verses)"
+        next
+      end
+      
+      actual_count = records.count
+      
+      if actual_count > expected_count
+        extra_count = actual_count - expected_count
+        total_extra += extra_count
+        
+        # Find verses beyond expected count
+        extra_verses = records.select { |r| r.unit > expected_count }.sort_by(&:unit)
+        
+        chapters_with_issues << {
+          chapter: chapter,
+          expected: expected_count,
+          actual: actual_count,
+          extra: extra_count,
+          verses: extra_verses
+        }
+        
+        puts "✗ Chapter #{chapter}: Expected #{expected_count}, found #{actual_count} (#{extra_count} extra)"
+        extra_verses.each do |verse|
+          puts "    - Verse #{verse.unit}: #{verse.unit_key} (ID: #{verse.id})"
+        end
+      elsif actual_count < expected_count
+        puts "⚠ Chapter #{chapter}: Expected #{expected_count}, found #{actual_count} (missing #{expected_count - actual_count})"
+      else
+        puts "✓ Chapter #{chapter}: #{actual_count} verses (correct)"
+      end
+    end
+    
+    puts ""
+    puts "=" * 80
+    puts "Summary:"
+    puts "  - Total extra verses: #{total_extra}"
+    puts "  - Chapters with extra verses: #{chapters_with_issues.count}"
+    puts "=" * 80
+    
+    if chapters_with_issues.any?
+      puts ""
+      if dry_run
+        puts "DRY RUN MODE: No records were deleted."
+        puts "To actually delete these records, run:"
+        puts "  DRY_RUN=false rake 'text_content:cleanup_extra_verses[#{source_name},#{book_code}]'"
+      else
+        puts "LIVE MODE: Deleting extra verses..."
+        deleted_count = 0
+        
+        chapters_with_issues.each do |issue|
+          issue[:verses].each do |verse|
+            begin
+              # Delete associated records first (text_translations, canon_text_contents)
+              verse.text_translations.destroy_all
+              verse.canon_text_contents.destroy_all
+              verse.child_units.update_all(parent_unit_id: nil) if verse.child_units.any?
+              
+              # Delete the verse
+              verse.destroy
+              deleted_count += 1
+              puts "  ✓ Deleted: #{verse.unit_key} (ID: #{verse.id})"
+            rescue => e
+              puts "  ✗ Error deleting #{verse.unit_key}: #{e.message}"
+            end
+          end
+        end
+        
+        puts ""
+        puts "✓ Deleted #{deleted_count} extra verse(s)"
+      end
+    else
+      puts ""
+      puts "✓ No extra verses found. All chapters have correct counts."
+    end
+    
+    puts ""
+    puts "Done!"
+  end
 end
 
