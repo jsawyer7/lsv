@@ -63,14 +63,15 @@ class TextContentAiValidatorService
 
   def system_prompt
     <<~PROMPT
-      You are a strict validator for biblical text sources. Your job is to answer YES/NO questions about whether specific verses exist in a specific source.
+      You are a validator for biblical text sources. Your job is to answer YES/NO questions about whether specific verses exist in a specific source.
 
       CRITICAL RULES:
-      1. You must ONLY verify verses that exist in the EXACT source specified (e.g., "Westcott-Hort 1881 Greek New Testament").
-      2. You must NOT use alternative sources or translations.
-      3. You must NOT invent or assume verses exist.
-      4. You must answer with ONLY "YES" or "NO" for each question.
-      5. If you cannot access or verify the exact source, answer "NO" for that question.
+      1. You must verify verses that exist in the EXACT source specified (e.g., "Westcott-Hort 1881 Greek New Testament").
+      2. Use your knowledge of standard biblical verse counts as a reference, but verify against the specific source when possible.
+      3. If you are UNSURE whether a verse exists, answer "YES" (be conservative - it's better to try creating a verse than to skip it).
+      4. Standard verse counts are provided in the prompt for reference - use them to guide your answers.
+      5. Only answer "NO" if you are CERTAIN the verse does not exist in the source.
+      6. If the verse number is within the standard range for that chapter, answer "YES" unless you have specific knowledge it's missing.
 
       You will receive questions in this format:
       Q1: Can you access [source name] directly? (YES/NO)
@@ -100,23 +101,51 @@ class TextContentAiValidatorService
     next_book_code = current_index && current_index + 1 < book_order.length ? book_order[current_index + 1] : nil
 
     # For John-only test, don't ask about next book
-    if @current_book_code == 'JHN'
+    if @current_book_code == 'JHN' || @current_book_code == 'JOH'
       next_book_code = nil
+    end
+
+    # Get expected verse count for context
+    expected_verses = VerseCountReference.expected_verses(@current_book_code, @current_chapter)
+    next_chapter_expected = VerseCountReference.expected_verses(@current_book_code, @current_chapter + 1)
+    
+    verse_count_context = if expected_verses
+      "REFERENCE: Standard verse count for #{@current_book_code} Chapter #{@current_chapter} is #{expected_verses} verses. Current verse is #{@current_verse}. "
+    else
+      ""
+    end
+    
+    next_verse_context = if expected_verses && (@current_verse + 1) <= expected_verses
+      "The next verse (#{@current_verse + 1}) is WITHIN the expected range (#{expected_verses} verses). "
+    elsif expected_verses && (@current_verse + 1) > expected_verses
+      "The next verse (#{@current_verse + 1}) is BEYOND the expected range (#{expected_verses} verses). "
+    else
+      ""
     end
 
     <<~PROMPT
       Source: #{@source_name}
       Current location: #{@current_book_code} #{@current_chapter}:#{@current_verse}
+      
+      #{verse_count_context}#{next_verse_context}
 
-      Answer these questions about the EXACT source "#{@source_name}". You must verify using ONLY the exact source specified - do NOT use alternative sources or translations.
+      Answer these questions about the EXACT source "#{@source_name}".
 
       Q1: Can you access "#{@source_name}" directly? (YES/NO)
       Q2: Does "#{@source_name}" contain #{@current_book_code} #{@current_chapter}:#{@current_verse + 1}? (YES/NO)
-      Q3: Does "#{@source_name}" contain #{@current_book_code} #{@current_chapter + 1}:1? (YES/NO)
+      #{if next_chapter_expected
+          "Q3: Does \"#{@source_name}\" contain #{@current_book_code} #{@current_chapter + 1}:1? (YES/NO) - Note: Standard verse count for Chapter #{@current_chapter + 1} is #{next_chapter_expected} verses."
+        else
+          "Q3: Does \"#{@source_name}\" contain #{@current_book_code} #{@current_chapter + 1}:1? (YES/NO)"
+        end}
       Q4: #{next_book_code ? "Does \"#{@source_name}\" contain #{next_book_code} 1:1? (YES/NO)" : "Is the source complete for #{@current_book_code}? (YES/NO)"}
       Q5: Is the source complete (no more verses after #{@current_book_code} #{@current_chapter}:#{@current_verse})? (YES/NO)
 
-      CRITICAL: You must answer based ONLY on the exact source "#{@source_name}". If you cannot verify a verse exists in this exact source, answer NO.
+      IMPORTANT GUIDELINES:
+      - If the verse number is within the standard range for that chapter, answer YES for Q2 unless you have specific knowledge it's missing.
+      - If you are UNSURE, answer YES (it's better to try creating a verse than to skip it).
+      - Only answer NO if you are CERTAIN the verse does not exist.
+      - Use the verse count reference information provided above to guide your answers.
 
       Respond with ONLY a JSON object in this exact format:
       {

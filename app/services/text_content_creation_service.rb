@@ -126,12 +126,14 @@ class TextContentCreationService
     next_book = next_location[:book]
     next_chapter = next_location[:chapter]
     next_verse = next_location[:verse]
+    used_fallback = next_location[:fallback] == true
 
     result = create_text_content_record(
       source: source,
       book: next_book,
       chapter: next_chapter,
-      verse: next_verse
+      verse: next_verse,
+      used_fallback: used_fallback
     )
 
     if result[:status] == 'error'
@@ -165,7 +167,22 @@ class TextContentCreationService
 
   private
 
-  def find_next_verse_with_ai(source:, current_book:, current_chapter:, current_verse:)
+  def find_next_verse_with_ai(source:, current_book:, current_chapter:, current_verse:, retry_count: 0)
+    max_retries = 2
+    
+    # Get expected verse count for validation
+    expected_verses = VerseCountReference.expected_verses(current_book.code, current_chapter)
+    next_verse = current_verse + 1
+    
+    # VALIDATION: Check if next verse is within expected range
+    if expected_verses && next_verse <= expected_verses
+      # Next verse is within expected range - AI should say YES, but we'll validate
+      Rails.logger.info "Verse #{next_verse} is within expected range (#{expected_verses} verses) for #{current_book.code} #{current_chapter}"
+    elsif expected_verses && next_verse > expected_verses
+      # Next verse is beyond expected range - likely end of chapter
+      Rails.logger.info "Verse #{next_verse} is beyond expected range (#{expected_verses} verses) for #{current_book.code} #{current_chapter}"
+    end
+
     # Use AI validator to check if next verse exists
     validator = TextContentAiValidatorService.new(
       source_name: source.name,
@@ -177,12 +194,18 @@ class TextContentCreationService
     validation_result = validator.validate_structure
 
     if validation_result[:status] == 'error'
-      return { status: 'error', error: validation_result[:error] }
+      # If AI validation fails, use fallback logic
+      return fallback_to_next_verse(
+        source: source,
+        current_book: current_book,
+        current_chapter: current_chapter,
+        current_verse: current_verse,
+        expected_verses: expected_verses
+      )
     end
 
     # Check Q2: Has next verse in same chapter?
     if validation_result[:has_next_verse_in_same_chapter]
-      next_verse = current_verse + 1
       return {
         status: 'success',
         book: current_book,
@@ -191,11 +214,50 @@ class TextContentCreationService
       }
     end
 
+    # RETRY LOGIC: If AI says NO and we haven't retried, try once more
+    # Only retry if verse is within expected range (AI might have made a mistake)
+    if retry_count < max_retries && expected_verses && next_verse <= expected_verses
+      Rails.logger.info "AI said NO to verse #{next_verse} but it's within expected range (#{expected_verses}). Retrying AI validation (attempt #{retry_count + 1}/#{max_retries})"
+      sleep(1) # Brief pause before retry
+      return find_next_verse_with_ai(
+        source: source,
+        current_book: current_book,
+        current_chapter: current_chapter,
+        current_verse: current_verse,
+        retry_count: retry_count + 1
+      )
+    end
+
+    # FALLBACK: If AI says NO but verse is within expected range, try anyway
+    # This runs after retries are exhausted
+    if expected_verses && next_verse <= expected_verses
+      Rails.logger.warn "AI said NO to verse #{next_verse} after #{retry_count} retries, but it's within expected range (#{expected_verses}). Using fallback - will try creating it anyway."
+      return {
+        status: 'success',
+        book: current_book,
+        chapter: current_chapter,
+        verse: next_verse,
+        fallback: true
+      }
+    end
+
+    # Check if we've reached the expected last verse
+    if expected_verses && current_verse >= expected_verses
+      # We've reached or passed the expected last verse - move to next chapter
+      Rails.logger.info "Reached expected last verse (#{expected_verses}) for #{current_book.code} #{current_chapter}, moving to next chapter"
+    end
+
     # Check Q3: Has first verse in next chapter?
     if validation_result[:has_first_verse_in_next_chapter]
-      # Find first verse of next chapter in same book
-      # We'll use AI to verify, but for now assume chapter + 1, verse 1
       next_chapter = current_chapter + 1
+      next_chapter_expected = VerseCountReference.expected_verses(current_book.code, next_chapter)
+      
+      # Validate that next chapter exists in our reference
+      if next_chapter_expected.nil? && expected_verses
+        # We have data for current chapter but not next - might be end of book
+        Rails.logger.warn "No verse count data for #{current_book.code} Chapter #{next_chapter}, but AI says it exists"
+      end
+      
       return {
         status: 'success',
         book: current_book,
@@ -205,11 +267,9 @@ class TextContentCreationService
     end
 
     # Check Q4: Has first verse in next book?
-    # For testing with John only, we'll skip this and mark as complete
     if validation_result[:has_first_verse_in_next_book] == true
-      # For now, only process John (JHN) - if we're at John, don't move to Acts
-      if current_book.code == 'JHN'
-        # For John-only test, mark as complete when we reach the end of John
+      # For John-only processing, don't move to Acts
+      if current_book.code == 'JHN' || current_book.code == 'JOH'
         return { status: 'complete' }
       end
 
@@ -221,7 +281,6 @@ class TextContentCreationService
 
       next_book_code = BOOK_ORDER[next_index]
       next_book = Book.unscoped.find_by(code: next_book_code)
-      # Try case-insensitive if exact match fails
       next_book ||= Book.unscoped.where('LOWER(code) = LOWER(?)', next_book_code).first
       return { status: 'error', error: "Next book #{next_book_code} not found" } unless next_book
 
@@ -233,11 +292,67 @@ class TextContentCreationService
       }
     end
 
+    # Final validation: Check if we should be complete
+    if expected_verses && current_verse >= expected_verses
+      # Check if there are more chapters in the book
+      next_chapter_expected = VerseCountReference.expected_verses(current_book.code, current_chapter + 1)
+      if next_chapter_expected
+        # Next chapter exists - move to it
+        return {
+          status: 'success',
+          book: current_book,
+          chapter: current_chapter + 1,
+          verse: 1
+        }
+      else
+        # No more chapters - check if there's a next book
+        if current_book.code == 'JHN' || current_book.code == 'JOH'
+          return { status: 'complete' }
+        end
+      end
+    end
+
     # Q5: Complete
     { status: 'complete' }
   end
 
-  def create_text_content_record(source:, book:, chapter:, verse:)
+  def fallback_to_next_verse(source:, current_book:, current_chapter:, current_verse:, expected_verses:)
+    next_verse = current_verse + 1
+    
+    # If we have expected verse count and next verse is within range, try it
+    if expected_verses && next_verse <= expected_verses
+      Rails.logger.info "Using fallback: Creating verse #{next_verse} (within expected range of #{expected_verses})"
+      return {
+        status: 'success',
+        book: current_book,
+        chapter: current_chapter,
+        verse: next_verse,
+        fallback: true
+      }
+    end
+    
+    # If we've reached expected last verse, move to next chapter
+    if expected_verses && current_verse >= expected_verses
+      next_chapter = current_chapter + 1
+      next_chapter_expected = VerseCountReference.expected_verses(current_book.code, next_chapter)
+      
+      if next_chapter_expected
+        Rails.logger.info "Using fallback: Moving to next chapter #{next_chapter} (expected #{next_chapter_expected} verses)"
+        return {
+          status: 'success',
+          book: current_book,
+          chapter: next_chapter,
+          verse: 1,
+          fallback: true
+        }
+      end
+    end
+    
+    # If we can't determine, return error
+    { status: 'error', error: 'Unable to determine next verse location' }
+  end
+
+  def create_text_content_record(source:, book:, chapter:, verse:, used_fallback: false)
     # Check if already exists (idempotent) - use unscoped to avoid default scope ordering
     existing = TextContent.unscoped.find_by(
       source_id: source.id,
@@ -299,11 +414,13 @@ class TextContentCreationService
         source_name: source.name,
         book_code: book.code,
         chapter: chapter,
-        verse: verse
+        verse: verse,
+        used_fallback: used_fallback
       }.to_json,
       response_payload: {
         status: 'created',
-        unit_key: unit_key
+        unit_key: unit_key,
+        used_fallback: used_fallback
       }.to_json,
       status: 'success'
     )
