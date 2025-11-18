@@ -576,13 +576,12 @@ ActiveAdmin.register TextContent do
             div class: "card-body" do
               div id: "word-for-word-table-container" do
                 if f.object.word_for_word_array.present?
-                  table class: "table table-striped" do
+                  table class: "table table-striped table-bordered" do
                     thead class: "table-dark" do
                       tr do
-                        th "#{f.object.language.name} word"
-                        th "Literal meaning"
-                        th "Confidence (1–100)"
-                        th "Notes"
+                        th "#{f.object.language.name} Word", style: "width: 30%;"
+                        th "English Translation", style: "width: 30%;"
+                        th "AI Translation Comments", style: "width: 40%;"
                       end
                     end
                     tbody do
@@ -590,7 +589,6 @@ ActiveAdmin.register TextContent do
                         tr do
                           td class: "fw-semibold" do word['word'] || word[:word] || '' end
                           td do word['literal_meaning'] || word[:literal_meaning] || '' end
-                          td do word['confidence'] || word[:confidence] || '' end
                           td class: "small text-muted" do word['notes'] || word[:notes] || '' end
                         end
                       end
@@ -825,12 +823,11 @@ ActiveAdmin.register TextContent do
             }
             
             const languageName = languageDisplay ? languageDisplay.textContent.split('(')[0].trim() : 'Source';
-            let tableHTML = '<table class=\"table table-striped\"><thead class=\"table-dark\"><tr><th>' + languageName + ' word</th><th>Literal meaning</th><th>Confidence (1–100)</th><th>Notes</th></tr></thead><tbody>';
+            let tableHTML = '<table class=\"table table-striped table-bordered\"><thead class=\"table-dark\"><tr><th style=\"width: 30%;\">' + languageName + ' Word</th><th style=\"width: 30%;\">English Translation</th><th style=\"width: 40%;\">AI Translation Comments</th></tr></thead><tbody>';
             
             words.forEach(function(word) {
               tableHTML += '<tr><td class=\"fw-semibold\">' + (word.word || '') + '</td>';
               tableHTML += '<td>' + (word.literal_meaning || '') + '</td>';
-              tableHTML += '<td>' + (word.confidence || '') + '</td>';
               tableHTML += '<td class=\"small text-muted\">' + (word.notes || '') + '</td></tr>';
             });
             
@@ -930,6 +927,38 @@ ActiveAdmin.register TextContent do
                     else
                       span class: "text-muted" do "No LSV literal reconstruction provided" end
                     end
+                  end
+                end
+              end
+              div class: "col-12" do
+                div class: "materio-info-item" do
+                  div class: "text-muted small fw-semibold mb-3" do
+                    i class: "ri ri-translate me-2"
+                    "Word-for-Word Translation"
+                  end
+                  if resource.word_for_word_array.present?
+                    div class: "table-responsive" do
+                      table class: "table table-striped table-bordered" do
+                        thead class: "table-dark" do
+                          tr do
+                            th "#{resource.language.name} Word", style: "width: 30%;"
+                            th "English Translation", style: "width: 30%;"
+                            th "AI Translation Comments", style: "width: 40%;"
+                          end
+                        end
+                        tbody do
+                          resource.word_for_word_array.each do |word|
+                            tr do
+                              td class: "fw-semibold" do word['word'] || word[:word] || '' end
+                              td do word['literal_meaning'] || word[:literal_meaning] || '' end
+                              td class: "small text-muted" do word['notes'] || word[:notes] || '' end
+                            end
+                          end
+                        end
+                      end
+                    end
+                  else
+                    p class: "text-muted mb-0" do "No word-for-word translation available." end
                   end
                 end
               end

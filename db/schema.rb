@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2025_11_09_191342) do
+ActiveRecord::Schema[7.0].define(version: 2025_11_18_034033) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -337,6 +337,12 @@ ActiveRecord::Schema[7.0].define(version: 2025_11_09_191342) do
     t.datetime "updated_at", null: false
     t.jsonb "word_for_word_translation", default: []
     t.text "lsv_literal_reconstruction"
+    t.datetime "content_populated_at"
+    t.text "content_populated_by"
+    t.datetime "content_validated_at"
+    t.text "content_validated_by"
+    t.jsonb "content_validation_result"
+    t.text "validation_notes"
     t.index ["book_id"], name: "index_text_contents_on_book_id"
     t.index ["language_id"], name: "index_text_contents_on_language_id"
     t.index ["parent_unit_id"], name: "index_text_contents_on_parent_unit_id"

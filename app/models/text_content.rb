@@ -43,6 +43,29 @@ class TextContent < ApplicationRecord
     word_for_word_translation.is_a?(Array) ? word_for_word_translation : []
   end
 
+  def content_populated?
+    content_populated_at.present? && content.present?
+  end
+
+  def content_validated?
+    content_validated_at.present? && content_validation_result.present?
+  end
+
+  def is_100_percent_accurate?
+    return false unless content_validated?
+    content_validation_result['is_accurate'] == true
+  end
+
+  def validation_accuracy_percentage
+    return nil unless content_validated?
+    content_validation_result['accuracy_percentage'] || 0
+  end
+
+  def validation_discrepancies
+    return [] unless content_validated?
+    content_validation_result['discrepancies'] || []
+  end
+
   def self.ransackable_attributes(auth_object = nil)
     ["book_id", "unit_group", "content", "created_at", "id", "language_id", "parent_unit_id", 
      "source_id", "text_unit_type_id", "unit_key", "unit", "updated_at", "word_for_word_translation",
