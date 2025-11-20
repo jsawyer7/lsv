@@ -1,4 +1,6 @@
-require 'openai'
+require 'net/http'
+require 'json'
+require 'uri'
 
 class TextContentValidationService
   def initialize(text_content)
@@ -45,38 +47,55 @@ class TextContentValidationService
   def perform_validation
     max_retries = 3
     retry_count = 0
+    ai_response = nil
     
     begin
-      client = OpenAI::Client.new(
-        access_token: openai_api_key,
-        log_errors: true,
-        request_timeout: 120 # 2 minute timeout
-      )
-
       prompt = build_validation_prompt
 
-      response = client.chat(
-        parameters: {
-          model: "gpt-4-turbo",
-          messages: [
-            {
-              role: "system",
-              content: system_prompt
-            },
-            {
-              role: "user",
-              content: prompt
-            }
-          ],
-          temperature: 0.0, # Zero temperature for strict validation
-          response_format: { type: "json_object" }
-        }
+      response = call_grok_api(
+        model: "grok-3",
+        messages: [
+          {
+            role: "system",
+            content: system_prompt
+          },
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        temperature: 0.0, # Zero temperature for strict validation
+        response_format: { type: "json_object" }
       )
 
-      ai_response = response.dig("choices", 0, "message", "content")
+      # Log response for debugging
+      Rails.logger.debug "Grok API response type: #{response.class}"
+      Rails.logger.debug "Grok API response keys: #{response.keys.inspect}" if response.is_a?(Hash)
+      
+      # Extract the content from Grok API response
+      # Grok API should return: { "choices": [{ "message": { "content": "..." } }] }
+      ai_response = nil
+      
+      if response.is_a?(Hash)
+        if response.key?("choices") && response["choices"].is_a?(Array) && response["choices"].first
+          choice = response["choices"].first
+          if choice.is_a?(Hash) && choice.key?("message")
+            message = choice["message"]
+            if message.is_a?(Hash) && message.key?("content")
+              ai_response = message["content"]
+            end
+          end
+        end
+      end
+      
+      if ai_response.nil?
+        Rails.logger.error "Could not extract content from Grok API response"
+        Rails.logger.error "Response structure: #{response.inspect[0..500]}"
+        return { status: 'error', error: 'Could not extract content from Grok API response', is_accurate: false }
+      end
       
       if ai_response.blank?
-        return { status: 'error', error: 'Empty response from AI', is_accurate: false }
+        return { status: 'error', error: 'Empty response from Grok API', is_accurate: false }
       end
 
       # Parse JSON response
@@ -101,9 +120,9 @@ class TextContentValidationService
         raw_response: ai_response
       }
     rescue JSON::ParserError => e
-      Rails.logger.error "Failed to parse validation response: #{e.message}"
-      Rails.logger.error "Raw response: #{ai_response}"
-      { status: 'error', error: "Failed to parse validation response: #{e.message}", is_accurate: false }
+      Rails.logger.error "Failed to parse Grok API validation response: #{e.message}"
+      Rails.logger.error "Raw response: #{ai_response || 'N/A'}"
+      { status: 'error', error: "Failed to parse Grok API validation response: #{e.message}", is_accurate: false }
     rescue Net::OpenTimeout, Net::ReadTimeout, Errno::ETIMEDOUT => e
       retry_count += 1
       if retry_count < max_retries
@@ -222,7 +241,7 @@ class TextContentValidationService
   def update_validation_fields(result)
     @text_content.update!(
       content_validated_at: Time.current,
-      content_validated_by: 'gpt-4-turbo',
+      content_validated_by: 'grok-3',
       content_validation_result: {
         is_accurate: result[:is_accurate],
         accuracy_percentage: result[:accuracy_percentage],
@@ -259,8 +278,83 @@ class TextContentValidationService
     Rails.logger.error "Failed to log validation: #{e.message}"
   end
 
-  def openai_api_key
-    Rails.application.secrets.dig(:openai, :api_key) || ENV['OPENAI_API_KEY']
+  def grok_api_key
+    ENV['XAI_API_KEY']
+  end
+
+  def call_grok_api(model:, messages:, temperature: 0.0, response_format: nil, max_tokens: nil)
+    api_key = grok_api_key
+    unless api_key.present?
+      raise "Grok API key not found. Please set XAI_API_KEY environment variable"
+    end
+
+    uri = URI.parse("https://api.x.ai/v1/chat/completions")
+    http = Net::HTTP.new(uri.host, uri.port)
+    http.use_ssl = true
+    http.read_timeout = 120
+    http.open_timeout = 30
+
+    request = Net::HTTP::Post.new(uri.path)
+    request["Authorization"] = "Bearer #{api_key}"
+    request["Content-Type"] = "application/json"
+
+    body = {
+      model: model,
+      messages: messages,
+      temperature: temperature
+    }
+    
+    body[:response_format] = response_format if response_format
+    body[:max_tokens] = max_tokens if max_tokens
+
+    request.body = body.to_json
+
+    Rails.logger.debug "Grok API request: POST #{uri.path}, model: #{model}"
+    
+    response = http.request(request)
+    
+    unless response.is_a?(Net::HTTPSuccess)
+      error_body = begin
+        JSON.parse(response.body)
+      rescue JSON::ParserError
+        { error: { message: response.message } }
+      end
+      error_msg = response.message
+      Rails.logger.error "Grok API error (#{response.code}): #{error_msg}"
+      Rails.logger.error "Response body: #{response.body[0..500]}"
+      raise "Grok API error (#{response.code}): #{error_msg}"
+    end
+
+    # Parse the response body - it should be JSON
+    parsed_response = begin
+      result = JSON.parse(response.body)
+      Rails.logger.debug "Parsed response type: #{result.class}"
+      result
+    rescue JSON::ParserError => e
+      Rails.logger.error "Failed to parse Grok API response body: #{e.message}"
+      Rails.logger.error "Response body (first 500 chars): #{response.body[0..500]}"
+      Rails.logger.error "Response body length: #{response.body.length}"
+      raise "Failed to parse Grok API response: #{e.message}. Response body: #{response.body[0..200]}"
+    end
+    
+    # Ensure we return a Hash (not a String or other type)
+    if parsed_response.is_a?(String)
+      Rails.logger.warn "Grok API returned a string instead of Hash, attempting to parse again"
+      parsed_response = JSON.parse(parsed_response)
+    end
+    
+    unless parsed_response.is_a?(Hash)
+      Rails.logger.error "Unexpected response type: #{parsed_response.class}"
+      Rails.logger.error "Response value (first 500 chars): #{parsed_response.inspect[0..500]}"
+      raise "Grok API returned unexpected response type: #{parsed_response.class}. Expected Hash, got #{parsed_response.class}"
+    end
+    
+    Rails.logger.debug "Returning parsed response with keys: #{parsed_response.keys.inspect}"
+    parsed_response
+  rescue => e
+    Rails.logger.error "Grok API error: #{e.class.name}: #{e.message}"
+    Rails.logger.error e.backtrace.first(5).join("\n")
+    raise e
   end
 end
 
