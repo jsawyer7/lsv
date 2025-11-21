@@ -936,5 +936,136 @@ namespace :text_content do
     puts ""
     puts "Done!"
   end
+  
+  desc "Clear all content fields for John (or all text contents) to start fresh. Usage: rake 'text_content:clear_content[source_id,book_code]' or use ALL=true to clear all sources. Use DRY_RUN=false to actually clear (default: DRY_RUN=true)"
+  task :clear_content, [:source_id, :book_code] => :environment do |t, args|
+    source_id = args[:source_id]
+    book_code = args[:book_code]
+    clear_all = ENV['ALL'] == 'true'
+    dry_run = ENV['DRY_RUN'] != 'false'  # Default to dry run for safety
+    
+    puts "=" * 80
+    puts "Clearing Content Fields"
+    puts "Mode: #{dry_run ? 'DRY RUN (no changes)' : 'LIVE (will clear content)'}"
+    puts "=" * 80
+    puts ""
+    
+    if clear_all
+      puts "⚠ Clearing ALL text contents (all sources, all books)"
+      text_contents = TextContent.unscoped.all
+    elsif source_id && book_code
+      source = Source.unscoped.find_by(id: source_id.to_i)
+      unless source
+        puts "✗ Source not found: #{source_id}"
+        exit 1
+      end
+      
+      book = Book.unscoped.find_by(code: book_code) || Book.unscoped.where('LOWER(code) = LOWER(?)', book_code).first
+      unless book
+        puts "✗ Book not found: #{book_code}"
+        exit 1
+      end
+      
+      puts "Source: #{source.name} (ID: #{source.id})"
+      puts "Book: #{book.std_name} (#{book.code})"
+      text_contents = TextContent.unscoped.where(source_id: source.id, book_id: book.id)
+    else
+      puts "Usage:"
+      puts "  Clear specific source/book: rake 'text_content:clear_content[source_id,book_code]'"
+      puts "  Clear ALL text contents: ALL=true rake 'text_content:clear_content'"
+      puts ""
+      puts "To actually clear (not dry run): DRY_RUN=false rake 'text_content:clear_content[...]'"
+      exit 1
+    end
+    
+    total_count = text_contents.count
+    populated_count = text_contents.where.not(content_populated_at: nil).count
+    validated_count = text_contents.where.not(content_validated_at: nil).count
+    
+    puts ""
+    puts "Found #{total_count} text content record(s)"
+    puts "  - With populated content: #{populated_count}"
+    puts "  - With validation: #{validated_count}"
+    puts ""
+    
+    if total_count == 0
+      puts "✓ No records to clear"
+      exit 0
+    end
+    
+    if dry_run
+      puts "DRY RUN MODE: No records will be cleared."
+      puts ""
+      puts "Records that would be cleared:"
+      text_contents.limit(10).each do |tc|
+        has_content = tc.content.present? || tc.word_for_word_translation.present? || tc.lsv_literal_reconstruction.present?
+        puts "  - #{tc.unit_key}: #{has_content ? 'Has content' : 'Empty'}"
+      end
+      if total_count > 10
+        puts "  ... and #{total_count - 10} more records"
+      end
+      puts ""
+      puts "To actually clear these records, run:"
+      if clear_all
+        puts "  DRY_RUN=false ALL=true rake 'text_content:clear_content'"
+      else
+        puts "  DRY_RUN=false rake 'text_content:clear_content[#{source_id},#{book_code}]'"
+      end
+    else
+      puts "LIVE MODE: Clearing content fields..."
+      puts ""
+      
+      cleared_count = 0
+      errors = []
+      
+      text_contents.find_each do |text_content|
+        begin
+          # Clear all content-related fields
+          text_content.update!(
+            content: '',
+            word_for_word_translation: [],
+            lsv_literal_reconstruction: nil,
+            content_populated_at: nil,
+            content_populated_by: nil,
+            content_validated_at: nil,
+            content_validated_by: nil,
+            content_validation_result: nil,
+            validation_notes: nil
+          )
+          cleared_count += 1
+          
+          if cleared_count % 50 == 0
+            puts "  Cleared #{cleared_count}/#{total_count} records..."
+          end
+        rescue => e
+          errors << { unit_key: text_content.unit_key, error: e.message }
+          Rails.logger.error "Failed to clear #{text_content.unit_key}: #{e.message}"
+        end
+      end
+      
+      puts ""
+      puts "=" * 80
+      puts "SUMMARY"
+      puts "=" * 80
+      puts ""
+      puts "Total records: #{total_count}"
+      puts "Successfully cleared: #{cleared_count}"
+      puts "Errors: #{errors.count}"
+      
+      if errors.any?
+        puts ""
+        puts "Errors encountered:"
+        errors.first(10).each do |error|
+          puts "  - #{error[:unit_key]}: #{error[:error]}"
+        end
+        if errors.count > 10
+          puts "  ... and #{errors.count - 10} more errors"
+        end
+      end
+    end
+    
+    puts ""
+    puts "Done!"
+  end
 end
 
