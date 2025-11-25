@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2025_11_18_034033) do
+ActiveRecord::Schema[7.0].define(version: 2025_11_22_130300) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -227,6 +227,15 @@ ActiveRecord::Schema[7.0].define(version: 2025_11_18_034033) do
     t.index ["user_id"], name: "index_follows_on_user_id"
   end
 
+  create_table "genre_types", force: :cascade do |t|
+    t.string "code", limit: 50, null: false
+    t.string "label", null: false
+    t.text "description"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["code"], name: "index_genre_types_on_code", unique: true
+  end
+
   create_table "languages", force: :cascade do |t|
     t.text "code", null: false
     t.text "name", null: false
@@ -263,6 +272,15 @@ ActiveRecord::Schema[7.0].define(version: 2025_11_18_034033) do
     t.index ["internal_id"], name: "index_name_mappings_on_internal_id", unique: true
     t.index ["jewish"], name: "index_name_mappings_on_jewish"
     t.index ["muslim"], name: "index_name_mappings_on_muslim"
+  end
+
+  create_table "party_types", force: :cascade do |t|
+    t.string "code", limit: 50, null: false
+    t.string "label", null: false
+    t.text "description"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["code"], name: "index_party_types_on_code", unique: true
   end
 
   create_table "peers", force: :cascade do |t|
@@ -343,6 +361,11 @@ ActiveRecord::Schema[7.0].define(version: 2025_11_18_034033) do
     t.text "content_validated_by"
     t.jsonb "content_validation_result"
     t.text "validation_notes"
+    t.string "addressed_party_code", limit: 50
+    t.text "addressed_party_custom_name"
+    t.string "responsible_party_code", limit: 50
+    t.text "responsible_party_custom_name"
+    t.string "genre_code", limit: 50
     t.index ["book_id"], name: "index_text_contents_on_book_id"
     t.index ["language_id"], name: "index_text_contents_on_language_id"
     t.index ["parent_unit_id"], name: "index_text_contents_on_parent_unit_id"
@@ -441,7 +464,10 @@ ActiveRecord::Schema[7.0].define(version: 2025_11_18_034033) do
   add_foreign_key "sources", "languages"
   add_foreign_key "sources", "text_unit_types"
   add_foreign_key "text_contents", "books"
+  add_foreign_key "text_contents", "genre_types", column: "genre_code", primary_key: "code"
   add_foreign_key "text_contents", "languages"
+  add_foreign_key "text_contents", "party_types", column: "addressed_party_code", primary_key: "code"
+  add_foreign_key "text_contents", "party_types", column: "responsible_party_code", primary_key: "code"
   add_foreign_key "text_contents", "sources"
   add_foreign_key "text_contents", "text_unit_types"
   add_foreign_key "text_translations", "languages", column: "language_target_id"

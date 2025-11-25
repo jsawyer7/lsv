@@ -1,6 +1,8 @@
 ActiveAdmin.register TextContent do
   permit_params :source_id, :book_id, :text_unit_type_id, :language_id, :parent_unit_id,
                 :unit_group, :unit, :content, :unit_key, :word_for_word_translation, :lsv_literal_reconstruction,
+                :addressed_party_code, :addressed_party_custom_name, :responsible_party_code, 
+                :responsible_party_custom_name, :genre_code,
                 canon_ids: []
   menu parent: "Data Tables", label: "Text Contents", priority: 8
   
@@ -99,12 +101,16 @@ ActiveAdmin.register TextContent do
         permitted = text_content_params.permit(
           :source_id, :book_id, :text_unit_type_id, :language_id, :parent_unit_id,
           :unit_group, :unit, :content, :unit_key, :word_for_word_translation, :lsv_literal_reconstruction,
+          :addressed_party_code, :addressed_party_custom_name, :responsible_party_code,
+          :responsible_party_custom_name, :genre_code,
           canon_ids: []
         )
       else
         permitted = ActionController::Parameters.new(text_content_params || {}).permit(
           :source_id, :book_id, :text_unit_type_id, :language_id, :parent_unit_id,
           :unit_group, :unit, :content, :unit_key, :word_for_word_translation, :lsv_literal_reconstruction,
+          :addressed_party_code, :addressed_party_custom_name, :responsible_party_code,
+          :responsible_party_custom_name, :genre_code,
           canon_ids: []
         )
       end
@@ -579,16 +585,43 @@ ActiveAdmin.register TextContent do
                   table class: "table table-striped table-bordered" do
                     thead class: "table-dark" do
                       tr do
-                        th "#{f.object.language.name} Word", style: "width: 30%;"
-                        th "English Translation", style: "width: 30%;"
-                        th "AI Translation Comments", style: "width: 40%;"
+                        th "#{f.object.language&.name || 'Source'} Token", style: "width: 15%;"
+                        th "Lemma", style: "width: 12%;"
+                        th "Morphology", style: "width: 15%;"
+                        th "Base Gloss", style: "width: 15%;"
+                        th "Secondary Glosses", style: "width: 15%;"
+                        th "Completeness", style: "width: 8%;"
+                        th "Notes", style: "width: 20%;"
                       end
                     end
                     tbody do
                       f.object.word_for_word_array.each do |word|
                         tr do
-                          td class: "fw-semibold" do word['word'] || word[:word] || '' end
-                          td do word['literal_meaning'] || word[:literal_meaning] || '' end
+                          td class: "fw-semibold" do 
+                            word['token'] || word[:token] || word['word'] || word[:word] || ''
+                          end
+                          td class: "small" do word['lemma'] || word[:lemma] || '-' end
+                          td class: "small" do word['morphology'] || word[:morphology] || '-' end
+                          td do word['base_gloss'] || word[:base_gloss] || word['literal_meaning'] || word[:literal_meaning] || '' end
+                          td class: "small" do 
+                            if word['secondary_glosses'] && word['secondary_glosses'].is_a?(Array)
+                              word['secondary_glosses'].join(', ')
+                            elsif word[:secondary_glosses] && word[:secondary_glosses].is_a?(Array)
+                              word[:secondary_glosses].join(', ')
+                            else
+                              '-'
+                            end
+                          end
+                          td class: "small" do 
+                            completeness = word['completeness'] || word[:completeness] || ''
+                            if completeness == 'COMPLETE'
+                              span class: "badge bg-success" do completeness end
+                            elsif completeness == 'INCOMPLETE'
+                              span class: "badge bg-warning" do completeness end
+                            else
+                              completeness
+                            end
+                          end
                           td class: "small text-muted" do word['notes'] || word[:notes] || '' end
                         end
                       end
@@ -612,8 +645,97 @@ ActiveAdmin.register TextContent do
             end
           end
 
+          # Party and Genre Classification
+          div class: "row mt-4" do
+            div class: "col-md-6" do
+              div class: "materio-form-group" do
+                div class: "materio-form-label" do
+                  i class: "ri ri-user-line me-2"
+                  span "Addressed Party"
+                end
+                f.input :addressed_party_code,
+                        as: :select,
+                        collection: PartyType.ordered.map { |pt| [pt.label, pt.code] },
+                        include_blank: "Select Addressed Party",
+                        class: "materio-form-control",
+                        label: false,
+                        input_html: {
+                          class: "materio-form-control",
+                          style: "width: 100%; max-width: 500px;"
+                        }
+              end
+              div class: "materio-form-group mt-2" do
+                div class: "materio-form-label" do
+                  i class: "ri ri-edit-line me-2"
+                  span "Addressed Party Custom Name"
+                  span " (if CHURCH selected)", class: "text-muted ms-2 small"
+                end
+                f.input :addressed_party_custom_name,
+                        as: :string,
+                        class: "materio-form-control",
+                        label: false,
+                        input_html: {
+                          class: "materio-form-control",
+                          style: "width: 100%; max-width: 500px;",
+                          placeholder: "e.g., GALATIA, CORINTH, ROME"
+                        }
+              end
+            end
+            div class: "col-md-6" do
+              div class: "materio-form-group" do
+                div class: "materio-form-label" do
+                  i class: "ri ri-user-settings-line me-2"
+                  span "Responsible Party"
+                end
+                f.input :responsible_party_code,
+                        as: :select,
+                        collection: PartyType.ordered.map { |pt| [pt.label, pt.code] },
+                        include_blank: "Select Responsible Party",
+                        class: "materio-form-control",
+                        label: false,
+                        input_html: {
+                          class: "materio-form-control",
+                          style: "width: 100%; max-width: 500px;"
+                        }
+              end
+              div class: "materio-form-group mt-2" do
+                div class: "materio-form-label" do
+                  i class: "ri ri-edit-line me-2"
+                  span "Responsible Party Custom Name"
+                  span " (if CHURCH selected)", class: "text-muted ms-2 small"
+                end
+                f.input :responsible_party_custom_name,
+                        as: :string,
+                        class: "materio-form-control",
+                        label: false,
+                        input_html: {
+                          class: "materio-form-control",
+                          style: "width: 100%; max-width: 500px;",
+                          placeholder: "e.g., GALATIA, CORINTH, ROME"
+                        }
+              end
+            end
+          end
+
+          div class: "materio-form-group mt-3" do
+            div class: "materio-form-label" do
+              i class: "ri ri-book-mark-line me-2"
+              span "Genre"
+            end
+            f.input :genre_code,
+                    as: :select,
+                    collection: GenreType.ordered.map { |gt| [gt.label, gt.code] },
+                    include_blank: "Select Genre",
+                    class: "materio-form-control",
+                    label: false,
+                    input_html: {
+                      class: "materio-form-control",
+                      style: "width: 100%; max-width: 500px;"
+                    }
+          end
+
           # Canon checkboxes in a grid - dynamically show only canons that exist in database
-          div class: "materio-form-group" do
+          div class: "materio-form-group mt-4" do
             div class: "materio-form-label mb-3" do
               i class: "ri ri-list-check me-2"
               span "Canon Assignments"
@@ -875,6 +997,9 @@ ActiveAdmin.register TextContent do
                   div class: "text-muted small fw-semibold mb-2" do
                     i class: "ri ri-code-line me-2"
                     "Unit Key"
+                    span class: "ms-2 text-muted", style: "font-size: 0.75rem; font-weight: normal;" do
+                      "(unit_key)"
+                    end
                   end
                   div class: "fw-semibold text-dark" do resource.unit_key end
                 end
@@ -884,6 +1009,9 @@ ActiveAdmin.register TextContent do
                   div class: "text-muted small fw-semibold mb-2" do
                     i class: "ri ri-book-line me-2"
                     "Source"
+                    span class: "ms-2 text-muted", style: "font-size: 0.75rem; font-weight: normal;" do
+                      "(source_id)"
+                    end
                   end
                   div class: "fw-semibold text-dark" do resource.source.name end
                 end
@@ -893,6 +1021,9 @@ ActiveAdmin.register TextContent do
                   div class: "text-muted small fw-semibold mb-2" do
                     i class: "ri ri-book-open-line me-2"
                     "Book"
+                    span class: "ms-2 text-muted", style: "font-size: 0.75rem; font-weight: normal;" do
+                      "(book_id)"
+                    end
                   end
                   div class: "fw-semibold text-dark" do resource.book.std_name end
                 end
@@ -902,6 +1033,9 @@ ActiveAdmin.register TextContent do
                   div class: "text-muted small fw-semibold mb-2" do
                     i class: "ri ri-list-check me-2"
                     "Unit Type"
+                    span class: "ms-2 text-muted", style: "font-size: 0.75rem; font-weight: normal;" do
+                      "(text_unit_type_id)"
+                    end
                   end
                   div class: "fw-semibold text-dark" do resource.text_unit_type.name end
                 end
@@ -911,6 +1045,9 @@ ActiveAdmin.register TextContent do
                   div class: "text-muted small fw-semibold mb-2" do
                     i class: "ri ri-file-text-line me-2"
                     "Content"
+                    span class: "ms-2 text-muted", style: "font-size: 0.75rem; font-weight: normal;" do
+                      "(content)"
+                    end
                   end
                   div class: "fw-semibold text-dark" do resource.content end
                 end
@@ -920,12 +1057,117 @@ ActiveAdmin.register TextContent do
                   div class: "text-muted small fw-semibold mb-2" do
                     i class: "ri ri-text-wrap me-2"
                     "LSV Literal Reconstruction"
+                    span class: "ms-2 text-muted", style: "font-size: 0.75rem; font-weight: normal;" do
+                      "(lsv_literal_reconstruction)"
+                    end
                   end
                   div class: "fw-semibold text-dark" do
                     if resource.lsv_literal_reconstruction.present?
                       resource.lsv_literal_reconstruction
                     else
                       span class: "text-muted" do "No LSV literal reconstruction provided" end
+                    end
+                  end
+                end
+              end
+              div class: "col-md-6" do
+                div class: "materio-info-item" do
+                  div class: "text-muted small fw-semibold mb-2" do
+                    i class: "ri ri-user-line me-2"
+                    "Addressed Party"
+                    span class: "ms-2 text-muted", style: "font-size: 0.75rem; font-weight: normal;" do
+                      "(addressed_party_code)"
+                    end
+                  end
+                  div class: "fw-semibold text-dark" do
+                    if resource.addressed_party_code.present?
+                      party_display = resource.addressed_party.label
+                      if resource.addressed_party.code == 'CHURCH' && resource.addressed_party_custom_name.present?
+                        party_display += " (#{resource.addressed_party_custom_name})"
+                      end
+                      span do party_display end
+                      br
+                      span class: "text-muted small", style: "font-weight: normal;" do
+                        "Code: #{resource.addressed_party_code}"
+                      end
+                    else
+                      span class: "text-muted" do "Not assigned" end
+                      br
+                      span class: "text-muted small", style: "font-weight: normal;" do
+                        "(Field is empty - AI has not populated this yet)"
+                      end
+                    end
+                  end
+                  if resource.addressed_party_custom_name.present?
+                    div class: "mt-2" do
+                      div class: "text-muted small fw-semibold mb-1" do
+                        "Custom Name (addressed_party_custom_name):"
+                      end
+                      div class: "fw-semibold text-dark" do resource.addressed_party_custom_name end
+                    end
+                  end
+                end
+              end
+              div class: "col-md-6" do
+                div class: "materio-info-item" do
+                  div class: "text-muted small fw-semibold mb-2" do
+                    i class: "ri ri-user-settings-line me-2"
+                    "Responsible Party"
+                    span class: "ms-2 text-muted", style: "font-size: 0.75rem; font-weight: normal;" do
+                      "(responsible_party_code)"
+                    end
+                  end
+                  div class: "fw-semibold text-dark" do
+                    if resource.responsible_party_code.present?
+                      party_display = resource.responsible_party.label
+                      if resource.responsible_party.code == 'CHURCH' && resource.responsible_party_custom_name.present?
+                        party_display += " (#{resource.responsible_party_custom_name})"
+                      end
+                      span do party_display end
+                      br
+                      span class: "text-muted small", style: "font-weight: normal;" do
+                        "Code: #{resource.responsible_party_code}"
+                      end
+                    else
+                      span class: "text-muted" do "Not assigned" end
+                      br
+                      span class: "text-muted small", style: "font-weight: normal;" do
+                        "(Field is empty - AI has not populated this yet)"
+                      end
+                    end
+                  end
+                  if resource.responsible_party_custom_name.present?
+                    div class: "mt-2" do
+                      div class: "text-muted small fw-semibold mb-1" do
+                        "Custom Name (responsible_party_custom_name):"
+                      end
+                      div class: "fw-semibold text-dark" do resource.responsible_party_custom_name end
+                    end
+                  end
+                end
+              end
+              div class: "col-md-6" do
+                div class: "materio-info-item" do
+                  div class: "text-muted small fw-semibold mb-2" do
+                    i class: "ri ri-book-mark-line me-2"
+                    "Genre"
+                    span class: "ms-2 text-muted", style: "font-size: 0.75rem; font-weight: normal;" do
+                      "(genre_code)"
+                    end
+                  end
+                  div class: "fw-semibold text-dark" do
+                    if resource.genre_code.present?
+                      span do resource.genre.label end
+                      br
+                      span class: "text-muted small", style: "font-weight: normal;" do
+                        "Code: #{resource.genre_code}"
+                      end
+                    else
+                      span class: "text-muted" do "Not assigned" end
+                      br
+                      span class: "text-muted small", style: "font-weight: normal;" do
+                        "(Field is empty - AI has not populated this yet)"
+                      end
                     end
                   end
                 end
@@ -941,17 +1183,94 @@ ActiveAdmin.register TextContent do
                       table class: "table table-striped table-bordered" do
                         thead class: "table-dark" do
                           tr do
-                            th "#{resource.language.name} Word", style: "width: 30%;"
-                            th "English Translation", style: "width: 30%;"
-                            th "AI Translation Comments", style: "width: 40%;"
+                            th "#{resource.language.name} Token", style: "width: 15%;"
+                            th "Lemma", style: "width: 12%;"
+                            th "Morphology", style: "width: 15%;"
+                            th "Base Gloss", style: "width: 15%;"
+                            th "Secondary Glosses", style: "width: 15%;"
+                            th "Completeness", style: "width: 8%;"
+                            th "Notes", style: "width: 20%;"
                           end
                         end
                         tbody do
                           resource.word_for_word_array.each do |word|
                             tr do
-                              td class: "fw-semibold" do word['word'] || word[:word] || '' end
-                              td do word['literal_meaning'] || word[:literal_meaning] || '' end
+                              td class: "fw-semibold" do 
+                                word['token'] || word[:token] || word['word'] || word[:word] || ''
+                              end
+                              td class: "small" do word['lemma'] || word[:lemma] || '-' end
+                              td class: "small" do word['morphology'] || word[:morphology] || '-' end
+                              td do word['base_gloss'] || word[:base_gloss] || word['literal_meaning'] || word[:literal_meaning] || '' end
+                              td class: "small" do 
+                                if word['secondary_glosses'] && word['secondary_glosses'].is_a?(Array)
+                                  word['secondary_glosses'].join(', ')
+                                elsif word[:secondary_glosses] && word[:secondary_glosses].is_a?(Array)
+                                  word[:secondary_glosses].join(', ')
+                                else
+                                  '-'
+                                end
+                              end
+                              td class: "small" do 
+                                completeness = word['completeness'] || word[:completeness] || ''
+                                if completeness == 'COMPLETE'
+                                  span class: "badge bg-success" do completeness end
+                                elsif completeness == 'INCOMPLETE'
+                                  span class: "badge bg-warning" do completeness end
+                                else
+                                  completeness
+                                end
+                              end
                               td class: "small text-muted" do word['notes'] || word[:notes] || '' end
+                            end
+                          end
+                        end
+                      end
+                    end
+                    
+                    # Display LSV Notes if available
+                    if resource.lsv_notes.present? && resource.lsv_notes.is_a?(Hash)
+                      div class: "mt-4" do
+                        div class: "card" do
+                          div class: "card-header bg-info text-white" do
+                            h6 class: "mb-0" do "LSV Translation Notes" end
+                          end
+                          div class: "card-body" do
+                            if resource.lsv_notes['lexical_options'].present?
+                              div class: "mb-3" do
+                                strong "Lexical Options:"
+                                ul class: "mb-0" do
+                                  resource.lsv_notes['lexical_options'].each do |option|
+                                    li do
+                                      "#{option['token']}: Primary: #{option['primary_sense_used']}, Secondary: #{option['secondary_senses_valid']&.join(', ') || 'none'}"
+                                    end
+                                  end
+                                end
+                              end
+                            end
+                            if resource.lsv_notes['structural_support'].present?
+                              div class: "mb-3" do
+                                strong "Structural Support:"
+                                ul class: "mb-0" do
+                                  resource.lsv_notes['structural_support'].each do |support|
+                                    li do support end
+                                  end
+                                end
+                              end
+                            end
+                            if resource.lsv_notes['validation_status'].present?
+                              div do
+                                strong "Validation Status: "
+                                status = resource.lsv_notes['validation_status']
+                                if status == 'OK'
+                                  span class: "badge bg-success" do status end
+                                elsif status == 'MISSING_LEXICAL_MEANINGS'
+                                  span class: "badge bg-warning" do status end
+                                elsif status == 'INVALID_MEANING'
+                                  span class: "badge bg-danger" do status end
+                                else
+                                  span class: "badge bg-secondary" do status end
+                                end
+                              end
                             end
                           end
                         end

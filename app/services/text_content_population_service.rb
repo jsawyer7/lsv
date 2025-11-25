@@ -107,6 +107,12 @@ class TextContentPopulationService
         source_text: parsed['source_text'],
         word_for_word: parsed['word_for_word'] || [],
         lsv_literal_reconstruction: parsed['lsv_literal_reconstruction'],
+        lsv_notes: parsed['lsv_notes'] || {},
+        addressed_party_code: parsed['addressed_party_code'],
+        addressed_party_custom_name: parsed['addressed_party_custom_name'],
+        responsible_party_code: parsed['responsible_party_code'],
+        responsible_party_custom_name: parsed['responsible_party_custom_name'],
+        genre_code: parsed['genre_code'],
         ai_notes: parsed['ai_notes'],
         raw_response: ai_response
       }
@@ -149,20 +155,103 @@ class TextContentPopulationService
       
       Your task is to:
       1. Extract the EXACT text from the specified source (character-by-character accuracy required)
-      2. Create a word-for-word translation table with three columns:
-         - Source language word (exact as in source)
-         - English translation (dictionary meaning, not contextual interpretation)
-         - AI translation comments (explain word choice, alternative meanings, grammatical notes)
-      3. Provide a literal reconstruction that preserves the source language structure while being readable in English
+      2. Create a complete word-for-word translation chart with full lexical coverage
+      3. Provide an LSV literal translation built strictly from the word-for-word chart
       
-      CRITICAL REQUIREMENTS:
-      - The source text must be 100% exactly as it appears in the source, including all punctuation, diacritics, and spacing
-      - Do not modify, modernize, or "correct" the source text
-      - Word-for-word translation should be dictionary-based, not contextually interpreted
-      - Include all alternative meanings when a word has multiple possible translations
-      - Preserve the exact word order from the source
+      ================================================================================
+      WORD-FOR-WORD TRANSLATION REQUIREMENTS (CRITICAL - 98% ACCURACY TARGET)
+      ================================================================================
       
-      LSV RULE - STRICTLY ENFORCED:
+      1. EXACT SOURCE TEXT
+      - You must use the EXACT stored text from the source (character-by-character)
+      - Include ALL characters, accents/diacritics, punctuation, word order
+      - Do NOT reconstruct, guess, modernize, or "correct" the source text
+      - If you cannot access the exact source text, you MUST indicate this clearly
+      
+      2. TOKEN-BY-TOKEN MAPPING
+      For EACH word/token in the source text, you must provide:
+      {
+        "token": "<exact source word as it appears>",
+        "lemma": "<root/lemma if applicable for this language>",
+        "morphology": "<part of speech / parsing if applicable>",
+        "base_gloss": "<primary minimal literal gloss>",
+        "secondary_glosses": ["<other literal glosses if lexically valid>"],
+        "completeness": "COMPLETE | INCOMPLETE",
+        "notes": "<grammatical notes, case, tense, voice, etc.>"
+      }
+      
+      3. LEXICAL COVERAGE (MULTI-SENSE WORDS) - CRITICAL
+      - For each token, you MUST look up its FULL lexical range in approved lexicons
+      - If a word has multiple lexically valid meanings, you MUST include ALL of them
+      - Example: If "κατέλαβεν" can mean "overcame", "overtook", "comprehended", "understood"
+        → You MUST list ALL valid literal senses in base_gloss + secondary_glosses
+      - Do NOT limit to only one meaning if others are equally legitimate
+      - If any lexically valid sense is missing, mark completeness: "INCOMPLETE"
+      - You must NOT include:
+        * Theological, doctrinal, or paraphrase meanings
+        * Only meanings that are lexically attested for that word in that language
+      
+      4. LANGUAGE-AGNOSTIC APPROACH
+      - These rules apply to ALL source types: Greek, Hebrew, Aramaic, Latin, Ge'ez, Syriac, English, etc.
+      - All sources must follow: exact text → tokenization → literal gloss
+      - No special-case theology per language
+      - All driven by stored text + lexicon, nothing else
+      
+      5. VALIDATION FLAGS
+      Your output should indicate:
+      - OK: Exact text match and lexical coverage is complete
+      - TEXT_MISMATCH: If text differs from stored source (should not happen if you have access)
+      - MISSING_LEXICAL_MEANINGS: If any token has incomplete lexical range
+      - INVALID_MEANING: If a gloss uses a meaning not found in lexicon
+      
+      ================================================================================
+      LSV TRANSLATION REQUIREMENTS (BUILT ON WORD-FOR-WORD LAYER)
+      ================================================================================
+      
+      1. LSV TRANSLATION MUST ONLY USE WORD-FOR-WORD CHART
+      - The LSV translation CANNOT introduce:
+        * Paraphrases
+        * Theology
+        * Interpretation
+        * Smoothing
+        * Denominational bias
+      - It MUST translate using ONLY:
+        * The exact source text
+        * The exact tokens from word-for-word chart
+        * The exact lexical ranges from word-for-word chart
+      - If a meaning is NOT in the lexical range → LSV translation CANNOT use it
+      
+      2. LSV TRANSLATION MUST REFLECT ALL VALID LEXICAL SENSES
+      - If a word has multiple legitimate literal senses, the word-for-word chart lists all
+      - The LSV translation must:
+        * Choose the most context-literal sense
+        * Footnote or annotate secondary valid senses
+      - This prevents eliminating legitimate literal meanings
+      
+      3. LSV TRANSLATION MUST NOT EXCEED SOURCE TEXT
+      - Must stay strictly inside:
+        * Exact word order (if possible in English)
+        * Literal grammar hierarchy
+        * No addition of subjects, objects, or smoothing unless English requires minimal structural support
+      - If English requires smoothing → mark it in metadata as STRUCTURAL SUPPORT ONLY, not translation
+      
+      4. NO LSV TRANSLATION CAN OVERRIDE THE LEXICON
+      - If a verb means A and B, and you pick only A, you must still show that B is legitimate
+      - This prevents false dogmatic translations
+      
+      5. LSV TRANSLATION FOLLOWS 3-LAYER STRUCTURE
+      - Layer 1: Exact Source Text (database)
+      - Layer 2: Word-for-Word Analysis (token-by-token)
+      - Layer 3: LSV Literal Translation (sentence-level)
+      - Translation is ALWAYS built only from Layer 2
+      
+      6. ANY MISSING MEANINGS = AUTOMATIC FAILURE
+      - If a verb has 3 valid senses but only 1 was included → LSV translation is automatically invalid
+      - Because LSV translation is built on token-level lexical completeness
+      
+      ================================================================================
+      LSV RULE - STRICTLY ENFORCED
+      ================================================================================
       "No external philosophical, theological, or cultural meanings may be imported."
       - Do NOT add philosophical definitions, classical Greek philosophical concepts, or theological interpretations
       - Do NOT add modern lexicon expansions that import external meanings
@@ -172,7 +261,11 @@ class TextContentPopulationService
         * Grammatical notes (case, tense, voice, etc.)
         * Alternative dictionary translations
         * Basic linguistic information
-      - If a word has multiple dictionary meanings, list them, but do NOT import philosophical or theological interpretations
+      - If a word has multiple dictionary meanings, list them ALL, but do NOT import philosophical or theological interpretations
+      
+      SPECIFIC WORD EXAMPLES:
+      - For λόγος: Use ONLY "word" or "speech" or "statement" - DO NOT add "reason" or "principle" as these are philosophical imports
+      - For any word: Only use dictionary meanings that are purely linguistic, not philosophical/theological extensions
     PROMPT
   end
 
@@ -184,41 +277,86 @@ class TextContentPopulationService
       Verse: #{@verse}
       Source Language: #{@source.language.name}
       
-      Please provide the following in JSON format:
+      Please provide the following in JSON format with COMPLETE lexical coverage:
       
       {
-        "source_text": "The EXACT text from #{@source.name} for #{@book.std_name} #{@chapter}:#{@verse}, character-by-character accurate",
+        "source_text": "The EXACT text from #{@source.name} for #{@book.std_name} #{@chapter}:#{@verse}, character-by-character accurate. Include ALL punctuation, diacritics, accents, spacing exactly as in the source.",
+        
         "word_for_word": [
           {
-            "word": "exact word from source",
-            "literal_meaning": "dictionary meaning",
-            "confidence": 100,
-            "notes": "explanation of word choice, alternatives, grammatical notes"
+            "token": "<exact word as it appears in source text>",
+            "lemma": "<root/lemma if applicable for this language>",
+            "morphology": "<part of speech / parsing if applicable (e.g., 'Noun, Nominative, Masculine, Singular')>",
+            "base_gloss": "<primary minimal literal gloss - the most common dictionary meaning>",
+            "secondary_glosses": ["<other literal glosses if lexically valid>", "<include ALL valid meanings>"],
+            "completeness": "COMPLETE | INCOMPLETE",
+            "notes": "<grammatical notes: case, tense, voice, mood, number, gender, etc. Do NOT include theological or philosophical interpretations. Only linguistic information.>"
           }
         ],
-        "lsv_literal_reconstruction": "Literal English reconstruction preserving source structure",
+        
+        "lsv_literal_reconstruction": "Literal English sentence-level translation built STRICTLY from the word_for_word chart. Must use only meanings from the lexical ranges provided. Must preserve source word order where possible. If structural support is needed for English readability, note it in lsv_notes.",
+        
+        "lsv_notes": {
+          "lexical_options": [
+            {
+              "token": "<word that has multiple valid senses>",
+              "primary_sense_used": "<sense chosen for translation>",
+              "secondary_senses_valid": ["<other valid senses>", "<include ALL>"]
+            }
+          ],
+          "structural_support": [
+            "<any English structural elements added for readability only, not translation>"
+          ],
+          "validation_status": "OK | MISSING_LEXICAL_MEANINGS | INVALID_MEANING"
+        },
+        
+        "addressed_party_code": "ONE of: INDIVIDUAL, ISRAEL, JUDAH, JEWS, GENTILES, DISCIPLES, BELIEVERS, ALL_PEOPLE, CHURCH, NOT_SPECIFIED",
+        "addressed_party_custom_name": "If addressed_party_code is CHURCH, provide the church name (e.g., GALATIA, CORINTH, ROME). Otherwise null.",
+        "responsible_party_code": "ONE of: INDIVIDUAL, ISRAEL, JUDAH, JEWS, GENTILES, DISCIPLES, BELIEVERS, ALL_PEOPLE, CHURCH, NOT_SPECIFIED",
+        "responsible_party_custom_name": "If responsible_party_code is CHURCH, provide the church name. Otherwise null.",
+        "genre_code": "ONE of: NARRATIVE, LAW, PROPHECY, WISDOM, POETRY_SONG, GOSPEL_TEACHING_SAYING, EPISTLE_LETTER, APOCALYPTIC_VISION, GENEALOGY_LIST, PRAYER",
         "ai_notes": "Any additional notes about the text, variants, or translation challenges"
       }
       
-      IMPORTANT:
-      - Extract the text EXACTLY as it appears in #{@source.name}
-      - Do not add, remove, or modify any characters
-      - Include all punctuation, diacritics, and spacing exactly as in the source
-      - For word_for_word array, preserve the exact order of words from the source
-      - English translations should be dictionary-based, not contextually interpreted
-      - Use "word" for source language word, "literal_meaning" for English translation, "confidence" (1-100), and "notes" for AI comments
+      ================================================================================
+      CRITICAL REQUIREMENTS FOR WORD-FOR-WORD CHART:
+      ================================================================================
       
-      LSV RULE - CRITICAL:
-      In the "notes" field for each word, you MUST:
-      - Only provide dictionary-based meanings and grammatical notes
-      - Do NOT add philosophical definitions, theological interpretations, or cultural meanings
-      - Do NOT import external philosophical concepts (e.g., "classical Greek philosophy", "Platonic concepts")
-      - Do NOT add theological interpretations beyond basic dictionary meanings
-      - Do NOT expand with modern lexicon meanings that import external philosophical/theological concepts
-      - Focus ONLY on: grammatical information, dictionary definitions, alternative dictionary translations
+      1. EXACT SOURCE TEXT
+      - Extract the text EXACTLY as it appears in #{@source.name}
+      - Do NOT add, remove, or modify ANY characters
+      - Include ALL punctuation, diacritics, accents, and spacing exactly as in the source
+      - Preserve the exact word order from the source
+      
+      2. COMPLETE LEXICAL COVERAGE (MOST CRITICAL)
+      - For EACH token, you MUST look up its FULL lexical range in approved lexicons
+      - If a word has multiple lexically valid meanings, you MUST include ALL of them in base_gloss + secondary_glosses
+      - Example: If "κατέλαβεν" can lexically mean:
+        * "overcame" (literal)
+        * "overtook" (literal)
+        * "comprehended" (literal)
+        * "understood" (literal)
+        → You MUST list ALL four in your word_for_word entry
+      - If you miss any lexically valid sense, mark completeness: "INCOMPLETE"
+      - Do NOT limit to only the "most common" meaning - include ALL legitimate literal senses
+      
+      3. TOKEN STRUCTURE
+      - "token": The exact word as it appears in source (preserve case, accents, etc.)
+      - "lemma": The dictionary form/root (e.g., for Greek verbs, give the lexical form)
+      - "morphology": Part of speech and grammatical parsing (e.g., "Verb, Aorist, Active, Indicative, 3rd Person, Singular")
+      - "base_gloss": The primary dictionary meaning
+      - "secondary_glosses": Array of ALL other valid literal meanings from the lexicon
+      - "completeness": "COMPLETE" only if ALL lexically valid meanings are included
+      
+      4. NOTES FIELD - LINGUISTIC ONLY
+      - Include ONLY: grammatical information (case, tense, voice, mood, number, gender)
+      - Include ONLY: dictionary definitions and alternative dictionary translations
+      - Do NOT include: philosophical definitions, theological interpretations, cultural meanings
+      - Do NOT import: external philosophical concepts, classical Greek philosophy, Platonic concepts
+      - Do NOT add: theological interpretations beyond basic dictionary meanings
       
       Example of CORRECT notes:
-      "Dative case, meaning 'at' or 'in'. Can also mean 'with' in some contexts."
+      "Verb, Aorist, Active, Indicative, 3rd Person, Singular. Dative case, meaning 'at' or 'in'. Can also mean 'with' in some contexts."
       
       Example of INCORRECT notes (DO NOT DO THIS):
       "In classical Greek philosophy, this word carries deep philosophical meaning related to..."
@@ -228,17 +366,74 @@ class TextContentPopulationService
       SPECIFIC WORD EXAMPLES:
       - For λόγος: Use ONLY "word" or "speech" or "statement" - DO NOT add "reason" or "principle" as these are philosophical imports
       - For any word: Only use dictionary meanings that are purely linguistic, not philosophical/theological extensions
+      
+      ================================================================================
+      CRITICAL REQUIREMENTS FOR LSV TRANSLATION:
+      ================================================================================
+      
+      1. LSV TRANSLATION MUST BE BUILT ONLY FROM WORD-FOR-WORD CHART
+      - You CANNOT use meanings that are NOT in the word_for_word lexical ranges
+      - You CANNOT add paraphrases, theology, interpretation, smoothing, or denominational bias
+      - You MUST use only: exact source text + exact tokens + exact lexical ranges
+      
+      2. LSV TRANSLATION MUST REFLECT ALL VALID LEXICAL SENSES
+      - If a word has multiple legitimate literal senses in word_for_word, you must:
+        * Choose the most context-literal sense for the translation
+        * Document ALL other valid senses in lsv_notes.lexical_options
+      - This prevents eliminating legitimate literal meanings
+      
+      3. LSV TRANSLATION MUST NOT EXCEED SOURCE TEXT
+      - Preserve exact word order where possible in English
+      - Use literal grammar hierarchy
+      - Do NOT add subjects, objects, or smoothing unless English requires minimal structural support
+      - If structural support is needed, note it in lsv_notes.structural_support as "STRUCTURAL SUPPORT ONLY"
+      
+      4. VALIDATION STATUS
+      - Set lsv_notes.validation_status to:
+        * "OK" if lexical coverage is complete and LSV translation uses only valid meanings
+        * "MISSING_LEXICAL_MEANINGS" if any token has incomplete lexical range
+        * "INVALID_MEANING" if LSV translation uses a meaning not in the lexicon
+      
+      ================================================================================
+      CLASSIFICATION RULES:
+      ================================================================================
+      - Addressed Party: Who is the text speaking TO? If it's a letter (e.g., "To the church in Corinth"), use CHURCH and set custom_name to "CORINTH". If not specified, use NOT_SPECIFIED.
+      - Responsible Party: Who is the text speaking ABOUT or who is responsible? If not specified, use NOT_SPECIFIED.
+      - Genre: Classify the text type. For letters/epistles, use EPISTLE_LETTER. For narrative sections, use NARRATIVE. For teachings/sayings, use GOSPEL_TEACHING_SAYING. For prayers, use PRAYER. For legal text, use LAW. For poetry/songs, use POETRY_SONG. For prophecy, use PROPHECY. For wisdom literature, use WISDOM. For apocalyptic visions, use APOCALYPTIC_VISION. For genealogies/lists, use GENEALOGY_LIST.
+      
+      ================================================================================
+      REMEMBER: 98% ACCURACY TARGET
+      ================================================================================
+      - Complete lexical coverage is the #1 priority
+      - Missing any lexically valid meaning = INCOMPLETE
+      - LSV translation must be built strictly from word-for-word chart
+      - No theological or philosophical imports allowed
     PROMPT
   end
 
   def update_text_content(result)
-    @text_content.update!(
+    # Store word_for_word with lsv_notes as a structured object
+    word_for_word_data = {
+      tokens: result[:word_for_word] || [],
+      lsv_notes: result[:lsv_notes] || {}
+    }
+    
+    update_params = {
       content: result[:source_text],
-      word_for_word_translation: result[:word_for_word],
+      word_for_word_translation: word_for_word_data,
       lsv_literal_reconstruction: result[:lsv_literal_reconstruction],
       content_populated_at: Time.current,
       content_populated_by: 'grok-3'
-    )
+    }
+    
+    # Add party and genre fields if present
+    update_params[:addressed_party_code] = result[:addressed_party_code] if result[:addressed_party_code].present?
+    update_params[:addressed_party_custom_name] = result[:addressed_party_custom_name] if result[:addressed_party_custom_name].present?
+    update_params[:responsible_party_code] = result[:responsible_party_code] if result[:responsible_party_code].present?
+    update_params[:responsible_party_custom_name] = result[:responsible_party_custom_name] if result[:responsible_party_custom_name].present?
+    update_params[:genre_code] = result[:genre_code] if result[:genre_code].present?
+    
+    @text_content.update!(update_params)
   end
 
   def log_population(result)

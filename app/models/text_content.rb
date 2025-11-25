@@ -4,6 +4,9 @@ class TextContent < ApplicationRecord
   belongs_to :text_unit_type
   belongs_to :language
   belongs_to :parent_unit, class_name: 'TextContent', optional: true
+  belongs_to :addressed_party, class_name: 'PartyType', foreign_key: 'addressed_party_code', primary_key: 'code', optional: true
+  belongs_to :responsible_party, class_name: 'PartyType', foreign_key: 'responsible_party_code', primary_key: 'code', optional: true
+  belongs_to :genre, class_name: 'GenreType', foreign_key: 'genre_code', primary_key: 'code', optional: true
   has_many :child_units, class_name: 'TextContent', foreign_key: 'parent_unit_id', dependent: :destroy
   has_many :text_translations, dependent: :destroy
   has_many :canon_text_contents, dependent: :destroy
@@ -40,7 +43,26 @@ class TextContent < ApplicationRecord
 
   def word_for_word_array
     return [] if word_for_word_translation.blank?
+    
+    # Handle new structure: { tokens: [...], lsv_notes: {...} }
+    if word_for_word_translation.is_a?(Hash) && word_for_word_translation['tokens']
+      return word_for_word_translation['tokens'] || []
+    end
+    
+    # Handle old structure: direct array
     word_for_word_translation.is_a?(Array) ? word_for_word_translation : []
+  end
+  
+  def lsv_notes
+    return {} if word_for_word_translation.blank?
+    
+    # Handle new structure: { tokens: [...], lsv_notes: {...} }
+    if word_for_word_translation.is_a?(Hash) && word_for_word_translation['lsv_notes']
+      return word_for_word_translation['lsv_notes'] || {}
+    end
+    
+    # Old structure doesn't have lsv_notes
+    {}
   end
 
   def content_populated?
@@ -69,11 +91,12 @@ class TextContent < ApplicationRecord
   def self.ransackable_attributes(auth_object = nil)
     ["book_id", "unit_group", "content", "created_at", "id", "language_id", "parent_unit_id", 
      "source_id", "text_unit_type_id", "unit_key", "unit", "updated_at", "word_for_word_translation",
-     "lsv_literal_reconstruction"]
+     "lsv_literal_reconstruction", "addressed_party_code", "responsible_party_code", "genre_code"]
   end
 
   def self.ransackable_associations(auth_object = nil)
-    ["book", "canon_text_contents", "canons", "child_units", "language", "parent_unit", "source", "text_unit_type"]
+    ["book", "canon_text_contents", "canons", "child_units", "language", "parent_unit", "source", "text_unit_type",
+     "addressed_party", "responsible_party", "genre"]
   end
 
   private
