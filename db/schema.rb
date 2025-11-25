@@ -186,25 +186,12 @@ ActiveRecord::Schema[7.0].define(version: 2025_12_11_183213) do
     t.boolean "published", default: false
     t.vector "content_embedding", limit: 3072
     t.string "normalized_content_hash"
-    t.text "tradition_hashes"
     t.text "normalized_content"
+    t.text "tradition_hashes"
+    t.index ["normalized_content"], name: "index_claims_on_normalized_content"
     t.index ["normalized_content_hash", "user_id"], name: "index_claims_on_normalized_content_hash_and_user_id"
     t.index ["normalized_content_hash"], name: "index_claims_on_normalized_content_hash"
     t.index ["user_id"], name: "index_claims_on_user_id"
-  end
-
-  create_table "customers", force: :cascade do |t|
-    t.string "chargebee_id"
-    t.bigint "user_id", null: false
-    t.string "email"
-    t.string "first_name"
-    t.string "last_name"
-    t.string "company"
-    t.string "phone"
-    t.jsonb "metadata"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["user_id"], name: "index_customers_on_user_id"
   end
 
   create_table "directions", force: :cascade do |t|
@@ -218,10 +205,10 @@ ActiveRecord::Schema[7.0].define(version: 2025_12_11_183213) do
 
   create_table "evidences", force: :cascade do |t|
     t.bigint "claim_id", null: false
+    t.text "content"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "sources", default: [], array: true
-    t.text "content"
     t.string "verse_reference"
     t.text "original_text"
     t.text "translation"
@@ -239,6 +226,7 @@ ActiveRecord::Schema[7.0].define(version: 2025_12_11_183213) do
     t.string "logical_form"
     t.text "normalized_content"
     t.index ["claim_id"], name: "index_evidences_on_claim_id"
+    t.index ["normalized_content"], name: "index_evidences_on_normalized_content"
     t.index ["sources"], name: "index_evidences_on_sources", using: :gin
   end
 
@@ -328,6 +316,7 @@ ActiveRecord::Schema[7.0].define(version: 2025_12_11_183213) do
     t.string "reasonable_type"
     t.bigint "reasonable_id"
     t.text "normalized_content"
+    t.index ["normalized_content"], name: "index_reasonings_on_normalized_content"
     t.index ["reasonable_type", "reasonable_id", "source"], name: "index_reasonings_on_reasonable_and_source", unique: true
   end
 
@@ -488,7 +477,6 @@ ActiveRecord::Schema[7.0].define(version: 2025_12_11_183213) do
   add_foreign_key "chargebee_subscriptions", "chargebee_plans"
   add_foreign_key "chargebee_subscriptions", "users"
   add_foreign_key "claims", "users"
-  add_foreign_key "customers", "users"
   add_foreign_key "evidences", "claims"
   add_foreign_key "follows", "users"
   add_foreign_key "follows", "users", column: "followed_user"
