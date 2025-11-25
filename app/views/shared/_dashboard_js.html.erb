@@ -41,7 +41,7 @@
       });
     }
 
-    // Facebook-style dropdown system with smooth animations
+    // Dropdown system
     class DropdownManager {
       constructor() {
         this.userProfile = document.querySelector('.user-profile');
@@ -49,8 +49,6 @@
         this.dropdownMenu = document.querySelector('.dropdown-menu');
         
         this.isDropdownOpen = false;
-        this.isSubmenuOpen = false;
-        this.animationTimeout = null;
         
         this.init();
       }
@@ -68,115 +66,41 @@
           });
         }
         
-        // Settings submenu click functionality (Facebook-style)
-        const settingsParent = document.querySelector('.dropdown-parent');
-        if (settingsParent) {
-          settingsParent.addEventListener('click', (e) => {
-            console.log('Settings clicked');
-            e.stopPropagation();
-            this.showSubmenu();
-            
-            // Visual test - change background color temporarily
-            settingsParent.style.backgroundColor = '#e3f0ff';
-            setTimeout(() => {
-              settingsParent.style.backgroundColor = '';
-            }, 1000);
-          });
-        } else {
-          console.log('Settings parent not found');
-        }
-        
-        // Back button functionality - make entire header clickable
-        const settingsHeader = document.querySelector('.settings-header');
-        if (settingsHeader) {
-          settingsHeader.addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.closeSubmenu();
-          });
-        }
-        
         // Close dropdowns when clicking outside
         document.addEventListener('click', (e) => {
           if (!this.userProfile?.contains(e.target)) {
-            this.closeAllDropdowns();
+            this.closeDropdown();
           }
         });
         
         // Close on escape key
         document.addEventListener('keydown', (e) => {
           if (e.key === 'Escape') {
-            this.closeAllDropdowns();
+            this.closeDropdown();
           }
         });
-        
-        // Prevent submenu from closing when clicking inside it
-        const submenuContent = document.querySelector('.submenu-content');
-        if (submenuContent) {
-          submenuContent.addEventListener('click', (e) => {
-            e.stopPropagation();
-          });
-        }
       }
       
       toggleDropdown() {
         if (this.isDropdownOpen) {
-          this.closeAllDropdowns();
+          this.closeDropdown();
         } else {
           this.showDropdown();
         }
       }
       
       showDropdown() {
-        this.clearAnimationTimeout();
         this.dropdownMenu?.classList.add('show');
         this.userInfo?.classList.add('active');
         this.isDropdownOpen = true;
       }
       
-      hideDropdown() {
+      closeDropdown() {
         this.dropdownMenu?.classList.remove('show');
         this.dropdownMenu?.classList.remove('submenu-active');
         this.dropdownMenu?.classList.remove('submenu-open');
         this.userInfo?.classList.remove('active');
         this.isDropdownOpen = false;
-        this.closeSubmenu();
-      }
-      
-      showSubmenu() {
-        this.clearAnimationTimeout();
-        console.log('showSubmenu called');
-        
-        // Simple approach - add class immediately
-        this.dropdownMenu?.classList.add('submenu-active');
-        console.log('Added submenu-active class');
-        console.log('Dropdown classes:', this.dropdownMenu?.classList.toString());
-        
-        this.isSubmenuOpen = true;
-      }
-      
-      hideSubmenu() {
-        this.clearAnimationTimeout();
-        
-        // Remove morphing class immediately for smooth transition back
-        this.dropdownMenu?.classList.remove('submenu-active');
-        this.dropdownMenu?.classList.remove('submenu-open');
-        this.isSubmenuOpen = false;
-      }
-      
-      closeSubmenu() {
-        this.hideSubmenu();
-      }
-      
-      closeAllDropdowns() {
-        this.hideDropdown();
-        this.closeSubmenu();
-      }
-      
-      clearAnimationTimeout() {
-        if (this.animationTimeout) {
-          clearTimeout(this.animationTimeout);
-          this.animationTimeout = null;
-        }
       }
     }
     

@@ -1,10 +1,29 @@
 <div class="settings-main">
   <div class="settings-header-section">
     <h2 class="settings-title">Settings</h2>
-    <div class="settings-profile-banner" style="<%= 'background-image: url(' + @user.background_image_url + ');' if @user.background_image_url.present? %>"></div>
+    <div class="settings-profile-banner-wrapper">
+      <div class="settings-profile-banner" style="<%= 'background-image: url(' + @user.background_image_url + ');' if @user.background_image_url.present? %>">
+        <input type="hidden" id="banner-remove-background-field" name="remove_background_image" value="false" />
+        <input type="file" id="banner-background-upload-input" name="user[background_image]" accept="image/png,image/jpg,image/jpeg" style="display:none;" />
+        <button type="button" class="settings-banner-edit-btn" onclick="document.getElementById('banner-background-upload-input').click();">
+          <i class="fas fa-camera"></i>
+          <span><%= @user.background_image.attached? ? 'Edit cover photo' : 'Add cover photo' %></span>
+        </button>
+        <% if @user.background_image.attached? %>
+          <button type="button" class="settings-banner-delete-btn" onclick="removeBannerBackgroundAndSubmit()" title="Remove cover photo">
+            <i class="fas fa-trash"></i>
+          </button>
+        <% end %>
+      </div>
+    </div>
     <div class="settings-profile-header">
-      <div class="settings-profile-avatar">
-        <%= image_tag(@user.avatar_url.presence || 'default-avatar.png', class: 'settings-avatar-img') %>
+      <div class="settings-profile-avatar-wrapper">
+        <div class="settings-profile-avatar">
+          <%= image_tag(@user.avatar_url.presence || 'default-avatar.png', class: 'settings-avatar-img') %>
+        </div>
+        <button type="button" class="settings-profile-avatar-camera-btn" onclick="showAvatarOptionsModal();" title="Update profile picture">
+          <i class="fas fa-camera"></i>
+        </button>
       </div>
       <div class="settings-profile-info">
         <div class="settings-profile-name"><%= @user.full_name || @user.email %></div>

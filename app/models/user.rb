@@ -74,7 +74,8 @@ class User < ApplicationRecord
   def background_image_url
     if background_image.attached?
       # Use compressed version for better performance
-      compressed_bg = background_image.variant(resize_to_limit: [1200, 600], quality: 80)
+      # Banner is 350px high, using 3.5:1 aspect ratio (1400x400)
+      compressed_bg = background_image.variant(resize_to_limit: [1400, 400], quality: 80)
       Rails.application.routes.url_helpers.rails_blob_url(compressed_bg, only_path: true)
     else
       nil
