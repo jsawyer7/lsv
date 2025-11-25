@@ -88,6 +88,36 @@ class TextContent < ApplicationRecord
     content_validation_result['discrepancies'] || []
   end
 
+  def validation_character_accurate?
+    return nil unless content_validated?
+    content_validation_result['character_accurate'] == true
+  end
+
+  def validation_lexical_coverage_complete?
+    return nil unless content_validated?
+    content_validation_result['lexical_coverage_complete'] != false
+  end
+
+  def validation_lsv_translation_valid?
+    return nil unless content_validated?
+    content_validation_result['lsv_translation_valid'] != false
+  end
+
+  def validation_lexical_coverage_issues
+    return [] unless content_validated?
+    content_validation_result['lexical_coverage_issues'] || []
+  end
+
+  def validation_lsv_translation_issues
+    return [] unless content_validated?
+    content_validation_result['lsv_translation_issues'] || []
+  end
+
+  def validation_flags
+    return [] unless content_validated?
+    content_validation_result['validation_flags'] || []
+  end
+
   def self.ransackable_attributes(auth_object = nil)
     ["book_id", "unit_group", "content", "created_at", "id", "language_id", "parent_unit_id", 
      "source_id", "text_unit_type_id", "unit_key", "unit", "updated_at", "word_for_word_translation",

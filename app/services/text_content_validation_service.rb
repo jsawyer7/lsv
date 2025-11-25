@@ -102,20 +102,31 @@ class TextContentValidationService
       parsed = JSON.parse(ai_response)
       
       lsv_violations = parsed['lsv_rule_violations'] || []
-      character_accurate = parsed['is_accurate'] == true
+      character_accurate = parsed['character_accurate'] == true || (parsed['character_accurate'].nil? && parsed['is_accurate'] == true)
+      lexical_coverage_complete = parsed['lexical_coverage_complete'] != false # Default to true if not specified
+      lsv_translation_valid = parsed['lsv_translation_valid'] != false # Default to true if not specified
       
-      # If there are LSV rule violations, the overall accuracy is compromised
-      # Even if characters match, the content violates LSV rules
-      overall_accurate = character_accurate && lsv_violations.empty?
+      # Overall accuracy requires ALL checks to pass
+      overall_accurate = parsed['is_accurate'] == true || (
+        character_accurate && 
+        lexical_coverage_complete && 
+        lsv_translation_valid && 
+        lsv_violations.empty?
+      )
       
       {
         status: 'success',
         is_accurate: overall_accurate,
         character_accurate: character_accurate,
+        lexical_coverage_complete: lexical_coverage_complete,
+        lsv_translation_valid: lsv_translation_valid,
         accuracy_percentage: parsed['accuracy_percentage'] || 0,
         character_accuracy: parsed['character_accuracy'] || {},
         discrepancies: parsed['discrepancies'] || [],
+        lexical_coverage_issues: parsed['lexical_coverage_issues'] || [],
+        lsv_translation_issues: parsed['lsv_translation_issues'] || [],
         lsv_rule_violations: lsv_violations,
+        validation_flags: parsed['validation_flags'] || [],
         validation_notes: parsed['validation_notes'] || '',
         raw_response: ai_response
       }
@@ -154,30 +165,72 @@ class TextContentValidationService
 
   def system_prompt
     <<~PROMPT
-      You are a strict textual validation expert. Your job is to verify that a provided text is 100% character-by-character accurate compared to the source.
+      You are a strict textual validation expert. Your job is to verify:
+      1. Character-by-character accuracy of the source text
+      2. Complete lexical coverage in word-for-word translation
+      3. LSV translation built strictly from word-for-word chart
+      4. LSV rule compliance (no philosophical/theological imports)
       
-      You must:
-      1. Compare the provided text character-by-character with the source
-      2. Identify ANY discrepancies (missing characters, extra characters, wrong characters, punctuation differences, spacing differences)
-      3. Report accuracy as a percentage (100% = perfect match)
-      4. List all discrepancies with exact positions and differences
-      5. Validate that word-for-word translation comments follow LSV rules
+      ================================================================================
+      VALIDATION REQUIREMENTS
+      ================================================================================
       
-      CRITICAL:
+      1. CHARACTER-BY-CHARACTER ACCURACY
+      - Compare the provided text character-by-character with the source
+      - Identify ANY discrepancies (missing characters, extra characters, wrong characters, punctuation differences, spacing differences)
+      - Report accuracy as a percentage (100% = perfect match)
+      - List all discrepancies with exact positions and differences
       - Even a single character difference means the text is NOT 100% accurate
       - Punctuation, diacritics, spacing, and capitalization must all match exactly
-      - Report discrepancies with specific character positions when possible
       
-      LSV RULE VALIDATION:
-      Check word-for-word translation comments for violations of: "No external philosophical, theological, or cultural meanings may be imported."
-      - Flag any comments that add philosophical definitions, classical Greek philosophical concepts, or theological interpretations
-      - Flag any comments that import modern lexicon expansions with external meanings
-      - Flag any comments that add cultural or historical context beyond basic dictionary definitions
-      - Comments should ONLY contain: dictionary meanings, grammatical notes, alternative dictionary translations, basic linguistic information
+      2. WORD-FOR-WORD LEXICAL COVERAGE VALIDATION
+      For EACH token in the word-for-word chart, you must verify:
+      - token: Exact word from source (must match source text)
+      - lemma: Root/lemma provided (if applicable for language)
+      - morphology: Part of speech/parsing provided (if applicable)
+      - base_gloss: Primary literal meaning provided
+      - secondary_glosses: ALL other lexically valid meanings included
+      - completeness: "COMPLETE" only if ALL lexically valid meanings are included
+      - notes: Only grammatical/linguistic information, no theology/philosophy
+      
+      CRITICAL LEXICAL COVERAGE RULE:
+      - If a word has multiple lexically valid meanings, ALL must be in base_gloss + secondary_glosses
+      - If any lexically valid sense is missing → completeness must be "INCOMPLETE"
+      - Flag as MISSING_LEXICAL_MEANINGS if any token has incomplete lexical range
+      - Flag as INVALID_MEANING if a gloss uses a meaning not found in lexicon
+      
+      3. LSV TRANSLATION VALIDATION
+      The LSV translation must:
+      - Be built ONLY from the word-for-word chart
+      - Use ONLY meanings from base_gloss + secondary_glosses
+      - NOT introduce paraphrases, theology, interpretation, smoothing, or denominational bias
+      - Reflect ALL valid lexical senses (primary + secondary documented)
+      - NOT exceed source text (no additions unless minimal structural support)
+      - If LSV translation uses a meaning NOT in word-for-word chart → flag as INVALID_MEANING
+      
+      4. LSV RULE VALIDATION
+      Check word-for-word translation notes for violations of: "No external philosophical, theological, or cultural meanings may be imported."
+      - Flag any notes that add philosophical definitions, classical Greek philosophical concepts, or theological interpretations
+      - Flag any notes that import modern lexicon expansions with external meanings
+      - Flag any notes that add cultural or historical context beyond basic dictionary definitions
+      - Notes should ONLY contain: dictionary meanings, grammatical notes, alternative dictionary translations, basic linguistic information
+      
+      ================================================================================
+      VALIDATION FLAGS
+      ================================================================================
+      You must return one or more of these flags:
+      - OK: Exact text match, complete lexical coverage, LSV translation valid, no LSV violations
+      - TEXT_MISMATCH: Text differs from stored source text
+      - MISSING_LEXICAL_MEANINGS: At least one token has incomplete lexical range
+      - INVALID_MEANING: LSV translation uses a meaning not in word-for-word chart
+      - LSV_RULE_VIOLATION: Word-for-word notes contain philosophical/theological imports
     PROMPT
   end
 
   def build_validation_prompt
+    word_for_word_data = @text_content.word_for_word_array
+    lsv_notes = @text_content.lsv_notes
+    
     <<~PROMPT
       Source: #{@source.name}
       Book: #{@book.std_name} (#{@book.code})
@@ -185,19 +238,36 @@ class TextContentValidationService
       Verse: #{@verse}
       Source Language: #{@source.language.name}
       
-      Please validate the following text against #{@source.name} for #{@book.std_name} #{@chapter}:#{@verse}:
+      ================================================================================
+      VALIDATION TASK
+      ================================================================================
       
-      TEXT TO VALIDATE:
+      Please validate the following against #{@source.name} for #{@book.std_name} #{@chapter}:#{@verse}:
+      
+      1. SOURCE TEXT (Character-by-character accuracy):
       "#{@text_content.content}"
       
-      WORD-FOR-WORD TRANSLATION COMMENTS TO VALIDATE:
-      #{@text_content.word_for_word_translation.to_json}
+      2. WORD-FOR-WORD TRANSLATION CHART:
+      #{word_for_word_data.to_json}
+      
+      3. LSV LITERAL RECONSTRUCTION:
+      "#{@text_content.lsv_literal_reconstruction}"
+      
+      4. LSV NOTES (if available):
+      #{lsv_notes.to_json}
+      
+      ================================================================================
+      VALIDATION REQUIREMENTS
+      ================================================================================
       
       Please provide validation in JSON format:
       
       {
         "is_accurate": true/false,
         "accuracy_percentage": 0-100,
+        "character_accurate": true/false,
+        "lexical_coverage_complete": true/false,
+        "lsv_translation_valid": true/false,
         "character_accuracy": {
           "total_characters": number,
           "matching_characters": number,
@@ -211,30 +281,78 @@ class TextContentValidationService
             "type": "missing/extra/wrong/punctuation/spacing"
           }
         ],
+        "lexical_coverage_issues": [
+          {
+            "token": "the word/token",
+            "issue": "description of missing lexical meanings",
+            "missing_meanings": ["meaning1", "meaning2"],
+            "completeness_status": "COMPLETE | INCOMPLETE"
+          }
+        ],
+        "lsv_translation_issues": [
+          {
+            "issue": "description of problem",
+            "type": "INVALID_MEANING | EXCEEDS_SOURCE | NOT_FROM_CHART",
+            "details": "specific details"
+          }
+        ],
         "lsv_rule_violations": [
           {
-            "word": "the word that has the violation",
-            "comment": "the problematic comment text",
+            "token": "the word that has the violation",
+            "notes": "the problematic notes text",
             "violation_type": "philosophical/theological/cultural/lexicon_expansion",
             "issue": "description of what violates the LSV rule"
           }
         ],
-        "validation_notes": "Detailed notes about the validation, including any LSV rule violations"
+        "validation_flags": ["OK" | "TEXT_MISMATCH" | "MISSING_LEXICAL_MEANINGS" | "INVALID_MEANING" | "LSV_RULE_VIOLATION"],
+        "validation_notes": "Detailed notes about the validation"
       }
       
-      IMPORTANT:
-      - Compare character-by-character
+      ================================================================================
+      VALIDATION RULES
+      ================================================================================
+      
+      1. CHARACTER ACCURACY:
+      - Compare character-by-character with the source
       - Report 100% accuracy ONLY if every single character matches exactly
       - Include all discrepancies, no matter how small
       - Note any differences in punctuation, diacritics, spacing, or capitalization
+      - Set character_accurate to true ONLY if 100% match
       
-      LSV RULE CHECK:
-      Review the word-for-word translation comments and check for violations of: "No external philosophical, theological, or cultural meanings may be imported."
-      - Look for philosophical definitions, classical Greek philosophical concepts, theological interpretations
-      - Look for modern lexicon expansions that import external meanings
-      - Look for cultural or historical context beyond basic dictionary definitions
-      - If violations are found, set is_accurate to false and list them in lsv_rule_violations array
-      - Comments should ONLY contain: dictionary meanings, grammatical notes, alternative dictionary translations
+      2. LEXICAL COVERAGE:
+      - For EACH token, verify ALL lexically valid meanings are in base_gloss + secondary_glosses
+      - Check completeness field: should be "COMPLETE" only if ALL meanings included
+      - If any token is missing valid meanings, add to lexical_coverage_issues
+      - Set lexical_coverage_complete to false if ANY token has incomplete coverage
+      
+      3. LSV TRANSLATION:
+      - Verify LSV translation uses ONLY meanings from word-for-word chart
+      - Check that no meanings are used that aren't in base_gloss or secondary_glosses
+      - Verify LSV translation doesn't exceed source text (no additions)
+      - If LSV translation violates these rules, add to lsv_translation_issues
+      - Set lsv_translation_valid to false if ANY issues found
+      
+      4. LSV RULE COMPLIANCE:
+      - Review word-for-word notes for each token
+      - Check for violations: philosophical definitions, theological interpretations, cultural imports
+      - Look for modern lexicon expansions with external meanings
+      - Notes should ONLY contain: dictionary meanings, grammatical notes, alternative dictionary translations
+      - If violations found, add to lsv_rule_violations and set is_accurate to false
+      
+      5. OVERALL ACCURACY:
+      - Set is_accurate to true ONLY if:
+        * character_accurate = true (100% character match)
+        * lexical_coverage_complete = true (all meanings included)
+        * lsv_translation_valid = true (built from chart only)
+        * lsv_rule_violations = [] (no violations)
+      - If ANY of these fail, set is_accurate to false
+      
+      6. VALIDATION FLAGS:
+      - Add "OK" if all checks pass
+      - Add "TEXT_MISMATCH" if character accuracy < 100%
+      - Add "MISSING_LEXICAL_MEANINGS" if any token has incomplete lexical coverage
+      - Add "INVALID_MEANING" if LSV translation uses invalid meanings
+      - Add "LSV_RULE_VIOLATION" if notes contain philosophical/theological imports
     PROMPT
   end
 
@@ -244,10 +362,16 @@ class TextContentValidationService
       content_validated_by: 'grok-3',
       content_validation_result: {
         is_accurate: result[:is_accurate],
+        character_accurate: result[:character_accurate],
+        lexical_coverage_complete: result[:lexical_coverage_complete],
+        lsv_translation_valid: result[:lsv_translation_valid],
         accuracy_percentage: result[:accuracy_percentage],
         character_accuracy: result[:character_accuracy],
         discrepancies: result[:discrepancies],
+        lexical_coverage_issues: result[:lexical_coverage_issues] || [],
+        lsv_translation_issues: result[:lsv_translation_issues] || [],
         lsv_rule_violations: result[:lsv_rule_violations] || [],
+        validation_flags: result[:validation_flags] || [],
         validated_at: Time.current.iso8601
       },
       validation_notes: result[:validation_notes]

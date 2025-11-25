@@ -427,6 +427,335 @@ namespace :text_content do
     puts "Done!"
   end
   
+  desc "Populate and validate content for a specific chapter (e.g., John chapter 1). Usage: rake 'text_content:populate_chapter[source_id,book_code,chapter]' or use FORCE=true to overwrite existing content"
+  task :populate_chapter, [:source_id, :book_code, :chapter] => :environment do |t, args|
+    source_id = args[:source_id] || "10"
+    book_code = args[:book_code] || "JHN"
+    chapter = args[:chapter]&.to_i
+    
+    unless chapter
+      puts "Usage: rake 'text_content:populate_chapter[source_id,book_code,chapter]'"
+      puts "Example: rake 'text_content:populate_chapter[10,JHN,1]'"
+      exit 1
+    end
+    
+    force = ENV['FORCE'] == 'true'
+    
+    puts "=" * 80
+    puts "Populate and Validate Chapter"
+    puts "Source ID: #{source_id}"
+    puts "Book: #{book_code}"
+    puts "Chapter: #{chapter}"
+    puts "Force: #{force ? 'YES (will overwrite existing)' : 'NO (will skip existing)'}"
+    puts "=" * 80
+    puts ""
+    
+    # Find source
+    source = Source.unscoped.find_by(id: source_id.to_i)
+    unless source
+      puts "✗ Source not found: #{source_id}"
+      exit 1
+    end
+    
+    # Find book
+    book = Book.unscoped.find_by(code: book_code) || Book.unscoped.where('LOWER(code) = LOWER(?)', book_code).first
+    unless book
+      puts "✗ Book not found: #{book_code}"
+      exit 1
+    end
+    
+    # Get expected verse count for this chapter
+    require_relative '../../app/models/concerns/verse_count_reference'
+    expected_verses = VerseCountReference.get_verse_count(book.code, chapter)
+    
+    if expected_verses.nil?
+      puts "⚠ Warning: No verse count reference found for #{book.std_name} chapter #{chapter}"
+      puts "  Will process all existing records for this chapter"
+    else
+      puts "Expected verses in #{book.std_name} chapter #{chapter}: #{expected_verses}"
+      puts ""
+    end
+    
+    # Find all existing records for this chapter
+    existing_records = TextContent.unscoped.where(
+      source_id: source.id,
+      book_id: book.id,
+      unit_group: chapter
+    ).order(:unit)
+    
+    if existing_records.empty?
+      puts "✗ No text content records found for #{book.std_name} chapter #{chapter}"
+      puts "  Please create the records first using: rake 'text_content:create_all[#{source_id},#{book_code}]'"
+      exit 1
+    end
+    
+    puts "Found #{existing_records.count} record(s) for #{book.std_name} chapter #{chapter}"
+    puts ""
+    
+    # Check for missing verses
+    missing_verses = []
+    if expected_verses
+      existing_verse_numbers = existing_records.pluck(:unit).compact.sort
+      expected_verse_numbers = (1..expected_verses).to_a
+      missing_verses = expected_verse_numbers - existing_verse_numbers
+      
+      if missing_verses.any?
+        puts "⚠ Missing verses: #{missing_verses.join(', ')}"
+        puts "  These verses need to be created first"
+        puts ""
+      end
+    end
+    
+    # Stats tracking
+    stats = {
+      total: existing_records.count,
+      already_populated: 0,
+      populated: 0,
+      overwritten: 0,
+      validated: 0,
+      validation_passed: 0,
+      validation_failed: 0,
+      lsv_violations: 0,
+      errors: []
+    }
+    
+    # Process each verse
+    existing_records.each_with_index do |text_content, index|
+      verse = text_content.unit
+      puts "[#{index + 1}/#{existing_records.count}] Processing: #{book.std_name} #{chapter}:#{verse} (#{text_content.unit_key})"
+      
+      # Step 1: Populate
+      populate_success = false
+      max_populate_retries = 3
+      populate_retry_count = 0
+      
+      begin
+        while populate_retry_count < max_populate_retries && !populate_success
+          begin
+            population_service = TextContentPopulationService.new(text_content)
+            population_result = population_service.populate_content_fields(force: force)
+            
+            if population_result[:status] == 'success'
+              populate_success = true
+              if population_result[:overwrote]
+                stats[:overwritten] += 1
+                puts "  ✓ Content populated (overwritten)"
+              else
+                stats[:populated] += 1
+                puts "  ✓ Content populated"
+              end
+            elsif population_result[:status] == 'already_populated' && !force
+              stats[:already_populated] += 1
+              populate_success = true
+              puts "  → Already populated (skipped)"
+            else
+              # Check if it's a retryable network error
+              error_msg = population_result[:error] || ''
+              is_network_error = error_msg.include?('ConnectionFailed') || 
+                                 error_msg.include?('No route to host') ||
+                                 error_msg.include?('Timeout') ||
+                                 error_msg.include?('ECONNREFUSED') ||
+                                 error_msg.include?('EHOSTUNREACH')
+              
+              if is_network_error && populate_retry_count < max_populate_retries - 1
+                populate_retry_count += 1
+                wait_time = populate_retry_count * 2
+                puts "  ⚠ Population network error (retry #{populate_retry_count}/#{max_populate_retries}): #{error_msg[0..100]}"
+                puts "  → Waiting #{wait_time}s before retry..."
+                sleep wait_time
+                next
+              else
+                stats[:errors] << { chapter: chapter, verse: verse, error: "Population failed: #{population_result[:error]}", type: 'population' }
+                puts "  ✗ Population failed: #{population_result[:error]}"
+                break
+              end
+            end
+          rescue => e
+            error_msg = e.message
+            is_network_error = error_msg.include?('ConnectionFailed') || 
+                               error_msg.include?('No route to host') ||
+                               error_msg.include?('Timeout') ||
+                               error_msg.include?('ECONNREFUSED') ||
+                               error_msg.include?('EHOSTUNREACH')
+            
+            if is_network_error && populate_retry_count < max_populate_retries - 1
+              populate_retry_count += 1
+              wait_time = populate_retry_count * 2
+              puts "  ⚠ Population network exception (retry #{populate_retry_count}/#{max_populate_retries}): #{error_msg[0..100]}"
+              puts "  → Waiting #{wait_time}s before retry..."
+              sleep wait_time
+              next
+            else
+              stats[:errors] << { chapter: chapter, verse: verse, error: "Population exception: #{e.message}", type: 'population' }
+              puts "  ✗ Population exception: #{e.message}"
+              break
+            end
+          end
+        end
+      end
+      
+      # Step 2: Validate (only if content was populated or already exists)
+      text_content.reload
+      if text_content.content_populated? && text_content.content.present?
+        validate_success = false
+        max_validate_retries = 3
+        validate_retry_count = 0
+        
+        begin
+          while validate_retry_count < max_validate_retries && !validate_success
+            begin
+              validation_service = TextContentValidationService.new(text_content)
+              validation_result = validation_service.validate_content
+              
+              if validation_result[:status] == 'success'
+                validate_success = true
+                stats[:validated] += 1
+                is_accurate = validation_result[:is_accurate]
+                has_violations = validation_result[:lsv_rule_violations]&.any?
+                
+                if is_accurate && !has_violations
+                  stats[:validation_passed] += 1
+                  puts "  ✓ Validation passed (100% accurate, no LSV violations)"
+                elsif has_violations
+                  stats[:validation_failed] += 1
+                  stats[:lsv_violations] += validation_result[:lsv_rule_violations].count
+                  puts "  ⚠ Validation: Characters accurate but #{validation_result[:lsv_rule_violations].count} LSV violation(s)"
+                  validation_result[:lsv_rule_violations].first(3).each do |violation|
+                    puts "    - #{violation['token'] || violation['word']}: #{violation['violation_type']}"
+                  end
+                else
+                  stats[:validation_failed] += 1
+                  accuracy = validation_result[:accuracy_percentage] || 0
+                  puts "  ✗ Validation failed: #{accuracy}% accurate"
+                end
+              else
+                # Check if it's a retryable network error
+                error_msg = validation_result[:error] || ''
+                is_network_error = error_msg.include?('ConnectionFailed') || 
+                                   error_msg.include?('No route to host') ||
+                                   error_msg.include?('Timeout') ||
+                                   error_msg.include?('ECONNREFUSED') ||
+                                   error_msg.include?('EHOSTUNREACH')
+                
+                if is_network_error && validate_retry_count < max_validate_retries - 1
+                  validate_retry_count += 1
+                  wait_time = validate_retry_count * 2
+                  puts "  ⚠ Validation network error (retry #{validate_retry_count}/#{max_validate_retries}): #{error_msg[0..100]}"
+                  puts "  → Waiting #{wait_time}s before retry..."
+                  sleep wait_time
+                  next
+                else
+                  stats[:errors] << { chapter: chapter, verse: verse, error: "Validation failed: #{validation_result[:error]}", type: 'validation' }
+                  puts "  ✗ Validation error: #{validation_result[:error]}"
+                  break
+                end
+              end
+            rescue => e
+              error_msg = e.message
+              is_network_error = error_msg.include?('ConnectionFailed') || 
+                                 error_msg.include?('No route to host') ||
+                                 error_msg.include?('Timeout') ||
+                                 error_msg.include?('ECONNREFUSED') ||
+                                 error_msg.include?('EHOSTUNREACH')
+              
+              if is_network_error && validate_retry_count < max_validate_retries - 1
+                validate_retry_count += 1
+                wait_time = validate_retry_count * 2
+                puts "  ⚠ Validation network exception (retry #{validate_retry_count}/#{max_validate_retries}): #{error_msg[0..100]}"
+                puts "  → Waiting #{wait_time}s before retry..."
+                sleep wait_time
+                next
+              else
+                stats[:errors] << { chapter: chapter, verse: verse, error: "Validation exception: #{e.message}", type: 'validation' }
+                puts "  ✗ Validation exception: #{e.message}"
+                break
+              end
+            end
+          end
+        end
+      else
+        puts "  → Skipped validation (content not populated)"
+      end
+      
+      puts ""
+      
+      # Small delay to avoid overwhelming the API
+      sleep 0.5 if index < existing_records.count - 1
+    end
+    
+    # Final summary
+    puts ""
+    puts "=" * 80
+    puts "SUMMARY"
+    puts "=" * 80
+    puts ""
+    puts "Total records processed: #{stats[:total]}"
+    puts ""
+    puts "Population:"
+    puts "  - Already populated (skipped): #{stats[:already_populated]}"
+    puts "  - Newly populated: #{stats[:populated]}"
+    puts "  - Overwritten: #{stats[:overwritten]}"
+    puts ""
+    puts "Validation:"
+    puts "  - Validated: #{stats[:validated]}"
+    puts "  - Passed (100% accurate, no violations): #{stats[:validation_passed]}"
+    puts "  - Failed: #{stats[:validation_failed]}"
+    puts "  - LSV rule violations found: #{stats[:lsv_violations]}"
+    puts ""
+    
+    if stats[:errors].any?
+      network_errors = stats[:errors].select { |e| e[:error].to_s.include?('ConnectionFailed') || e[:error].to_s.include?('No route to host') }
+      other_errors = stats[:errors] - network_errors
+      
+      puts "Errors encountered: #{stats[:errors].count}"
+      puts "  - Network errors: #{network_errors.count} (can be retried)"
+      puts "  - Other errors: #{other_errors.count}"
+      puts ""
+      
+      if network_errors.any?
+        puts "Network errors (retry these):"
+        network_errors.first(10).each do |error|
+          puts "  - #{book.std_name} #{error[:chapter]}:#{error[:verse]} (#{error[:type]}): #{error[:error][0..80]}"
+        end
+        if network_errors.count > 10
+          puts "  ... and #{network_errors.count - 10} more network errors"
+        end
+        puts ""
+      end
+      
+      if other_errors.any?
+        puts "Other errors:"
+        other_errors.first(10).each do |error|
+          puts "  - #{book.std_name} #{error[:chapter]}:#{error[:verse]} (#{error[:type]}): #{error[:error][0..80]}"
+        end
+        if other_errors.count > 10
+          puts "  ... and #{other_errors.count - 10} more errors"
+        end
+        puts ""
+      end
+    end
+    
+    if missing_verses.any?
+      puts "⚠ Missing verses: #{missing_verses.join(', ')}"
+      puts "  These verses need to be created first"
+      puts ""
+    end
+    
+    # Check for verses that need attention
+    needs_attention = stats[:validation_failed] + stats[:lsv_violations]
+    if needs_attention > 0
+      puts "⚠ #{needs_attention} verse(s) need attention (validation failed or LSV violations)"
+      puts ""
+    end
+    
+    if stats[:errors].empty? && missing_verses.empty? && needs_attention == 0
+      puts "✓ All verses in chapter #{chapter} processed successfully!"
+    end
+    
+    puts ""
+    puts "Done!"
+  end
+  
   desc "Populate and validate content for ALL verses of John. Usage: rake 'text_content:populate_all_john[source_id]' or use FORCE=true to overwrite existing content"
   task :populate_all_john, [:source_id] => :environment do |t, args|
     source_id = args[:source_id] || "10"
