@@ -465,8 +465,7 @@ namespace :text_content do
     end
     
     # Get expected verse count for this chapter
-    require_relative '../../app/models/concerns/verse_count_reference'
-    expected_verses = VerseCountReference.get_verse_count(book.code, chapter)
+    expected_verses = VerseCountReference.expected_verses(book.code, chapter)
     
     if expected_verses.nil?
       puts "⚠ Warning: No verse count reference found for #{book.std_name} chapter #{chapter}"
