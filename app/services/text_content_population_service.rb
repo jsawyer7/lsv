@@ -159,14 +159,36 @@ class TextContentPopulationService
       3. Provide an LSV literal translation built strictly from the word-for-word chart
       
       ================================================================================
+      ⚠️ CRITICAL: EXACT CAPITALIZATION REQUIREMENT ⚠️
+      ================================================================================
+      The source text (Westcott-Hort 1881) uses SPECIFIC capitalization that you MUST preserve exactly.
+      - If the source has "ἐν" (lowercase), you MUST use "ἐν" (lowercase), NOT "Ἐν" (capitalized) - even if it's the first word
+      - If the source has "λόγος" (lowercase), you MUST use "λόγος" (lowercase), NOT "Λόγος" (capitalized)
+      - If the source has "θεόν" (lowercase), you MUST use "θεόν" (lowercase), NOT "Θεόν" (capitalized)
+      - If the source has "θεὸς" (lowercase), you MUST use "θεὸς" (lowercase), NOT "Θεὸς" (capitalized)
+      - Do NOT apply modern English capitalization conventions (e.g., capitalizing first word of sentence)
+      - Do NOT capitalize words just because they refer to God or important concepts
+      - Do NOT capitalize the first word of a sentence if the source has it lowercase
+      - The source text capitalization is PART OF THE EXACT TEXT - changing it makes it inaccurate
+      - Example: John 1:1 in WH1881 starts with "ἐν" (lowercase), NOT "Ἐν" (capitalized)
+      - Example: John 1:1 in WH1881 has "λόγος" (lowercase), "θεόν" (lowercase), "θεὸς" (lowercase)
+      - If you capitalize any of these, the text is NOT 100% accurate
+      
+      ================================================================================
       WORD-FOR-WORD TRANSLATION REQUIREMENTS (CRITICAL - 98% ACCURACY TARGET)
       ================================================================================
       
-      1. EXACT SOURCE TEXT
+      1. EXACT SOURCE TEXT (CHARACTER-BY-CHARACTER - INCLUDING EXACT CAPITALIZATION)
       - You must use the EXACT stored text from the source (character-by-character)
-      - Include ALL characters, accents/diacritics, punctuation, word order
+      - Include ALL characters, accents/diacritics, punctuation, word order, AND EXACT CAPITALIZATION
+      - CRITICAL: Preserve EXACT capitalization from source - do NOT change lowercase to uppercase
+      - Do NOT change capitalization (e.g., if source has "θεόν" lowercase, do NOT capitalize to "Θεόν")
       - Do NOT reconstruct, guess, modernize, or "correct" the source text
+      - Do NOT apply modern capitalization conventions - use EXACT capitalization from source
+      - Do NOT capitalize words because they refer to God, the Word, or important theological concepts
       - If you cannot access the exact source text, you MUST indicate this clearly
+      - CRITICAL: Even a single capitalization difference means the text is NOT 100% accurate
+      - CRITICAL: Capitalization is part of the source text - changing it violates character-by-character accuracy
       
       2. TOKEN-BY-TOKEN MAPPING
       For EACH word/token in the source text, you must provide:
@@ -232,8 +254,17 @@ class TextContentPopulationService
       - Must stay strictly inside:
         * Exact word order (if possible in English)
         * Literal grammar hierarchy
-        * No addition of subjects, objects, or smoothing unless English requires minimal structural support
+        * NO insertion of articles (a, an, the) where Greek/Hebrew has none
+        * NO smoothing of prepositions (e.g., πρὸς + accusative = "toward/to", NEVER "with")
+        * NO smoothing of verb aspects (imperfect = "was-being", not just "was")
+        * NO addition of subjects, objects, or smoothing unless English requires minimal structural support
       - If English requires smoothing → mark it in metadata as STRUCTURAL SUPPORT ONLY, not translation
+      
+      CRITICAL LSV TRANSLATION RULES:
+      - πρὸς + accusative: ALWAYS "toward" or "to", NEVER "with" (even if contextually common)
+      - Imperfect verbs (ἦν, etc.): Preserve continuous aspect as "was-being" or explicitly note aspect
+      - Articles: Do NOT insert "the" where source language has no article (e.g., ἐν ἀρχῇ = "in beginning", not "in the beginning")
+      - Demonstrative pronouns: Render as "this" or "this one", NEVER as "he/she/it" (that's interpretive smoothing)
       
       4. NO LSV TRANSLATION CAN OVERRIDE THE LEXICON
       - If a verb means A and B, and you pick only A, you must still show that B is legitimate
@@ -277,10 +308,21 @@ class TextContentPopulationService
       Verse: #{@verse}
       Source Language: #{@source.language.name}
       
+      ⚠️ CRITICAL CAPITALIZATION WARNING ⚠️
+      The Westcott-Hort 1881 source uses SPECIFIC capitalization that you MUST preserve exactly:
+      - "ἐν" is lowercase (even as first word), NOT "Ἐν" - John 1:1 starts with lowercase "ἐν"
+      - "λόγος" is lowercase, NOT "Λόγος"
+      - "θεόν" is lowercase, NOT "Θεόν"
+      - "θεὸς" is lowercase, NOT "Θεὸς"
+      - Do NOT capitalize the first word of a sentence if source has it lowercase
+      - Do NOT capitalize words just because they refer to God or important concepts
+      - Do NOT apply modern English capitalization conventions
+      - Capitalization is part of the exact text - changing it makes it inaccurate
+      
       Please provide the following in JSON format with COMPLETE lexical coverage:
       
       {
-        "source_text": "The EXACT text from #{@source.name} for #{@book.std_name} #{@chapter}:#{@verse}, character-by-character accurate. Include ALL punctuation, diacritics, accents, spacing exactly as in the source.",
+        "source_text": "The EXACT text from #{@source.name} for #{@book.std_name} #{@chapter}:#{@verse}, character-by-character accurate including EXACT CAPITALIZATION. Include ALL punctuation, diacritics, accents, spacing, AND EXACT CAPITALIZATION exactly as in the source. Do NOT capitalize words that are lowercase in the source.",
         
         "word_for_word": [
           {
@@ -322,11 +364,22 @@ class TextContentPopulationService
       CRITICAL REQUIREMENTS FOR WORD-FOR-WORD CHART:
       ================================================================================
       
-      1. EXACT SOURCE TEXT
+      1. EXACT SOURCE TEXT (CHARACTER-BY-CHARACTER - INCLUDING EXACT CAPITALIZATION)
       - Extract the text EXACTLY as it appears in #{@source.name}
       - Do NOT add, remove, or modify ANY characters
-      - Include ALL punctuation, diacritics, accents, and spacing exactly as in the source
+      - Include ALL punctuation, diacritics, accents, spacing, AND EXACT CAPITALIZATION exactly as in the source
+      - ⚠️ CRITICAL CAPITALIZATION RULE: Preserve EXACT capitalization from source
+        * If source has "λόγος" (lowercase), use "λόγος" (lowercase), NOT "Λόγος"
+        * If source has "θεόν" (lowercase), use "θεόν" (lowercase), NOT "Θεόν"
+        * If source has "θεὸς" (lowercase), use "θεὸς" (lowercase), NOT "Θεὸς"
+        * Do NOT capitalize words just because they refer to God, the Word, or important concepts
+        * Do NOT apply modern English capitalization conventions
+        * The source text capitalization is PART OF THE EXACT TEXT
+      - Do NOT change capitalization (e.g., if source has "θεόν" lowercase, do NOT capitalize to "Θεόν")
+      - Do NOT apply modern capitalization conventions - preserve EXACT capitalization from source
       - Preserve the exact word order from the source
+      - CRITICAL: Even a single capitalization difference means the text is NOT 100% accurate
+      - CRITICAL: Capitalization errors are character accuracy errors - the text must match character-by-character
       
       2. COMPLETE LEXICAL COVERAGE (MOST CRITICAL)
       - For EACH token, you MUST look up its FULL lexical range in approved lexicons
@@ -339,6 +392,15 @@ class TextContentPopulationService
         → You MUST list ALL four in your word_for_word entry
       - If you miss any lexically valid sense, mark completeness: "INCOMPLETE"
       - Do NOT limit to only the "most common" meaning - include ALL legitimate literal senses
+      
+      CRITICAL WORD-FOR-WORD RULES (NO SMOOTHING):
+      - Demonstrative pronouns (οὗτος, etc.): Render as "this" or "this one" ONLY, NEVER as "he/she/it"
+      - Imperfect verbs (ἦν, etc.): base_gloss should be "was-being" to preserve continuous aspect, NOT just "was"
+      - Prepositions with cases:
+        * πρὸς + accusative: base_gloss = "toward" or "to", NEVER "with" (even if contextually common)
+        * ἐν + dative: base_gloss = "in", secondary_glosses can include "at, among, with" but primary is "in"
+      - Articles: If Greek has no article, do NOT supply one in English gloss
+      - NO interpretive smoothing: Only dictionary meanings, no functional translations
       
       3. TOKEN STRUCTURE
       - "token": The exact word as it appears in source (preserve case, accents, etc.)
@@ -397,9 +459,21 @@ class TextContentPopulationService
       ================================================================================
       CLASSIFICATION RULES:
       ================================================================================
-      - Addressed Party: Who is the text speaking TO? If it's a letter (e.g., "To the church in Corinth"), use CHURCH and set custom_name to "CORINTH". If not specified, use NOT_SPECIFIED.
-      - Responsible Party: Who is the text speaking ABOUT or who is responsible? If not specified, use NOT_SPECIFIED.
-      - Genre: Classify the text type. For letters/epistles, use EPISTLE_LETTER. For narrative sections, use NARRATIVE. For teachings/sayings, use GOSPEL_TEACHING_SAYING. For prayers, use PRAYER. For legal text, use LAW. For poetry/songs, use POETRY_SONG. For prophecy, use PROPHECY. For wisdom literature, use WISDOM. For apocalyptic visions, use APOCALYPTIC_VISION. For genealogies/lists, use GENEALOGY_LIST.
+      - Addressed Party: Who is the text speaking TO? Check for vocative case, second-person verbs, imperatives, or direct address. If it's a letter (e.g., "To the church in Corinth"), use CHURCH and set custom_name to "CORINTH". If the verse has no vocative, no second-person, no imperative, and no direct address, use NOT_SPECIFIED.
+      - Responsible Party: Who is the text speaking ABOUT or who is responsible for the action/statement? Check if the verse holds anyone accountable, commands anyone, or tells anyone to do something. If the verse is simply a declarative statement with no imperative, no command, no warning, and no obligation, use NOT_SPECIFIED.
+      - Genre: Classify the text type with 100% scholarly accuracy:
+        * NARRATIVE: For narrative text, story-telling, biographical accounts, Gospel narrative sections, Prologues that function as narrative introduction (e.g., John 1:1-18 Prologue is NARRATIVE, not GOSPEL_TEACHING_SAYING)
+        * EPISTLE_LETTER: For letters/epistles (e.g., Paul's letters)
+        * GOSPEL_TEACHING_SAYING: For actual teachings, sayings, or discourses (e.g., Sermon on the Mount, parables when presented as teaching)
+        * PRAYER: For prayer text
+        * LAW: For legal text, commandments, statutes
+        * POETRY_SONG: For poetry or song
+        * PROPHECY: For prophetic text
+        * WISDOM: For wisdom literature
+        * APOCALYPTIC_VISION: For apocalyptic vision
+        * GENEALOGY_LIST: For genealogy or list
+        
+        IMPORTANT: Gospel Prologues (like John 1:1-18) are NARRATIVE, not GOSPEL_TEACHING_SAYING. They are narrative introductions that set the story in motion, even if they use elevated language.
       
       ================================================================================
       REMEMBER: 98% ACCURACY TARGET

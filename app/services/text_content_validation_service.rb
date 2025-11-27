@@ -172,16 +172,35 @@ class TextContentValidationService
       4. LSV rule compliance (no philosophical/theological imports)
       
       ================================================================================
+      ⚠️ CRITICAL: CAPITALIZATION VALIDATION REQUIREMENT ⚠️
+      ================================================================================
+      The Westcott-Hort 1881 source text uses SPECIFIC capitalization that MUST be preserved exactly.
+      - If source has "ἐν" (lowercase), provided text MUST have "ἐν" (lowercase), NOT "Ἐν" - even if it's the first word
+      - If source has "λόγος" (lowercase), provided text MUST have "λόγος" (lowercase), NOT "Λόγος"
+      - If source has "θεόν" (lowercase), provided text MUST have "θεόν" (lowercase), NOT "Θεόν"
+      - If source has "θεὸς" (lowercase), provided text MUST have "θεὸς" (lowercase), NOT "Θεὸς"
+      - Capitalization differences are CHARACTER ACCURACY ERRORS - they make the text NOT 100% accurate
+      - Do NOT accept modern capitalization conventions (e.g., capitalizing first word of sentence)
+      - Do NOT accept capitalization of first word if source has it lowercase
+      - Example: John 1:1 in WH1881 starts with "ἐν" (lowercase), NOT "Ἐν" (capitalized)
+      - Example: John 1:1 in WH1881 has "λόγος", "θεόν", "θεὸς" all lowercase - if any are capitalized, it's WRONG
+      
+      ================================================================================
       VALIDATION REQUIREMENTS
       ================================================================================
       
-      1. CHARACTER-BY-CHARACTER ACCURACY
+      1. CHARACTER-BY-CHARACTER ACCURACY (INCLUDING EXACT CAPITALIZATION)
       - Compare the provided text character-by-character with the source
-      - Identify ANY discrepancies (missing characters, extra characters, wrong characters, punctuation differences, spacing differences)
+      - Identify ANY discrepancies (missing characters, extra characters, wrong characters, punctuation differences, spacing differences, CAPITALIZATION DIFFERENCES)
       - Report accuracy as a percentage (100% = perfect match)
       - List all discrepancies with exact positions and differences
-      - Even a single character difference means the text is NOT 100% accurate
-      - Punctuation, diacritics, spacing, and capitalization must all match exactly
+      - Even a single character difference (including capitalization) means the text is NOT 100% accurate
+      - Punctuation, diacritics, spacing, AND CAPITALIZATION must all match exactly
+      - CRITICAL: If source has "θεόν" (lowercase) and provided text has "Θεόν" (capitalized), this is a CAPITALIZATION ERROR and must be flagged
+      - CRITICAL: If source has "λόγος" (lowercase) and provided text has "Λόγος" (capitalized), this is a CAPITALIZATION ERROR
+      - CRITICAL: If source has "θεὸς" (lowercase) and provided text has "Θεὸς" (capitalized), this is a CAPITALIZATION ERROR
+      - Do NOT accept modern capitalization conventions - source text capitalization must be preserved exactly
+      - Capitalization errors are character accuracy errors - they make the text NOT 100% accurate
       
       2. WORD-FOR-WORD LEXICAL COVERAGE VALIDATION
       For EACH token in the word-for-word chart, you must verify:
@@ -199,6 +218,13 @@ class TextContentValidationService
       - Flag as MISSING_LEXICAL_MEANINGS if any token has incomplete lexical range
       - Flag as INVALID_MEANING if a gloss uses a meaning not found in lexicon
       
+      CRITICAL WORD-FOR-WORD VALIDATION RULES:
+      - Demonstrative pronouns (οὗτος, etc.): base_gloss must be "this" or "this one", NEVER "he/she/it"
+      - Imperfect verbs (ἦν, etc.): base_gloss should preserve aspect as "was-being", NOT just "was"
+      - Prepositions: πρὸς + accusative MUST have base_gloss as "toward" or "to", NEVER "with"
+      - Articles: If source language has no article, gloss should NOT supply one
+      - If ANY of these violations are found → flag as INVALID_MEANING
+      
       3. LSV TRANSLATION VALIDATION
       The LSV translation must:
       - Be built ONLY from the word-for-word chart
@@ -207,6 +233,13 @@ class TextContentValidationService
       - Reflect ALL valid lexical senses (primary + secondary documented)
       - NOT exceed source text (no additions unless minimal structural support)
       - If LSV translation uses a meaning NOT in word-for-word chart → flag as INVALID_MEANING
+      
+      CRITICAL LSV TRANSLATION VALIDATION RULES:
+      - πρὸς + accusative: MUST be "toward" or "to", NEVER "with" (even if contextually common, "with" is theological smoothing)
+      - Imperfect verbs: MUST preserve continuous aspect (e.g., "was-being" not just "was")
+      - Articles: MUST NOT insert "the" where source language has no article (e.g., ἐν ἀρχῇ = "in beginning", not "in the beginning")
+      - Demonstrative pronouns: MUST be "this" or "this one", NEVER "he/she/it" (that's interpretive smoothing)
+      - If ANY of these violations are found → flag as INVALID_MEANING and set lsv_translation_valid to false
       
       4. LSV RULE VALIDATION
       Check word-for-word translation notes for violations of: "No external philosophical, theological, or cultural meanings may be imported."
@@ -242,10 +275,21 @@ class TextContentValidationService
       VALIDATION TASK
       ================================================================================
       
+      ⚠️ CRITICAL CAPITALIZATION VALIDATION ⚠️
+      The Westcott-Hort 1881 source uses SPECIFIC capitalization:
+      - "ἐν" should be lowercase (even as first word), NOT "Ἐν" - John 1:1 starts with lowercase "ἐν"
+      - "λόγος" should be lowercase, NOT "Λόγος"
+      - "θεόν" should be lowercase, NOT "Θεόν"
+      - "θεὸς" should be lowercase, NOT "Θεὸς"
+      - Do NOT accept capitalization of first word if source has it lowercase
+      - Capitalization differences are CHARACTER ACCURACY ERRORS
+      
       Please validate the following against #{@source.name} for #{@book.std_name} #{@chapter}:#{@verse}:
       
-      1. SOURCE TEXT (Character-by-character accuracy):
+      1. SOURCE TEXT (Character-by-character accuracy INCLUDING EXACT CAPITALIZATION):
       "#{@text_content.content}"
+      
+      CRITICAL: Check that capitalization matches exactly - if source has lowercase and provided text has capitalized, this is an ERROR.
       
       2. WORD-FOR-WORD TRANSLATION CHART:
       #{word_for_word_data.to_json}
@@ -312,12 +356,23 @@ class TextContentValidationService
       VALIDATION RULES
       ================================================================================
       
-      1. CHARACTER ACCURACY:
+      1. CHARACTER ACCURACY (INCLUDING EXACT CAPITALIZATION):
       - Compare character-by-character with the source
-      - Report 100% accuracy ONLY if every single character matches exactly
+      - Report 100% accuracy ONLY if every single character matches exactly (including capitalization)
       - Include all discrepancies, no matter how small
-      - Note any differences in punctuation, diacritics, spacing, or capitalization
-      - Set character_accurate to true ONLY if 100% match
+      - Note any differences in punctuation, diacritics, spacing, OR CAPITALIZATION
+      - ⚠️ CRITICAL CAPITALIZATION CHECKS:
+        * If source has "ἐν" (lowercase) and provided text has "Ἐν" (capitalized) → CAPITALIZATION ERROR (even if first word)
+        * If source has "λόγος" (lowercase) and provided text has "Λόγος" (capitalized) → CAPITALIZATION ERROR
+        * If source has "θεόν" (lowercase) and provided text has "Θεόν" (capitalized) → CAPITALIZATION ERROR
+        * If source has "θεὸς" (lowercase) and provided text has "Θεὸς" (capitalized) → CAPITALIZATION ERROR
+        * Any capitalization difference is a CHARACTER ACCURACY ERROR
+        * Do NOT accept modern capitalization conventions (e.g., capitalizing first word of sentence)
+      - CRITICAL: Capitalization differences are errors (e.g., "θεόν" vs "Θεόν" is a mismatch)
+      - CRITICAL: Capitalization is part of the source text - changing it violates character-by-character accuracy
+      - Do NOT accept modern capitalization conventions - source capitalization must be preserved exactly
+      - Set character_accurate to false if ANY capitalization differences are found
+      - Set character_accurate to true ONLY if 100% match (including exact capitalization)
       
       2. LEXICAL COVERAGE:
       - For EACH token, verify ALL lexically valid meanings are in base_gloss + secondary_glosses
@@ -329,7 +384,12 @@ class TextContentValidationService
       - Verify LSV translation uses ONLY meanings from word-for-word chart
       - Check that no meanings are used that aren't in base_gloss or secondary_glosses
       - Verify LSV translation doesn't exceed source text (no additions)
-      - If LSV translation violates these rules, add to lsv_translation_issues
+      - CRITICAL CHECKS:
+        * πρὸς + accusative: Must be "toward" or "to", NEVER "with" → if "with" is used, flag as INVALID_MEANING
+        * Imperfect verbs: Must preserve aspect (e.g., "was-being" not just "was") → if aspect is smoothed, flag as INVALID_MEANING
+        * Articles: Must NOT insert "the" where source has no article (e.g., "in beginning" not "in the beginning") → if article inserted, flag as INVALID_MEANING
+        * Demonstrative pronouns: Must be "this/this one", NEVER "he/she/it" → if personal pronoun used, flag as INVALID_MEANING
+      - If LSV translation violates these rules, add to lsv_translation_issues with specific details
       - Set lsv_translation_valid to false if ANY issues found
       
       4. LSV RULE COMPLIANCE:
