@@ -102,16 +102,18 @@ class TextContentValidationService
       parsed = JSON.parse(ai_response)
       
       lsv_violations = parsed['lsv_rule_violations'] || []
+      missing_required_fields = parsed['missing_required_fields'] || []
       character_accurate = parsed['character_accurate'] == true || (parsed['character_accurate'].nil? && parsed['is_accurate'] == true)
       lexical_coverage_complete = parsed['lexical_coverage_complete'] != false # Default to true if not specified
       lsv_translation_valid = parsed['lsv_translation_valid'] != false # Default to true if not specified
       
-      # Overall accuracy requires ALL checks to pass
+      # Overall accuracy requires ALL checks to pass, including required fields
       overall_accurate = parsed['is_accurate'] == true || (
         character_accurate && 
         lexical_coverage_complete && 
         lsv_translation_valid && 
-        lsv_violations.empty?
+        lsv_violations.empty? &&
+        missing_required_fields.empty?
       )
       
       {
@@ -126,6 +128,7 @@ class TextContentValidationService
         lexical_coverage_issues: parsed['lexical_coverage_issues'] || [],
         lsv_translation_issues: parsed['lsv_translation_issues'] || [],
         lsv_rule_violations: lsv_violations,
+        missing_required_fields: missing_required_fields,
         validation_flags: parsed['validation_flags'] || [],
         validation_notes: parsed['validation_notes'] || '',
         raw_response: ai_response
@@ -248,15 +251,24 @@ class TextContentValidationService
       - Flag any notes that add cultural or historical context beyond basic dictionary definitions
       - Notes should ONLY contain: dictionary meanings, grammatical notes, alternative dictionary translations, basic linguistic information
       
+      5. REQUIRED CLASSIFICATION FIELDS VALIDATION
+      ⚠️ CRITICAL: Every verse MUST have these three fields populated:
+      - genre_code: REQUIRED - Every verse must have a genre (NARRATIVE, LAW, PROPHECY, WISDOM, POETRY_SONG, GOSPEL_TEACHING_SAYING, EPISTLE_LETTER, APOCALYPTIC_VISION, GENEALOGY_LIST, PRAYER)
+      - addressed_party_code: REQUIRED - Every verse must have an addressed party (use NOT_SPECIFIED if unclear)
+      - responsible_party_code: REQUIRED - Every verse must have a responsible party (use NOT_SPECIFIED if unclear)
+      - If ANY of these fields are missing or null, flag as MISSING_REQUIRED_FIELDS
+      - These fields are NEVER optional - every verse must have all three
+      
       ================================================================================
       VALIDATION FLAGS
       ================================================================================
       You must return one or more of these flags:
-      - OK: Exact text match, complete lexical coverage, LSV translation valid, no LSV violations
+      - OK: Exact text match, complete lexical coverage, LSV translation valid, no LSV violations, all required fields present
       - TEXT_MISMATCH: Text differs from stored source text
       - MISSING_LEXICAL_MEANINGS: At least one token has incomplete lexical range
       - INVALID_MEANING: LSV translation uses a meaning not in word-for-word chart
       - LSV_RULE_VIOLATION: Word-for-word notes contain philosophical/theological imports
+      - MISSING_REQUIRED_FIELDS: genre_code, addressed_party_code, or responsible_party_code is missing
     PROMPT
   end
 
@@ -299,6 +311,11 @@ class TextContentValidationService
       
       4. LSV NOTES (if available):
       #{lsv_notes.to_json}
+      
+      5. CLASSIFICATION FIELDS (REQUIRED - Check if present):
+      - genre_code: #{@text_content.genre_code || 'MISSING'}
+      - addressed_party_code: #{@text_content.addressed_party_code || 'MISSING'}
+      - responsible_party_code: #{@text_content.responsible_party_code || 'MISSING'}
       
       ================================================================================
       VALIDATION REQUIREMENTS
@@ -348,7 +365,13 @@ class TextContentValidationService
             "issue": "description of what violates the LSV rule"
           }
         ],
-        "validation_flags": ["OK" | "TEXT_MISMATCH" | "MISSING_LEXICAL_MEANINGS" | "INVALID_MEANING" | "LSV_RULE_VIOLATION"],
+        "missing_required_fields": [
+          {
+            "field": "genre_code | addressed_party_code | responsible_party_code",
+            "issue": "description of missing field"
+          }
+        ],
+        "validation_flags": ["OK" | "TEXT_MISMATCH" | "MISSING_LEXICAL_MEANINGS" | "INVALID_MEANING" | "LSV_RULE_VIOLATION" | "MISSING_REQUIRED_FIELDS"],
         "validation_notes": "Detailed notes about the validation"
       }
       
@@ -399,20 +422,29 @@ class TextContentValidationService
       - Notes should ONLY contain: dictionary meanings, grammatical notes, alternative dictionary translations
       - If violations found, add to lsv_rule_violations and set is_accurate to false
       
-      5. OVERALL ACCURACY:
+      5. REQUIRED CLASSIFICATION FIELDS:
+      - Check that genre_code is present and valid (one of: NARRATIVE, LAW, PROPHECY, WISDOM, POETRY_SONG, GOSPEL_TEACHING_SAYING, EPISTLE_LETTER, APOCALYPTIC_VISION, GENEALOGY_LIST, PRAYER)
+      - Check that addressed_party_code is present and valid (one of: INDIVIDUAL, ISRAEL, JUDAH, JEWS, GENTILES, DISCIPLES, BELIEVERS, ALL_PEOPLE, CHURCH, NOT_SPECIFIED)
+      - Check that responsible_party_code is present and valid (one of: INDIVIDUAL, ISRAEL, JUDAH, JEWS, GENTILES, DISCIPLES, BELIEVERS, ALL_PEOPLE, CHURCH, NOT_SPECIFIED)
+      - If ANY of these fields are missing or null, add to missing_required_fields and set is_accurate to false
+      - These fields are NEVER optional - every verse must have all three
+      
+      6. OVERALL ACCURACY:
       - Set is_accurate to true ONLY if:
         * character_accurate = true (100% character match)
         * lexical_coverage_complete = true (all meanings included)
         * lsv_translation_valid = true (built from chart only)
         * lsv_rule_violations = [] (no violations)
+        * missing_required_fields = [] (all required classification fields present)
       - If ANY of these fail, set is_accurate to false
       
-      6. VALIDATION FLAGS:
-      - Add "OK" if all checks pass
+      7. VALIDATION FLAGS:
+      - Add "OK" if all checks pass (including all required fields present)
       - Add "TEXT_MISMATCH" if character accuracy < 100%
       - Add "MISSING_LEXICAL_MEANINGS" if any token has incomplete lexical coverage
       - Add "INVALID_MEANING" if LSV translation uses invalid meanings
       - Add "LSV_RULE_VIOLATION" if notes contain philosophical/theological imports
+      - Add "MISSING_REQUIRED_FIELDS" if genre_code, addressed_party_code, or responsible_party_code is missing
     PROMPT
   end
 
@@ -431,6 +463,7 @@ class TextContentValidationService
         lexical_coverage_issues: result[:lexical_coverage_issues] || [],
         lsv_translation_issues: result[:lsv_translation_issues] || [],
         lsv_rule_violations: result[:lsv_rule_violations] || [],
+        missing_required_fields: result[:missing_required_fields] || [],
         validation_flags: result[:validation_flags] || [],
         validated_at: Time.current.iso8601
       },

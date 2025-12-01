@@ -352,11 +352,11 @@ class TextContentPopulationService
           "validation_status": "OK | MISSING_LEXICAL_MEANINGS | INVALID_MEANING"
         },
         
-        "addressed_party_code": "ONE of: INDIVIDUAL, ISRAEL, JUDAH, JEWS, GENTILES, DISCIPLES, BELIEVERS, ALL_PEOPLE, CHURCH, NOT_SPECIFIED",
+        "genre_code": "REQUIRED - MUST be one of: NARRATIVE, LAW, PROPHECY, WISDOM, POETRY_SONG, GOSPEL_TEACHING_SAYING, EPISTLE_LETTER, APOCALYPTIC_VISION, GENEALOGY_LIST, PRAYER. Every verse MUST have exactly one genre. Never leave this null. Examples: Narrator statements = NARRATIVE, Direct speech by Jesus/John = GOSPEL_TEACHING_SAYING.",
+        "addressed_party_code": "REQUIRED - MUST be one of: INDIVIDUAL, ISRAEL, JUDAH, JEWS, GENTILES, DISCIPLES, BELIEVERS, ALL_PEOPLE, CHURCH, NOT_SPECIFIED. Every verse MUST have an addressed party. Use NOT_SPECIFIED if the verse gives no audience (narrator statements, descriptive text, truth statements). Examples: Narrator statements = NOT_SPECIFIED, Jesus speaking to disciples = DISCIPLES, Jews asking John = INDIVIDUAL.",
         "addressed_party_custom_name": "If addressed_party_code is CHURCH, provide the church name (e.g., GALATIA, CORINTH, ROME). Otherwise null.",
-        "responsible_party_code": "ONE of: INDIVIDUAL, ISRAEL, JUDAH, JEWS, GENTILES, DISCIPLES, BELIEVERS, ALL_PEOPLE, CHURCH, NOT_SPECIFIED",
+        "responsible_party_code": "REQUIRED - MUST be one of: INDIVIDUAL, ISRAEL, JUDAH, JEWS, GENTILES, DISCIPLES, BELIEVERS, ALL_PEOPLE, CHURCH, NOT_SPECIFIED. Every verse MUST have a responsible party. Use NOT_SPECIFIED if the speaker is not directly present (narrator statements). Examples: Narrator statements = NOT_SPECIFIED, John the Baptist speaking = INDIVIDUAL, Jesus speaking = INDIVIDUAL, Jews speaking = JEWS.",
         "responsible_party_custom_name": "If responsible_party_code is CHURCH, provide the church name. Otherwise null.",
-        "genre_code": "ONE of: NARRATIVE, LAW, PROPHECY, WISDOM, POETRY_SONG, GOSPEL_TEACHING_SAYING, EPISTLE_LETTER, APOCALYPTIC_VISION, GENEALOGY_LIST, PRAYER",
         "ai_notes": "Any additional notes about the text, variants, or translation challenges"
       }
       
@@ -457,23 +457,109 @@ class TextContentPopulationService
         * "INVALID_MEANING" if LSV translation uses a meaning not in the lexicon
       
       ================================================================================
-      CLASSIFICATION RULES:
       ================================================================================
-      - Addressed Party: Who is the text speaking TO? Check for vocative case, second-person verbs, imperatives, or direct address. If it's a letter (e.g., "To the church in Corinth"), use CHURCH and set custom_name to "CORINTH". If the verse has no vocative, no second-person, no imperative, and no direct address, use NOT_SPECIFIED.
-      - Responsible Party: Who is the text speaking ABOUT or who is responsible for the action/statement? Check if the verse holds anyone accountable, commands anyone, or tells anyone to do something. If the verse is simply a declarative statement with no imperative, no command, no warning, and no obligation, use NOT_SPECIFIED.
-      - Genre: Classify the text type with 100% scholarly accuracy:
-        * NARRATIVE: For narrative text, story-telling, biographical accounts, Gospel narrative sections, Prologues that function as narrative introduction (e.g., John 1:1-18 Prologue is NARRATIVE, not GOSPEL_TEACHING_SAYING)
-        * EPISTLE_LETTER: For letters/epistles (e.g., Paul's letters)
-        * GOSPEL_TEACHING_SAYING: For actual teachings, sayings, or discourses (e.g., Sermon on the Mount, parables when presented as teaching)
-        * PRAYER: For prayer text
-        * LAW: For legal text, commandments, statutes
-        * POETRY_SONG: For poetry or song
-        * PROPHECY: For prophetic text
-        * WISDOM: For wisdom literature
-        * APOCALYPTIC_VISION: For apocalyptic vision
-        * GENEALOGY_LIST: For genealogy or list
-        
-        IMPORTANT: Gospel Prologues (like John 1:1-18) are NARRATIVE, not GOSPEL_TEACHING_SAYING. They are narrative introductions that set the story in motion, even if they use elevated language.
+      ⚠️ CRITICAL: REQUIRED CLASSIFICATION FIELDS (100% SCHOLARLY ACCURACY) ⚠️
+      ================================================================================
+      EVERY verse MUST have these three fields populated - they are NEVER optional.
+      Classifications must be 100% scholarly accurate based on mainstream biblical scholarship.
+      Use the following exact definitions and options only—no additions or deviations.
+      Every verse must have exactly one genre, one addressed_party, and one responsible_party, with no nulls.
+      
+      ✅ 1. GENRE (Required for every verse - NEVER optional)
+      This is never optional. Every verse fits exactly one genre.
+      
+      GENRE OPTIONS (use exact codes):
+      • NARRATIVE - For narrative text, story-telling, biographical accounts, Gospel narrative sections, Prologues that function as narrative introduction (e.g., John 1:1-18 Prologue is NARRATIVE, not GOSPEL_TEACHING_SAYING)
+      • LAW - For legal text, commandments, statutes
+      • PROPHECY - For prophetic text
+      • WISDOM - For wisdom literature
+      • POETRY_SONG - For poetry or song
+      • GOSPEL_TEACHING_SAYING - For actual teachings, sayings, or discourses (e.g., when Jesus or John the Baptist speaks directly, parables when presented as teaching)
+      • EPISTLE_LETTER - For letters/epistles (e.g., Paul's letters)
+      • APOCALYPTIC_VISION - For apocalyptic vision
+      • GENEALOGY_LIST - For genealogy or list
+      • PRAYER - For prayer text
+      
+      CRITICAL GENRE RULES:
+      - Gospel Prologues (like John 1:1-18) are NARRATIVE, not GOSPEL_TEACHING_SAYING
+      - Narrator statements are NARRATIVE
+      - Direct speech/teachings by Jesus or John the Baptist are GOSPEL_TEACHING_SAYING
+      - Every verse MUST have exactly one genre - never leave null
+      
+      ✅ 2. ADDRESSED PARTY (Required for every verse - NEVER optional)
+      This states who the message is directed TO.
+      If unclear or universal: NOT_SPECIFIED or ALL_PEOPLE.
+      
+      ADDRESSED PARTY OPTIONS (use exact codes):
+      • INDIVIDUAL - A specific individual person
+      • ISRAEL - The nation of Israel as a whole
+      • JUDAH - The kingdom of Judah
+      • JEWS - Jewish people
+      • GENTILES - Non-Jewish people
+      • DISCIPLES - Disciples of Jesus
+      • BELIEVERS - Believers in general
+      • ALL_PEOPLE - All people universally
+      • CHURCH - Specific church or assembly (requires custom_name like GALATIA, CORINTH)
+      • NOT_SPECIFIED - Use when the verse gives no audience (narrator statements, descriptive text, truth statements)
+      
+      CRITICAL ADDRESSED PARTY RULES:
+      - Check for vocative case, second-person verbs, imperatives, or direct address
+      - If verse has no vocative, no second-person, no imperative, and no direct address → use NOT_SPECIFIED
+      - Narrator statements (e.g., John 1:1-14) → NOT_SPECIFIED
+      - Truth statements with no audience → NOT_SPECIFIED
+      - Descriptive rather than instructive text → NOT_SPECIFIED
+      - If it's a letter (e.g., "To the church in Corinth"), use CHURCH and set custom_name to "CORINTH"
+      - Every verse MUST have exactly one addressed_party_code - never leave null
+      
+      ✅ 3. RESPONSIBLE PARTY (Required for every verse - NEVER optional)
+      This states who is speaking, acting, or declaring the message.
+      Narrator verses? Use NOT_SPECIFIED if the speaker is not directly present.
+      
+      RESPONSIBLE PARTY OPTIONS (use exact codes):
+      • INDIVIDUAL - A specific individual person (e.g., Jesus, John the Baptist, Paul)
+      • ISRAEL - The nation of Israel as a whole
+      • JUDAH - The kingdom of Judah
+      • JEWS - Jewish people
+      • GENTILES - Non-Jewish people
+      • DISCIPLES - Disciples of Jesus
+      • BELIEVERS - Believers in general
+      • ALL_PEOPLE - All people universally
+      • CHURCH - Specific church or assembly (requires custom_name)
+      • NOT_SPECIFIED - Use when the speaker is not directly present (e.g., narrator statements in the Gospels)
+      
+      CRITICAL RESPONSIBLE PARTY RULES:
+      - Narrator statements in Gospels → NOT_SPECIFIED
+      - Truth statements with no speaker → NOT_SPECIFIED
+      - When Jesus or John the Baptist speaks directly → INDIVIDUAL
+      - When Paul writes a letter → INDIVIDUAL (Paul)
+      - When verse is simply a declarative statement with no imperative, no command, no warning, and no obligation → NOT_SPECIFIED
+      - Every verse MUST have exactly one responsible_party_code - never leave null
+      
+      🔥 Important Distinction:
+      - Addressed Party = who the message is directed TO
+      - Responsible Party = who is delivering or responsible FOR the message
+      
+      Examples from John Chapter 1:
+      - John 1:1 (narrator statement): Genre=NARRATIVE, Addressed=NOT_SPECIFIED, Responsible=NOT_SPECIFIED
+      - John 1:15 (John the Baptist speaking): Genre=GOSPEL_TEACHING_SAYING, Addressed=NOT_SPECIFIED, Responsible=INDIVIDUAL
+      - John 1:19 (Jews asking John): Genre=GOSPEL_TEACHING_SAYING, Addressed=INDIVIDUAL, Responsible=JEWS
+      - John 1:20 (John responding to Jews): Genre=GOSPEL_TEACHING_SAYING, Addressed=JEWS, Responsible=INDIVIDUAL
+      - John 1:29 (John speaking about Jesus): Genre=GOSPEL_TEACHING_SAYING, Addressed=NOT_SPECIFIED, Responsible=INDIVIDUAL
+      - John 1:36 (John speaking to disciples): Genre=GOSPEL_TEACHING_SAYING, Addressed=DISCIPLES, Responsible=INDIVIDUAL
+      - John 1:41 (Andrew speaking to Simon): Genre=GOSPEL_TEACHING_SAYING, Addressed=INDIVIDUAL, Responsible=INDIVIDUAL
+      
+      ✅ When to use NOT_SPECIFIED:
+      Use NOT_SPECIFIED when:
+      - The text is a narrator statement
+      - The text is not directed to any person or group
+      - The text is descriptive rather than instructive
+      - Prophecies with no explicit audience
+      - Truth statements (e.g., John 1:1, Genesis 1:1)
+      - The speaker is not directly present (narrator)
+      
+      This keeps the data consistent and sortable without forcing interpretations.
+      
+      ⚠️ CRITICAL: All three fields (genre_code, addressed_party_code, responsible_party_code) are REQUIRED for every verse. Never leave any of them null. Use NOT_SPECIFIED when appropriate, but always assign a value.
       
       ================================================================================
       REMEMBER: 98% ACCURACY TARGET
@@ -500,12 +586,19 @@ class TextContentPopulationService
       content_populated_by: 'grok-3'
     }
     
-    # Add party and genre fields if present
-    update_params[:addressed_party_code] = result[:addressed_party_code] if result[:addressed_party_code].present?
+    # Add party and genre fields - these are REQUIRED, so set defaults if missing
+    update_params[:addressed_party_code] = result[:addressed_party_code].presence || 'NOT_SPECIFIED'
     update_params[:addressed_party_custom_name] = result[:addressed_party_custom_name] if result[:addressed_party_custom_name].present?
-    update_params[:responsible_party_code] = result[:responsible_party_code] if result[:responsible_party_code].present?
+    update_params[:responsible_party_code] = result[:responsible_party_code].presence || 'NOT_SPECIFIED'
     update_params[:responsible_party_custom_name] = result[:responsible_party_custom_name] if result[:responsible_party_custom_name].present?
-    update_params[:genre_code] = result[:genre_code] if result[:genre_code].present?
+    
+    # Genre is REQUIRED - if missing, log error but don't fail (will be caught by validation)
+    if result[:genre_code].present?
+      update_params[:genre_code] = result[:genre_code]
+    else
+      Rails.logger.error "WARNING: genre_code missing for #{@text_content.unit_key} - this is required!"
+      # Don't set a default genre - validation should catch this
+    end
     
     @text_content.update!(update_params)
   end
