@@ -352,7 +352,7 @@ class TextContentPopulationService
           "validation_status": "OK | MISSING_LEXICAL_MEANINGS | INVALID_MEANING"
         },
         
-        "genre_code": "REQUIRED - MUST be one of: NARRATIVE, LAW, PROPHECY, WISDOM, POETRY_SONG, GOSPEL_TEACHING_SAYING, EPISTLE_LETTER, APOCALYPTIC_VISION, GENEALOGY_LIST, PRAYER. Every verse MUST have exactly one genre. Never leave this null. Examples: Narrator statements = NARRATIVE, Direct speech by Jesus/John = GOSPEL_TEACHING_SAYING.",
+        "genre_code": "REQUIRED - MUST be one of: NARRATIVE, LAW, PROPHECY, WISDOM, POETRY_SONG, GOSPEL_TEACHING_SAYING, EPISTLE_LETTER, APOCALYPTIC_VISION, GENEALOGY_LIST, PRAYER. Every verse MUST have exactly one genre. Never leave this null. CRITICAL RULES: (1) If narrator is describing an event (even if quoting speech) → NARRATIVE. (2) If narrator is reporting what someone said → NARRATIVE. (3) If Jesus is teaching instructionally → GOSPEL_TEACHING_SAYING. (4) If Teaching Rule = FALSE → Genre MUST = NARRATIVE. (5) All prologue verses (John 1:1-18) are NARRATIVE. Examples: Narrator statements = NARRATIVE, Narrator reporting John's words (John 1:15) = NARRATIVE, Narrator describing event (John 1:38) = NARRATIVE, Direct instructional teaching by Jesus = GOSPEL_TEACHING_SAYING.",
         "addressed_party_code": "REQUIRED - MUST be one of: INDIVIDUAL, ISRAEL, JUDAH, JEWS, GENTILES, DISCIPLES, BELIEVERS, ALL_PEOPLE, CHURCH, NOT_SPECIFIED. Every verse MUST have an addressed party. Use NOT_SPECIFIED if the verse gives no audience (narrator statements, descriptive text, truth statements). Examples: Narrator statements = NOT_SPECIFIED, Jesus speaking to disciples = DISCIPLES, Jews asking John = INDIVIDUAL.",
         "addressed_party_custom_name": "If addressed_party_code is CHURCH, provide the church name (e.g., GALATIA, CORINTH, ROME). Otherwise null.",
         "responsible_party_code": "REQUIRED - MUST be one of: INDIVIDUAL, ISRAEL, JUDAH, JEWS, GENTILES, DISCIPLES, BELIEVERS, ALL_PEOPLE, CHURCH, NOT_SPECIFIED. Every verse MUST have a responsible party. Use NOT_SPECIFIED if the speaker is not directly present (narrator statements). Examples: Narrator statements = NOT_SPECIFIED, John the Baptist speaking = INDIVIDUAL, Jesus speaking = INDIVIDUAL, Jews speaking = JEWS.",
@@ -469,21 +469,41 @@ class TextContentPopulationService
       This is never optional. Every verse fits exactly one genre.
       
       GENRE OPTIONS (use exact codes):
-      • NARRATIVE - For narrative text, story-telling, biographical accounts, Gospel narrative sections, Prologues that function as narrative introduction (e.g., John 1:1-18 Prologue is NARRATIVE, not GOSPEL_TEACHING_SAYING)
+      • NARRATIVE - For narrative text, story-telling, biographical accounts, Gospel narrative sections, Prologues that function as narrative introduction
       • LAW - For legal text, commandments, statutes
       • PROPHECY - For prophetic text
       • WISDOM - For wisdom literature
       • POETRY_SONG - For poetry or song
-      • GOSPEL_TEACHING_SAYING - For actual teachings, sayings, or discourses (e.g., when Jesus or John the Baptist speaks directly, parables when presented as teaching)
+      • GOSPEL_TEACHING_SAYING - For actual teachings, sayings, or discourses when Jesus is teaching or speaking instructionally
       • EPISTLE_LETTER - For letters/epistles (e.g., Paul's letters)
       • APOCALYPTIC_VISION - For apocalyptic vision
       • GENEALOGY_LIST - For genealogy or list
       • PRAYER - For prayer text
       
-      CRITICAL GENRE RULES:
-      - Gospel Prologues (like John 1:1-18) are NARRATIVE, not GOSPEL_TEACHING_SAYING
-      - Narrator statements are NARRATIVE
-      - Direct speech/teachings by Jesus or John the Baptist are GOSPEL_TEACHING_SAYING
+      ⚠️ CRITICAL GENRE RULES (MOST IMPORTANT):
+      Genre tracks the LITERARY FUNCTION of the verse, NOT the presence of speech.
+      
+      NARRATIVE applies when:
+      - The narrator is describing an event (even if quoting someone speaking)
+      - The narrator is reporting what someone said (e.g., "John cried out saying...")
+      - The verse is part of the story/narrative flow
+      - All prologue verses (John 1:1-18) are NARRATIVE - none are teachings
+      - If John the Baptist speaks but in a narrative setting (narrator reporting it) → NARRATIVE
+      - If the narrator quotes someone but is describing an event → NARRATIVE
+      - Examples: John 1:1-18 (all NARRATIVE), John 1:15 (narrator reporting John's words = NARRATIVE), John 1:38 (narrator describing event = NARRATIVE)
+      
+      GOSPEL_TEACHING_SAYING applies ONLY when:
+      - Jesus is teaching or speaking instructionally (direct teaching, not just quoted by narrator)
+      - The verse is instructional content, not narrative description
+      - The verse functions as a teaching/saying, not as story-telling
+      - Examples: Sermon on the Mount, parables when presented as teaching, direct instructional discourse
+      
+      RULE: If the narrator is describing an event → Genre = NARRATIVE
+      RULE: If Jesus is teaching or speaking instructionally → Genre = GOSPEL_TEACHING_SAYING
+      RULE: If John the Baptist speaks but in a narrative setting → Genre = NARRATIVE
+      RULE: If Teaching Rule = FALSE → Genre MUST = NARRATIVE
+      
+      CRITICAL: The presence of speech does NOT automatically mean GOSPEL_TEACHING_SAYING. If the narrator is reporting/describing the speech as part of the story, it's NARRATIVE.
       - Every verse MUST have exactly one genre - never leave null
       
       ✅ 2. ADDRESSED PARTY (Required for every verse - NEVER optional)
@@ -539,14 +559,17 @@ class TextContentPopulationService
       - Addressed Party = who the message is directed TO
       - Responsible Party = who is delivering or responsible FOR the message
       
-      Examples from John Chapter 1:
+      Examples from John Chapter 1 (CORRECT classifications):
       - John 1:1 (narrator statement): Genre=NARRATIVE, Addressed=NOT_SPECIFIED, Responsible=NOT_SPECIFIED
-      - John 1:15 (John the Baptist speaking): Genre=GOSPEL_TEACHING_SAYING, Addressed=NOT_SPECIFIED, Responsible=INDIVIDUAL
-      - John 1:19 (Jews asking John): Genre=GOSPEL_TEACHING_SAYING, Addressed=INDIVIDUAL, Responsible=JEWS
-      - John 1:20 (John responding to Jews): Genre=GOSPEL_TEACHING_SAYING, Addressed=JEWS, Responsible=INDIVIDUAL
-      - John 1:29 (John speaking about Jesus): Genre=GOSPEL_TEACHING_SAYING, Addressed=NOT_SPECIFIED, Responsible=INDIVIDUAL
-      - John 1:36 (John speaking to disciples): Genre=GOSPEL_TEACHING_SAYING, Addressed=DISCIPLES, Responsible=INDIVIDUAL
-      - John 1:41 (Andrew speaking to Simon): Genre=GOSPEL_TEACHING_SAYING, Addressed=INDIVIDUAL, Responsible=INDIVIDUAL
+      - John 1:15 (narrator reporting John cried out): Genre=NARRATIVE, Addressed=NOT_SPECIFIED, Responsible=INDIVIDUAL
+      - John 1:19 (Jews asking John - narrator describing): Genre=GOSPEL_TEACHING_SAYING, Addressed=INDIVIDUAL, Responsible=JEWS
+      - John 1:20 (John responding to Jews - direct speech): Genre=GOSPEL_TEACHING_SAYING, Addressed=JEWS, Responsible=INDIVIDUAL
+      - John 1:29 (John speaking about Jesus - narrator reporting): Genre=GOSPEL_TEACHING_SAYING, Addressed=NOT_SPECIFIED, Responsible=INDIVIDUAL
+      - John 1:36 (John speaking to disciples - narrator reporting): Genre=GOSPEL_TEACHING_SAYING, Addressed=DISCIPLES, Responsible=INDIVIDUAL
+      - John 1:38 (narrator describing event): Genre=NARRATIVE, Addressed=NOT_SPECIFIED, Responsible=NOT_SPECIFIED
+      - John 1:41 (Andrew speaking to Simon - direct speech): Genre=GOSPEL_TEACHING_SAYING, Addressed=INDIVIDUAL, Responsible=INDIVIDUAL
+      
+      CRITICAL: All verses in John 1:1-18 (Prologue) are NARRATIVE, not GOSPEL_TEACHING_SAYING, because they are narrator statements describing events.
       
       ✅ When to use NOT_SPECIFIED:
       Use NOT_SPECIFIED when:

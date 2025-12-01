@@ -259,6 +259,30 @@ class TextContentValidationService
       - If ANY of these fields are missing or null, flag as MISSING_REQUIRED_FIELDS
       - These fields are NEVER optional - every verse must have all three
       
+      ⚠️ CRITICAL GENRE VALIDATION RULES:
+      Genre tracks the LITERARY FUNCTION of the verse, NOT the presence of speech.
+      
+      NARRATIVE is correct when:
+      - The narrator is describing an event (even if quoting someone speaking)
+      - The narrator is reporting what someone said (e.g., "John cried out saying...")
+      - The verse is part of the story/narrative flow
+      - All prologue verses (John 1:1-18) are NARRATIVE - none are teachings
+      - If John the Baptist speaks but in a narrative setting (narrator reporting it) → NARRATIVE
+      - If the narrator quotes someone but is describing an event → NARRATIVE
+      - Examples: John 1:1-18 (all NARRATIVE), John 1:15 (narrator reporting John's words = NARRATIVE), John 1:38 (narrator describing event = NARRATIVE)
+      
+      GOSPEL_TEACHING_SAYING is correct ONLY when:
+      - Jesus is teaching or speaking instructionally (direct teaching, not just quoted by narrator)
+      - The verse is instructional content, not narrative description
+      - The verse functions as a teaching/saying, not as story-telling
+      
+      RULE: If the narrator is describing an event → Genre MUST = NARRATIVE
+      RULE: If Jesus is teaching or speaking instructionally → Genre = GOSPEL_TEACHING_SAYING
+      RULE: If John the Baptist speaks but in a narrative setting → Genre MUST = NARRATIVE
+      RULE: If Teaching Rule = FALSE → Genre MUST = NARRATIVE
+      
+      If genre_code is GOSPEL_TEACHING_SAYING but the verse is narrator describing an event, flag as INVALID_GENRE.
+      
       ================================================================================
       VALIDATION FLAGS
       ================================================================================
@@ -368,10 +392,10 @@ class TextContentValidationService
         "missing_required_fields": [
           {
             "field": "genre_code | addressed_party_code | responsible_party_code",
-            "issue": "description of missing field"
+            "issue": "description of missing field or invalid classification"
           }
         ],
-        "validation_flags": ["OK" | "TEXT_MISMATCH" | "MISSING_LEXICAL_MEANINGS" | "INVALID_MEANING" | "LSV_RULE_VIOLATION" | "MISSING_REQUIRED_FIELDS"],
+        "validation_flags": ["OK" | "TEXT_MISMATCH" | "MISSING_LEXICAL_MEANINGS" | "INVALID_MEANING" | "LSV_RULE_VIOLATION" | "MISSING_REQUIRED_FIELDS" | "INVALID_GENRE"],
         "validation_notes": "Detailed notes about the validation"
       }
       
@@ -429,6 +453,19 @@ class TextContentValidationService
       - If ANY of these fields are missing or null, add to missing_required_fields and set is_accurate to false
       - These fields are NEVER optional - every verse must have all three
       
+      ⚠️ CRITICAL GENRE VALIDATION:
+      - If the narrator is describing an event (even if quoting speech) → Genre MUST be NARRATIVE
+      - If the narrator is reporting what someone said → Genre MUST be NARRATIVE
+      - If John the Baptist speaks but in a narrative setting → Genre MUST be NARRATIVE
+      - If Teaching Rule = FALSE (not instructional teaching) → Genre MUST be NARRATIVE
+      - All prologue verses (John 1:1-18) MUST be NARRATIVE
+      - GOSPEL_TEACHING_SAYING is ONLY correct when Jesus is teaching instructionally (direct teaching, not narrator reporting)
+      - If genre_code is GOSPEL_TEACHING_SAYING but the verse is narrator describing an event → add to missing_required_fields with issue "INVALID_GENRE: Should be NARRATIVE (narrator describing event)"
+      - Examples of CORRECT classifications:
+        * John 1:15 (narrator reporting John cried out) → NARRATIVE (NOT GOSPEL_TEACHING_SAYING)
+        * John 1:38 (narrator describing event) → NARRATIVE (NOT GOSPEL_TEACHING_SAYING)
+        * All John 1:1-18 → NARRATIVE (NOT GOSPEL_TEACHING_SAYING)
+      
       6. OVERALL ACCURACY:
       - Set is_accurate to true ONLY if:
         * character_accurate = true (100% character match)
@@ -439,12 +476,13 @@ class TextContentValidationService
       - If ANY of these fail, set is_accurate to false
       
       7. VALIDATION FLAGS:
-      - Add "OK" if all checks pass (including all required fields present)
+      - Add "OK" if all checks pass (including all required fields present and correct)
       - Add "TEXT_MISMATCH" if character accuracy < 100%
       - Add "MISSING_LEXICAL_MEANINGS" if any token has incomplete lexical coverage
       - Add "INVALID_MEANING" if LSV translation uses invalid meanings
       - Add "LSV_RULE_VIOLATION" if notes contain philosophical/theological imports
       - Add "MISSING_REQUIRED_FIELDS" if genre_code, addressed_party_code, or responsible_party_code is missing
+      - Add "INVALID_GENRE" if genre_code is incorrect (e.g., GOSPEL_TEACHING_SAYING when it should be NARRATIVE for narrator describing event)
     PROMPT
   end
 
