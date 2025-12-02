@@ -353,9 +353,9 @@ class TextContentPopulationService
         },
         
         "genre_code": "REQUIRED - MUST be one of: NARRATIVE, LAW, PROPHECY, WISDOM, POETRY_SONG, GOSPEL_TEACHING_SAYING, EPISTLE_LETTER, APOCALYPTIC_VISION, GENEALOGY_LIST, PRAYER. Every verse MUST have exactly one genre. Never leave this null. CRITICAL RULES: (1) If narrator is describing an event (even if quoting speech) → NARRATIVE. (2) If narrator is reporting what someone said → NARRATIVE. (3) If Jesus is teaching instructionally → GOSPEL_TEACHING_SAYING. (4) If Teaching Rule = FALSE → Genre MUST = NARRATIVE. (5) All prologue verses (John 1:1-18) are NARRATIVE. Examples: Narrator statements = NARRATIVE, Narrator reporting John's words (John 1:15) = NARRATIVE, Narrator describing event (John 1:38) = NARRATIVE, Direct instructional teaching by Jesus = GOSPEL_TEACHING_SAYING.",
-        "addressed_party_code": "REQUIRED - MUST be one of: INDIVIDUAL, ISRAEL, JUDAH, JEWS, GENTILES, DISCIPLES, BELIEVERS, ALL_PEOPLE, CHURCH, NOT_SPECIFIED. Every verse MUST have an addressed party. Use NOT_SPECIFIED if the verse gives no audience (narrator statements, descriptive text, truth statements). Examples: Narrator statements = NOT_SPECIFIED, Jesus speaking to disciples = DISCIPLES, Jews asking John = INDIVIDUAL.",
+        "addressed_party_code": "REQUIRED - MUST be one of: INDIVIDUAL, ISRAEL, JUDAH, JEWS, GENTILES, DISCIPLES, BELIEVERS, ALL_PEOPLE, CHURCH, NOT_SPECIFIED. Every verse MUST have an addressed party. DETECTION: Look for recipient markers (αὐτῷ/αὐτοῖς, πρός + accusative, indirect-object pronouns, vocative, second-person verbs). If pronoun refers to specific entity from previous verse → assign that entity's code. If no audience marker → NOT_SPECIFIED. Examples: John 1:38 (λέγει αὐτοῖς, αὐτοῖς = two disciples) = DISCIPLES, Narrator statements = NOT_SPECIFIED, Jesus speaking to disciples = DISCIPLES.",
         "addressed_party_custom_name": "If addressed_party_code is CHURCH, provide the church name (e.g., GALATIA, CORINTH, ROME). Otherwise null.",
-        "responsible_party_code": "REQUIRED - MUST be one of: INDIVIDUAL, ISRAEL, JUDAH, JEWS, GENTILES, DISCIPLES, BELIEVERS, ALL_PEOPLE, CHURCH, NOT_SPECIFIED. Every verse MUST have a responsible party. Use NOT_SPECIFIED if the speaker is not directly present (narrator statements). Examples: Narrator statements = NOT_SPECIFIED, John the Baptist speaking = INDIVIDUAL, Jesus speaking = INDIVIDUAL, Jews speaking = JEWS.",
+        "responsible_party_code": "REQUIRED - MUST be one of: INDIVIDUAL, ISRAEL, JUDAH, JEWS, GENTILES, DISCIPLES, BELIEVERS, ALL_PEOPLE, CHURCH, NOT_SPECIFIED. Every verse MUST have a responsible party. DETECTION: Look for direct-speech verbs (λέγει, εἶπεν, λέγων, etc.). If verse contains speech verb → responsible_party = grammatical subject of that verb. If subject is named individual → INDIVIDUAL. If subject is group → that group code. If subject is pronoun → use nearest explicit antecedent. If no speech verb → NOT_SPECIFIED. Examples: John 1:38 (λέγει with Jesus as subject) = INDIVIDUAL, John 1:19 (Jews as subject of speech verb) = JEWS, Narrator statements = NOT_SPECIFIED.",
         "responsible_party_custom_name": "If responsible_party_code is CHURCH, provide the church name. Otherwise null.",
         "ai_notes": "Any additional notes about the text, variants, or translation challenges"
       }
@@ -493,9 +493,17 @@ class TextContentPopulationService
       - Examples: John 1:1-18 (all NARRATIVE), John 1:15 (narrator reporting John's words = NARRATIVE), John 1:38 (narrator describing event = NARRATIVE)
       
       GOSPEL_TEACHING_SAYING applies ONLY when:
-      - Jesus is teaching or speaking instructionally (direct teaching, not just quoted by narrator)
+      - The verse contains direct speech by Jesus in a Gospel (and it's instructional teaching)
       - The verse is instructional content, not narrative description
       - The verse functions as a teaching/saying, not as story-telling
+      
+      GENRE RULE (Simple):
+      - If the verse contains direct speech by Jesus in a Gospel → genre = GOSPEL_TEACHING_SAYING
+      - Otherwise, if speech occurs inside narration (narrator reporting speech) → genre = NARRATIVE
+      - Otherwise, if no speech → genre = NARRATIVE
+      
+      CRITICAL: Speech inside narration (narrator reporting "he said to them") = NARRATIVE, not GOSPEL_TEACHING_SAYING
+      Example: John 1:38 (λέγει αὐτοῖς - narrator reporting Jesus speaking) = NARRATIVE
       - Examples: Sermon on the Mount, parables when presented as teaching, direct instructional discourse
       
       RULE: If the narrator is describing an event → Genre = NARRATIVE
@@ -522,14 +530,31 @@ class TextContentPopulationService
       • CHURCH - Specific church or assembly (requires custom_name like GALATIA, CORINTH)
       • NOT_SPECIFIED - Use when the verse gives no audience (narrator statements, descriptive text, truth statements)
       
-      CRITICAL ADDRESSED PARTY RULES:
-      - Check for vocative case, second-person verbs, imperatives, or direct address
-      - If verse has no vocative, no second-person, no imperative, and no direct address → use NOT_SPECIFIED
+      ⚠️ CRITICAL ADDRESSED PARTY DETECTION RULES:
+      Detect recipient markers in the verse:
+      - αὐτῷ / αὐτοῖς ("to him / to them") - dative pronouns indicating recipient
+      - πρός + accusative for recipient (e.g., "πρὸς αὐτούς" = "to them")
+      - Indirect-object pronouns (dative case)
+      - Explicit "to the disciples / to the Jews / to Israel" phrases
+      - Vocative case (direct address)
+      - Second-person verbs or imperatives
+      
+      RULES:
+      - If pronoun refers to a specific entity introduced earlier in the immediate scene → assign that entity's code
+        * Example: "αὐτοῖς" referring to "two disciples" from previous verse → DISCIPLES
+        * Example: "αὐτῷ" referring to "the Jews" from previous verse → JEWS
+      - If multiple people but all within the same group (two disciples, several Pharisees) → use that group code
+      - If no identifiable entity → NOT_SPECIFIED
+      - If no audience marker exists → addressed_party = NOT_SPECIFIED
       - Narrator statements (e.g., John 1:1-14) → NOT_SPECIFIED
       - Truth statements with no audience → NOT_SPECIFIED
       - Descriptive rather than instructive text → NOT_SPECIFIED
       - If it's a letter (e.g., "To the church in Corinth"), use CHURCH and set custom_name to "CORINTH"
       - Every verse MUST have exactly one addressed_party_code - never leave null
+      
+      CONTINUITY OF SPEECH:
+      - If a speech act begins in a previous verse and continues, same audience stays addressed_party
+      - Do NOT reset audience unless: narrative breaks ("the next day…"), new subject introduced, new "he said to…" appears
       
       ✅ 3. RESPONSIBLE PARTY (Required for every verse - NEVER optional)
       This states who is speaking, acting, or declaring the message.
@@ -547,13 +572,29 @@ class TextContentPopulationService
       • CHURCH - Specific church or assembly (requires custom_name)
       • NOT_SPECIFIED - Use when the speaker is not directly present (e.g., narrator statements in the Gospels)
       
-      CRITICAL RESPONSIBLE PARTY RULES:
-      - Narrator statements in Gospels → NOT_SPECIFIED
+      ⚠️ CRITICAL RESPONSIBLE PARTY DETECTION RULES:
+      Detect direct-speech verbs in the verse:
+      - Greek: λέγει, εἶπεν, λέγων ("says", "said", "saying")
+      - Hebrew: אמר, ויאמר ("said", "and he said")
+      - Latin: dixit, ait ("said", "says")
+      - Any verb meaning "said / says / speaks"
+      
+      RULES:
+      - If the verse contains any direct-speech verb → responsible_party = the grammatical subject of that verb
+      - If subject is a named individual (Jesus, John, Paul, etc.) → INDIVIDUAL
+      - If subject is a group (e.g., Jews, Pharisees, disciples) → that group code (JEWS, DISCIPLES, etc.)
+      - If subject is implied (pronoun like "he", "they") → use nearest explicit antecedent from same narrative thread
+        * Example: "λέγει" with implied "he" referring to Jesus from previous verse → INDIVIDUAL
+        * Example: "εἶπαν" with implied "they" referring to "the Jews" from previous verse → JEWS
+      - If no direct-speech verb exists → responsible_party = NOT_SPECIFIED
+      - Narrator statements with no speech verb → NOT_SPECIFIED
       - Truth statements with no speaker → NOT_SPECIFIED
-      - When Jesus or John the Baptist speaks directly → INDIVIDUAL
-      - When Paul writes a letter → INDIVIDUAL (Paul)
-      - When verse is simply a declarative statement with no imperative, no command, no warning, and no obligation → NOT_SPECIFIED
-      - Every verse MUST have exactly one responsible_party_code - never leave null
+      
+      CONTINUITY OF SPEECH:
+      - If a speech act begins in a previous verse and continues, same speaker stays responsible_party
+      - Do NOT reset speaker unless: narrative breaks ("the next day…"), new subject introduced, new speech verb appears with different subject
+      
+      Every verse MUST have exactly one responsible_party_code - never leave null
       
       🔥 Important Distinction:
       - Addressed Party = who the message is directed TO
@@ -561,15 +602,20 @@ class TextContentPopulationService
       
       Examples from John Chapter 1 (CORRECT classifications):
       - John 1:1 (narrator statement): Genre=NARRATIVE, Addressed=NOT_SPECIFIED, Responsible=NOT_SPECIFIED
-      - John 1:15 (narrator reporting John cried out): Genre=NARRATIVE, Addressed=NOT_SPECIFIED, Responsible=INDIVIDUAL
-      - John 1:19 (Jews asking John - narrator describing): Genre=GOSPEL_TEACHING_SAYING, Addressed=INDIVIDUAL, Responsible=JEWS
-      - John 1:20 (John responding to Jews - direct speech): Genre=GOSPEL_TEACHING_SAYING, Addressed=JEWS, Responsible=INDIVIDUAL
-      - John 1:29 (John speaking about Jesus - narrator reporting): Genre=GOSPEL_TEACHING_SAYING, Addressed=NOT_SPECIFIED, Responsible=INDIVIDUAL
-      - John 1:36 (John speaking to disciples - narrator reporting): Genre=GOSPEL_TEACHING_SAYING, Addressed=DISCIPLES, Responsible=INDIVIDUAL
-      - John 1:38 (narrator describing event): Genre=NARRATIVE, Addressed=NOT_SPECIFIED, Responsible=NOT_SPECIFIED
-      - John 1:41 (Andrew speaking to Simon - direct speech): Genre=GOSPEL_TEACHING_SAYING, Addressed=INDIVIDUAL, Responsible=INDIVIDUAL
+      - John 1:15 (narrator reporting John cried out): Genre=NARRATIVE, Addressed=NOT_SPECIFIED, Responsible=INDIVIDUAL (John the Baptist - subject of speech verb)
+      - John 1:19 (Jews asking John - contains speech verb with Jews as subject): Genre=GOSPEL_TEACHING_SAYING, Addressed=INDIVIDUAL, Responsible=JEWS
+      - John 1:20 (John responding to Jews - contains speech verb with John as subject): Genre=GOSPEL_TEACHING_SAYING, Addressed=JEWS, Responsible=INDIVIDUAL
+      - John 1:29 (John speaking about Jesus - contains speech verb): Genre=GOSPEL_TEACHING_SAYING, Addressed=NOT_SPECIFIED, Responsible=INDIVIDUAL (John)
+      - John 1:36 (John speaking to disciples - contains speech verb, αὐτοῖς refers to disciples): Genre=GOSPEL_TEACHING_SAYING, Addressed=DISCIPLES, Responsible=INDIVIDUAL (John)
+      - John 1:38 (contains λέγει αὐτοῖς - "he says to them", Jesus speaking to two disciples): Genre=NARRATIVE (speech inside narration), Addressed=DISCIPLES (αὐτοῖς = "them" = two disciples), Responsible=INDIVIDUAL (Jesus - subject of λέγει)
+      - John 1:41 (Andrew speaking to Simon - contains speech verb): Genre=GOSPEL_TEACHING_SAYING, Addressed=INDIVIDUAL, Responsible=INDIVIDUAL
       
       CRITICAL: All verses in John 1:1-18 (Prologue) are NARRATIVE, not GOSPEL_TEACHING_SAYING, because they are narrator statements describing events.
+      
+      CRITICAL DETECTION EXAMPLES:
+      - Verse with "λέγει αὐτοῖς" → Check: Who is the subject of λέγει? (responsible_party) Who does αὐτοῖς refer to? (addressed_party)
+      - Verse with "εἶπαν αὐτῷ" → Check: Who is the subject of εἶπαν? (responsible_party) Who does αὐτῷ refer to? (addressed_party)
+      - Verse with no speech verb → responsible_party = NOT_SPECIFIED, addressed_party = NOT_SPECIFIED
       
       ✅ When to use NOT_SPECIFIED:
       Use NOT_SPECIFIED when:

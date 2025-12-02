@@ -456,15 +456,33 @@ class TextContentValidationService
       ⚠️ CRITICAL GENRE VALIDATION:
       - If the narrator is describing an event (even if quoting speech) → Genre MUST be NARRATIVE
       - If the narrator is reporting what someone said → Genre MUST be NARRATIVE
+      - If speech occurs inside narration (narrator reporting "he said to them") → Genre MUST be NARRATIVE
       - If John the Baptist speaks but in a narrative setting → Genre MUST be NARRATIVE
       - If Teaching Rule = FALSE (not instructional teaching) → Genre MUST be NARRATIVE
       - All prologue verses (John 1:1-18) MUST be NARRATIVE
-      - GOSPEL_TEACHING_SAYING is ONLY correct when Jesus is teaching instructionally (direct teaching, not narrator reporting)
+      - GOSPEL_TEACHING_SAYING is ONLY correct when: verse contains direct speech by Jesus in a Gospel (and it's instructional teaching)
+      - GENRE RULE: If verse contains direct speech by Jesus in a Gospel → GOSPEL_TEACHING_SAYING, otherwise if speech occurs inside narration → NARRATIVE, otherwise no speech → NARRATIVE
       - If genre_code is GOSPEL_TEACHING_SAYING but the verse is narrator describing an event → add to missing_required_fields with issue "INVALID_GENRE: Should be NARRATIVE (narrator describing event)"
       - Examples of CORRECT classifications:
         * John 1:15 (narrator reporting John cried out) → NARRATIVE (NOT GOSPEL_TEACHING_SAYING)
-        * John 1:38 (narrator describing event) → NARRATIVE (NOT GOSPEL_TEACHING_SAYING)
+        * John 1:38 (λέγει αὐτοῖς - narrator reporting Jesus speaking) → NARRATIVE (NOT GOSPEL_TEACHING_SAYING)
         * All John 1:1-18 → NARRATIVE (NOT GOSPEL_TEACHING_SAYING)
+      
+      ⚠️ CRITICAL RESPONSIBLE PARTY VALIDATION:
+      - Check if verse contains direct-speech verbs (λέγει, εἶπεν, λέγων, etc.)
+      - If speech verb exists → responsible_party MUST = grammatical subject of that verb
+      - If subject is named individual → responsible_party = INDIVIDUAL
+      - If subject is group → responsible_party = that group code
+      - If subject is pronoun → use nearest explicit antecedent from narrative thread
+      - If no speech verb → responsible_party = NOT_SPECIFIED
+      - Example: John 1:38 (λέγει with Jesus as subject) → responsible_party = INDIVIDUAL (NOT NOT_SPECIFIED)
+      
+      ⚠️ CRITICAL ADDRESSED PARTY VALIDATION:
+      - Check if verse contains recipient markers (αὐτῷ/αὐτοῖς, πρός + accusative, indirect-object pronouns)
+      - If recipient marker exists → addressed_party MUST = entity that marker refers to
+      - If pronoun refers to specific entity from previous verse → assign that entity's code
+      - Example: John 1:38 (αὐτοῖς referring to two disciples from previous verse) → addressed_party = DISCIPLES (NOT NOT_SPECIFIED)
+      - If no recipient marker → addressed_party = NOT_SPECIFIED
       
       6. OVERALL ACCURACY:
       - Set is_accurate to true ONLY if:
