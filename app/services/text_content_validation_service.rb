@@ -226,7 +226,31 @@ class TextContentValidationService
       - Imperfect verbs (ἦν, etc.): base_gloss should preserve aspect as "was-being", NOT just "was"
       - Prepositions: πρὸς + accusative MUST have base_gloss as "toward" or "to", NEVER "with"
       - Articles: If source language has no article, gloss should NOT supply one
+      - Prepositions with stative verbs: εἰς with stative verbs/participles (εἰμί, μένω, etc.) MUST be "in" (locative), NOT "into" (directional)
       - If ANY of these violations are found → flag as INVALID_MEANING
+      
+      ⚠️ CRITICAL CAPITALIZATION VALIDATION IN ENGLISH GLOSSES:
+      - NEVER capitalise an English gloss solely because of traditional theological rendering
+      - Capitalisation may ONLY occur when Greek grammar marks the word as a proper title/name through article + contextual identification
+      - ANY violation of capitalisation rules MUST automatically set completeness: "INCOMPLETE"
+      
+      # λόγος ("logos") Capitalization:
+      - base_gloss MUST ALWAYS be "word" (lowercase "w") in ALL contexts
+      - NO exceptions. No "Word." No titular capitalisation. Flag as INVALID_MEANING if capitalized
+      
+      # θεός ("theos") Capitalization:
+      - When anarthrous (no article), predicate nominative, or qualitative sense → base_gloss MUST be "god" or "deity" (lowercase "g")
+      - ONLY use "God" (capital G) when BOTH: (1) Greek has article (ὁ, τὸν, etc.) AND (2) Context identifies as the Father (one God of Israel)
+      - Any other context → lowercase "god". Flag as INVALID_MEANING if "God" used incorrectly
+      
+      # κύριος ("kyrios") Capitalization:
+      - base_gloss MUST be "lord" or "master" (lowercase) unless Greek has article AND narrative context makes it clear titular reference
+      - Under no circumstances infer divine LORD simply because tradition capitalises it. Flag as INVALID_MEANING if capitalized without proper justification
+      
+      # Summary:
+      - English capitalisation must follow Greek grammar, NEVER theology
+      - Greek never uses capitals for titles → neither can LSV
+      - Flag ANY theological capitalisation as INVALID_MEANING and set completeness: "INCOMPLETE"
       
       3. LSV TRANSLATION VALIDATION
       The LSV translation must:
@@ -242,6 +266,10 @@ class TextContentValidationService
       - Imperfect verbs: MUST preserve continuous aspect (e.g., "was-being" not just "was")
       - Articles: MUST NOT insert "the" where source language has no article (e.g., ἐν ἀρχῇ = "in beginning", not "in the beginning")
       - Demonstrative pronouns: MUST be "this" or "this one", NEVER "he/she/it" (that's interpretive smoothing)
+      - Prepositions with stative verbs: εἰς with stative verbs/participles MUST be "in" (locative), NOT "into" (directional)
+      - Structural support for articles: If English "the" is added, MUST note in lsv_notes.structural_support whether Greek phrase is articular or anarthrous
+      - If Greek phrase is anarthrous, structural_support MUST say: "English 'the' added for grammar; Greek phrase is anarthrous."
+      - Syntax notes precision: Notes MUST name exact governing lemma (e.g., "direct object of ἑώρακεν", not "object of the verb")
       - If ANY of these violations are found → flag as INVALID_MEANING and set lsv_translation_valid to false
       
       4. LSV RULE VALIDATION

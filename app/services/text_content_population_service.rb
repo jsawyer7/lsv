@@ -450,15 +450,69 @@ class TextContentPopulationService
              * "word", "speech", "statement", or closely related literal communicative senses.
            - DO NOT import philosophical senses like "reason", "principle", "rationality".
            - secondary_glosses MUST stay within strictly linguistic dictionary senses.
+           - ⚠️ CRITICAL CAPITALIZATION RULE: base_gloss MUST ALWAYS be "word" (lowercase "w") in ALL contexts.
+           - NO exceptions. No "Word." No titular capitalisation. NEVER capitalise based on theological tradition.
 
-        6. Greek Morphology:
+        6. Capitalisation and Theological Smoothing in English Glosses (ABSOLUTE PROHIBITION):
+           - NEVER capitalise an English gloss solely because of traditional theological rendering.
+           - Capitalisation may ONLY occur when the underlying Greek grammar marks the word as a proper title/name through article + contextual identification.
+           - ANY violation of these capitalisation rules MUST automatically set completeness: "INCOMPLETE" and trigger a repair step.
+
+           # θεός ("theos") Capitalisation Rules:
+           - When anarthrous (no article), or functioning as a predicate nominative, or used in a qualitative sense:
+             → base_gloss MUST be "god" or "deity" (lowercase "g").
+           - ONLY use "God" (capital G) when BOTH conditions are true:
+             1. Greek has the article (ὁ, τὸν, τοῦ, etc.) identifying a specific referent, AND
+             2. Context explicitly identifies this referent as the Father (the one God of Israel).
+           - Any other context → lowercase "god".
+
+           # κύριος ("kyrios") Capitalisation Rules:
+           - base_gloss MUST be "lord" or "master" (lowercase) unless the Greek uses the article AND the narrative context makes it a clear titular reference.
+           - Under no circumstances infer divine LORD simply because tradition capitalises it.
+
+           # Summary:
+           - English capitalisation must follow Greek grammar, NEVER theology.
+           - Greek never uses capitals for titles → neither can LSV.
+
+        7. Prepositions with Stative Verbs or Participles (εἰς / ἐν idiom):
+           - When εἰς governs an accusative locative/relational noun AND the governing verb or participle is stative
+             (εἰμί, ὑπάρχω, μένω, κάθημαι, κεῖμαι, γίνομαι, or any present/active participle of these),
+             the idiomatic Koine gloss is "in" (locative), not "into" (directional).
+           - Examples:
+             • ὁ ὢν εἰς τὸν κόλπον → "the one being in the bosom"
+             • μένει εἰς τὸν αἰῶνα → "remains in the age"
+           - base_gloss for εἰς in these frames MUST be "in".
+           - If you use "into", set completeness: "INCOMPLETE" and trigger repair.
+
+        8. Structural Support for English Articles – Anarthrous vs Articular Phrases:
+           - Before adding "the" (or "a/an") in lsv_literal_reconstruction,
+             you MUST determine whether the Greek noun phrase is articular or anarthrous.
+           - A noun phrase is articular only if an article (ὁ, ἡ, τό, etc.) matches
+             the noun in case, number, and gender and stands in the same phrase.
+           - If the phrase is anarthrous (e.g., μονογενὴς θεός, θεὸς ἦν ὁ λόγος),
+             any English "the" is pure structural support.
+             → lsv_notes.structural_support MUST explicitly say:
+               "English 'the' added for grammar; Greek phrase is anarthrous."
+           - Never say an added article "reflects the Greek article" unless it actually does.
+
+        9. Syntax Notes Must Be Precise and Verifiable:
+           - The "notes" field may only contain purely grammatical information.
+           - When stating syntactic role (subject, object, etc.),
+             you MUST name the exact governing lemma, e.g.:
+               "Accusative case, direct object of ἑώρακεν."
+               "Nominative case, subject of ἐξηγήσατο."
+           - Never use vague phrases like "object of the verb" without naming the verb.
+           - These notes MUST align with explicit dependency data
+             (head verb/participle and syntactic_role for each token).
+
+        10. Greek Morphology:
            - morphology should specify:
              * Part of speech,
              * Case, number, gender for nouns/adjectives/pronouns,
              * Tense, voice, mood, person, number for verbs.
            - notes MUST remain purely grammatical (no theological commentary).
 
-        7. Westcott-Hort 1881 Specific Editorial Conventions:
+        11. Westcott-Hort 1881 Specific Editorial Conventions:
            - Use the exact text of the 1881 edition (not NA28/UBS5 or Tregelles or SBLGNT).
            - WH1881 uses **no square brackets** in the main text (unlike NA28).
            - WH1881 uses **parentheses ()** for text they print but consider doubtful.
@@ -466,7 +520,7 @@ class TextContentPopulationService
            - Capitalization: WH1881 uses capitals only for proper names and the beginning of paragraphs/sentences. Divine names (Θεός, Κύριος) are **not** capitalized unless sentence-initial.
            - Do NOT "correct" to NA28 punctuation or bracketing.
 
-        8. Known WH1881 Quirks You Must Reproduce Exactly:
+        12. Known WH1881 Quirks You Must Reproduce Exactly:
            - John 7:53–8:11 is present but enclosed in double square brackets [[ ]].
            - Mark 16:9–20 is present with note but not bracketed.
            - Luke 22:43–44 is in double square brackets.
