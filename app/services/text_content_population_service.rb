@@ -238,7 +238,8 @@ class TextContentPopulationService
       • PROPHECY           – Prophetic oracles and pronouncements.
       • WISDOM             – Wisdom sayings, proverbs, reflective discourse (e.g., Proverbs, Ecclesiastes, Job wisdom).
       • POETRY_SONG        – Poetry, psalms, songs, parallelism.
-      • GOSPEL_TEACHING_SAYING – Direct teaching/discourse of Jesus in the Gospels presented as instruction.
+      • PARABLE            – Parable: a short story used to illustrate a moral or spiritual lesson (e.g., Jesus' parables like the Sower, Good Samaritan, Prodigal Son).
+      • GOSPEL_TEACHING_SAYING – Direct teaching/discourse of Jesus in the Gospels presented as instruction (not parables).
       • EPISTLE_LETTER     – Letter/epistle content (Pauline, General Epistles, etc.).
       • APOCALYPTIC_VISION – Visionary/apocalyptic scenes (Daniel, Revelation, similar).
       • GENEALOGY_LIST     – Lists of names, genealogies, censuses.
@@ -253,10 +254,19 @@ class TextContentPopulationService
         * Legal commands or prohibitions directed to individuals or groups.
       - PROPHECY:
         * "Thus says the LORD/YHWH…" type oracles; prophetic declarations.
+      - PARABLE:
+        * A short narrative story used to illustrate a moral or spiritual lesson.
+        * Typically introduced with phrases like "The kingdom of heaven is like..." or "A certain man had..."
+        * Distinct from GOSPEL_TEACHING_SAYING: parables are illustrative stories, while teachings are direct instruction.
+        * Examples: Parable of the Sower, Parable of the Good Samaritan, Parable of the Prodigal Son.
+        * If Jesus tells a parable, use PARABLE (not GOSPEL_TEACHING_SAYING).
+
       - GOSPEL_TEACHING_SAYING:
-        * ONLY when Jesus is teaching or speaking instructionally in Gospel contexts.
-        * Sermon on the Mount, parables as teaching, long discourses.
+        * ONLY when Jesus is teaching or speaking instructionally in Gospel contexts (direct instruction, not parables).
+        * Direct sayings, commands, explanations, or teachings without narrative story structure.
+        * Sermon on the Mount, long discourses (but NOT parables - use PARABLE for those).
       - If verse is in a Gospel but is narrator describing events/speech → NARRATIVE (not GOSPEL_TEACHING_SAYING).
+      - If verse is a parable → PARABLE (not GOSPEL_TEACHING_SAYING).
       - EPISTLE_LETTER:
         * Content inside NT letters, including doctrinal and practical instruction.
       - PRAYER:
@@ -393,7 +403,7 @@ class TextContentPopulationService
           "validation_status": "OK | MISSING_LEXICAL_MEANINGS | INVALID_MEANING"
         },
 
-        "genre_code": "REQUIRED – One of: NARRATIVE, LAW, PROPHECY, WISDOM, POETRY_SONG, GOSPEL_TEACHING_SAYING, EPISTLE_LETTER, APOCALYPTIC_VISION, GENEALOGY_LIST, PRAYER.",
+        "genre_code": "REQUIRED – One of: NARRATIVE, LAW, PROPHECY, WISDOM, POETRY_SONG, PARABLE, GOSPEL_TEACHING_SAYING, EPISTLE_LETTER, APOCALYPTIC_VISION, GENEALOGY_LIST, PRAYER.",
         "addressed_party_code": "REQUIRED – One of: INDIVIDUAL, ISRAEL, JUDAH, JEWS, GENTILES, DISCIPLES, BELIEVERS, ALL_PEOPLE, CHURCH, NOT_SPECIFIED.",
         "addressed_party_custom_name": "If addressed_party_code is CHURCH, provide the church name (e.g., CORINTH, ROME). Otherwise null.",
         "responsible_party_code": "REQUIRED – One of: INDIVIDUAL, ISRAEL, JUDAH, JEWS, GENTILES, DISCIPLES, BELIEVERS, ALL_PEOPLE, CHURCH, NOT_SPECIFIED.",

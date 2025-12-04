@@ -281,7 +281,7 @@ class TextContentValidationService
       
       5. REQUIRED CLASSIFICATION FIELDS VALIDATION
       ⚠️ CRITICAL: Every verse MUST have these three fields populated:
-      - genre_code: REQUIRED - Every verse must have a genre (NARRATIVE, LAW, PROPHECY, WISDOM, POETRY_SONG, GOSPEL_TEACHING_SAYING, EPISTLE_LETTER, APOCALYPTIC_VISION, GENEALOGY_LIST, PRAYER)
+      - genre_code: REQUIRED - Every verse must have a genre (NARRATIVE, LAW, PROPHECY, WISDOM, POETRY_SONG, PARABLE, GOSPEL_TEACHING_SAYING, EPISTLE_LETTER, APOCALYPTIC_VISION, GENEALOGY_LIST, PRAYER)
       - addressed_party_code: REQUIRED - Every verse must have an addressed party (use NOT_SPECIFIED if unclear)
       - responsible_party_code: REQUIRED - Every verse must have a responsible party (use NOT_SPECIFIED if unclear)
       - If ANY of these fields are missing or null, flag as MISSING_REQUIRED_FIELDS
@@ -299,17 +299,27 @@ class TextContentValidationService
       - If the narrator quotes someone but is describing an event → NARRATIVE
       - Examples: John 1:1-18 (all NARRATIVE), John 1:15 (narrator reporting John's words = NARRATIVE), John 1:38 (narrator describing event = NARRATIVE)
       
+      PARABLE is correct when:
+      - The verse is a short narrative story used to illustrate a moral or spiritual lesson
+      - Typically introduced with phrases like "The kingdom of heaven is like..." or "A certain man had..."
+      - Distinct from GOSPEL_TEACHING_SAYING: parables are illustrative stories, while teachings are direct instruction
+      - Examples: Parable of the Sower, Parable of the Good Samaritan, Parable of the Prodigal Son
+      - If Jesus tells a parable, genre MUST = PARABLE (not GOSPEL_TEACHING_SAYING)
+
       GOSPEL_TEACHING_SAYING is correct ONLY when:
       - Jesus is teaching or speaking instructionally (direct teaching, not just quoted by narrator)
-      - The verse is instructional content, not narrative description
+      - The verse is instructional content, not narrative description, and NOT a parable
       - The verse functions as a teaching/saying, not as story-telling
+      - Direct sayings, commands, explanations without narrative story structure
       
       RULE: If the narrator is describing an event → Genre MUST = NARRATIVE
-      RULE: If Jesus is teaching or speaking instructionally → Genre = GOSPEL_TEACHING_SAYING
+      RULE: If Jesus is teaching or speaking instructionally (direct instruction, not a story) → Genre = GOSPEL_TEACHING_SAYING
+      RULE: If Jesus tells a parable (illustrative story) → Genre MUST = PARABLE
       RULE: If John the Baptist speaks but in a narrative setting → Genre MUST = NARRATIVE
       RULE: If Teaching Rule = FALSE → Genre MUST = NARRATIVE
       
       If genre_code is GOSPEL_TEACHING_SAYING but the verse is narrator describing an event, flag as INVALID_GENRE.
+      If genre_code is GOSPEL_TEACHING_SAYING but the verse is a parable, flag as INVALID_GENRE (should be PARABLE).
       
       ================================================================================
       VALIDATION FLAGS

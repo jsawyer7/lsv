@@ -37,6 +37,7 @@ genre_types = [
   { code: 'PROPHECY', label: 'Prophecy', description: 'Prophetic text' },
   { code: 'WISDOM', label: 'Wisdom', description: 'Wisdom literature' },
   { code: 'POETRY_SONG', label: 'Poetry / Song', description: 'Poetry or song' },
+  { code: 'PARABLE', label: 'Parable', description: 'Parable - a short story used to illustrate a moral or spiritual lesson' },
   { code: 'GOSPEL_TEACHING_SAYING', label: 'Gospel Teaching / Saying', description: 'Gospel teaching or saying' },
   { code: 'EPISTLE_LETTER', label: 'Epistle / Letter', description: 'Epistle or letter' },
   { code: 'APOCALYPTIC_VISION', label: 'Apocalyptic Vision', description: 'Apocalyptic vision' },
