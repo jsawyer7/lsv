@@ -7,6 +7,30 @@ Sidekiq.configure_server do |config|
   # Set concurrency (number of threads) - increased from default 5 to 10
   config.concurrency = ENV.fetch('SIDEKIQ_CONCURRENCY', '10').to_i
   
+  # Explicitly set queues to listen to (matching ActiveJob queue_name_prefix)
+  # This ensures the worker processes jobs from the correct queues
+  # In production, ActiveJob uses queue_name_prefix: "literal_verification_production"
+  # So jobs go to: "literal_verification_production_default"
+  queue_prefix = Rails.application.config.active_job.queue_name_prefix
+  
+  if queue_prefix.present?
+    # Production: listen to prefixed queues
+    config.queues = [
+      "#{queue_prefix}_default",
+      "#{queue_prefix}_critical",
+      "#{queue_prefix}_low",
+      'default',  # Fallback for unprefixed queues
+      'critical',
+      'low'
+    ].compact.uniq
+  else
+    # Development: listen to unprefixed queues
+    config.queues = ['default', 'critical', 'low']
+  end
+  
+  Rails.logger.info "Sidekiq server configured with queues: #{config.queues.inspect}"
+  Rails.logger.info "ActiveJob queue_name_prefix: #{queue_prefix.inspect}"
+  
   # Configure error handling
   config.death_handlers << ->(job, ex) do
     Rails.logger.error "Job #{job['class']} failed permanently: #{ex.message}"
