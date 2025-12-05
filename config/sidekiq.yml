@@ -1,0 +1,9 @@
+# Sidekiq configuration file
+# This file is optional - Sidekiq will use defaults if not present
+
+:concurrency: 10
+:queues:
+  - default
+  - critical
+  - low
+
