@@ -3,6 +3,10 @@
 
 :concurrency: 10
 :queues:
+  - literal_verification_production_default
+  - literal_verification_production_critical
+  - literal_verification_production_low
+  # Also listen to unprefixed queues for backwards compatibility
   - default
   - critical
   - low
