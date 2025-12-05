@@ -51,10 +51,18 @@ class PopulateWestcottHortNtJob < ApplicationJob
     Rails.cache.delete('wh_nt_population_error')
 
     # Step 1: Create all text content records (if needed)
-    if force_create || TextContent.unscoped.where(source_id: source.id).count == 0
+    # Always create if force_create is true, or if no records exist
+    # Also check if we need to create missing records (partial creation scenario)
+    existing_count = TextContent.unscoped.where(source_id: source.id).count
+    expected_total = calculate_expected_verse_count
+    
+    if force_create || existing_count == 0 || existing_count < expected_total
       Rails.logger.info "Creating text content records..."
+      Rails.logger.info "Existing: #{existing_count}, Expected: #{expected_total}"
       creation_result = create_all_records(source)
       Rails.logger.info "Created: #{creation_result[:total_created]}, Existing: #{creation_result[:total_existing]}"
+    else
+      Rails.logger.info "All text content records already exist (#{existing_count} records)"
     end
 
     # Step 2: Enqueue individual jobs for each verse that needs population
@@ -97,6 +105,19 @@ class PopulateWestcottHortNtJob < ApplicationJob
   end
 
   private
+
+  def calculate_expected_verse_count
+    # Calculate total expected verses across all NT books
+    total = 0
+    VerseCountReference::NEW_TESTAMENT_BOOKS.each do |book_code|
+      chapters = VerseCountReference.book_chapter_counts[book_code.to_s.upcase]
+      next unless chapters
+      chapters.each do |_chapter_num, verse_count|
+        total += verse_count
+      end
+    end
+    total
+  end
 
   def create_all_records(source)
     nt_book_codes = VerseCountReference::NEW_TESTAMENT_BOOKS
