@@ -2199,33 +2199,39 @@ namespace :lexical do
       end
     end
 
-    desc "Enqueue Westcott-Hort NT population job via Sidekiq. Usage: rake 'lexical:enqueue_wh_nt_job[source_id]'"
+    desc "Enqueue Westcott-Hort NT population job via Sidekiq. Usage: rake 'lexical:enqueue_wh_nt_job[source_id]' or with FORCE_CREATE=true FORCE_POPULATE=true"
     task :enqueue_wh_nt_job, [:source_id] => :environment do |t, args|
       source_id = args[:source_id]&.to_i || 10
+      force_create = ENV['FORCE_CREATE'] == 'true'
+      force_populate = ENV['FORCE_POPULATE'] == 'true'
       
       puts "=" * 80
       puts "Enqueuing PopulateWestcottHortNtJob"
       puts "=" * 80
       puts "Source ID: #{source_id}"
+      puts "Force Create: #{force_create ? 'YES' : 'NO'}"
+      puts "Force Populate: #{force_populate ? 'YES' : 'NO'}"
       puts ""
       
-      # Check if already completed
-      source = Source.unscoped.find_by(id: source_id.to_i)
-      if source
-        total_verses = TextContent.unscoped.where(source_id: source.id).count
-        success_verses = TextContent.unscoped.where(source_id: source.id, population_status: 'success').count
-        completion_rate = total_verses > 0 ? (success_verses.to_f / total_verses * 100) : 0
-        
-        # Only consider complete if 100% successful (strict requirement)
-        if success_verses == total_verses && total_verses > 0
-          puts "⚠ Already completed (100% success - #{success_verses}/#{total_verses} verses)"
-          puts "Use FORCE_POPULATE=true to rerun"
-          exit 0
+      # Check if already completed (unless forcing)
+      unless force_populate
+        source = Source.unscoped.find_by(id: source_id.to_i)
+        if source
+          total_verses = TextContent.unscoped.where(source_id: source.id).count
+          success_verses = TextContent.unscoped.where(source_id: source.id, population_status: 'success').count
+          completion_rate = total_verses > 0 ? (success_verses.to_f / total_verses * 100) : 0
+          
+          # Only consider complete if 100% successful (strict requirement)
+          if success_verses == total_verses && total_verses > 0
+            puts "⚠ Already completed (100% success - #{success_verses}/#{total_verses} verses)"
+            puts "Use FORCE_POPULATE=true to rerun"
+            exit 0
+          end
         end
       end
       
       # Enqueue the job (using ActiveJob's perform_later which works with Sidekiq)
-      job = PopulateWestcottHortNtJob.perform_later(source_id)
+      job = PopulateWestcottHortNtJob.perform_later(source_id, force_create: force_create, force_populate: force_populate)
       
       if job
         puts "✓ Job enqueued successfully"
