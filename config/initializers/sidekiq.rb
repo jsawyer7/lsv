@@ -1,5 +1,5 @@
-# Get Redis URL from environment (Heroku sets REDIS_URL automatically)
-redis_url = ENV.fetch('REDIS_URL', 'redis://localhost:6379/0')
+# Get Redis URL from environment (Heroku sets REDISCLOUD_URL automatically)
+redis_url = ENV.fetch('REDISCLOUD_URL', 'redis://localhost:6379/0')
 
 Sidekiq.configure_server do |config|
   config.redis = { url: redis_url }
