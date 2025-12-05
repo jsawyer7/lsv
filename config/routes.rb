@@ -116,14 +116,22 @@ Rails.application.routes.draw do
   # Protect Sidekiq web UI with basic auth in production
   if Rails.env.production?
     Sidekiq::Web.use Rack::Auth::Basic do |username, password|
-      ActiveSupport::SecurityUtils.secure_compare(
-        ::Digest::SHA256.hexdigest(username),
-        ::Digest::SHA256.hexdigest(ENV.fetch('SIDEKIQ_USERNAME', 'admin'))
-      ) &
-      ActiveSupport::SecurityUtils.secure_compare(
-        ::Digest::SHA256.hexdigest(password),
-        ::Digest::SHA256.hexdigest(ENV.fetch('SIDEKIQ_PASSWORD', 'password'))
+      expected_username = ENV.fetch('SIDEKIQ_USERNAME', 'admin')
+      expected_password = ENV.fetch('SIDEKIQ_PASSWORD', 'password')
+      
+      # Use secure_compare for constant-time comparison to prevent timing attacks
+      username_match = ActiveSupport::SecurityUtils.secure_compare(
+        username.to_s,
+        expected_username
       )
+      
+      password_match = ActiveSupport::SecurityUtils.secure_compare(
+        password.to_s,
+        expected_password
+      )
+      
+      # Return boolean result (both must match)
+      username_match && password_match
     end
   end
   
