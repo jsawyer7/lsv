@@ -1,5 +1,8 @@
+# Get Redis URL from environment (Heroku sets REDIS_URL automatically)
+redis_url = ENV.fetch('REDIS_URL', 'redis://localhost:6379/0')
+
 Sidekiq.configure_server do |config|
-  config.redis = { url: ENV.fetch('REDIS_URL', 'redis://localhost:6379/0') }
+  config.redis = { url: redis_url }
   
   # Set concurrency (number of threads) - increased from default 5 to 10
   config.concurrency = ENV.fetch('SIDEKIQ_CONCURRENCY', '10').to_i
@@ -11,7 +14,17 @@ Sidekiq.configure_server do |config|
 end
 
 Sidekiq.configure_client do |config|
-  config.redis = { url: ENV.fetch('REDIS_URL', 'redis://localhost:6379/0') }
+  config.redis = { url: redis_url }
+end
+
+# Configure Sidekiq Web UI to use the same Redis connection
+# This must be set before routes are loaded (in routes.rb)
+# The Web UI needs explicit Redis configuration in production
+require 'sidekiq/web' if defined?(Sidekiq::Web)
+if defined?(Sidekiq::Web)
+  # Set Redis connection for Web UI
+  Sidekiq::Web.instance_variable_set(:@redis_pool, nil) # Clear any existing pool
+  Sidekiq::Web.redis = { url: redis_url, size: 10 }
 end
 
 # Optional: Configure Sidekiq-Cron for scheduled jobs

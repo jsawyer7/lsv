@@ -110,6 +110,7 @@ Rails.application.routes.draw do
   end
 
   # Sidekiq Web UI for monitoring background jobs
+  # Note: Redis connection is configured in config/initializers/sidekiq.rb
   require 'sidekiq/web'
   require 'sidekiq/cron/web' if defined?(Sidekiq::Cron)
   
