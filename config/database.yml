@@ -24,7 +24,10 @@ default: &default
 development:
   <<: *default
   database: literal_verification_development
-  pool: 10
+  # Increased pool size to accommodate Sidekiq threads (10) + Concurrent::Future threads (batch_size * threads)
+  # Formula: pool >= Sidekiq threads + (Sidekiq threads × batch_size)
+  # With 10 Sidekiq threads and batch_size of 7: 10 + (10 × 7) = 80, but we use 30 as a practical limit
+  pool: <%= ENV.fetch("DB_POOL", 30) %>
 
   # The specified database role being used to connect to postgres.
   # To create additional roles in postgres see `$ createuser --help`.

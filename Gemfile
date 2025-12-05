@@ -16,8 +16,8 @@ gem 'puma', '~> 4.1'
 gem 'sass-rails', '>= 6'
 # Build JSON APIs with ease. Read more: https://github.com/rails/jbuilder
 gem 'jbuilder', '~> 2.7'
-# Use Redis adapter to run Action Cable in production
-# gem 'redis', '~> 4.0'
+# Use Redis adapter to run Action Cable in production and Sidekiq
+gem 'redis', '~> 4.0'
 # Use Active Model has_secure_password
 # gem 'bcrypt', '~> 3.1.7'
 
@@ -86,3 +86,10 @@ gem "kaminari", "~> 1.2"
 # PDF generation
 gem 'prawn'
 gem 'prawn-table'
+
+# Concurrent processing for batch operations
+gem 'concurrent-ruby'
+
+# Background job processing with Sidekiq
+gem 'sidekiq'
+gem 'sidekiq-cron' # Optional: for scheduled jobs

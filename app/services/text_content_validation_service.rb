@@ -53,7 +53,7 @@ class TextContentValidationService
       prompt = build_validation_prompt
 
       response = call_grok_api(
-        model: "grok-3",
+        model: ENV.fetch('GROK_MODEL', 'grok-4-0709'),
         messages: [
           {
             role: "system",
@@ -545,7 +545,7 @@ class TextContentValidationService
   def update_validation_fields(result)
     @text_content.update!(
       content_validated_at: Time.current,
-      content_validated_by: 'grok-3',
+      content_validated_by: ENV.fetch('GROK_MODEL', 'grok-4-0709'),
       content_validation_result: {
         is_accurate: result[:is_accurate],
         character_accurate: result[:character_accurate],
@@ -569,24 +569,29 @@ class TextContentValidationService
     # Log the validation request/response
     TextContentApiLog.create!(
       text_content_id: @text_content.id,
-      api_endpoint: 'validate_content',
-      request_data: {
+      source_name: @source.name,
+      book_code: @book.code,
+      chapter: @chapter,
+      verse: @verse,
+      action: 'validate_content',
+      request_payload: {
         source: @source.name,
         book: @book.std_name,
         chapter: @chapter,
         verse: @verse,
         content_to_validate: @text_content.content
-      },
-      response_data: {
+      }.to_json,
+      response_payload: {
         is_accurate: result[:is_accurate],
         accuracy_percentage: result[:accuracy_percentage],
         discrepancies_count: result[:discrepancies]&.count || 0
-      },
-      raw_response: result[:raw_response],
-      status: result[:is_accurate] ? 'success' : 'validation_failed'
+      }.to_json,
+      status: result[:is_accurate] ? 'success' : 'validation_failed',
+      ai_model_name: GROK_MODEL
     )
   rescue => e
     Rails.logger.error "Failed to log validation: #{e.message}"
+    Rails.logger.error e.backtrace.first(3).join("\n")
   end
 
   def grok_api_key

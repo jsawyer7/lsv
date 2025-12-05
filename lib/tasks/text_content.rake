@@ -1395,5 +1395,849 @@ namespace :text_content do
     puts ""
     puts "Done!"
   end
+
+  # ============================================================================
+  # PRODUCTION BATCH PROCESSING TASKS (Concurrent Processing)
+  # ============================================================================
 end
+
+namespace :lexical do
+    desc "Populate entire book with concurrent processing. Usage: rake 'lexical:populate_book[source_id,book_code]' or FORCE=true"
+    task :populate_book, [:source_id, :book_code] => :environment do |t, args|
+      source_id = args[:source_id] || "10"
+      book_code = args[:book_code] || "JHN"
+      force = ENV['FORCE'] == 'true'
+      batch_size = ENV.fetch('BATCH_SIZE', '7').to_i
+      max_concurrent = ENV.fetch('GROK_MAX_CONCURRENT', '30').to_i
+      model = ENV.fetch('GROK_MODEL', 'grok-4-0709')
+
+      puts "=" * 80
+      puts "Populating Book with Concurrent Processing"
+      puts "Source ID: #{source_id}"
+      puts "Book Code: #{book_code}"
+      puts "Model: #{model}"
+      puts "Max Concurrent: #{max_concurrent}"
+      puts "Batch Size: #{batch_size}"
+      puts "Force: #{force ? 'YES (will overwrite existing)' : 'NO (skip existing)'}"
+      puts "=" * 80
+      puts ""
+
+      # Find source
+      source = Source.unscoped.find_by(id: source_id.to_i)
+      unless source
+        puts "✗ Source not found: #{source_id}"
+        exit 1
+      end
+
+      # Find book
+      book = Book.unscoped.find_by(code: book_code) || Book.unscoped.where('LOWER(code) = LOWER(?)', book_code).first
+      unless book
+        puts "✗ Book not found: #{book_code}"
+        exit 1
+      end
+
+      puts "✓ Source: #{source.name} (ID: #{source.id})"
+      puts "✓ Book: #{book.std_name} (#{book.code})"
+      puts ""
+
+      # Get scope of verses to process
+      scope = TextContent.unscoped.where(source_id: source.id, book_id: book.id)
+      
+      unless force
+        # Skip already successfully populated
+        scope = scope.where.not(population_status: 'success')
+      end
+
+      total = scope.count
+      
+      if total == 0
+        puts "✓ No verses to process (all already populated)"
+        exit 0
+      end
+
+      puts "Found #{total} verse(s) to process"
+      puts ""
+
+      # Process in batches using concurrent futures
+      require 'concurrent'
+      
+      processed = 0
+      success_count = 0
+      error_count = 0
+      start_time = Time.current
+
+      scope.find_in_batches(batch_size: batch_size) do |batch|
+        puts "Processing batch of #{batch.size} verses (#{processed + 1} to #{processed + batch.size} of #{total})..."
+        
+        # Create concurrent futures for this batch
+        futures = batch.map do |tc|
+          Concurrent::Future.execute do
+            begin
+              service = TextContentPopulationService.new(tc)
+              result = service.populate_content_fields(force: force)
+              # Ensure result is always a hash with status
+              result.is_a?(Hash) ? result : { status: 'error', error: 'Invalid result format' }
+            rescue => e
+              # Ensure we always return a hash with status
+              { status: 'error', error: "#{e.class.name}: #{e.message}" }
+            end
+          end
+        end
+
+        # Wait for all futures in this batch to complete
+        results = futures.map do |future|
+          begin
+            result = future.value
+            # Ensure result is always a hash with status
+            result.is_a?(Hash) ? result : { status: 'error', error: 'Future returned nil or invalid result' }
+          rescue => e
+            # Handle exceptions from futures
+            { status: 'error', error: "#{e.class.name}: #{e.message}" }
+          end
+        end
+        
+        # Count successes and errors
+        batch_success = results.count { |r| r && r.is_a?(Hash) && r[:status] == 'success' }
+        batch_errors = results.count { |r| r && r.is_a?(Hash) && r[:status] == 'error' }
+        
+        success_count += batch_success
+        error_count += batch_errors
+        processed += batch.size
+
+        # Progress bar
+        progress = (processed.to_f / total * 100).round(1)
+        bar_length = 50
+        filled = (progress / 100.0 * bar_length).floor
+        bar = '█' * filled + '░' * (bar_length - filled)
+        
+        puts "  Batch complete | #{processed}/#{total} (#{progress}%) | Success: #{batch_success}/#{batch.size} | Errors: #{batch_errors} | [#{bar}]"
+        puts ""
+      end
+
+      elapsed = Time.current - start_time
+      elapsed_minutes = (elapsed / 60.0).round(2)
+
+      puts "=" * 80
+      puts "Processing Complete"
+      puts "=" * 80
+      puts "Total processed: #{processed}"
+      puts "  - Success: #{success_count}"
+      puts "  - Errors: #{error_count}"
+      puts "  - Already populated: #{processed - success_count - error_count}"
+      puts "Time elapsed: #{elapsed_minutes} minutes"
+      puts "Average: #{(elapsed / processed).round(2)} seconds per verse" if processed > 0
+      puts ""
+
+      # Show error summary if any
+      if error_count > 0
+        error_records = scope.where(population_status: 'error').limit(10)
+        if error_records.any?
+          puts "Sample errors:"
+          error_records.each do |tc|
+            puts "  - #{tc.unit_key}: #{tc.population_error_message&.truncate(80)}"
+          end
+          puts ""
+        end
+        puts "⚠ Run with FORCE=true to retry errors, or check individual records"
+      end
+
+      puts "Done!"
+    end
+
+    desc "Populate entire source (all books) with concurrent processing. Usage: rake 'lexical:populate_source[source_id]' or FORCE=true"
+    task :populate_source, [:source_id] => :environment do |t, args|
+      source_id = args[:source_id] || "10"
+      force = ENV['FORCE'] == 'true'
+      batch_size = ENV.fetch('BATCH_SIZE', '7').to_i
+
+      puts "=" * 80
+      puts "Populating Entire Source with Concurrent Processing"
+      puts "Source ID: #{source_id}"
+      puts "Force: #{force ? 'YES (will overwrite existing)' : 'NO (skip existing)'}"
+      puts "=" * 80
+      puts ""
+
+      # Find source
+      source = Source.unscoped.find_by(id: source_id.to_i)
+      unless source
+        puts "✗ Source not found: #{source_id}"
+        exit 1
+      end
+
+      puts "✓ Source: #{source.name} (ID: #{source.id})"
+      puts ""
+
+      # Get all books for this source
+      books = Book.unscoped.joins(:text_contents)
+        .where(text_contents: { source_id: source.id })
+        .distinct
+        .order(:code)
+
+      if books.empty?
+        puts "✗ No books found for source #{source.name}"
+        exit 1
+      end
+
+      puts "Found #{books.count} book(s) to process:"
+      books.each { |b| puts "  - #{b.std_name} (#{b.code})" }
+      puts ""
+
+      total_processed = 0
+      total_success = 0
+      total_errors = 0
+      start_time = Time.current
+
+      books.each_with_index do |book, index|
+        puts "=" * 80
+        puts "[#{index + 1}/#{books.count}] Processing: #{book.std_name} (#{book.code})"
+        puts "=" * 80
+        puts ""
+
+        # Get scope for this book
+        scope = TextContent.unscoped.where(source_id: source.id, book_id: book.id)
+        
+        unless force
+          scope = scope.where.not(population_status: 'success')
+        end
+
+        book_total = scope.count
+
+        if book_total == 0
+          puts "✓ No verses to process for #{book.std_name} (all already populated)"
+          puts ""
+          next
+        end
+
+        puts "Processing #{book_total} verse(s) for #{book.std_name}..."
+        puts ""
+
+        # Process in batches
+        book_processed = 0
+        book_success = 0
+        book_errors = 0
+
+        scope.find_in_batches(batch_size: batch_size) do |batch|
+          futures = batch.map do |tc|
+            Concurrent::Future.execute do
+              begin
+                service = TextContentPopulationService.new(tc)
+                result = service.populate_content_fields(force: force)
+                result.is_a?(Hash) ? result : { status: 'error', error: 'Invalid result format' }
+              rescue => e
+                { status: 'error', error: "#{e.class.name}: #{e.message}" }
+              end
+            end
+          end
+
+          results = futures.map do |future|
+            begin
+              result = future.value
+              result.is_a?(Hash) ? result : { status: 'error', error: 'Future returned nil or invalid result' }
+            rescue => e
+              { status: 'error', error: "#{e.class.name}: #{e.message}" }
+            end
+          end
+          
+          batch_success = results.count { |r| r && r.is_a?(Hash) && r[:status] == 'success' }
+          batch_errors = results.count { |r| r && r.is_a?(Hash) && r[:status] == 'error' }
+          
+          book_success += batch_success
+          book_errors += batch_errors
+          book_processed += batch.size
+
+          progress = (book_processed.to_f / book_total * 100).round(1)
+          puts "  #{book.std_name}: #{book_processed}/#{book_total} (#{progress}%) | Success: #{book_success} | Errors: #{book_errors}"
+        end
+
+        total_processed += book_processed
+        total_success += book_success
+        total_errors += book_errors
+
+        puts ""
+        puts "✓ #{book.std_name} complete: #{book_success} success, #{book_errors} errors"
+        puts ""
+      end
+
+      elapsed = Time.current - start_time
+      elapsed_minutes = (elapsed / 60.0).round(2)
+
+      puts "=" * 80
+      puts "Source Processing Complete"
+      puts "=" * 80
+      puts "Total processed: #{total_processed}"
+      puts "  - Success: #{total_success}"
+      puts "  - Errors: #{total_errors}"
+      puts "Time elapsed: #{elapsed_minutes} minutes"
+      puts "Average: #{(elapsed / total_processed).round(2)} seconds per verse" if total_processed > 0
+      puts ""
+
+      if total_errors > 0
+        puts "⚠ #{total_errors} error(s) encountered. Run with FORCE=true to retry, or check individual records"
+      end
+
+      puts "Done!"
+    end
+
+    desc "Resume processing for failed/pending verses. Usage: rake 'lexical:resume[source_id]' or specify book_code"
+    task :resume, [:source_id, :book_code] => :environment do |t, args|
+      source_id = args[:source_id] || "10"
+      book_code = args[:book_code]
+      batch_size = ENV.fetch('BATCH_SIZE', '7').to_i
+
+      puts "=" * 80
+      puts "Resuming Failed/Pending Verses"
+      puts "Source ID: #{source_id}"
+      puts "Book Code: #{book_code || 'ALL'}"
+      puts "=" * 80
+      puts ""
+
+      source = Source.unscoped.find_by(id: source_id.to_i)
+      unless source
+        puts "✗ Source not found: #{source_id}"
+        exit 1
+      end
+
+      # Get scope
+      scope = TextContent.unscoped.where(source_id: source.id)
+      scope = scope.where(book_id: Book.unscoped.find_by(code: book_code).id) if book_code
+      
+      # Only process pending or error status
+      scope = scope.where(population_status: ['pending', 'error'])
+
+      total = scope.count
+
+      if total == 0
+        puts "✓ No pending or error verses to resume"
+        exit 0
+      end
+
+      puts "Found #{total} verse(s) to resume"
+      puts ""
+
+      processed = 0
+      success_count = 0
+      error_count = 0
+      start_time = Time.current
+
+        scope.find_in_batches(batch_size: batch_size) do |batch|
+          puts "Processing batch of #{batch.size} verses..."
+          
+          futures = batch.map do |tc|
+            Concurrent::Future.execute do
+              begin
+                service = TextContentPopulationService.new(tc)
+                result = service.populate_content_fields(force: true)
+                result.is_a?(Hash) ? result : { status: 'error', error: 'Invalid result format' }
+              rescue => e
+                { status: 'error', error: "#{e.class.name}: #{e.message}" }
+              end
+            end
+          end
+
+          results = futures.map.with_index do |future, idx|
+            begin
+              if future.wait(300) # Wait up to 5 minutes
+                result = future.value
+                result.is_a?(Hash) ? result : { status: 'error', error: 'Future returned nil or invalid result' }
+              else
+                Rails.logger.error "Future #{idx} timed out after 5 minutes"
+                { status: 'error', error: 'Request timed out after 5 minutes' }
+              end
+            rescue => e
+              Rails.logger.error "Exception getting future #{idx} value: #{e.class.name}: #{e.message}"
+              { status: 'error', error: "#{e.class.name}: #{e.message}" }
+            end
+          end
+          
+          batch_success = results.count { |r| r && r.is_a?(Hash) && r[:status] == 'success' }
+          batch_errors = results.count { |r| r && r.is_a?(Hash) && r[:status] == 'error' }
+        
+        success_count += batch_success
+        error_count += batch_errors
+        processed += batch.size
+
+        progress = (processed.to_f / total * 100).round(1)
+        puts "  #{processed}/#{total} (#{progress}%) | Success: #{batch_success} | Errors: #{batch_errors}"
+      end
+
+      elapsed = Time.current - start_time
+      elapsed_minutes = (elapsed / 60.0).round(2)
+
+      puts ""
+      puts "Resume Complete"
+      puts "  - Processed: #{processed}"
+      puts "  - Success: #{success_count}"
+      puts "  - Errors: #{error_count}"
+      puts "  - Time: #{elapsed_minutes} minutes"
+      puts ""
+      puts "Done!"
+    end
+
+    desc "Show population status summary. Usage: rake 'lexical:status[source_id]'"
+    task :status, [:source_id] => :environment do |t, args|
+      source_id = args[:source_id] || "10"
+
+      source = Source.unscoped.find_by(id: source_id.to_i)
+      unless source
+        puts "✗ Source not found: #{source_id}"
+        exit 1
+      end
+
+      puts "=" * 80
+      puts "Population Status Summary"
+      puts "Source: #{source.name} (ID: #{source.id})"
+      puts "=" * 80
+      puts ""
+
+      # Get status counts
+      statuses = TextContent.unscoped.where(source_id: source.id)
+        .group(:population_status)
+        .count
+
+      total = TextContent.unscoped.where(source_id: source.id).count
+
+      puts "Total verses: #{total}"
+      puts ""
+      puts "Status breakdown:"
+      statuses.each do |status, count|
+        percentage = total > 0 ? (count.to_f / total * 100).round(1) : 0
+        puts "  - #{status || 'NULL'}: #{count} (#{percentage}%)"
+      end
+      puts ""
+
+      # Show by book
+      puts "By book:"
+      Book.unscoped.joins(:text_contents)
+        .where(text_contents: { source_id: source.id })
+        .distinct
+        .order(:code)
+        .each do |book|
+          book_total = TextContent.unscoped.where(source_id: source.id, book_id: book.id).count
+          book_success = TextContent.unscoped.where(source_id: source.id, book_id: book.id, population_status: 'success').count
+          percentage = book_total > 0 ? (book_success.to_f / book_total * 100).round(1) : 0
+          puts "  - #{book.std_name} (#{book.code}): #{book_success}/#{book_total} (#{percentage}%)"
+        end
+      puts ""
+      puts "Done!"
+    end
+
+    # ============================================================================
+    # AUTOMATED CREATION AND POPULATION FOR WESTCOTT-HORT NEW TESTAMENT
+    # ============================================================================
+
+    desc "Create all chapters and verses for Westcott-Hort New Testament, then populate them. Usage: rake 'lexical:create_and_populate_wh_nt[source_id]'"
+    task :create_and_populate_wh_nt, [:source_id] => :environment do |t, args|
+      source_id = args[:source_id]
+      force_create = ENV['FORCE_CREATE'] == 'true'
+      force_populate = ENV['FORCE_POPULATE'] == 'true'
+      batch_size = ENV.fetch('BATCH_SIZE', '7').to_i
+      max_concurrent = ENV.fetch('GROK_MAX_CONCURRENT', '30').to_i
+      model = ENV.fetch('GROK_MODEL', 'grok-4-0709')
+
+      puts "=" * 80
+      puts "Create and Populate Westcott-Hort New Testament"
+      puts "=" * 80
+      puts ""
+
+      # Step 1: Find Westcott-Hort source
+      source = if source_id
+        Source.unscoped.find_by(id: source_id.to_i)
+      else
+        # Try to find by name variations
+        Source.unscoped.where('name ILIKE ? OR name ILIKE ? OR name ILIKE ? OR code ILIKE ?',
+                              '%Westcott%', '%Hort%', '%1881%', '%WH%').first
+      end
+
+      unless source
+        puts "✗ Westcott-Hort source not found"
+        puts ""
+        puts "Available sources:"
+        Source.unscoped.limit(10).each do |s|
+          puts "  - ID: #{s.id}, Name: #{s.name}, Code: #{s.code}"
+        end
+        puts ""
+        puts "Usage: rake 'lexical:create_and_populate_wh_nt[source_id]'"
+        exit 1
+      end
+
+      puts "✓ Source: #{source.name} (ID: #{source.id}, Code: #{source.code})"
+      puts ""
+
+      # Step 2: Get all New Testament books
+      nt_book_codes = VerseCountReference::NEW_TESTAMENT_BOOKS
+      puts "New Testament books to process: #{nt_book_codes.count}"
+      puts ""
+
+      # Step 3: Create all text_content records for all books
+      puts "=" * 80
+      puts "STEP 1: Creating Text Content Records"
+      puts "=" * 80
+      puts ""
+
+      total_created = 0
+      total_existing = 0
+      creation_errors = []
+
+      nt_book_codes.each_with_index do |book_code, index|
+        puts "[#{index + 1}/#{nt_book_codes.count}] Processing: #{book_code}"
+
+        # Find or create book
+        book = Book.unscoped.find_by(code: book_code)
+        unless book
+          # Try to find by std_name
+          book = Book.unscoped.where('std_name ILIKE ?', "%#{book_code}%").first
+          unless book
+            puts "  ⚠ Book #{book_code} not found, skipping..."
+            next
+          end
+        end
+
+        puts "  Book: #{book.std_name} (#{book.code})"
+
+        # Get chapters for this book
+        chapters = VerseCountReference.chapters_for_book(book_code)
+        
+        if chapters.empty?
+          puts "  ⚠ No verse count data for #{book_code}, skipping..."
+          next
+        end
+
+        puts "  Chapters: #{chapters.count}"
+
+        # Create all verses for this book
+        book_created = 0
+        book_existing = 0
+
+        chapters.each do |chapter|
+          verse_count = VerseCountReference.expected_verses(book_code, chapter)
+          next unless verse_count
+
+          (1..verse_count).each do |verse|
+            # Check if already exists
+            existing = TextContent.unscoped.find_by(
+              source_id: source.id,
+              book_id: book.id,
+              unit_group: chapter,
+              unit: verse
+            )
+
+            if existing
+              book_existing += 1
+              next unless force_create
+            end
+
+            # Create new record
+            begin
+              unit_key = "#{source.code}|#{book.code}|#{chapter}|#{verse}"
+              
+              text_unit_type = source.text_unit_type || TextUnitType.unscoped.find_by(code: 'BIB_VERSE')
+              language = source.language
+
+              unless text_unit_type && language
+                creation_errors << { book: book_code, chapter: chapter, verse: verse, error: "Missing text_unit_type or language" }
+                next
+              end
+
+              text_content = TextContent.new(
+                source: source,
+                book: book,
+                text_unit_type: text_unit_type,
+                language: language,
+                unit_group: chapter,
+                unit: verse,
+                unit_key: unit_key,
+                content: '',
+                allow_empty_content: true,
+                population_status: 'pending'
+              )
+
+              if text_content.save
+                book_created += 1
+              else
+                creation_errors << { book: book_code, chapter: chapter, verse: verse, error: text_content.errors.full_messages.join(', ') }
+              end
+            rescue => e
+              creation_errors << { book: book_code, chapter: chapter, verse: verse, error: e.message }
+            end
+          end
+        end
+
+        total_created += book_created
+        total_existing += book_existing
+
+        puts "  ✓ Created: #{book_created}, Existing: #{book_existing}"
+        puts ""
+      end
+
+      puts "=" * 80
+      puts "Creation Summary"
+      puts "=" * 80
+      puts "Total created: #{total_created}"
+      puts "Total existing: #{total_existing}"
+      puts "Errors: #{creation_errors.count}"
+      puts ""
+
+      if creation_errors.any?
+        puts "Creation errors (first 10):"
+        creation_errors.first(10).each do |error|
+          puts "  - #{error[:book]} #{error[:chapter]}:#{error[:verse]}: #{error[:error]}"
+        end
+        puts ""
+      end
+
+      # Step 4: Populate all created records
+      puts "=" * 80
+      puts "STEP 2: Populating Text Content"
+      puts "=" * 80
+      puts ""
+      puts "Model: #{model}"
+      puts "Max Concurrent: #{max_concurrent}"
+      puts "Batch Size: #{batch_size}"
+      puts "Force: #{force_populate ? 'YES (will overwrite existing)' : 'NO (skip existing)'}"
+      puts ""
+
+      # Get scope of verses to populate
+      scope = TextContent.unscoped.where(source_id: source.id)
+      
+      unless force_populate
+        # Skip already successfully populated
+        scope = scope.where.not(population_status: 'success')
+      end
+
+      total_to_populate = scope.count
+
+      if total_to_populate == 0
+        puts "✓ No verses to populate (all already populated)"
+        exit 0
+      end
+
+      puts "Found #{total_to_populate} verse(s) to populate"
+      puts ""
+
+      # Process in batches using concurrent futures
+      require 'concurrent'
+      
+      processed = 0
+      success_count = 0
+      error_count = 0
+      start_time = Time.current
+
+      scope.find_in_batches(batch_size: batch_size) do |batch|
+        puts "Processing batch of #{batch.size} verses (#{processed + 1} to #{processed + batch.size} of #{total_to_populate})..."
+        
+        # Create concurrent futures for this batch
+        futures = batch.map do |tc|
+          Concurrent::Future.execute do
+            begin
+              service = TextContentPopulationService.new(tc)
+              result = service.populate_content_fields(force: force_populate)
+              # Ensure result is always a hash with status
+              if result.nil?
+                Rails.logger.error "Service returned nil for #{tc.unit_key}"
+                { status: 'error', error: 'Service returned nil' }
+              elsif !result.is_a?(Hash)
+                Rails.logger.error "Service returned non-hash for #{tc.unit_key}: #{result.class}"
+                { status: 'error', error: "Invalid result format: #{result.class}" }
+              elsif !result.key?(:status)
+                Rails.logger.error "Service result missing :status key for #{tc.unit_key}: #{result.keys.inspect}"
+                { status: 'error', error: 'Result missing :status key' }
+              else
+                result
+              end
+            rescue => e
+              # Ensure we always return a hash with status
+              Rails.logger.error "Exception in future for #{tc.unit_key}: #{e.class.name}: #{e.message}"
+              Rails.logger.error e.backtrace.first(3).join("\n")
+              { status: 'error', error: "#{e.class.name}: #{e.message}" }
+            end
+          end
+        end
+
+        # Wait for all futures in this batch to complete
+        results = futures.map.with_index do |future, idx|
+          begin
+            # Use wait with timeout, then get value
+            if future.wait(300) # Wait up to 5 minutes
+              result = future.value
+            else
+              Rails.logger.error "Future #{idx} timed out after 5 minutes"
+              { status: 'error', error: 'Request timed out after 5 minutes' }
+            end
+            # Ensure result is always a hash with status
+            if result.nil?
+              Rails.logger.error "Future #{idx} returned nil"
+              { status: 'error', error: 'Future returned nil' }
+            elsif !result.is_a?(Hash)
+              Rails.logger.error "Future #{idx} returned non-hash: #{result.class}"
+              { status: 'error', error: "Invalid result format: #{result.class}" }
+            elsif !result.key?(:status)
+              Rails.logger.error "Future #{idx} result missing :status key: #{result.keys.inspect}"
+              { status: 'error', error: 'Result missing :status key' }
+            else
+              result
+            end
+          rescue Concurrent::TimeoutError => e
+            Rails.logger.error "Future #{idx} timed out after 5 minutes"
+            { status: 'error', error: 'Request timed out after 5 minutes' }
+          rescue => e
+            # Handle exceptions from futures
+            Rails.logger.error "Exception getting future #{idx} value: #{e.class.name}: #{e.message}"
+            { status: 'error', error: "#{e.class.name}: #{e.message}" }
+          end
+        end
+        
+        # Count successes and errors
+        batch_success = results.count { |r| r && r.is_a?(Hash) && r[:status] == 'success' }
+        batch_errors = results.count { |r| r && r.is_a?(Hash) && r[:status] == 'error' }
+        
+        success_count += batch_success
+        error_count += batch_errors
+        processed += batch.size
+
+        # Progress bar
+        progress = (processed.to_f / total_to_populate * 100).round(1)
+        bar_length = 50
+        filled = (progress / 100.0 * bar_length).floor
+        bar = '█' * filled + '░' * (bar_length - filled)
+        
+        puts "  Batch complete | #{processed}/#{total_to_populate} (#{progress}%) | Success: #{batch_success}/#{batch.size} | Errors: #{batch_errors} | [#{bar}]"
+        puts ""
+      end
+
+      elapsed = Time.current - start_time
+      elapsed_minutes = (elapsed / 60.0).round(2)
+
+      puts "=" * 80
+      puts "Population Complete"
+      puts "=" * 80
+      puts "Total processed: #{processed}"
+      puts "  - Success: #{success_count}"
+      puts "  - Errors: #{error_count}"
+      puts "  - Already populated: #{processed - success_count - error_count}"
+      puts "Time elapsed: #{elapsed_minutes} minutes"
+      puts "Average: #{(elapsed / processed).round(2)} seconds per verse" if processed > 0
+      puts ""
+
+      # Show error summary if any
+      if error_count > 0
+        error_records = scope.where(population_status: 'error').limit(10)
+        if error_records.any?
+          puts "Sample errors:"
+          error_records.each do |tc|
+            puts "  - #{tc.unit_key}: #{tc.population_error_message&.truncate(80)}"
+          end
+          puts ""
+        end
+        puts "⚠ Run with FORCE_POPULATE=true to retry errors, or use: rake 'lexical:resume[#{source.id}]'"
+      end
+
+      puts ""
+      puts "=" * 80
+      puts "Complete Summary"
+      puts "=" * 80
+      puts "Records created: #{total_created}"
+      puts "Records existing: #{total_existing}"
+      puts "Records populated: #{success_count}"
+      puts "Records with errors: #{error_count}"
+      puts "Total time: #{elapsed_minutes} minutes"
+      puts ""
+      puts "Done!"
+    end
+
+    desc "Monitor job status and alert if issues. Usage: rake 'lexical:monitor[source_id]'"
+    task :monitor, [:source_id] => :environment do |t, args|
+      source_id = args[:source_id]&.to_i || 10
+      
+      scope = TextContent.unscoped.where(source_id: source_id)
+      total = scope.count
+      success = scope.where(population_status: 'success').count
+      error = scope.where(population_status: 'error').count
+      pending = scope.where(population_status: ['pending', nil]).count
+      processing = scope.where(population_status: 'processing').count
+      
+      # Check for stuck jobs (processing > 1 hour)
+      stuck = scope.where(population_status: 'processing')
+                   .where('last_population_attempt_at < ?', 1.hour.ago)
+                   .count
+      
+      error_rate = total > 0 ? (error.to_f / total * 100) : 0
+      success_rate = total > 0 ? (success.to_f / total * 100) : 0
+      
+      puts "=" * 80
+      puts "Job Status Monitor - Source ID: #{source_id}"
+      puts "=" * 80
+      puts ""
+      puts "Summary:"
+      puts "  Total: #{total}"
+      puts "  Success: #{success} (#{success_rate.round(1)}%)"
+      puts "  Error: #{error} (#{error_rate.round(1)}%)"
+      puts "  Pending: #{pending}"
+      puts "  Processing: #{processing}"
+      puts "  Stuck (>1hr): #{stuck}"
+      puts ""
+      
+      # Alert conditions
+      alerts = []
+      if error_rate > 5
+        alerts << "⚠️  HIGH ERROR RATE: #{error_rate.round(1)}% (threshold: 5%)"
+      end
+      if stuck > 0
+        alerts << "⚠️  STUCK JOBS: #{stuck} job(s) processing for >1 hour"
+      end
+      if processing > 50
+        alerts << "⚠️  HIGH PROCESSING COUNT: #{processing} jobs currently processing"
+      end
+      
+      if alerts.any?
+        puts "ALERTS:"
+        alerts.each { |alert| puts "  #{alert}" }
+        puts ""
+        exit 1 # Exit with error code for monitoring tools
+      else
+        puts "✓ Status OK"
+        exit 0
+      end
+    end
+
+    desc "Enqueue Westcott-Hort NT population job via Sidekiq. Usage: rake 'lexical:enqueue_wh_nt_job[source_id]'"
+    task :enqueue_wh_nt_job, [:source_id] => :environment do |t, args|
+      source_id = args[:source_id]&.to_i || 10
+      
+      puts "=" * 80
+      puts "Enqueuing PopulateWestcottHortNtJob"
+      puts "=" * 80
+      puts "Source ID: #{source_id}"
+      puts ""
+      
+      # Check if already completed
+      source = Source.unscoped.find_by(id: source_id.to_i)
+      if source
+        total_verses = TextContent.unscoped.where(source_id: source.id).count
+        success_verses = TextContent.unscoped.where(source_id: source.id, population_status: 'success').count
+        completion_rate = total_verses > 0 ? (success_verses.to_f / total_verses * 100) : 0
+        
+        # Only consider complete if 100% successful (strict requirement)
+        if success_verses == total_verses && total_verses > 0
+          puts "⚠ Already completed (100% success - #{success_verses}/#{total_verses} verses)"
+          puts "Use FORCE_POPULATE=true to rerun"
+          exit 0
+        end
+      end
+      
+      # Enqueue the job (using ActiveJob's perform_later which works with Sidekiq)
+      job = PopulateWestcottHortNtJob.perform_later(source_id)
+      
+      if job
+        puts "✓ Job enqueued successfully"
+        puts "Job ID: #{job.job_id}"
+        puts ""
+        puts "Monitor progress at: /sidekiq"
+        puts "Or check logs: heroku logs --tail --ps worker"
+      else
+        puts "✗ Failed to enqueue job"
+        exit 1
+      end
+    end
+  end
+
 

@@ -1,8 +1,18 @@
 require 'net/http'
 require 'json'
 require 'uri'
+require 'concurrent'
 
 class TextContentPopulationService
+  # Configuration from environment variables
+  MAX_CONCURRENT = ENV.fetch('GROK_MAX_CONCURRENT', '30').to_i
+  GROK_MODEL = ENV.fetch('GROK_MODEL', 'grok-4-0709')
+  # Increased max_tokens to handle large word-for-word translations with all required fields
+  GROK_MAX_TOKENS = ENV.fetch('GROK_MAX_TOKENS', '8000').to_i
+  GROK_TIMEOUT = ENV.fetch('GROK_TIMEOUT_SECONDS', '180').to_i
+
+  # Semaphore for rate limiting concurrent requests
+  SEMAPHORE = Concurrent::Semaphore.new(MAX_CONCURRENT)
   def initialize(text_content)
     @text_content = text_content
     @source = text_content.source
@@ -13,6 +23,9 @@ class TextContentPopulationService
 
   def populate_content_fields(force: false)
     Rails.logger.info "Populating content fields for #{@text_content.unit_key}"
+
+    # Update attempt timestamp
+    @text_content.update_column(:last_population_attempt_at, Time.current)
 
     # Check if already populated (unless force is true)
     unless force
@@ -26,21 +39,66 @@ class TextContentPopulationService
       end
     end
 
+    # Set status to processing
+    @text_content.update_column(:population_status, 'processing')
+
     # Fetch exact source text and word-for-word translation
     result = fetch_source_content
 
     if result[:status] == 'success'
-      update_text_content(result)
-      log_population(result)
-      { status: 'success', data: result, overwrote: force && @text_content.content_populated? }
+      # Validate response before saving
+      validation_result = validate_ai_response(result)
+      
+      if validation_result[:valid]
+        update_text_content(result)
+        log_population(result)
+        
+        # Mark as success
+        @text_content.update_columns(
+          population_status: 'success',
+          population_error_message: nil
+        )
+        
+        { status: 'success', data: result, overwrote: force && @text_content.content_populated? }
+      else
+        # Mark as error with validation message
+        error_msg = validation_result[:error] || 'AI response validation failed'
+        @text_content.update_columns(
+          population_status: 'error',
+          population_error_message: error_msg.truncate(1000)
+        )
+        Rails.logger.error "AI response validation failed: #{error_msg}"
+        { status: 'error', error: error_msg }
+      end
+    elsif result[:status] == 'unavailable'
+      # Mark as unavailable
+      @text_content.update_columns(
+        population_status: 'unavailable',
+        population_error_message: result[:error]&.truncate(1000)
+      )
+      { status: 'unavailable', error: result[:error] }
     else
-      Rails.logger.error "Failed to populate content: #{result[:error]}"
-      { status: 'error', error: result[:error] }
+      # Mark as error
+      error_msg = result[:error] || 'Unknown error'
+      @text_content.update_columns(
+        population_status: 'error',
+        population_error_message: error_msg.truncate(1000)
+      )
+      Rails.logger.error "Failed to populate content: #{error_msg}"
+      { status: 'error', error: error_msg }
     end
   rescue => e
-    Rails.logger.error "Error in TextContentPopulationService: #{e.message}"
+    error_msg = "#{e.class.name}: #{e.message}"
+    Rails.logger.error "Error in TextContentPopulationService: #{error_msg}"
     Rails.logger.error e.backtrace.join("\n")
-    { status: 'error', error: e.message }
+    
+    # Mark as error
+    @text_content.update_columns(
+      population_status: 'error',
+      population_error_message: error_msg.truncate(1000)
+    )
+    
+    { status: 'error', error: error_msg }
   end
 
   private
@@ -53,13 +111,14 @@ class TextContentPopulationService
     begin
       prompt = build_population_prompt
       response = call_grok_api(
-        model: "grok-3",
+        model: GROK_MODEL,
         messages: [
           { role: "system", content: system_prompt },
           { role: "user", content: prompt }
         ],
         temperature: 0.0, # Zero temperature for exact accuracy
-        response_format: { type: "json_object" }
+        response_format: { type: "json_object" },
+        max_tokens: GROK_MAX_TOKENS
       )
 
       Rails.logger.debug "Grok API response type: #{response.class}"
@@ -82,6 +141,11 @@ class TextContentPopulationService
 
       if ai_response.blank?
         return { status: 'error', error: 'Empty response from Grok API' }
+      end
+
+      # Check for unavailable text indicator
+      if ai_response.strip == '[EDITION_TEXT_UNAVAILABLE]' || ai_response.include?('[EDITION_TEXT_UNAVAILABLE]')
+        return { status: 'unavailable', error: 'Text unavailable in source edition' }
       end
 
       parsed = JSON.parse(ai_response)
@@ -574,7 +638,7 @@ class TextContentPopulationService
       word_for_word_translation: word_for_word_data,
       lsv_literal_reconstruction: result[:lsv_literal_reconstruction],
       content_populated_at: Time.current,
-      content_populated_by: 'grok-3'
+      content_populated_by: GROK_MODEL
     }
 
     # Required classification fields; use NOT_SPECIFIED when missing
@@ -596,24 +660,70 @@ class TextContentPopulationService
   def log_population(result)
     TextContentApiLog.create!(
       text_content_id: @text_content.id,
-      api_endpoint: 'populate_content',
-      request_data: {
+      source_name: @source.name,
+      book_code: @book.code,
+      chapter: @chapter,
+      verse: @verse,
+      action: 'populate_content',
+      request_payload: {
         source: @source.name,
         book: @book.std_name,
         chapter: @chapter,
         verse: @verse
-      },
-      response_data: {
+      }.to_json,
+      response_payload: {
         source_text: result[:source_text],
         word_for_word_count: result[:word_for_word]&.count || 0,
         lsv_literal_reconstruction: result[:lsv_literal_reconstruction],
         ai_notes: result[:ai_notes]
-      },
-      raw_response: result[:raw_response],
-      status: 'success'
+      }.to_json,
+      status: 'success',
+      ai_model_name: GROK_MODEL
     )
   rescue => e
     Rails.logger.error "Failed to log population: #{e.message}"
+    Rails.logger.error e.backtrace.first(3).join("\n")
+  end
+
+  # Validate AI response before saving
+  def validate_ai_response(result)
+    errors = []
+
+    # Check source_text
+    if result[:source_text].blank? || result[:source_text] == '[EDITION_TEXT_UNAVAILABLE]'
+      errors << "source_text is blank or unavailable"
+    end
+
+    # Check word_for_word
+    if result[:word_for_word].blank? || !result[:word_for_word].is_a?(Array)
+      errors << "word_for_word must be a non-empty array"
+    end
+
+    # Check lsv_literal_reconstruction
+    if result[:lsv_literal_reconstruction].blank?
+      errors << "lsv_literal_reconstruction is blank"
+    end
+
+    # Check lsv_notes structure
+    if result[:lsv_notes].present? && !result[:lsv_notes].is_a?(Hash)
+      errors << "lsv_notes must be a hash"
+    elsif result[:lsv_notes].present?
+      validation_status = result[:lsv_notes]['validation_status']
+      unless ['OK', 'MISSING_LEXICAL_MEANINGS', 'INVALID_MEANING'].include?(validation_status)
+        errors << "lsv_notes.validation_status must be OK, MISSING_LEXICAL_MEANINGS, or INVALID_MEANING"
+      end
+    end
+
+    # Check genre_code (required)
+    if result[:genre_code].blank?
+      errors << "genre_code is required"
+    end
+
+    if errors.any?
+      { valid: false, error: errors.join('; ') }
+    else
+      { valid: true }
+    end
   end
 
   # ===========================
@@ -644,64 +754,165 @@ class TextContentPopulationService
 
     request.body = body.to_json
 
-    Rails.logger.debug "Grok API request: POST #{uri.path}, model: #{model}"
+    Rails.logger.debug "Grok API request: POST #{uri.path}, model: #{model}, max_tokens: #{max_tokens}"
 
-    # Try the request with normal SSL verification first
-    begin
-      http = Net::HTTP.new(uri.host, uri.port)
-      http.read_timeout = 120
-      http.open_timeout = 30
-      http.use_ssl = true
-      http.verify_mode = OpenSSL::SSL::VERIFY_PEER
-      
-      response = http.request(request)
-    rescue OpenSSL::SSL::SSLError => e
-      # If it's a CRL error, retry with a workaround that disables CRL checking
-      if e.message.include?('CRL') || e.message.include?('revocation')
-        Rails.logger.warn "CRL check failed, retrying with CRL checking disabled: #{e.message}"
-        
-        # Retry with a custom SSL context that doesn't check CRL
-        http = Net::HTTP.new(uri.host, uri.port)
-        http.read_timeout = 120
-        http.open_timeout = 30
-        http.use_ssl = true
-        http.verify_mode = OpenSSL::SSL::VERIFY_PEER
-        
-        # For CRL errors, temporarily disable SSL verification as a workaround
-        # This is necessary because OpenSSL cannot reach the CRL server
-        # Note: The connection is still encrypted, we just skip certificate verification
-        # This is acceptable for API calls where the endpoint is trusted
-        Rails.logger.warn "Using VERIFY_NONE as workaround for CRL error - connection is still encrypted"
-        http.verify_mode = OpenSSL::SSL::VERIFY_NONE
-        
-        response = http.request(request)
-      else
-        # Re-raise non-CRL SSL errors
-        raise
+    # Retry logic for rate limiting and transient errors
+    max_retries = 5
+    retry_count = 0
+    base_wait = 1
+    response = nil
+    response_body = nil
+    parsed_response = nil
+
+    loop do
+      begin
+        # Use semaphore to limit concurrent requests
+        SEMAPHORE.acquire
+        begin
+          # Try the request with normal SSL verification first
+          begin
+            http = Net::HTTP.new(uri.host, uri.port)
+            http.read_timeout = GROK_TIMEOUT
+            http.open_timeout = 30
+            http.use_ssl = true
+            http.verify_mode = OpenSSL::SSL::VERIFY_PEER
+            
+            response = http.request(request)
+          rescue OpenSSL::SSL::SSLError => e
+            # If it's a CRL error, retry with a workaround that disables CRL checking
+            if e.message.include?('CRL') || e.message.include?('revocation')
+              Rails.logger.warn "CRL check failed, retrying with CRL checking disabled: #{e.message}"
+              
+              # Retry with a custom SSL context that doesn't check CRL
+              http = Net::HTTP.new(uri.host, uri.port)
+              http.read_timeout = GROK_TIMEOUT
+              http.open_timeout = 30
+              http.use_ssl = true
+              http.verify_mode = OpenSSL::SSL::VERIFY_PEER
+              
+              # For CRL errors, temporarily disable SSL verification as a workaround
+              # This is necessary because OpenSSL cannot reach the CRL server
+              # Note: The connection is still encrypted, we just skip certificate verification
+              # This is acceptable for API calls where the endpoint is trusted
+              Rails.logger.warn "Using VERIFY_NONE as workaround for CRL error - connection is still encrypted"
+              http.verify_mode = OpenSSL::SSL::VERIFY_NONE
+              
+              response = http.request(request)
+            else
+              # Re-raise non-CRL SSL errors
+              raise
+            end
+          end
+        ensure
+          SEMAPHORE.release
+        end
+
+        # Handle rate limiting and retryable errors (check after releasing semaphore)
+        if response.code == '429' # Rate limit
+          retry_count += 1
+          if retry_count <= max_retries
+            wait_time = base_wait * (2 ** retry_count) + rand(0.0..1.0) # Exponential backoff with jitter
+            Rails.logger.warn "Rate limit hit (attempt #{retry_count}/#{max_retries}). Waiting #{wait_time.round(2)}s before retry..."
+            sleep wait_time
+            next # Retry the loop
+          else
+            error_body = begin
+              JSON.parse(response.body)
+            rescue JSON::ParserError
+              { error: { message: response.message } }
+            end
+            error_msg = error_body.dig('error', 'message') || response.message
+            Rails.logger.error "Grok API rate limit error after #{max_retries} retries: #{error_msg}"
+            raise "Grok API rate limit error: #{error_msg}"
+          end
+        elsif response.code.to_i >= 500 # Server errors - retry
+          retry_count += 1
+          if retry_count <= max_retries
+            wait_time = base_wait * (2 ** retry_count) + rand(0.0..1.0)
+            Rails.logger.warn "Server error #{response.code} (attempt #{retry_count}/#{max_retries}). Waiting #{wait_time.round(2)}s before retry..."
+            sleep wait_time
+            next # Retry the loop
+          else
+            error_body = begin
+              JSON.parse(response.body)
+            rescue JSON::ParserError
+              { error: { message: response.message } }
+            end
+            error_msg = error_body.dig('error', 'message') || response.message
+            Rails.logger.error "Grok API server error after #{max_retries} retries: #{error_msg}"
+            raise "Grok API server error (#{response.code}): #{error_msg}"
+          end
+        elsif !response.is_a?(Net::HTTPSuccess)
+          error_body = begin
+            JSON.parse(response.body)
+          rescue JSON::ParserError
+            { error: { message: response.message } }
+          end
+          error_msg = error_body.dig('error', 'message') || response.message
+          Rails.logger.error "Grok API error (#{response.code}): #{error_msg}"
+          Rails.logger.error "Response body: #{response.body[0..500]}"
+          raise "Grok API error (#{response.code}): #{error_msg}"
+        else
+          # Success - now parse JSON and check for truncation
+          response_body = response.body
+          
+          # Check if response body looks truncated (incomplete JSON)
+          if response_body.present? && !response_body.strip.end_with?('}')
+            Rails.logger.warn "Response body appears truncated (doesn't end with '}'). Length: #{response_body.length}"
+            Rails.logger.warn "Last 200 chars: #{response_body[-200..-1]}"
+            # Retry the entire request if JSON is incomplete
+            if retry_count < max_retries
+              retry_count += 1
+              wait_time = base_wait * (2 ** retry_count) + rand(0.0..1.0)
+              Rails.logger.warn "Incomplete JSON response (attempt #{retry_count}/#{max_retries}). Retrying in #{wait_time.round(2)}s..."
+              sleep wait_time
+              next # Retry the loop
+            else
+              Rails.logger.error "Failed to get complete response after #{max_retries} retries"
+              raise "Grok API returned incomplete JSON response after #{max_retries} retries"
+            end
+          end
+          
+          # Try to parse JSON
+          begin
+            parsed_response = JSON.parse(response_body)
+            Rails.logger.debug "Parsed response type: #{parsed_response.class}"
+            break # Success - exit the loop
+          rescue JSON::ParserError => e
+            Rails.logger.error "Failed to parse Grok API response body: #{e.message}"
+            Rails.logger.error "Response body (first 500 chars): #{response_body[0..500]}"
+            Rails.logger.error "Response body length: #{response_body.length}"
+            Rails.logger.error "Response body (last 200 chars): #{response_body[-200..-1]}" if response_body.length > 200
+            
+            # Retry if JSON is incomplete (truncated response) and we haven't exceeded retries
+            if (e.message.include?('unexpected end') || e.message.include?('expected closing')) && retry_count < max_retries
+              retry_count += 1
+              wait_time = base_wait * (2 ** retry_count) + rand(0.0..1.0)
+              Rails.logger.warn "Incomplete JSON detected (attempt #{retry_count}/#{max_retries}). Retrying in #{wait_time.round(2)}s..."
+              sleep wait_time
+              next # Retry the loop
+            end
+            
+            raise "Failed to parse Grok API response: #{e.message}. Response body: #{response_body[0..200]}"
+          end
+        end
+      rescue Net::OpenTimeout, Net::ReadTimeout, Errno::ETIMEDOUT => e
+        retry_count += 1
+        if retry_count <= max_retries
+          wait_time = base_wait * (2 ** retry_count) + rand(0.0..1.0)
+          Rails.logger.warn "Timeout error (attempt #{retry_count}/#{max_retries}): #{e.message}. Waiting #{wait_time.round(2)}s before retry..."
+          sleep wait_time
+          next # Retry the loop
+        else
+          Rails.logger.error "Grok API timeout after #{max_retries} retries: #{e.message}"
+          raise "Grok API timeout: #{e.message}"
+        end
       end
     end
 
-    unless response.is_a?(Net::HTTPSuccess)
-      error_body = begin
-        JSON.parse(response.body)
-      rescue JSON::ParserError
-        { error: { message: response.message } }
-      end
-      error_msg = error_body.dig('error', 'message') || response.message
-      Rails.logger.error "Grok API error (#{response.code}): #{error_msg}"
-      Rails.logger.error "Response body: #{response.body[0..500]}"
-      raise "Grok API error (#{response.code}): #{error_msg}"
-    end
-
-    parsed_response = begin
-      result = JSON.parse(response.body)
-      Rails.logger.debug "Parsed response type: #{result.class}"
-      result
-    rescue JSON::ParserError => e
-      Rails.logger.error "Failed to parse Grok API response body: #{e.message}"
-      Rails.logger.error "Response body (first 500 chars): #{response.body[0..500]}"
-      Rails.logger.error "Response body length: #{response.body.length}"
-      raise "Failed to parse Grok API response: #{e.message}. Response body: #{response.body[0..200]}"
+    # Ensure parsed_response was set (should always be set if we exit the loop normally)
+    unless parsed_response
+      raise "Failed to get valid response from Grok API after #{max_retries} retries"
     end
 
     if parsed_response.is_a?(String)

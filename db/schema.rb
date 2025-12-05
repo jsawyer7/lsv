@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2025_11_22_130300) do
+ActiveRecord::Schema[7.0].define(version: 2025_11_22_140000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -366,11 +366,17 @@ ActiveRecord::Schema[7.0].define(version: 2025_11_22_130300) do
     t.string "responsible_party_code", limit: 50
     t.text "responsible_party_custom_name"
     t.string "genre_code", limit: 50
+    t.string "population_status", default: "pending"
+    t.text "population_error_message"
+    t.datetime "last_population_attempt_at"
+    t.index ["book_id", "population_status"], name: "index_text_contents_on_book_id_and_population_status"
     t.index ["book_id"], name: "index_text_contents_on_book_id"
     t.index ["language_id"], name: "index_text_contents_on_language_id"
     t.index ["parent_unit_id"], name: "index_text_contents_on_parent_unit_id"
+    t.index ["population_status"], name: "index_text_contents_on_population_status"
     t.index ["source_id", "book_id", "unit_key"], name: "index_text_contents_on_source_book_unit_key", unique: true
     t.index ["source_id", "book_id"], name: "index_text_contents_on_source_id_and_book_id"
+    t.index ["source_id", "population_status"], name: "index_text_contents_on_source_id_and_population_status"
     t.index ["source_id"], name: "index_text_contents_on_source_id"
     t.index ["text_unit_type_id"], name: "index_text_contents_on_text_unit_type_id"
     t.index ["unit_group", "unit"], name: "index_text_contents_on_unit_group_and_unit"

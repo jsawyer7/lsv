@@ -108,4 +108,24 @@ Rails.application.routes.draw do
     post '/text-content/create-next', to: 'text_contents#create_next'
     post '/text-content/ai-validate-structure', to: 'text_contents#ai_validate_structure'
   end
+
+  # Sidekiq Web UI for monitoring background jobs
+  require 'sidekiq/web'
+  require 'sidekiq/cron/web' if defined?(Sidekiq::Cron)
+  
+  # Protect Sidekiq web UI with basic auth in production
+  if Rails.env.production?
+    Sidekiq::Web.use Rack::Auth::Basic do |username, password|
+      ActiveSupport::SecurityUtils.secure_compare(
+        ::Digest::SHA256.hexdigest(username),
+        ::Digest::SHA256.hexdigest(ENV.fetch('SIDEKIQ_USERNAME', 'admin'))
+      ) &
+      ActiveSupport::SecurityUtils.secure_compare(
+        ::Digest::SHA256.hexdigest(password),
+        ::Digest::SHA256.hexdigest(ENV.fetch('SIDEKIQ_PASSWORD', 'password'))
+      )
+    end
+  end
+  
+  mount Sidekiq::Web => '/sidekiq'
 end

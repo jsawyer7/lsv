@@ -1,0 +1,6 @@
+# Scheduled jobs for Sidekiq-Cron
+# Format: https://github.com/ondrejbartas/sidekiq-cron
+# Leave empty hash if no scheduled jobs
+
+{}
+

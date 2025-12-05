@@ -69,6 +69,22 @@ class TextContent < ApplicationRecord
     content_populated_at.present? && content.present?
   end
 
+  def population_pending?
+    population_status == 'pending' || population_status.nil?
+  end
+
+  def population_success?
+    population_status == 'success'
+  end
+
+  def population_error?
+    population_status == 'error'
+  end
+
+  def population_unavailable?
+    population_status == 'unavailable'
+  end
+
   def content_validated?
     content_validated_at.present? && content_validation_result.present?
   end
