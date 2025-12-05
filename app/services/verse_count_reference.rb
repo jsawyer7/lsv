@@ -81,6 +81,12 @@ class VerseCountReference
     counts.keys.sort
   end
 
+  # Alias for NEW_TESTAMENT_VERSE_COUNTS for backward compatibility
+  # Returns hash: { book_code => { chapter => verse_count } }
+  def self.book_chapter_counts
+    NEW_TESTAMENT_VERSE_COUNTS
+  end
+
   # Check if a verse number is within expected range
   def self.verse_exists?(book_code, chapter, verse)
     expected = expected_verses(book_code, chapter)
