@@ -55,6 +55,14 @@ class VerseCountReference
                21 => 27, 22 => 21 }
   }.freeze
 
+  # Old Testament book verse counts (standard Protestant canon)
+  # Format: { book_code => { chapter => verse_count } }
+  OLD_TESTAMENT_VERSE_COUNTS = {
+    'JUG' => { 1 => 36, 2 => 23, 3 => 31, 4 => 24, 5 => 31, 6 => 40, 7 => 25, 8 => 35, 9 => 57, 10 => 18,
+               11 => 40, 12 => 15, 13 => 25, 14 => 20, 15 => 20, 16 => 31, 17 => 13, 18 => 31, 19 => 30, 20 => 48,
+               21 => 25 }
+  }.freeze
+
   # Standard New Testament book order
   NEW_TESTAMENT_BOOKS = %w[MAT MRK LUK JHN ACT ROM 1CO 2CO GAL EPH PHP COL 1TH 2TH 1TI 2TI TIT PHM HEB JAS 1PE 2PE 1JN 2JN 3JN JUD REV].freeze
 
@@ -64,7 +72,8 @@ class VerseCountReference
     # Handle variations
     book_code_up = 'JHN' if ['JOH', 'JOHN'].include?(book_code_up)
     
-    counts = NEW_TESTAMENT_VERSE_COUNTS[book_code_up]
+    # Check Old Testament first, then New Testament
+    counts = OLD_TESTAMENT_VERSE_COUNTS[book_code_up] || NEW_TESTAMENT_VERSE_COUNTS[book_code_up]
     return nil unless counts
     
     counts[chapter.to_i]
@@ -75,7 +84,8 @@ class VerseCountReference
     book_code_up = book_code.to_s.upcase
     book_code_up = 'JHN' if ['JOH', 'JOHN'].include?(book_code_up)
     
-    counts = NEW_TESTAMENT_VERSE_COUNTS[book_code_up]
+    # Check Old Testament first, then New Testament
+    counts = OLD_TESTAMENT_VERSE_COUNTS[book_code_up] || NEW_TESTAMENT_VERSE_COUNTS[book_code_up]
     return [] unless counts
     
     counts.keys.sort

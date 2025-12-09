@@ -1517,6 +1517,152 @@ namespace :text_content do
     puts "Done!"
   end
 
+  desc "Fix book codes: Ensure JUD is Jude and create Judges with code JUG. Usage: rake 'text_content:fix_jud_judges' or use DRY_RUN=false to actually make changes (default: DRY_RUN=true)"
+  task :fix_jud_judges => :environment do
+    dry_run = ENV['DRY_RUN'] != 'false'  # Default to dry run for safety
+    
+    puts "=" * 80
+    puts "Fixing Book Codes: JUD -> Jude, Creating Judges (JUG)"
+    puts "Mode: #{dry_run ? 'DRY RUN (no changes)' : 'LIVE (will make changes)'}"
+    puts "=" * 80
+    puts ""
+    
+    # Step 1: Find or update JUD book to be Jude
+    puts "Step 1: Ensuring JUD is Jude"
+    puts "-" * 80
+    
+    jud_book = Book.unscoped.find_by(code: 'JUD')
+    
+    if jud_book
+      puts "✓ Found book with code JUD:"
+      puts "  - ID: #{jud_book.id}"
+      puts "  - Code: #{jud_book.code}"
+      puts "  - Name: #{jud_book.std_name}"
+      puts "  - Description: #{jud_book.description || 'N/A'}"
+      puts ""
+      
+      if jud_book.std_name != 'Jude'
+        puts "⚠ Book name is '#{jud_book.std_name}', should be 'Jude'"
+        if dry_run
+          puts "  → Would update std_name to 'Jude'"
+        else
+          jud_book.update!(std_name: 'Jude')
+          puts "  ✓ Updated std_name to 'Jude'"
+        end
+      else
+        puts "✓ Book name is already 'Jude' (correct)"
+      end
+      
+      # Check for any text_contents using this book
+      text_content_count = TextContent.unscoped.where(book_id: jud_book.id).count
+      if text_content_count > 0
+        puts "  ⚠ Found #{text_content_count} text_content record(s) using this book"
+        puts "    These records will continue to reference JUD (Jude) - no changes needed"
+      end
+    else
+      puts "⚠ Book with code JUD not found"
+      if dry_run
+        puts "  → Would create new book: code='JUD', std_name='Jude'"
+      else
+        jud_book = Book.create!(
+          code: 'JUD',
+          std_name: 'Jude',
+          description: 'Epistle of Jude'
+        )
+        puts "  ✓ Created new book: JUD (Jude)"
+      end
+    end
+    
+    puts ""
+    
+    # Step 2: Create Judges book with code JUG
+    puts "Step 2: Creating Judges book with code JUG"
+    puts "-" * 80
+    
+    jug_book = Book.unscoped.find_by(code: 'JUG')
+    
+    if jug_book
+      puts "⚠ Book with code JUG already exists:"
+      puts "  - ID: #{jug_book.id}"
+      puts "  - Code: #{jug_book.code}"
+      puts "  - Name: #{jug_book.std_name}"
+      puts "  - Description: #{jug_book.description || 'N/A'}"
+      puts ""
+      
+      if jug_book.std_name != 'Judges'
+        puts "⚠ Book name is '#{jug_book.std_name}', should be 'Judges'"
+        if dry_run
+          puts "  → Would update std_name to 'Judges'"
+        else
+          jug_book.update!(std_name: 'Judges')
+          puts "  ✓ Updated std_name to 'Judges'"
+        end
+      else
+        puts "✓ Book name is already 'Judges' (correct)"
+      end
+      
+      # Check for any text_contents using this book
+      text_content_count = TextContent.unscoped.where(book_id: jug_book.id).count
+      if text_content_count > 0
+        puts "  ℹ Found #{text_content_count} text_content record(s) using this book"
+      end
+    else
+      puts "Book with code JUG not found"
+      if dry_run
+        puts "  → Would create new book: code='JUG', std_name='Judges'"
+      else
+        jug_book = Book.create!(
+          code: 'JUG',
+          std_name: 'Judges',
+          description: 'Book of Judges'
+        )
+        puts "  ✓ Created new book: JUG (Judges)"
+      end
+    end
+    
+    puts ""
+    
+    # Step 3: Summary
+    puts "=" * 80
+    puts "SUMMARY"
+    puts "=" * 80
+    puts ""
+    
+    if dry_run
+      puts "DRY RUN MODE: No changes were made."
+      puts ""
+      puts "To actually make these changes, run:"
+      puts "  DRY_RUN=false rake 'text_content:fix_jud_judges'"
+    else
+      puts "LIVE MODE: Changes completed."
+      puts ""
+      puts "Final status:"
+      
+      final_jud = Book.unscoped.find_by(code: 'JUD')
+      final_jug = Book.unscoped.find_by(code: 'JUG')
+      
+      if final_jud
+        puts "  ✓ JUD: #{final_jud.std_name} (ID: #{final_jud.id})"
+      else
+        puts "  ✗ JUD: Not found"
+      end
+      
+      if final_jug
+        puts "  ✓ JUG: #{final_jug.std_name} (ID: #{final_jug.id})"
+      else
+        puts "  ✗ JUG: Not found"
+      end
+      
+      puts ""
+      puts "Note: If you need to add verse count data for Judges (JUG),"
+      puts "      update app/services/verse_count_reference.rb to include"
+      puts "      Old Testament verse counts or add JUG to the reference data."
+    end
+    
+    puts ""
+    puts "Done!"
+  end
+
   # ============================================================================
   # PRODUCTION BATCH PROCESSING TASKS (Concurrent Processing)
   # ============================================================================
