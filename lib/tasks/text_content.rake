@@ -1396,6 +1396,127 @@ namespace :text_content do
     puts "Done!"
   end
 
+  desc "Delete content for specific verses by unit_key. Usage: rake 'text_content:delete_verse_content' or use DRY_RUN=false to actually delete (default: DRY_RUN=true)"
+  task :delete_verse_content => :environment do
+    dry_run = ENV['DRY_RUN'] != 'false'  # Default to dry run for safety
+    
+    # List of verses to delete content for (unit_keys)
+    verses_to_delete = [
+      'GRK_WH1881|MAT|17|21',
+      'GRK_WH1881|MAT|18|11',
+      'GRK_WH1881|MAT|23|14',
+      'GRK_WH1881|MRK|7|16',
+      'GRK_WH1881|MRK|9|44',
+      'GRK_WH1881|MRK|9|46',
+      'GRK_WH1881|MRK|11|26',
+      'GRK_WH1881|MRK|15|28',
+      'GRK_WH1881|LUK|17|36',
+      'GRK_WH1881|LUK|23|17',
+      'GRK_WH1881|JHN|5|4',
+      'GRK_WH1881|ACT|8|37',
+      'GRK_WH1881|ACT|15|34',
+      'GRK_WH1881|ACT|24|7',
+      'GRK_WH1881|ACT|28|29',
+      'GRK_WH1881|ROM|16|24',
+      'GRK_WH1881|LUK|24|12'
+    ]
+    
+    puts "=" * 80
+    puts "Deleting Content for Specific Verses"
+    puts "Mode: #{dry_run ? 'DRY RUN (no changes)' : 'LIVE (will delete content)'}"
+    puts "=" * 80
+    puts ""
+    puts "Total verses to process: #{verses_to_delete.count}"
+    puts ""
+    
+    # Find all text contents by unit_key
+    text_contents = TextContent.unscoped.where(unit_key: verses_to_delete)
+    found_count = text_contents.count
+    not_found = verses_to_delete - text_contents.pluck(:unit_key)
+    
+    puts "Found #{found_count} text content record(s) matching the unit_keys"
+    if not_found.any?
+      puts "⚠ Not found (#{not_found.count}):"
+      not_found.each { |uk| puts "  - #{uk}" }
+    end
+    puts ""
+    
+    if found_count == 0
+      puts "✓ No records found to delete content for"
+      exit 0
+    end
+    
+    # Show what will be deleted
+    puts "Verses that will have content deleted:"
+    text_contents.each do |tc|
+      has_content = tc.content.present? || tc.word_for_word_translation.present? || tc.lsv_literal_reconstruction.present?
+      puts "  - #{tc.unit_key}: #{has_content ? 'Has content' : 'Already empty'}"
+    end
+    puts ""
+    
+    if dry_run
+      puts "DRY RUN MODE: No records will be modified."
+      puts ""
+      puts "To actually delete content for these records, run:"
+      puts "  DRY_RUN=false rake 'text_content:delete_verse_content'"
+    else
+      puts "LIVE MODE: Deleting content fields..."
+      puts ""
+      
+      deleted_count = 0
+      errors = []
+      
+      text_contents.find_each do |text_content|
+        begin
+          # Clear all content-related fields
+          text_content.update!(
+            content: '',
+            word_for_word_translation: [],
+            lsv_literal_reconstruction: nil,
+            content_populated_at: nil,
+            content_populated_by: nil,
+            content_validated_at: nil,
+            content_validated_by: nil,
+            content_validation_result: nil,
+            validation_notes: nil
+          )
+          deleted_count += 1
+          puts "  ✓ Deleted content for: #{text_content.unit_key}"
+        rescue => e
+          errors << { unit_key: text_content.unit_key, error: e.message }
+          Rails.logger.error "Failed to delete content for #{text_content.unit_key}: #{e.message}"
+          puts "  ✗ Error deleting content for #{text_content.unit_key}: #{e.message}"
+        end
+      end
+      
+      puts ""
+      puts "=" * 80
+      puts "SUMMARY"
+      puts "=" * 80
+      puts ""
+      puts "Total records found: #{found_count}"
+      puts "Successfully deleted content: #{deleted_count}"
+      puts "Errors: #{errors.count}"
+      
+      if errors.any?
+        puts ""
+        puts "Errors encountered:"
+        errors.each do |error|
+          puts "  - #{error[:unit_key]}: #{error[:error]}"
+        end
+      end
+      
+      if not_found.any?
+        puts ""
+        puts "⚠ Note: #{not_found.count} verse(s) were not found in the database:"
+        not_found.each { |uk| puts "  - #{uk}" }
+      end
+    end
+    
+    puts ""
+    puts "Done!"
+  end
+
   # ============================================================================
   # PRODUCTION BATCH PROCESSING TASKS (Concurrent Processing)
   # ============================================================================
