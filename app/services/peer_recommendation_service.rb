@@ -94,9 +94,10 @@ class PeerRecommendationService
       recommendations.concat(google_recommendations)
     end
 
-    # Try Twitter if available (if implemented)
+    # Try Twitter/X if available
     if @user.provider == 'twitter' && @user.oauth_token.present? && @user.oauth_token_secret.present?
-      # Twitter implementation would go here
+      twitter_recommendations = find_from_twitter(excluded_ids, limit - recommendations.count)
+      recommendations.concat(twitter_recommendations)
     end
 
     recommendations.first(limit)
@@ -192,6 +193,82 @@ class PeerRecommendationService
       end
     rescue => e
       Rails.logger.error "Error fetching Google contacts: #{e.message}"
+      []
+    end
+  end
+
+  def find_from_twitter(excluded_ids, limit)
+    return [] unless @user.oauth_token.present? && @user.oauth_token_secret.present?
+
+    begin
+      require 'oauth'
+      require 'net/http'
+      require 'json'
+      require 'uri'
+
+      # Twitter API v2 endpoint for getting following list
+      base_url = 'https://api.twitter.com/2/users/me/following'
+      params = {
+        'max_results' => [limit, 100].min.to_s, # Twitter API max is 100
+        'user.fields' => 'username'
+      }
+
+      # Create OAuth consumer
+      consumer = OAuth::Consumer.new(
+        ENV['TWITTER_API_KEY'],
+        ENV['TWITTER_API_SECRET'],
+        { site: 'https://api.twitter.com' }
+      )
+
+      # Create access token
+      access_token = OAuth::Token.new(
+        @user.oauth_token,
+        @user.oauth_token_secret
+      )
+
+      # Build request
+      uri = URI(base_url)
+      uri.query = URI.encode_www_form(params)
+
+      # Create and sign request
+      request = Net::HTTP::Get.new(uri.request_uri)
+      consumer.sign!(request, access_token)
+
+      # Make request
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.use_ssl = true
+      response = http.request(request)
+
+      return [] unless response.is_a?(Net::HTTPSuccess)
+
+      data = JSON.parse(response.body)
+      following_data = data['data'] || []
+
+      return [] if following_data.empty?
+
+      # Extract Twitter UIDs (Twitter API returns IDs, not usernames for matching)
+      twitter_uids = following_data.map { |f| f['id'] }.compact
+
+      return [] if twitter_uids.empty?
+
+      # Find users in our system who match Twitter UIDs
+      users = User.where(provider: 'twitter', uid: twitter_uids)
+                 .where.not(id: excluded_ids + [@user.id])
+                 .limit(limit)
+
+      users.map do |user|
+        {
+          user: user,
+          score: 5, # Medium weight for social connections
+          reason: 'Following on X (Twitter)',
+          source: 'twitter'
+        }
+      end
+    rescue OAuth::Error => e
+      Rails.logger.error "OAuth error fetching Twitter following: #{e.message}"
+      []
+    rescue => e
+      Rails.logger.error "Error fetching Twitter following: #{e.message}\n#{e.backtrace.join("\n")}"
       []
     end
   end
