@@ -441,6 +441,10 @@ ActiveRecord::Schema[7.0].define(version: 2025_11_22_140000) do
     t.text "about"
     t.string "phone"
     t.integer "naming_preference"
+    t.text "oauth_token"
+    t.text "oauth_token_secret"
+    t.text "oauth_refresh_token"
+    t.datetime "oauth_expires_at"
     t.index ["confirmation_token"], name: "index_users_on_confirmation_token", unique: true
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true

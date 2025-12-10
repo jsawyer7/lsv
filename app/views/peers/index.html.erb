@@ -62,24 +62,33 @@
       <div class="peers-suggestions">
         <h3 class="peers-section-title">People you may know</h3>
         <div class="peers-suggestions-list">
-          <% @suggested_users.each do |user| %>
-            <div class="peer-card">
-              <div class="peer-avatar-wrap">
-                <%= image_tag user.avatar_url.presence || 'default-avatar.png', class: 'peer-avatar' %>
+          <% if @suggested_users.any? %>
+            <% @suggested_users.each do |user| %>
+              <div class="peer-card">
+                <div class="peer-avatar-wrap">
+                  <%= image_tag user.avatar_url.presence || 'default-avatar.png', class: 'peer-avatar' %>
+                </div>
+                <div class="peer-name-row">
+                  <span class="peer-name truncate-text"><%= user.full_name.presence || user.email %></span>
+                  <span class="peer-verified"><i class="fa fa-check-circle"></i></span>
+                </div>
+                <% if @recommendation_reasons && @recommendation_reasons[user.id] %>
+                  <div class="peer-match-info" style="font-size: 0.85em; color: #666; margin: 5px 0;">
+                    <%= @recommendation_reasons[user.id][:reason] %>
+                  </div>
+                <% end %>
+                <div class="peer-rating">★ 4.7</div>
+                <% if Peer.exists?(user_id: current_user.id, peer_id: user.id, status: 'pending') %>
+                  <span class="add-peer-btn request-sent-text">Request Sent</span>
+                <% elsif Peer.exists?(user_id: user.id, peer_id: current_user.id, status: 'pending') %>
+                  <%= button_to 'Accept Request', accept_peers_path(user_id: user.id), method: :post, class: 'add-peer-btn' %>
+                <% else %>
+                  <%= button_to 'Add Peer', add_peers_path(peer_id: user.id), method: :post, class: 'add-peer-btn' %>
+                <% end %>
               </div>
-              <div class="peer-name-row">
-                <span class="peer-name truncate-text"><%= user.full_name.presence || user.email %></span>
-                <span class="peer-verified"><i class="fa fa-check-circle"></i></span>
-              </div>
-              <div class="peer-rating">★ 4.7</div>
-              <% if Peer.exists?(user_id: current_user.id, peer_id: user.id, status: 'pending') %>
-                <span class="add-peer-btn request-sent-text">Request Sent</span>
-              <% elsif Peer.exists?(user_id: user.id, peer_id: current_user.id, status: 'pending') %>
-                <%= button_to 'Accept Request', accept_peers_path(user_id: user.id), method: :post, class: 'add-peer-btn' %>
-              <% else %>
-                <%= button_to 'Add Peer', add_peers_path(peer_id: user.id), method: :post, class: 'add-peer-btn' %>
-              <% end %>
-            </div>
+            <% end %>
+          <% else %>
+            <div class="no-requests-message">No suggestions available at this time.</div>
           <% end %>
         </div>
         <div class="pagination-container">
