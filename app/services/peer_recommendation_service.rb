@@ -116,7 +116,10 @@ class PeerRecommendationService
       uri.query = URI.encode_www_form(params)
 
       response = Net::HTTP.get_response(uri)
-      return [] unless response.is_a?(Net::HTTPSuccess)
+
+      unless response.is_a?(Net::HTTPSuccess)
+        return []
+      end
 
       data = JSON.parse(response.body)
       friend_uids = (data['data'] || []).map { |f| f['id'] }
@@ -137,7 +140,6 @@ class PeerRecommendationService
         }
       end
     rescue => e
-      Rails.logger.error "Error fetching Facebook friends: #{e.message}"
       []
     end
   end
@@ -164,7 +166,10 @@ class PeerRecommendationService
       request['Authorization'] = "Bearer #{@user.oauth_token}"
 
       response = http.request(request)
-      return [] unless response.is_a?(Net::HTTPSuccess)
+
+      unless response.is_a?(Net::HTTPSuccess)
+        return []
+      end
 
       data = JSON.parse(response.body)
       connections = data['connections'] || []
@@ -192,7 +197,6 @@ class PeerRecommendationService
         }
       end
     rescue => e
-      Rails.logger.error "Error fetching Google contacts: #{e.message}"
       []
     end
   end
@@ -239,7 +243,9 @@ class PeerRecommendationService
       http.use_ssl = true
       response = http.request(request)
 
-      return [] unless response.is_a?(Net::HTTPSuccess)
+      unless response.is_a?(Net::HTTPSuccess)
+        return []
+      end
 
       data = JSON.parse(response.body)
       following_data = data['data'] || []
@@ -264,11 +270,7 @@ class PeerRecommendationService
           source: 'twitter'
         }
       end
-    rescue OAuth::Error => e
-      Rails.logger.error "OAuth error fetching Twitter following: #{e.message}"
-      []
     rescue => e
-      Rails.logger.error "Error fetching Twitter following: #{e.message}\n#{e.backtrace.join("\n")}"
       []
     end
   end
