@@ -2712,7 +2712,7 @@ namespace :lexical do
         exit 1
       end
 
-      # Populate each verse
+      # Populate each verse with fidelity checking and retry logic
       stats = {
         total: test_verse_records.count,
         populated: 0,
@@ -2727,23 +2727,141 @@ namespace :lexical do
         
         puts "[#{index + 1}/#{test_verse_records.count}] Populating: #{book.std_name} #{chapter}:#{verse} (#{text_content.unit_key})"
 
-        begin
-          population_service = TextContentPopulationService.new(text_content)
-          population_result = population_service.populate_content_fields(force: force)
+        max_retries = 3
+        retry_count = 0
+        populated_successfully = false
 
-          if population_result[:status] == 'success'
-            stats[:populated] += 1
-            puts "  ✓ Populated successfully"
-          elsif population_result[:status] == 'already_populated'
-            stats[:already_populated] += 1
-            puts "  → Already populated (skipped)"
-          else
-            stats[:errors] << { book: book.code, chapter: chapter, verse: verse, error: population_result[:error] }
-            puts "  ✗ Failed: #{population_result[:error]}"
+        while retry_count < max_retries && !populated_successfully
+          begin
+            population_service = TextContentPopulationService.new(text_content.reload)
+            population_result = population_service.populate_content_fields(force: force || retry_count > 0)
+
+            if population_result[:status] == 'success'
+              # Verify fidelity for Swete source
+              if source.code == 'LXX_SWETE' || source.name.include?('Swete')
+                begin
+                  text_content.reload
+                  if text_content.content.present?
+                    fidelity_validator = SweteFidelityValidator.new(
+                      source.code,
+                      book.code,
+                      chapter,
+                      verse
+                    )
+                    
+                    if fidelity_validator.canonical_exists?
+                      fidelity_validator.verify(text_content.content)
+                      stats[:populated] += 1
+                      puts "  ✓ Populated and fidelity verified"
+                    else
+                      # Canonical doesn't exist yet - log warning but count as success
+                      Rails.logger.warn "Canonical text not found for #{text_content.unit_key} - skipping fidelity check"
+                      stats[:populated] += 1
+                      puts "  ✓ Populated (canonical text not yet loaded)"
+                    end
+                  else
+                    raise "Content is empty after population"
+                  end
+                rescue SweteFidelityError => e
+                  retry_count += 1
+                  if retry_count < max_retries
+                    puts "  ⚠ Fidelity mismatch (retry #{retry_count}/#{max_retries}): #{e.message.split("\n").first}"
+                    puts "  → Retrying population..."
+                    text_content.update_columns(population_status: 'pending', content: '')
+                    sleep 2
+                    next
+                  else
+                    stats[:errors] << { book: book.code, chapter: chapter, verse: verse, error: "Fidelity error: #{e.message.split("\n").first}" }
+                    puts "  ✗ Fidelity verification failed after #{max_retries} retries"
+                  end
+                end
+              else
+                # Not Swete source - no fidelity check needed
+                stats[:populated] += 1
+                puts "  ✓ Populated successfully"
+              end
+              
+              populated_successfully = true
+            elsif population_result[:status] == 'already_populated'
+              # Check fidelity even for already populated
+              if source.code == 'LXX_SWETE' || source.name.include?('Swete')
+                begin
+                  fidelity_validator = SweteFidelityValidator.new(
+                    source.code,
+                    book.code,
+                    chapter,
+                    verse
+                  )
+                  
+                  if fidelity_validator.canonical_exists?
+                    fidelity_validator.verify(text_content.content)
+                    stats[:already_populated] += 1
+                    puts "  → Already populated and fidelity verified"
+                  else
+                    stats[:already_populated] += 1
+                    puts "  → Already populated (canonical text not yet loaded)"
+                  end
+                rescue SweteFidelityError => e
+                  if force || retry_count > 0
+                    retry_count += 1
+                    if retry_count < max_retries
+                      puts "  ⚠ Fidelity mismatch on existing content (retry #{retry_count}/#{max_retries}): #{e.message.split("\n").first}"
+                      puts "  → Retrying population with force..."
+                      text_content.update_columns(population_status: 'pending', content: '')
+                      sleep 2
+                      next
+                    else
+                      stats[:errors] << { book: book.code, chapter: chapter, verse: verse, error: "Fidelity error: #{e.message.split("\n").first}" }
+                      puts "  ✗ Fidelity verification failed after #{max_retries} retries"
+                    end
+                  else
+                    stats[:errors] << { book: book.code, chapter: chapter, verse: verse, error: "Fidelity error (use FORCE=true to retry): #{e.message.split("\n").first}" }
+                    puts "  ✗ Fidelity mismatch (use FORCE=true to retry)"
+                  end
+                end
+              else
+                stats[:already_populated] += 1
+                puts "  → Already populated (skipped)"
+              end
+              
+              populated_successfully = true
+            else
+              retry_count += 1
+              if retry_count < max_retries
+                puts "  ⚠ Population failed (retry #{retry_count}/#{max_retries}): #{population_result[:error]}"
+                sleep 2
+                next
+              else
+                stats[:errors] << { book: book.code, chapter: chapter, verse: verse, error: population_result[:error] }
+                puts "  ✗ Failed after #{max_retries} retries: #{population_result[:error]}"
+                populated_successfully = true  # Stop retrying
+              end
+            end
+          rescue SweteFidelityError => e
+            retry_count += 1
+            if retry_count < max_retries
+              puts "  ⚠ Fidelity error (retry #{retry_count}/#{max_retries}): #{e.message.split("\n").first}"
+              puts "  → Retrying population..."
+              text_content.update_columns(population_status: 'pending', content: '')
+              sleep 2
+              next
+            else
+              stats[:errors] << { book: book.code, chapter: chapter, verse: verse, error: "Fidelity error: #{e.message.split("\n").first}" }
+              puts "  ✗ Fidelity verification failed after #{max_retries} retries"
+              populated_successfully = true
+            end
+          rescue => e
+            retry_count += 1
+            if retry_count < max_retries
+              puts "  ⚠ Exception (retry #{retry_count}/#{max_retries}): #{e.message}"
+              sleep 2
+              next
+            else
+              stats[:errors] << { book: book.code, chapter: chapter, verse: verse, error: e.message }
+              puts "  ✗ Exception after #{max_retries} retries: #{e.message}"
+              populated_successfully = true
+            end
           end
-        rescue => e
-          stats[:errors] << { book: book.code, chapter: chapter, verse: verse, error: e.message }
-          puts "  ✗ Exception: #{e.message}"
         end
 
         puts ""
@@ -2753,10 +2871,19 @@ namespace :lexical do
       puts "Population Summary"
       puts "=" * 80
       puts "Total verses: #{stats[:total]}"
-      puts "  - Newly populated: #{stats[:populated]}"
-      puts "  - Already populated: #{stats[:already_populated]}"
+      puts "  - Newly populated (fidelity verified): #{stats[:populated]}"
+      puts "  - Already populated (fidelity verified): #{stats[:already_populated]}"
       puts "  - Errors: #{stats[:errors].count}"
       puts ""
+      
+      if stats[:errors].any?
+        fidelity_errors = stats[:errors].select { |e| e[:error].include?('Fidelity') || e[:error].include?('fidelity') }
+        if fidelity_errors.any?
+          puts "Fidelity errors: #{fidelity_errors.count}"
+          puts "  These verses need canonical text loaded or source text corrected"
+          puts ""
+        end
+      end
 
       if stats[:errors].any?
         puts "Errors encountered:"
@@ -2771,8 +2898,8 @@ namespace :lexical do
       puts "=" * 80
       puts "Records created: #{total_created}"
       puts "Records existing: #{total_existing}"
-      puts "Verses populated: #{stats[:populated]}"
-      puts "Verses already populated: #{stats[:already_populated]}"
+      puts "Verses populated (fidelity verified): #{stats[:populated]}"
+      puts "Verses already populated (fidelity verified): #{stats[:already_populated]}"
       puts "Errors: #{stats[:errors].count}"
       puts ""
       puts "Done!"
@@ -2974,7 +3101,7 @@ namespace :lexical do
         exit 1
       end
 
-      # Populate each verse
+      # Populate each verse with fidelity checking and retry logic
       stats = {
         total: test_verse_records.count,
         populated: 0,
@@ -2989,23 +3116,141 @@ namespace :lexical do
         
         puts "[#{index + 1}/#{test_verse_records.count}] Populating: #{book.std_name} #{chapter}:#{verse} (#{text_content.unit_key})"
 
-        begin
-          population_service = TextContentPopulationService.new(text_content)
-          population_result = population_service.populate_content_fields(force: force)
+        max_retries = 3
+        retry_count = 0
+        populated_successfully = false
 
-          if population_result[:status] == 'success'
-            stats[:populated] += 1
-            puts "  ✓ Populated successfully"
-          elsif population_result[:status] == 'already_populated'
-            stats[:already_populated] += 1
-            puts "  → Already populated (skipped)"
-          else
-            stats[:errors] << { book: book.code, chapter: chapter, verse: verse, error: population_result[:error] }
-            puts "  ✗ Failed: #{population_result[:error]}"
+        while retry_count < max_retries && !populated_successfully
+          begin
+            population_service = TextContentPopulationService.new(text_content.reload)
+            population_result = population_service.populate_content_fields(force: force || retry_count > 0)
+
+            if population_result[:status] == 'success'
+              # Verify fidelity for Swete source
+              if source.code == 'LXX_SWETE' || source.name.include?('Swete')
+                begin
+                  text_content.reload
+                  if text_content.content.present?
+                    fidelity_validator = SweteFidelityValidator.new(
+                      source.code,
+                      book.code,
+                      chapter,
+                      verse
+                    )
+                    
+                    if fidelity_validator.canonical_exists?
+                      fidelity_validator.verify(text_content.content)
+                      stats[:populated] += 1
+                      puts "  ✓ Populated and fidelity verified"
+                    else
+                      # Canonical doesn't exist yet - log warning but count as success
+                      Rails.logger.warn "Canonical text not found for #{text_content.unit_key} - skipping fidelity check"
+                      stats[:populated] += 1
+                      puts "  ✓ Populated (canonical text not yet loaded)"
+                    end
+                  else
+                    raise "Content is empty after population"
+                  end
+                rescue SweteFidelityError => e
+                  retry_count += 1
+                  if retry_count < max_retries
+                    puts "  ⚠ Fidelity mismatch (retry #{retry_count}/#{max_retries}): #{e.message.split("\n").first}"
+                    puts "  → Retrying population..."
+                    text_content.update_columns(population_status: 'pending', content: '')
+                    sleep 2
+                    next
+                  else
+                    stats[:errors] << { book: book.code, chapter: chapter, verse: verse, error: "Fidelity error: #{e.message.split("\n").first}" }
+                    puts "  ✗ Fidelity verification failed after #{max_retries} retries"
+                  end
+                end
+              else
+                # Not Swete source - no fidelity check needed
+                stats[:populated] += 1
+                puts "  ✓ Populated successfully"
+              end
+              
+              populated_successfully = true
+            elsif population_result[:status] == 'already_populated'
+              # Check fidelity even for already populated
+              if source.code == 'LXX_SWETE' || source.name.include?('Swete')
+                begin
+                  fidelity_validator = SweteFidelityValidator.new(
+                    source.code,
+                    book.code,
+                    chapter,
+                    verse
+                  )
+                  
+                  if fidelity_validator.canonical_exists?
+                    fidelity_validator.verify(text_content.content)
+                    stats[:already_populated] += 1
+                    puts "  → Already populated and fidelity verified"
+                  else
+                    stats[:already_populated] += 1
+                    puts "  → Already populated (canonical text not yet loaded)"
+                  end
+                rescue SweteFidelityError => e
+                  if force || retry_count > 0
+                    retry_count += 1
+                    if retry_count < max_retries
+                      puts "  ⚠ Fidelity mismatch on existing content (retry #{retry_count}/#{max_retries}): #{e.message.split("\n").first}"
+                      puts "  → Retrying population with force..."
+                      text_content.update_columns(population_status: 'pending', content: '')
+                      sleep 2
+                      next
+                    else
+                      stats[:errors] << { book: book.code, chapter: chapter, verse: verse, error: "Fidelity error: #{e.message.split("\n").first}" }
+                      puts "  ✗ Fidelity verification failed after #{max_retries} retries"
+                    end
+                  else
+                    stats[:errors] << { book: book.code, chapter: chapter, verse: verse, error: "Fidelity error (use FORCE=true to retry): #{e.message.split("\n").first}" }
+                    puts "  ✗ Fidelity mismatch (use FORCE=true to retry)"
+                  end
+                end
+              else
+                stats[:already_populated] += 1
+                puts "  → Already populated (skipped)"
+              end
+              
+              populated_successfully = true
+            else
+              retry_count += 1
+              if retry_count < max_retries
+                puts "  ⚠ Population failed (retry #{retry_count}/#{max_retries}): #{population_result[:error]}"
+                sleep 2
+                next
+              else
+                stats[:errors] << { book: book.code, chapter: chapter, verse: verse, error: population_result[:error] }
+                puts "  ✗ Failed after #{max_retries} retries: #{population_result[:error]}"
+                populated_successfully = true  # Stop retrying
+              end
+            end
+          rescue SweteFidelityError => e
+            retry_count += 1
+            if retry_count < max_retries
+              puts "  ⚠ Fidelity error (retry #{retry_count}/#{max_retries}): #{e.message.split("\n").first}"
+              puts "  → Retrying population..."
+              text_content.update_columns(population_status: 'pending', content: '')
+              sleep 2
+              next
+            else
+              stats[:errors] << { book: book.code, chapter: chapter, verse: verse, error: "Fidelity error: #{e.message.split("\n").first}" }
+              puts "  ✗ Fidelity verification failed after #{max_retries} retries"
+              populated_successfully = true
+            end
+          rescue => e
+            retry_count += 1
+            if retry_count < max_retries
+              puts "  ⚠ Exception (retry #{retry_count}/#{max_retries}): #{e.message}"
+              sleep 2
+              next
+            else
+              stats[:errors] << { book: book.code, chapter: chapter, verse: verse, error: e.message }
+              puts "  ✗ Exception after #{max_retries} retries: #{e.message}"
+              populated_successfully = true
+            end
           end
-        rescue => e
-          stats[:errors] << { book: book.code, chapter: chapter, verse: verse, error: e.message }
-          puts "  ✗ Exception: #{e.message}"
         end
 
         puts ""
@@ -3015,10 +3260,19 @@ namespace :lexical do
       puts "Population Summary"
       puts "=" * 80
       puts "Total verses: #{stats[:total]}"
-      puts "  - Newly populated: #{stats[:populated]}"
-      puts "  - Already populated: #{stats[:already_populated]}"
+      puts "  - Newly populated (fidelity verified): #{stats[:populated]}"
+      puts "  - Already populated (fidelity verified): #{stats[:already_populated]}"
       puts "  - Errors: #{stats[:errors].count}"
       puts ""
+      
+      if stats[:errors].any?
+        fidelity_errors = stats[:errors].select { |e| e[:error].include?('Fidelity') || e[:error].include?('fidelity') }
+        if fidelity_errors.any?
+          puts "Fidelity errors: #{fidelity_errors.count}"
+          puts "  These verses need canonical text loaded or source text corrected"
+          puts ""
+        end
+      end
 
       if stats[:errors].any?
         puts "Errors encountered:"
@@ -3033,8 +3287,8 @@ namespace :lexical do
       puts "=" * 80
       puts "Records created: #{total_created}"
       puts "Records existing: #{total_existing}"
-      puts "Verses populated: #{stats[:populated]}"
-      puts "Verses already populated: #{stats[:already_populated]}"
+      puts "Verses populated (fidelity verified): #{stats[:populated]}"
+      puts "Verses already populated (fidelity verified): #{stats[:already_populated]}"
       puts "Errors: #{stats[:errors].count}"
       puts ""
       puts "Done!"

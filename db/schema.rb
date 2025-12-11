@@ -10,8 +10,9 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2025_11_22_140000) do
+ActiveRecord::Schema[7.0].define(version: 2025_12_11_183213) do
   # These are extensions that must be enabled in order to support this database
+  enable_extension "pg_stat_statements"
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
   enable_extension "vector"
@@ -83,6 +84,17 @@ ActiveRecord::Schema[7.0].define(version: 2025_11_22_140000) do
     t.index ["canon_id"], name: "index_canon_text_contents_on_canon_id"
     t.index ["text_content_id", "canon_id"], name: "index_canon_text_contents_on_text_content_id_and_canon_id", unique: true
     t.index ["text_content_id"], name: "index_canon_text_contents_on_text_content_id"
+  end
+
+  create_table "canonical_source_texts", id: false, force: :cascade do |t|
+    t.string "source_code", limit: 50, null: false
+    t.string "book_code", limit: 10, null: false
+    t.integer "chapter_number", null: false
+    t.string "verse_number", limit: 10, null: false
+    t.text "canonical_text", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["source_code", "book_code", "chapter_number", "verse_number"], name: "index_canonical_source_texts_unique", unique: true
   end
 
   create_table "canons", force: :cascade do |t|
@@ -348,7 +360,7 @@ ActiveRecord::Schema[7.0].define(version: 2025_11_22_140000) do
     t.bigint "language_id", null: false
     t.uuid "parent_unit_id"
     t.integer "unit_group"
-    t.integer "unit"
+    t.string "unit"
     t.text "content", null: false
     t.string "unit_key", limit: 255, null: false
     t.datetime "created_at", null: false

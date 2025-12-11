@@ -19,9 +19,68 @@ class TextContentPopulateJob < ApplicationJob
 
     case result[:status]
     when 'success'
-      Rails.logger.info "TextContentPopulateJob: Successfully populated #{text_content.unit_key}"
+      # Verify fidelity for Swete source after successful population
+      text_content.reload
+      if text_content.content.present? && (text_content.source.code == 'LXX_SWETE' || text_content.source.name.include?('Swete'))
+        begin
+          fidelity_validator = SweteFidelityValidator.new(
+            text_content.source.code,
+            text_content.book.code,
+            text_content.unit_group,
+            text_content.unit
+          )
+          
+          if fidelity_validator.canonical_exists?
+            fidelity_validator.verify(text_content.content)
+            Rails.logger.info "TextContentPopulateJob: Successfully populated and fidelity verified #{text_content.unit_key}"
+          else
+            Rails.logger.warn "TextContentPopulateJob: Successfully populated #{text_content.unit_key} (canonical text not yet loaded)"
+          end
+        rescue SweteFidelityError => e
+          Rails.logger.error "TextContentPopulateJob: Fidelity error for #{text_content.unit_key}: #{e.message}"
+          text_content.update_columns(
+            population_status: 'error',
+            population_error_message: "Swete fidelity mismatch: #{e.message.split("\n").first}".truncate(1000)
+          )
+          raise "Fidelity mismatch: #{e.message.split("\n").first}" # This will trigger retry
+        end
+      else
+        Rails.logger.info "TextContentPopulateJob: Successfully populated #{text_content.unit_key}"
+      end
     when 'already_populated'
-      Rails.logger.info "TextContentPopulateJob: Already populated #{text_content.unit_key}"
+      # Verify fidelity even for already populated
+      text_content.reload
+      if text_content.content.present? && (text_content.source.code == 'LXX_SWETE' || text_content.source.name.include?('Swete'))
+        begin
+          fidelity_validator = SweteFidelityValidator.new(
+            text_content.source.code,
+            text_content.book.code,
+            text_content.unit_group,
+            text_content.unit
+          )
+          
+          if fidelity_validator.canonical_exists?
+            fidelity_validator.verify(text_content.content)
+            Rails.logger.info "TextContentPopulateJob: Already populated and fidelity verified #{text_content.unit_key}"
+          else
+            Rails.logger.info "TextContentPopulateJob: Already populated #{text_content.unit_key} (canonical text not yet loaded)"
+          end
+        rescue SweteFidelityError => e
+          Rails.logger.error "TextContentPopulateJob: Fidelity error for already populated #{text_content.unit_key}: #{e.message}"
+          # Mark for retry if force is true
+          if force
+            text_content.update_columns(
+              population_status: 'pending',
+              population_error_message: "Swete fidelity mismatch: #{e.message.split("\n").first}".truncate(1000)
+            )
+            raise "Fidelity mismatch: #{e.message.split("\n").first}" # This will trigger retry
+          else
+            Rails.logger.warn "TextContentPopulateJob: Fidelity error but force=false, skipping retry for #{text_content.unit_key}"
+          end
+        end
+      else
+        Rails.logger.info "TextContentPopulateJob: Already populated #{text_content.unit_key}"
+      end
     when 'unavailable'
       Rails.logger.warn "TextContentPopulateJob: Text unavailable for #{text_content.unit_key}"
     when 'error'
