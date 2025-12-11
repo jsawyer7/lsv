@@ -2516,13 +2516,10 @@ namespace :lexical do
     # AUTOMATED CREATION AND POPULATION FOR SEPTUAGINT (H.B. SWETE 1894–1909)
     # ============================================================================
 
-    desc "Create and populate test verses for Septuagint (H.B. Swete). Usage: rake 'lexical:create_and_populate_lxx_test_verses[source_id]'"
+    desc "Create and populate test verses for Septuagint LXX (runs synchronously). Usage: rake 'lexical:create_and_populate_lxx_test_verses[source_id]' or with FORCE=true"
     task :create_and_populate_lxx_test_verses, [:source_id] => :environment do |t, args|
-      source_id = args[:source_id]
-      force_create = ENV['FORCE_CREATE'] == 'true'
-      force_populate = ENV['FORCE_POPULATE'] == 'true'
-      batch_size = ENV.fetch('BATCH_SIZE', '7').to_i
-      model = ENV.fetch('GROK_MODEL', 'grok-4-0709')
+      source_id = args[:source_id]&.to_i
+      force = ENV['FORCE'] == 'true'
 
       puts "=" * 80
       puts "Create and Populate Septuagint (H.B. Swete) Test Verses"
@@ -2558,37 +2555,37 @@ namespace :lexical do
       end
       puts ""
 
-      # Step 2: Define test verses
+      # Define test verses
       test_verses = [
         # 1. Genesis 1:1–2
-        { book: 'GEN', chapter: 1, verses: [1, 2] },
+        { book: 'GEN', chapter: 1, verses: [1, 2], description: 'Tests basic syntax, prepositions, and orthography' },
         # 2. Exodus 3:14
-        { book: 'EXO', chapter: 3, verses: [14] },
+        { book: 'EXO', chapter: 3, verses: [14], description: 'Key existential construction: ἐγώ εἰμι ὁ ὤν - Critical for LSV behavior' },
         # 3. Isaiah 7:14
-        { book: 'ISA', chapter: 7, verses: [14] },
+        { book: 'ISA', chapter: 7, verses: [14], description: 'Check παρθένος + Swete\'s notes if present' },
         # 4. Isaiah 9:5–6 LXX
-        { book: 'ISA', chapter: 9, verses: [5, 6] },
+        { book: 'ISA', chapter: 9, verses: [5, 6], description: 'Long compound titles; punctuation stress test' },
         # 5. Psalm 109:3 LXX (110:3 MT)
-        { book: 'PSA', chapter: 109, verses: [3] },
+        { book: 'PSA', chapter: 109, verses: [3], description: 'Poetry formatting + theological nuance' },
         # 6. Psalm 44:7–8 LXX (45:6–7 MT)
-        { book: 'PSA', chapter: 44, verses: [7, 8] },
-        # 7. Job 42:17a–e (Tests Hexaplaric symbols; Swete may use special formatting)
-        # Note: 17a–e refers to verse 17 with sub-verses, but we'll create verse 17
-        { book: 'JOB', chapter: 42, verses: [17] },
+        { book: 'PSA', chapter: 44, verses: [7, 8], description: 'OT parallel to Hebrews 1:8–9; perfect comparison case' },
+        # 7. Job 42:17 (Tests Hexaplaric symbols)
+        { book: 'JOB', chapter: 42, verses: [17], description: 'Tests Hexaplaric symbols (*, ÷, etc.) where Swete uses them' },
         # 8. Proverbs 8:22–25
-        { book: 'PRO', chapter: 8, verses: [22, 23, 24, 25] },
+        { book: 'PRO', chapter: 8, verses: [22, 23, 24, 25], description: 'Key theological text: κύριος ἔκτισέν με - Also sometimes contains critical marks' },
         # 9. Daniel 3:25 (Theodotion)
-        { book: 'DAN', chapter: 3, verses: [25] },
+        { book: 'DAN', chapter: 3, verses: [25], description: 'Ensures Theodotion material parses correctly' },
         # 10. Daniel 13 (Susanna) — treated as Daniel 13, NOT a separate book
-        { book: 'DAN', chapter: 13, verses: [1, 23, 24, 63] },
+        { book: 'DAN', chapter: 13, verses: [1, 23, 24, 63], description: 'Secondary Greek tradition incorporation - Proper handling of extended narrative structure' },
         # 11. Optional: Daniel 14 (Bel and the Dragon)
-        { book: 'DAN', chapter: 14, verses: [1] }
+        { book: 'DAN', chapter: 14, verses: [1], description: 'Bel and the Dragon - treated as Daniel chapter 14' }
       ]
 
-      puts "Test verses to process: #{test_verses.sum { |tv| tv[:verses].count }}"
+      total_test_verses = test_verses.sum { |tv| tv[:verses].count }
+      puts "Test verses to process: #{total_test_verses}"
       puts ""
 
-      # Step 3: Create all text_content records for test verses
+      # Step 1: Create text content records
       puts "=" * 80
       puts "STEP 1: Creating Text Content Records"
       puts "=" * 80
@@ -2598,9 +2595,12 @@ namespace :lexical do
       total_existing = 0
       creation_errors = []
 
-      test_verses.each do |test_verse|
+      test_verses.each_with_index do |test_verse, idx|
         book_code = test_verse[:book]
         chapter = test_verse[:chapter]
+        description = test_verse[:description]
+
+        puts "[#{idx + 1}/#{test_verses.count}] #{book_code} #{chapter} - #{description}"
 
         # Find book
         book = Book.unscoped.find_by(code: book_code)
@@ -2621,7 +2621,8 @@ namespace :lexical do
 
           if existing
             total_existing += 1
-            next unless force_create
+            puts "  → Exists: #{book.std_name} #{chapter}:#{verse}"
+            next unless force
           end
 
           # Create new record
@@ -2651,17 +2652,19 @@ namespace :lexical do
 
             if text_content.save
               total_created += 1
-              puts "  ✓ Created: #{book.std_name} #{chapter}:#{verse} (#{unit_key})"
+              puts "  ✓ Created: #{book.std_name} #{chapter}:#{verse}"
             else
               creation_errors << { book: book_code, chapter: chapter, verse: verse, error: text_content.errors.full_messages.join(', ') }
+              puts "  ✗ Error: #{text_content.errors.full_messages.join(', ')}"
             end
           rescue => e
             creation_errors << { book: book_code, chapter: chapter, verse: verse, error: e.message }
+            puts "  ✗ Exception: #{e.message}"
           end
         end
+        puts ""
       end
 
-      puts ""
       puts "=" * 80
       puts "Creation Summary"
       puts "=" * 80
@@ -2671,163 +2674,368 @@ namespace :lexical do
       puts ""
 
       if creation_errors.any?
-        puts "Creation errors (first 10):"
-        creation_errors.first(10).each do |error|
+        puts "Creation errors:"
+        creation_errors.each do |error|
           puts "  - #{error[:book]} #{error[:chapter]}:#{error[:verse]}: #{error[:error]}"
         end
         puts ""
       end
 
-      # Step 4: Populate all created records
+      # Step 2: Populate all test verses
       puts "=" * 80
-      puts "STEP 2: Populating Text Content"
+      puts "STEP 2: Populating Test Verses"
       puts "=" * 80
-      puts ""
-      puts "Model: #{model}"
-      puts "Batch Size: #{batch_size}"
-      puts "Force: #{force_populate ? 'YES (will overwrite existing)' : 'NO (skip existing)'}"
       puts ""
 
-      # Get scope of verses to populate
-      scope = TextContent.unscoped.where(source_id: source.id)
-      
-      unless force_populate
-        # Skip already successfully populated
-        scope = scope.where.not(population_status: 'success')
+      # Get all test verse records
+      test_verse_records = []
+      test_verses.each do |test_verse|
+        book = Book.unscoped.find_by(code: test_verse[:book])
+        next unless book
+
+        test_verse[:verses].each do |verse|
+          record = TextContent.unscoped.find_by(
+            source_id: source.id,
+            book_id: book.id,
+            unit_group: test_verse[:chapter],
+            unit: verse
+          )
+          test_verse_records << record if record
+        end
       end
 
-      total_to_populate = scope.count
-
-      if total_to_populate == 0
-        puts "✓ No verses to populate (all already populated)"
-        exit 0
-      end
-
-      puts "Found #{total_to_populate} verse(s) to populate"
+      puts "Found #{test_verse_records.count} test verse record(s) to populate"
       puts ""
 
-      # Process in batches using concurrent futures
-      require 'concurrent'
-      
-      processed = 0
-      success_count = 0
-      error_count = 0
-      start_time = Time.current
+      if test_verse_records.empty?
+        puts "✗ No test verse records found to populate"
+        exit 1
+      end
 
-      scope.find_in_batches(batch_size: batch_size) do |batch|
-        puts "Processing batch of #{batch.size} verses (#{processed + 1} to #{processed + batch.size} of #{total_to_populate})..."
+      # Populate each verse
+      stats = {
+        total: test_verse_records.count,
+        populated: 0,
+        already_populated: 0,
+        errors: []
+      }
+
+      test_verse_records.each_with_index do |text_content, index|
+        book = text_content.book
+        chapter = text_content.unit_group
+        verse = text_content.unit
         
-        # Create concurrent futures for this batch
-        futures = batch.map do |tc|
-          Concurrent::Future.execute do
-            begin
-              service = TextContentPopulationService.new(tc)
-              result = service.populate_content_fields(force: force_populate)
-              # Ensure result is always a hash with status
-              if result.nil?
-                Rails.logger.error "Service returned nil for #{tc.unit_key}"
-                { status: 'error', error: 'Service returned nil' }
-              elsif !result.is_a?(Hash)
-                Rails.logger.error "Service returned non-hash for #{tc.unit_key}: #{result.class}"
-                { status: 'error', error: "Invalid result format: #{result.class}" }
-              elsif !result.key?(:status)
-                Rails.logger.error "Service result missing :status key for #{tc.unit_key}: #{result.keys.inspect}"
-                { status: 'error', error: 'Result missing :status key' }
-              else
-                result
-              end
-            rescue => e
-              Rails.logger.error "Exception in future for #{tc.unit_key}: #{e.class.name}: #{e.message}"
-              { status: 'error', error: "#{e.class.name}: #{e.message}" }
-            end
+        puts "[#{index + 1}/#{test_verse_records.count}] Populating: #{book.std_name} #{chapter}:#{verse} (#{text_content.unit_key})"
+
+        begin
+          population_service = TextContentPopulationService.new(text_content)
+          population_result = population_service.populate_content_fields(force: force)
+
+          if population_result[:status] == 'success'
+            stats[:populated] += 1
+            puts "  ✓ Populated successfully"
+          elsif population_result[:status] == 'already_populated'
+            stats[:already_populated] += 1
+            puts "  → Already populated (skipped)"
+          else
+            stats[:errors] << { book: book.code, chapter: chapter, verse: verse, error: population_result[:error] }
+            puts "  ✗ Failed: #{population_result[:error]}"
           end
+        rescue => e
+          stats[:errors] << { book: book.code, chapter: chapter, verse: verse, error: e.message }
+          puts "  ✗ Exception: #{e.message}"
         end
 
-        # Wait for all futures in this batch to complete
-        results = futures.map.with_index do |future, idx|
-          begin
-            if future.wait(300) # Wait up to 5 minutes
-              result = future.value
-            else
-              Rails.logger.error "Future #{idx} timed out after 5 minutes"
-              { status: 'error', error: 'Request timed out after 5 minutes' }
-            end
-            # Ensure result is always a hash with status
-            if result.nil?
-              Rails.logger.error "Future #{idx} returned nil"
-              { status: 'error', error: 'Future returned nil' }
-            elsif !result.is_a?(Hash)
-              Rails.logger.error "Future #{idx} returned non-hash: #{result.class}"
-              { status: 'error', error: "Invalid result format: #{result.class}" }
-            elsif !result.key?(:status)
-              Rails.logger.error "Future #{idx} result missing :status key: #{result.keys.inspect}"
-              { status: 'error', error: 'Result missing :status key' }
-            else
-              result
-            end
-          rescue Concurrent::TimeoutError => e
-            Rails.logger.error "Future #{idx} timed out after 5 minutes"
-            { status: 'error', error: 'Request timed out after 5 minutes' }
-          rescue => e
-            Rails.logger.error "Exception getting future #{idx} value: #{e.class.name}: #{e.message}"
-            { status: 'error', error: "#{e.class.name}: #{e.message}" }
-          end
-        end
-        
-        # Count successes and errors
-        batch_success = results.count { |r| r && r.is_a?(Hash) && r[:status] == 'success' }
-        batch_errors = results.count { |r| r && r.is_a?(Hash) && r[:status] == 'error' }
-        
-        success_count += batch_success
-        error_count += batch_errors
-        processed += batch.size
-
-        # Progress bar
-        progress = (processed.to_f / total_to_populate * 100).round(1)
-        bar_length = 50
-        filled = (progress / 100.0 * bar_length).floor
-        bar = '█' * filled + '░' * (bar_length - filled)
-        
-        puts "  Batch complete | #{processed}/#{total_to_populate} (#{progress}%) | Success: #{batch_success}/#{batch.size} | Errors: #{batch_errors} | [#{bar}]"
         puts ""
       end
 
-      elapsed = Time.current - start_time
-      elapsed_minutes = (elapsed / 60.0).round(2)
-
       puts "=" * 80
-      puts "Population Complete"
+      puts "Population Summary"
       puts "=" * 80
-      puts "Total processed: #{processed}"
-      puts "  - Success: #{success_count}"
-      puts "  - Errors: #{error_count}"
-      puts "  - Already populated: #{processed - success_count - error_count}"
-      puts "Time elapsed: #{elapsed_minutes} minutes"
-      puts "Average: #{(elapsed / processed).round(2)} seconds per verse" if processed > 0
+      puts "Total verses: #{stats[:total]}"
+      puts "  - Newly populated: #{stats[:populated]}"
+      puts "  - Already populated: #{stats[:already_populated]}"
+      puts "  - Errors: #{stats[:errors].count}"
       puts ""
 
-      # Show error summary if any
-      if error_count > 0
-        error_records = scope.where(population_status: 'error').limit(10)
-        if error_records.any?
-          puts "Sample errors:"
-          error_records.each do |tc|
-            puts "  - #{tc.unit_key}: #{tc.population_error_message&.truncate(80)}"
-          end
-          puts ""
+      if stats[:errors].any?
+        puts "Errors encountered:"
+        stats[:errors].each do |error|
+          puts "  - #{error[:book]} #{error[:chapter]}:#{error[:verse]}: #{error[:error]}"
         end
-        puts "⚠ Run with FORCE_POPULATE=true to retry errors"
+        puts ""
       end
 
-      puts ""
       puts "=" * 80
       puts "Complete Summary"
       puts "=" * 80
       puts "Records created: #{total_created}"
       puts "Records existing: #{total_existing}"
-      puts "Records populated: #{success_count}"
-      puts "Records with errors: #{error_count}"
-      puts "Total time: #{elapsed_minutes} minutes"
+      puts "Verses populated: #{stats[:populated]}"
+      puts "Verses already populated: #{stats[:already_populated]}"
+      puts "Errors: #{stats[:errors].count}"
+      puts ""
+      puts "Done!"
+    end
+
+    desc "Create and populate test verses for Septuagint LXX (runs synchronously). Usage: rake 'lexical:create_and_populate_lxx_test_verses[source_id]' or with FORCE=true"
+    task :create_and_populate_lxx_test_verses, [:source_id] => :environment do |t, args|
+      source_id = args[:source_id]&.to_i
+      force = ENV['FORCE'] == 'true'
+      
+      puts "=" * 80
+      puts "Create and Populate Septuagint LXX Test Verses"
+      puts "=" * 80
+      puts "Source ID: #{source_id || 'AUTO (will find or create)'}"
+      puts "Force: #{force ? 'YES (will overwrite existing)' : 'NO (skip existing)'}"
+      puts ""
+      
+      # Find or create source
+      source = if source_id
+        Source.unscoped.find_by(id: source_id.to_i)
+      else
+        Source.unscoped.where('name ILIKE ? OR name ILIKE ? OR name ILIKE ? OR code ILIKE ?',
+                              '%Swete%', '%Septuagint%', '%LXX%', '%SWETE%').first
+      end
+
+      unless source
+        language = Language.unscoped.find_by(code: 'grc')
+        unless language
+          puts "✗ Greek language not found. Please seed languages first."
+          exit 1
+        end
+
+        source = Source.create!(
+          code: 'LXX_SWETE',
+          name: 'Septuagint (H.B. Swete 1894–1909)',
+          description: 'The Old Testament in Greek according to the Septuagint, edited by H.B. Swete',
+          language: language
+        )
+        puts "✓ Created new source: #{source.name} (ID: #{source.id})"
+      else
+        puts "✓ Found source: #{source.name} (ID: #{source.id})"
+      end
+      puts ""
+
+      # Define test verses
+      test_verses = [
+        # 1. Genesis 1:1–2
+        { book: 'GEN', chapter: 1, verses: [1, 2], description: 'Tests basic syntax, prepositions, and orthography' },
+        # 2. Exodus 3:14
+        { book: 'EXO', chapter: 3, verses: [14], description: 'Key existential construction: ἐγώ εἰμι ὁ ὤν - Critical for LSV behavior' },
+        # 3. Isaiah 7:14
+        { book: 'ISA', chapter: 7, verses: [14], description: 'Check παρθένος + Swete\'s notes if present' },
+        # 4. Isaiah 9:5–6 LXX
+        { book: 'ISA', chapter: 9, verses: [5, 6], description: 'Long compound titles; punctuation stress test' },
+        # 5. Psalm 109:3 LXX (110:3 MT)
+        { book: 'PSA', chapter: 109, verses: [3], description: 'Poetry formatting + theological nuance' },
+        # 6. Psalm 44:7–8 LXX (45:6–7 MT)
+        { book: 'PSA', chapter: 44, verses: [7, 8], description: 'OT parallel to Hebrews 1:8–9; perfect comparison case' },
+        # 7. Job 42:17 (Tests Hexaplaric symbols)
+        { book: 'JOB', chapter: 42, verses: [17], description: 'Tests Hexaplaric symbols (*, ÷, etc.) where Swete uses them' },
+        # 8. Proverbs 8:22–25
+        { book: 'PRO', chapter: 8, verses: [22, 23, 24, 25], description: 'Key theological text: κύριος ἔκτισέν με - Also sometimes contains critical marks' },
+        # 9. Daniel 3:25 (Theodotion)
+        { book: 'DAN', chapter: 3, verses: [25], description: 'Ensures Theodotion material parses correctly' },
+        # 10. Daniel 13 (Susanna) — treated as Daniel 13, NOT a separate book
+        { book: 'DAN', chapter: 13, verses: [1, 23, 24, 63], description: 'Secondary Greek tradition incorporation - Proper handling of extended narrative structure' },
+        # 11. Optional: Daniel 14 (Bel and the Dragon)
+        { book: 'DAN', chapter: 14, verses: [1], description: 'Bel and the Dragon - treated as Daniel chapter 14' }
+      ]
+
+      total_test_verses = test_verses.sum { |tv| tv[:verses].count }
+      puts "Test verses to process: #{total_test_verses}"
+      puts ""
+
+      # Step 1: Create text content records
+      puts "=" * 80
+      puts "STEP 1: Creating Text Content Records"
+      puts "=" * 80
+      puts ""
+
+      total_created = 0
+      total_existing = 0
+      creation_errors = []
+
+      test_verses.each_with_index do |test_verse, idx|
+        book_code = test_verse[:book]
+        chapter = test_verse[:chapter]
+        description = test_verse[:description]
+
+        puts "[#{idx + 1}/#{test_verses.count}] #{book_code} #{chapter} - #{description}"
+
+        # Find book
+        book = Book.unscoped.find_by(code: book_code)
+        unless book
+          creation_errors << { book: book_code, chapter: chapter, error: "Book not found" }
+          puts "  ✗ Book #{book_code} not found, skipping..."
+          next
+        end
+
+        test_verse[:verses].each do |verse|
+          # Check if already exists
+          existing = TextContent.unscoped.find_by(
+            source_id: source.id,
+            book_id: book.id,
+            unit_group: chapter,
+            unit: verse
+          )
+
+          if existing
+            total_existing += 1
+            puts "  → Exists: #{book.std_name} #{chapter}:#{verse}"
+            next unless force
+          end
+
+          # Create new record
+          begin
+            unit_key = "#{source.code}|#{book.code}|#{chapter}|#{verse}"
+            
+            text_unit_type = source.text_unit_type || TextUnitType.unscoped.find_by(code: 'BIB_VERSE')
+            language = source.language
+
+            unless text_unit_type && language
+              creation_errors << { book: book_code, chapter: chapter, verse: verse, error: "Missing text_unit_type or language" }
+              next
+            end
+
+            text_content = TextContent.new(
+              source: source,
+              book: book,
+              text_unit_type: text_unit_type,
+              language: language,
+              unit_group: chapter,
+              unit: verse,
+              unit_key: unit_key,
+              content: '',
+              allow_empty_content: true,
+              population_status: 'pending'
+            )
+
+            if text_content.save
+              total_created += 1
+              puts "  ✓ Created: #{book.std_name} #{chapter}:#{verse}"
+            else
+              creation_errors << { book: book_code, chapter: chapter, verse: verse, error: text_content.errors.full_messages.join(', ') }
+              puts "  ✗ Error: #{text_content.errors.full_messages.join(', ')}"
+            end
+          rescue => e
+            creation_errors << { book: book_code, chapter: chapter, verse: verse, error: e.message }
+            puts "  ✗ Exception: #{e.message}"
+          end
+        end
+        puts ""
+      end
+
+      puts "=" * 80
+      puts "Creation Summary"
+      puts "=" * 80
+      puts "Total created: #{total_created}"
+      puts "Total existing: #{total_existing}"
+      puts "Errors: #{creation_errors.count}"
+      puts ""
+
+      if creation_errors.any?
+        puts "Creation errors:"
+        creation_errors.each do |error|
+          puts "  - #{error[:book]} #{error[:chapter]}:#{error[:verse]}: #{error[:error]}"
+        end
+        puts ""
+      end
+
+      # Step 2: Populate all test verses
+      puts "=" * 80
+      puts "STEP 2: Populating Test Verses"
+      puts "=" * 80
+      puts ""
+
+      # Get all test verse records
+      test_verse_records = []
+      test_verses.each do |test_verse|
+        book = Book.unscoped.find_by(code: test_verse[:book])
+        next unless book
+
+        test_verse[:verses].each do |verse|
+          record = TextContent.unscoped.find_by(
+            source_id: source.id,
+            book_id: book.id,
+            unit_group: test_verse[:chapter],
+            unit: verse
+          )
+          test_verse_records << record if record
+        end
+      end
+
+      puts "Found #{test_verse_records.count} test verse record(s) to populate"
+      puts ""
+
+      if test_verse_records.empty?
+        puts "✗ No test verse records found to populate"
+        exit 1
+      end
+
+      # Populate each verse
+      stats = {
+        total: test_verse_records.count,
+        populated: 0,
+        already_populated: 0,
+        errors: []
+      }
+
+      test_verse_records.each_with_index do |text_content, index|
+        book = text_content.book
+        chapter = text_content.unit_group
+        verse = text_content.unit
+        
+        puts "[#{index + 1}/#{test_verse_records.count}] Populating: #{book.std_name} #{chapter}:#{verse} (#{text_content.unit_key})"
+
+        begin
+          population_service = TextContentPopulationService.new(text_content)
+          population_result = population_service.populate_content_fields(force: force)
+
+          if population_result[:status] == 'success'
+            stats[:populated] += 1
+            puts "  ✓ Populated successfully"
+          elsif population_result[:status] == 'already_populated'
+            stats[:already_populated] += 1
+            puts "  → Already populated (skipped)"
+          else
+            stats[:errors] << { book: book.code, chapter: chapter, verse: verse, error: population_result[:error] }
+            puts "  ✗ Failed: #{population_result[:error]}"
+          end
+        rescue => e
+          stats[:errors] << { book: book.code, chapter: chapter, verse: verse, error: e.message }
+          puts "  ✗ Exception: #{e.message}"
+        end
+
+        puts ""
+      end
+
+      puts "=" * 80
+      puts "Population Summary"
+      puts "=" * 80
+      puts "Total verses: #{stats[:total]}"
+      puts "  - Newly populated: #{stats[:populated]}"
+      puts "  - Already populated: #{stats[:already_populated]}"
+      puts "  - Errors: #{stats[:errors].count}"
+      puts ""
+
+      if stats[:errors].any?
+        puts "Errors encountered:"
+        stats[:errors].each do |error|
+          puts "  - #{error[:book]} #{error[:chapter]}:#{error[:verse]}: #{error[:error]}"
+        end
+        puts ""
+      end
+
+      puts "=" * 80
+      puts "Complete Summary"
+      puts "=" * 80
+      puts "Records created: #{total_created}"
+      puts "Records existing: #{total_existing}"
+      puts "Verses populated: #{stats[:populated]}"
+      puts "Verses already populated: #{stats[:already_populated]}"
+      puts "Errors: #{stats[:errors].count}"
       puts ""
       puts "Done!"
     end
