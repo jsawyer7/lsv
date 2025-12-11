@@ -17,6 +17,12 @@ class PeerRecommendationService
       recommendations = merge_recommendations(recommendations, social_recommendations)
     end
 
+    # If we have location data, add location-based recommendations
+    if recommendations.count < limit && @user.latitude.present? && @user.longitude.present?
+      location_recommendations = find_by_location(excluded_ids, limit - recommendations.count)
+      recommendations = merge_recommendations(recommendations, location_recommendations)
+    end
+
     # If still not enough, add users with similar activity/interests
     if recommendations.count < limit
       activity_recommendations = find_similar_users(excluded_ids, limit - recommendations.count)
@@ -272,6 +278,88 @@ class PeerRecommendationService
       end
     rescue => e
       []
+    end
+  end
+
+  # Find peers based on geographic proximity
+  def find_by_location(excluded_ids, limit)
+    return [] unless @user.latitude.present? && @user.longitude.present?
+
+    # Search radius in kilometers (adjust as needed)
+    radius_km = 50 # 50km radius
+
+    # Calculate bounding box for efficient query
+    # 1 degree latitude ≈ 111 km
+    lat_delta = radius_km / 111.0
+    lon_delta = radius_km / (111.0 * Math.cos(@user.latitude * Math::PI / 180.0))
+
+    min_lat = @user.latitude - lat_delta
+    max_lat = @user.latitude + lat_delta
+    min_lon = @user.longitude - lon_delta
+    max_lon = @user.longitude + lon_delta
+
+    # Find users within bounding box
+    nearby_users = User.where.not(id: excluded_ids + [@user.id])
+                      .where.not(latitude: nil, longitude: nil)
+                      .where('latitude BETWEEN ? AND ?', min_lat, max_lat)
+                      .where('longitude BETWEEN ? AND ?', min_lon, max_lon)
+                      .limit(limit * 2) # Get more to calculate distances
+
+    # Calculate distances and sort by proximity
+    users_with_distance = nearby_users.map do |user|
+      distance = calculate_distance(
+        @user.latitude, @user.longitude,
+        user.latitude, user.longitude
+      )
+      { user: user, distance: distance }
+    end
+
+    # Sort by distance and take closest ones
+    users_with_distance.sort_by { |u| u[:distance] }
+                      .first(limit)
+                      .map do |item|
+                        distance_km = item[:distance].round(1)
+                        {
+                          user: item[:user],
+                          score: calculate_location_score(item[:distance]),
+                          reason: distance_km < 1 ? "Less than 1 km away" : "About #{distance_km} km away",
+                          source: 'location'
+                        }
+                      end
+  end
+
+  # Calculate distance between two points using Haversine formula (in kilometers)
+  def calculate_distance(lat1, lon1, lat2, lon2)
+    earth_radius_km = 6371.0
+
+    dlat = (lat2 - lat1) * Math::PI / 180.0
+    dlon = (lon2 - lon1) * Math::PI / 180.0
+
+    a = Math.sin(dlat / 2) ** 2 +
+        Math.cos(lat1 * Math::PI / 180.0) *
+        Math.cos(lat2 * Math::PI / 180.0) *
+        Math.sin(dlon / 2) ** 2
+
+    c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+    earth_radius_km * c
+  end
+
+  # Calculate score based on distance (closer = higher score)
+  def calculate_location_score(distance_km)
+    # Score decreases with distance
+    # Within 1km: score 8
+    # Within 10km: score 6
+    # Within 50km: score 4
+    # Beyond 50km: score 2
+    case distance_km
+    when 0..1
+      8
+    when 1..10
+      6
+    when 10..50
+      4
+    else
+      2
     end
   end
 

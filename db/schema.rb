@@ -457,9 +457,17 @@ ActiveRecord::Schema[7.0].define(version: 2025_12_11_183213) do
     t.text "oauth_token_secret"
     t.text "oauth_refresh_token"
     t.datetime "oauth_expires_at"
+    t.decimal "latitude", precision: 10, scale: 6
+    t.decimal "longitude", precision: 10, scale: 6
+    t.string "city"
+    t.string "country"
+    t.datetime "terms_agreed_at"
+    t.boolean "location_consent", default: false
     t.index ["confirmation_token"], name: "index_users_on_confirmation_token", unique: true
     t.index ["email"], name: "index_users_on_email", unique: true
+    t.index ["latitude", "longitude"], name: "index_users_on_latitude_and_longitude"
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
+    t.index ["terms_agreed_at"], name: "index_users_on_terms_agreed_at"
   end
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"

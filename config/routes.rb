@@ -19,6 +19,9 @@ Rails.application.routes.draw do
   # Onboarding routes
   patch 'onboarding', to: 'onboarding#update'
 
+  # Terms and consent routes
+  post 'accept_terms', to: 'users#accept_terms'
+
   resources :claims, only: [:new, :create, :show, :index, :edit, :update, :destroy]
 
   resources :claims do
@@ -113,28 +116,28 @@ Rails.application.routes.draw do
   # Note: Redis connection is configured in config/initializers/sidekiq.rb
   require 'sidekiq/web'
   require 'sidekiq/cron/web' if defined?(Sidekiq::Cron)
-  
+
   # Protect Sidekiq web UI with basic auth in production
   if Rails.env.production?
     Sidekiq::Web.use Rack::Auth::Basic do |username, password|
       expected_username = ENV.fetch('SIDEKIQ_USERNAME', 'admin')
       expected_password = ENV.fetch('SIDEKIQ_PASSWORD', 'password')
-      
+
       # Use secure_compare for constant-time comparison to prevent timing attacks
       username_match = ActiveSupport::SecurityUtils.secure_compare(
         username.to_s,
         expected_username
       )
-      
+
       password_match = ActiveSupport::SecurityUtils.secure_compare(
         password.to_s,
         expected_password
       )
-      
+
       # Return boolean result (both must match)
       username_match && password_match
     end
   end
-  
+
   mount Sidekiq::Web => '/sidekiq'
 end
