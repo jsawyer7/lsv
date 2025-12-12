@@ -16,6 +16,23 @@ document.addEventListener('DOMContentLoaded', function() {
   function renderClaim(claim) {
     let userDisplay = claim.user && claim.user.full_name ? claim.user.full_name :
       (claim.user && claim.user.email ? claim.user.email : `User #${claim.user_id}`);
+    
+    // Determine like button HTML
+    let likeButtonHtml;
+    const likesCount = claim.likes_count || 0;
+    
+    if (claim.user_liked && claim.like_id) {
+      // User has liked - show unlike button
+      likeButtonHtml = `<a href="/claims/${claim.id}/likes/${claim.like_id}" class="feed-like liked" data-method="delete" data-remote="true" data-claim-id="${claim.id}">
+        <i class="fas fa-thumbs-up"></i> <span class="like-count">${likesCount}</span>
+      </a>`;
+    } else {
+      // User hasn't liked - show like button
+      likeButtonHtml = `<a href="/claims/${claim.id}/likes" class="feed-like" data-method="post" data-remote="true" data-claim-id="${claim.id}">
+        <i class="fas fa-thumbs-up"></i> <span class="like-count">${likesCount}</span>
+      </a>`;
+    }
+    
     return `
       <div class="feed-card">
         <div class="feed-card-header">
@@ -28,7 +45,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="feed-card-content">${claim.content}</div>
         <div class="feed-card-footer">
           <div class="feed-card-actions">
-            <span class="feed-like"><i class="fas fa-thumbs-up"></i> 1.1k</span>
+            ${likeButtonHtml}
           </div>
           <span class="feed-card-date">${new Date(claim.created_at).toLocaleDateString()}</span>
           <a class="feed-card-link" href="/claims/${claim.id}">View Details</a>
@@ -61,6 +78,67 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   claimsList.addEventListener('scroll', onProfileScroll);
+  
+  // Handle like button clicks for dynamically added elements
+  claimsList.addEventListener('click', function(e) {
+    const likeButton = e.target.closest('.feed-like');
+    if (!likeButton || likeButton.tagName !== 'A') return;
+    
+    e.preventDefault();
+    const claimId = likeButton.getAttribute('data-claim-id');
+    const isLiked = likeButton.classList.contains('liked');
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+    
+    let url, method;
+    if (isLiked) {
+      // Unlike - extract like ID from href
+      url = likeButton.href;
+      method = 'DELETE';
+    } else {
+      // Like
+      url = `/claims/${claimId}/likes`;
+      method = 'POST';
+    }
+    
+    fetch(url, {
+      method: method,
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': csrfToken,
+        'Accept': 'application/json'
+      },
+      credentials: 'same-origin'
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.status === 'success') {
+        const likeCountSpan = likeButton.querySelector('.like-count');
+        if (likeCountSpan) {
+          likeCountSpan.textContent = data.likes_count;
+        }
+        
+        if (isLiked) {
+          // User unliked - change to like button
+          likeButton.classList.remove('liked');
+          likeButton.href = `/claims/${claimId}/likes`;
+          likeButton.setAttribute('data-method', 'post');
+          likeButton.setAttribute('data-remote', 'true');
+        } else {
+          // User liked - change to unlike button
+          likeButton.classList.add('liked');
+          if (data.like_id) {
+            likeButton.href = `/claims/${claimId}/likes/${data.like_id}`;
+            likeButton.setAttribute('data-method', 'delete');
+            likeButton.setAttribute('data-remote', 'true');
+          }
+        }
+      }
+    })
+    .catch(error => {
+      console.error('Error liking/unliking:', error);
+    });
+  });
+  
   fetchClaims();
 });
 </script>

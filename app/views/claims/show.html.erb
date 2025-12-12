@@ -37,6 +37,24 @@
             <%= image_tag 'claim-icon.png', alt: 'Claim Icon', class: 'claim-section-icon' %>
             <span class="claim-details-label">Claim</span>
             <span class="claim-details-date"><%= @claim.created_at.strftime('%d %b, %Y') %></span>
+            <% if user_signed_in? %>
+              <% user_like = @claim.likes.find_by(user: current_user) %>
+              <div class="claim-like-action" style="margin-left: auto;">
+                <% if user_like %>
+                  <%= link_to claim_like_path(@claim, user_like), method: :delete, remote: true, class: 'feed-like liked', data: { claim_id: @claim.id } do %>
+                    <i class="fas fa-thumbs-up"></i> <span class="like-count"><%= @claim.likes.count %></span>
+                  <% end %>
+                <% else %>
+                  <%= link_to claim_likes_path(@claim), method: :post, remote: true, class: 'feed-like', data: { claim_id: @claim.id } do %>
+                    <i class="fas fa-thumbs-up"></i> <span class="like-count"><%= @claim.likes.count %></span>
+                  <% end %>
+                <% end %>
+              </div>
+            <% else %>
+              <div class="claim-like-action" style="margin-left: auto;">
+                <span class="feed-like"><i class="fas fa-thumbs-up"></i> <span class="like-count"><%= @claim.likes.count %></span></span>
+              </div>
+            <% end %>
           </div>
           <div class="claim-details-content" id="claim-content">
             <%= @claim.content_for_tradition(@tradition) %>

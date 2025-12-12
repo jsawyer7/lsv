@@ -26,6 +26,7 @@ Rails.application.routes.draw do
 
   resources :claims do
     resources :challenges, only: [:create, :show]
+    resources :likes, only: [:create, :destroy]
     post :validate_claim, on: :collection
     post :validate_evidence, on: :collection
     post :generate_ai_evidence, on: :collection
@@ -71,6 +72,7 @@ Rails.application.routes.draw do
   get '/users/:id/profile/infinite', to: 'users#profile_infinite', as: :user_profile_infinite
 
   resources :theories, only: [:index, :new, :create, :edit, :update, :destroy] do
+    resources :likes, only: [:create, :destroy]
     collection do
       get :infinite
     end

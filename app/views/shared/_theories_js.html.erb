@@ -19,6 +19,22 @@ document.addEventListener('DOMContentLoaded', function() {
   theoryList.style.overflowY = 'auto';
 
   function renderTheory(theory) {
+    // Determine like button HTML
+    let likeButtonHtml;
+    const likesCount = theory.likes_count || 0;
+    
+    if (theory.user_liked && theory.like_id) {
+      // User has liked - show unlike button
+      likeButtonHtml = `<a href="/theories/${theory.id}/likes/${theory.like_id}" class="feed-like liked" data-method="delete" data-remote="true" data-theory-id="${theory.id}">
+        <i class="fas fa-thumbs-up"></i> <span class="like-count">${likesCount}</span>
+      </a>`;
+    } else {
+      // User hasn't liked - show like button
+      likeButtonHtml = `<a href="/theories/${theory.id}/likes" class="feed-like" data-method="post" data-remote="true" data-theory-id="${theory.id}">
+        <i class="fas fa-thumbs-up"></i> <span class="like-count">${likesCount}</span>
+      </a>`;
+    }
+    
     return `
       <div class="feed-card">
         <div class="feed-card-header">
@@ -31,7 +47,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="feed-card-content">${theory.description || ''}</div>
         <div class="feed-card-footer">
           <div class="feed-card-actions">
-            <span class="feed-like"><i class="fas fa-thumbs-up"></i> 1.1k</span>
+            ${likeButtonHtml}
           </div>
           <span class="feed-card-date">${new Date(theory.created_at).toLocaleDateString()}</span>
           <a class="feed-card-link" href="#">View Details</a>
@@ -73,6 +89,66 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   theoryList.addEventListener('scroll', onTheoryScroll);
+  
+  // Handle like button clicks for dynamically added elements
+  theoryList.addEventListener('click', function(e) {
+    const likeButton = e.target.closest('.feed-like');
+    if (!likeButton || likeButton.tagName !== 'A') return;
+    
+    e.preventDefault();
+    const theoryId = likeButton.getAttribute('data-theory-id');
+    const isLiked = likeButton.classList.contains('liked');
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+    
+    let url, method;
+    if (isLiked) {
+      // Unlike - extract like ID from href
+      url = likeButton.href;
+      method = 'DELETE';
+    } else {
+      // Like
+      url = `/theories/${theoryId}/likes`;
+      method = 'POST';
+    }
+    
+    fetch(url, {
+      method: method,
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': csrfToken,
+        'Accept': 'application/json'
+      },
+      credentials: 'same-origin'
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.status === 'success') {
+        const likeCountSpan = likeButton.querySelector('.like-count');
+        if (likeCountSpan) {
+          likeCountSpan.textContent = data.likes_count;
+        }
+        
+        if (isLiked) {
+          // User unliked - change to like button
+          likeButton.classList.remove('liked');
+          likeButton.href = `/theories/${theoryId}/likes`;
+          likeButton.setAttribute('data-method', 'post');
+          likeButton.setAttribute('data-remote', 'true');
+        } else {
+          // User liked - change to unlike button
+          likeButton.classList.add('liked');
+          if (data.like_id) {
+            likeButton.href = `/theories/${theoryId}/likes/${data.like_id}`;
+            likeButton.setAttribute('data-method', 'delete');
+            likeButton.setAttribute('data-remote', 'true');
+          }
+        }
+      }
+    })
+    .catch(error => {
+      console.error('Error liking/unliking theory:', error);
+    });
+  });
 
   if (searchInput) {
     searchInput.addEventListener('input', function() {
