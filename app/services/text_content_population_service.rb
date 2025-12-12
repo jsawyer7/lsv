@@ -66,16 +66,26 @@ class TextContentPopulationService
             Rails.logger.warn "Canonical text not found for #{@text_content.unit_key} - fidelity check skipped (will be added later)"
           end
         rescue SweteFidelityError => e
-          # Only catch actual fidelity mismatches (not missing canonical)
-          Rails.logger.error "Swete fidelity error for #{@text_content.unit_key}: #{e.message}"
+          # Catch fidelity mismatches and contamination errors
+          error_type = e.respond_to?(:error_type) ? e.error_type : 'FIDELITY_MISMATCH'
+          error_msg = if error_type == 'CONTAMINATION' || error_type == 'THEODOTION_BYZANTINE_EXPANSION'
+            "Swete contamination detected: #{e.message.split("\n").first}"
+          else
+            "Swete fidelity mismatch: #{e.message.split("\n").first}"
+          end
+          
+          Rails.logger.error "Swete validation error for #{@text_content.unit_key}: #{error_msg}"
+          Rails.logger.error "Error type: #{error_type}"
+          
           @text_content.update_columns(
             population_status: 'error',
-            population_error_message: "Swete fidelity mismatch: #{e.message}"
+            population_error_message: error_msg.truncate(1000)
           )
           return {
             status: 'error',
-            error: "Swete fidelity mismatch: #{e.message}",
-            is_accurate: false
+            error: error_msg,
+            is_accurate: false,
+            error_type: error_type
           }
         end
       end
@@ -740,6 +750,12 @@ class TextContentPopulationService
   # ===========================
 
   def update_text_content(result)
+    # STEP 1: Validate word-for-word layer for Swete sources
+    # Ensure glosses don't invent words that aren't in the source text
+    if swete_source? && result[:word_for_word].present?
+      validate_word_for_word_layer!(result[:source_text], result[:word_for_word])
+    end
+
     word_for_word_data = {
       tokens: result[:word_for_word] || [],
       lsv_notes: result[:lsv_notes] || {}
@@ -767,6 +783,45 @@ class TextContentPopulationService
     end
 
     @text_content.update!(update_params)
+  end
+
+  # Validate word-for-word layer: ensure all Greek tokens exist in source text
+  # This prevents glosses from inventing words that aren't in Swete
+  def validate_word_for_word_layer!(source_text, word_for_word_tokens)
+    return unless source_text.present? && word_for_word_tokens.is_a?(Array)
+
+    source_text_normalized = source_text.downcase.gsub(/[·,.;:!?«»"ʼ'']/, '')
+    missing_tokens = []
+
+    word_for_word_tokens.each do |token_data|
+      next unless token_data.is_a?(Hash)
+      
+      greek_token = token_data['token'] || token_data[:token]
+      next unless greek_token.present?
+
+      # Normalize token for comparison (remove punctuation, lowercase)
+      token_normalized = greek_token.downcase.gsub(/[·,.;:!?«»"ʼ'']/, '')
+      
+      # Check if token exists in source text
+      unless source_text_normalized.include?(token_normalized)
+        missing_tokens << greek_token
+      end
+    end
+
+    if missing_tokens.any?
+      error_msg = "Word-for-word layer contains tokens not in source text: #{missing_tokens.join(', ')}"
+      Rails.logger.error "Swete word-for-word validation failed for #{@text_content.unit_key}: #{error_msg}"
+      raise SweteFidelityError.new(
+        error_msg,
+        error_type: 'WORD_FOR_WORD_INVALID',
+        details: {
+          book: @book.code,
+          chapter: @chapter,
+          verse: @verse,
+          missing_tokens: missing_tokens
+        }
+      )
+    end
   end
 
   def log_population(result)

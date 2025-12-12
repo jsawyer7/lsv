@@ -51,15 +51,58 @@ class SweteFidelityValidator
   # Verify that pipeline text exactly matches canonical Swete text
   # Raises SweteFidelityError if it does not
   # Returns pipeline_text unchanged if canonical doesn't exist (skip check)
+  # 
+  # This method performs comprehensive validation:
+  # 1. Contamination detection (Byzantine/Theodotion expansions)
+  # 2. Canonical text fidelity check
+  # 3. Punctuation and character-level validation
   def verify(pipeline_text)
     # Only enforce for Swete sources
     unless SWETE_SOURCE_CODES.include?(@source_code)
       return pipeline_text  # no-op for other sources
     end
 
+    # STEP 1: Contamination detection (fail-fast)
+    # This catches Byzantine/Theodotion expansions BEFORE canonical comparison
+    # This is the critical layer that prevents contaminated text from entering the system
+    begin
+      detector = SweteContaminationDetector.new(
+        @source_code,
+        @book_code,
+        @chapter,
+        @verse,
+        pipeline_text
+      )
+      detector.validate!
+    rescue SweteContaminationDetector::SweteContaminationError => e
+      error_msg = <<~ERROR
+        Swete contamination detected at #{@source_code} #{@book_code} #{@chapter}:#{@verse}
+        
+        Contamination Type: #{e.contamination_type}
+        Details: #{e.details.inspect}
+        
+        Pipeline text (contaminated):
+        #{pipeline_text}
+        
+        #{e.message}
+        
+        This text contains Byzantine or Theodotion expansions that do not appear in Swete's diplomatic text.
+        The text must be rejected and re-ingested from the correct Swete source.
+      ERROR
+
+      Rails.logger.error error_msg
+      raise SweteFidelityError.new(
+        error_msg,
+        error_type: e.contamination_type || 'CONTAMINATION',
+        details: e.details
+      )
+    end
+
+    # STEP 2: Canonical text fidelity check
     canonical_text = fetch_canonical_text
     
     # If canonical doesn't exist, skip verification (don't raise error)
+    # But contamination check still runs above
     return pipeline_text unless canonical_text
 
     norm_pipeline = self.class.normalize_for_compare(pipeline_text)
@@ -83,7 +126,17 @@ class SweteFidelityValidator
       ERROR
 
       Rails.logger.error error_msg
-      raise SweteFidelityError.new(error_msg)
+      raise SweteFidelityError.new(
+        error_msg,
+        error_type: 'FIDELITY_MISMATCH',
+        details: {
+          book: @book_code,
+          chapter: @chapter,
+          verse: @verse,
+          pipeline_length: norm_pipeline.length,
+          canonical_length: norm_canonical.length
+        }
+      )
     end
 
     pipeline_text  # Return unchanged, just verified
