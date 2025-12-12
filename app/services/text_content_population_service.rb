@@ -80,11 +80,9 @@ class TextContentPopulationService
         end
       end
       
-      # Step 2: Apply speech segment detection and responsible party assignment for LXX sources
-      if lxx_source?
-        result = apply_speech_segment_detection(result)
-        result = apply_divine_speech_detection(result) # Still check for divine speech patterns
-      end
+      # Step 2: Apply generic metadata inference (replaces hard-coded logic)
+      # This works for all sources, not just LXX
+      result = apply_generic_metadata_inference(result)
       
       # Step 3: Validate response before saving
       validation_result = validate_ai_response(result)
@@ -687,36 +685,6 @@ class TextContentPopulationService
   # ===========================
 
   # Known divine speech verses in LXX (whitelist for bulletproof detection)
-  LXX_DIVINE_SPEECH_WHITELIST = {
-    'PSA' => {
-      44 => [7],  # ὁ θρόνος σου ὁ θεός...
-      109 => [3]  # ἐγέννησά σε
-    },
-    'EXO' => {
-      3 => [14]   # Ἐγώ εἰμι ὁ ὤν
-    },
-    'ISA' => {
-      7 => [14]   # παρθένος - indirect but sometimes flagged
-    }
-  }.freeze
-
-  # Divine speech trigger patterns
-  DIVINE_SPEECH_TRIGGERS = [
-    # Vocative ὁ θεός + 2nd person forms
-    { pattern: /ὁ θεός.*\b(σου|σε|σοι|σὲ)\b/i, description: 'Vocative ὁ θεός with 2nd person pronoun' },
-    
-    # Standard divine speech formulas
-    { pattern: /ἐγὼ κύριος/i, description: 'ἐγὼ κύριος' },
-    { pattern: /λέγει κύριος/i, description: 'λέγει κύριος' },
-    { pattern: /κύριος εἶπεν/i, description: 'κύριος εἶπεν' },
-    { pattern: /θεὸς εἶπεν/i, description: 'θεὸς εἶπεν' },
-    { pattern: /τάδε λέγει κύριος/i, description: 'τάδε λέγει κύριος' },
-    
-    # Explicit divine self-reference with 2nd person
-    { pattern: /ἐγέννησά σε/i, description: 'ἐγέννησά σε (I begat you)' },
-    { pattern: /Ἐγώ εἰμι ὁ ὤν/i, description: 'Ἐγώ εἰμι ὁ ὤν (I am the being)' }
-  ].freeze
-
   def swete_source?
     @source.code == 'LXX_SWETE' || 
     @source.name.include?('Swete') || 
@@ -729,112 +697,42 @@ class TextContentPopulationService
     @source.code&.include?('LXX')
   end
 
-  def apply_divine_speech_detection(result)
+  # Apply generic metadata inference (replaces hard-coded book/verse logic)
+  # This works for all sources and all verses without special cases
+  def apply_generic_metadata_inference(result)
     greek_text = result[:source_text] || @text_content.content || ''
     return result if greek_text.blank?
 
-    # Check whitelist first (bulletproof for known cases)
-    if divine_speech_whitelist_match?
-      Rails.logger.info "Divine speech detected via whitelist for #{@text_content.unit_key}"
-      result[:responsible_party_code] = 'INDIVIDUAL'
-      result[:responsible_party_custom_name] = 'GOD'
-      return result
-    end
+    # Get existing metadata from result or text_content
+    existing_responsible_code = result[:responsible_party_code] || @text_content.responsible_party_code || 'NOT_SPECIFIED'
+    existing_addressed_code = result[:addressed_party_code] || @text_content.addressed_party_code || 'NOT_SPECIFIED'
+    existing_responsible_custom = result[:responsible_party_custom_name] || @text_content.responsible_party_custom_name
 
-    # Check for divine speech patterns
-    divine_speech_detected = false
-    matched_pattern = nil
+    # Use generic inference service
+    inference_service = GenericMetadataInferenceService.new(
+      greek_text,
+      genre_code: result[:genre_code],
+      existing_responsible_code: existing_responsible_code,
+      existing_addressed_code: existing_addressed_code,
+      existing_responsible_custom: existing_responsible_custom
+    )
 
-    DIVINE_SPEECH_TRIGGERS.each do |trigger|
-      if trigger[:pattern].match?(greek_text)
-        divine_speech_detected = true
-        matched_pattern = trigger[:description]
-        break
-      end
-    end
+    inferred_metadata = inference_service.infer_metadata
 
-    if divine_speech_detected
-      Rails.logger.info "Divine speech detected via pattern (#{matched_pattern}) for #{@text_content.unit_key}"
-      result[:responsible_party_code] = 'INDIVIDUAL'
-      result[:responsible_party_custom_name] = 'GOD'
+    # Apply inferred metadata to result
+    result[:responsible_party_code] = inferred_metadata[:responsible_party_code]
+    result[:responsible_party_custom_name] = inferred_metadata[:responsible_party_custom_name]
+    result[:addressed_party_code] = inferred_metadata[:addressed_party_code]
+
+    # Log if metadata changed
+    if inferred_metadata[:responsible_party_code] != existing_responsible_code ||
+       inferred_metadata[:addressed_party_code] != existing_addressed_code
+      Rails.logger.info "Generic metadata inference for #{@text_content.unit_key}: " \
+        "responsible=#{inferred_metadata[:responsible_party_code]}(#{inferred_metadata[:responsible_party_custom_name]}), " \
+        "addressed=#{inferred_metadata[:addressed_party_code]}"
     end
 
     result
-  end
-
-  def divine_speech_whitelist_match?
-    book_whitelist = LXX_DIVINE_SPEECH_WHITELIST[@book.code]
-    return false unless book_whitelist
-
-    chapter_whitelist = book_whitelist[@chapter]
-    return false unless chapter_whitelist
-
-    chapter_whitelist.include?(@verse)
-  end
-
-  def apply_speech_segment_detection(result)
-    # Step 1: Detect speech segments for the chapter
-    detector = SpeechSegmentDetector.new(@source, @book, @chapter)
-    segments = detector.detect_speech_segments
-    
-    # Step 2: Check if current verse is in a speech segment
-    speaker_info = detector.get_speaker_info(@verse, segments)
-    verse_in_speech = speaker_info[:speaker_type].present?
-    
-    if verse_in_speech
-      # Verse is in a known speech segment - use speaker from segment
-      # DO NOT apply personified speech rules here
-      if speaker_info[:speaker_type] == 'DIVINE'
-        result[:responsible_party_code] = 'INDIVIDUAL'
-        result[:responsible_party_custom_name] = speaker_info[:speaker_name] || 'GOD'
-        Rails.logger.info "Speech segment detected: #{@text_content.unit_key} is in #{speaker_info[:speaker_type]} speech (#{speaker_info[:speaker_name]})"
-      elsif speaker_info[:speaker_type] == 'HUMAN'
-        result[:responsible_party_code] = 'INDIVIDUAL'
-        result[:responsible_party_custom_name] = speaker_info[:speaker_name] if speaker_info[:speaker_name].present?
-        Rails.logger.info "Speech segment detected: #{@text_content.unit_key} is in #{speaker_info[:speaker_type]} speech (#{speaker_info[:speaker_name]})"
-      end
-    else
-      # Verse is NOT in a speech segment - apply fallback rules
-      # Order: 1) Explicit identifiers, 2) Personified speech detection
-      greek_text = result[:source_text] || @text_content.content || ''
-      
-      # Only apply personified speech if no explicit speaker found
-      if is_personified_speech?(greek_text) && result[:responsible_party_code] == 'NOT_SPECIFIED'
-        result[:responsible_party_code] = 'NOT_SPECIFIED'
-        result[:addressed_party_code] = 'NOT_SPECIFIED'
-        Rails.logger.info "Personified speech detected (fallback): #{@text_content.unit_key} - setting both parties to NOT_SPECIFIED"
-      end
-    end
-    
-    result
-  end
-
-  # Detect personified speech (Wisdom, vineyard, lover, beloved, Zion speaking in first person)
-  # This is a FALLBACK rule - only applies when verse is NOT in a known speech segment
-  def is_personified_speech?(greek_text)
-    return false if greek_text.blank?
-    
-    # First person markers
-    first_person_markers = [
-      /\bἐγώ\b/i,  # "I"
-      /\bμου\b/i,  # "my"
-      /\bμε\b/i,   # "me"
-      /\bἐμοί\b/i  # "to me"
-    ]
-    
-    # Personified entity markers (Wisdom, vineyard, etc.)
-    personified_entities = [
-      /σοφία/i,    # Wisdom
-      /ἀμπελών/i,  # vineyard
-      /ἀγαπητός/i, # beloved
-      /Σιών/i      # Zion
-    ]
-    
-    # Check if text has first person AND personified entity
-    has_first_person = first_person_markers.any? { |pattern| pattern.match?(greek_text) }
-    has_personified = personified_entities.any? { |pattern| pattern.match?(greek_text) }
-    
-    has_first_person && has_personified
   end
 
   # ===========================
