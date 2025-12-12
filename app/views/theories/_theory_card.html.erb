@@ -27,9 +27,24 @@
         <% end %>
       </div>
     <% else %>
-      <div class="feed-card-actions">
-        <span class="feed-like"><i class="fas fa-thumbs-up"></i> 1.1k</span>
-      </div>
+      <% if user_signed_in? %>
+        <% user_like = theory.likes.find_by(user: current_user) %>
+        <div class="feed-card-actions">
+          <% if user_like %>
+            <%= link_to theory_like_path(theory, user_like), method: :delete, remote: true, class: 'feed-like liked', data: { theory_id: theory.id } do %>
+              <i class="fas fa-thumbs-up"></i> <span class="like-count"><%= theory.likes.count %></span>
+            <% end %>
+          <% else %>
+            <%= link_to theory_likes_path(theory), method: :post, remote: true, class: 'feed-like', data: { theory_id: theory.id } do %>
+              <i class="fas fa-thumbs-up"></i> <span class="like-count"><%= theory.likes.count %></span>
+            <% end %>
+          <% end %>
+        </div>
+      <% else %>
+        <div class="feed-card-actions">
+          <span class="feed-like"><i class="fas fa-thumbs-up"></i> <span class="like-count"><%= theory.likes.count %></span></span>
+        </div>
+      <% end %>
       <span class="feed-card-date"><%= theory.created_at.strftime('%d %b, %Y') %></span>
       <a class="feed-card-link" href="#">View Details</a>
     <% end %>

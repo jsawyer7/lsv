@@ -1,0 +1,126 @@
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Universal click handler for like buttons (works for both static and dynamic)
+  document.body.addEventListener('click', function(e) {
+    const likeButton = e.target.closest('.feed-like');
+    if (!likeButton || likeButton.tagName !== 'A') return;
+    
+    // Only handle if it has data-method attribute (Rails UJS should handle it, but we'll add fallback)
+    const method = likeButton.getAttribute('data-method');
+    if (!method) return;
+    
+    // If Rails UJS is working, let it handle it
+    // Otherwise, we'll catch it in the fallback
+    const hasRailsUJS = typeof Rails !== 'undefined';
+    
+    if (!hasRailsUJS || !likeButton.hasAttribute('data-remote')) {
+      // Fallback: handle manually
+      e.preventDefault();
+      handleLikeClick(likeButton);
+    }
+  });
+  
+  // Handle Rails UJS success events
+  document.body.addEventListener('ajax:success', function(event) {
+    const [data, status, xhr] = event.detail;
+    const link = event.target.closest('.feed-like');
+    
+    if (!link || data.status !== 'success') return;
+    
+    updateLikeButton(link, data);
+  });
+  
+  function handleLikeClick(likeButton) {
+    const claimId = likeButton.getAttribute('data-claim-id');
+    const theoryId = likeButton.getAttribute('data-theory-id');
+    const isLiked = likeButton.classList.contains('liked');
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+    
+    let url, method;
+    if (isLiked) {
+      url = likeButton.href;
+      method = 'DELETE';
+    } else {
+      if (claimId) {
+        url = `/claims/${claimId}/likes`;
+      } else if (theoryId) {
+        url = `/theories/${theoryId}/likes`;
+      } else {
+        return;
+      }
+      method = 'POST';
+    }
+    
+    fetch(url, {
+      method: method,
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': csrfToken,
+        'Accept': 'application/json'
+      },
+      credentials: 'same-origin'
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.status === 'success') {
+        updateLikeButton(likeButton, data);
+      }
+    })
+    .catch(error => {
+      console.error('Error liking/unliking:', error);
+    });
+  }
+  
+  function updateLikeButton(link, data) {
+    // Update like count
+    const likeCountSpan = link.querySelector('.like-count');
+    if (likeCountSpan) {
+      likeCountSpan.textContent = data.likes_count;
+    }
+    
+    // Determine likeable type and ID
+    const claimId = link.getAttribute('data-claim-id');
+    const theoryId = link.getAttribute('data-theory-id');
+    
+    let basePath, likeableId;
+    if (claimId) {
+      basePath = 'claims';
+      likeableId = claimId;
+    } else if (theoryId) {
+      basePath = 'theories';
+      likeableId = theoryId;
+    } else {
+      return;
+    }
+    
+    // Toggle button state
+    if (link.classList.contains('liked')) {
+      // User unliked - change to like button
+      link.classList.remove('liked');
+      link.href = `/${basePath}/${likeableId}/likes`;
+      link.setAttribute('data-method', 'post');
+      link.setAttribute('data-remote', 'true');
+    } else {
+      // User liked - change to unlike button
+      link.classList.add('liked');
+      if (data.like_id) {
+        link.href = `/${basePath}/${likeableId}/likes/${data.like_id}`;
+        link.setAttribute('data-method', 'delete');
+        link.setAttribute('data-remote', 'true');
+      }
+    }
+  }
+  
+  // Handle AJAX errors
+  document.body.addEventListener('ajax:error', function(event) {
+    const [data, status, xhr] = event.detail;
+    const link = event.target.closest('.feed-like');
+    
+    if (link) {
+      const errorMsg = data && data.message ? data.message : 'Unable to like/unlike. Please try again.';
+      console.error('Like error:', errorMsg);
+    }
+  });
+});
+</script>
+

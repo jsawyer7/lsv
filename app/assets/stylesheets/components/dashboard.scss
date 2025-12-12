@@ -524,6 +524,20 @@
         align-items: center;
         gap: 4px;
         cursor: pointer;
+        text-decoration: none;
+        transition: color 0.2s;
+        
+        &:hover {
+          color: #1d4ed8;
+        }
+        
+        &.liked {
+          color: #10b981;
+          
+          &:hover {
+            color: #059669;
+          }
+        }
       }
     }
     .feed-card-date {
