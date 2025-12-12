@@ -81,6 +81,10 @@ ActiveAdmin.register CanonBook do
   filter :included_bool
 
   form do |f|
+    # Pre-select canon if passed as parameter (from URL params or form object)
+    # Define this at the top so it's available throughout the form
+    selected_canon_id = params[:canon_id] || params[:canon_book]&.dig(:canon_id) || f.object.canon_id
+    
     div class: "page-header mb-4" do
       div class: "d-flex justify-content-between align-items-center" do
         div do
@@ -118,6 +122,7 @@ ActiveAdmin.register CanonBook do
             f.input :canon_id,
                     as: :select,
                     collection: Canon.ordered.map { |canon| [canon.display_name, canon.id] },
+                    selected: selected_canon_id,
                     class: "materio-form-control",
                     label: false,
                     input_html: {
@@ -148,7 +153,15 @@ ActiveAdmin.register CanonBook do
             div class: "materio-form-label" do
               i class: "ri ri-sort-asc me-2"
               span "Sequence Number"
+              small class: "text-muted ms-2" do "(Order in canon - editable)" end
             end
+            # Auto-suggest next sequence number if new record and canon is selected
+            suggested_seq = if f.object.new_record? && selected_canon_id.present?
+                             canon = Canon.find_by(id: selected_canon_id)
+                             canon ? (canon.canon_books.maximum(:seq_no) || 0) + 1 : 1
+                           else
+                             f.object.seq_no || 1
+                           end
             f.input :seq_no,
                     as: :number,
                     class: "materio-form-control",
@@ -156,8 +169,13 @@ ActiveAdmin.register CanonBook do
                     input_html: {
                       class: "materio-form-control",
                       placeholder: "Enter sequence number...",
-                      min: 1
+                      min: 1,
+                      value: suggested_seq,
+                      style: "width: 100%; max-width: 200px;"
                     }
+            small class: "form-text text-muted" do
+              "The order this book appears in the canon. Lower numbers appear first."
+            end
           end
 
           div class: "materio-form-group" do
