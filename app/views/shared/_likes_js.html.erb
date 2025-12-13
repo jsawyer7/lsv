@@ -2,46 +2,120 @@
 document.addEventListener('DOMContentLoaded', function() {
   // Universal click handler for like buttons (works for both static and dynamic)
   document.body.addEventListener('click', function(e) {
-    const likeButton = e.target.closest('.feed-like');
+    const likeButton = e.target.closest('.feed-like, .comment-like');
     if (!likeButton || likeButton.tagName !== 'A') return;
     
     // Only handle if it has data-method attribute (Rails UJS should handle it, but we'll add fallback)
     const method = likeButton.getAttribute('data-method');
     if (!method) return;
     
-    // If Rails UJS is working, let it handle it
-    // Otherwise, we'll catch it in the fallback
+    // Prevent double-clicks and rapid successive clicks
+    if (likeButton.dataset.processing === 'true') {
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+      return false;
+    }
+    
+    // Mark as processing immediately
+    likeButton.dataset.processing = 'true';
+    
+    // Store original href and method before any updates
+    const originalHref = likeButton.href;
+    const originalMethod = likeButton.getAttribute('data-method');
+    
+    // If Rails UJS is working, let it handle it but prevent double processing
     const hasRailsUJS = typeof Rails !== 'undefined';
     
     if (!hasRailsUJS || !likeButton.hasAttribute('data-remote')) {
       // Fallback: handle manually
       e.preventDefault();
-      handleLikeClick(likeButton);
+      e.stopPropagation();
+      handleLikeClick(likeButton).finally(() => {
+        likeButton.dataset.processing = 'false';
+      });
+    } else {
+      // Rails UJS will handle it, but we need to ensure the href is correct
+      // Don't update the button state here - let the ajax:success handler do it
+      // Reset processing flag after a delay (Rails UJS will handle the request)
+      setTimeout(() => {
+        likeButton.dataset.processing = 'false';
+      }, 2000);
     }
-  });
+  }, true); // Use capture phase to handle before Rails UJS
   
   // Handle Rails UJS success events
   document.body.addEventListener('ajax:success', function(event) {
     const [data, status, xhr] = event.detail;
-    const link = event.target.closest('.feed-like');
+    const link = event.target.closest('.feed-like, .comment-like');
     
-    if (!link || data.status !== 'success') return;
+    if (!link || data.status !== 'success') {
+      // Reset processing flag on error
+      if (link) link.dataset.processing = 'false';
+      return;
+    }
     
+    // Update button state
     updateLikeButton(link, data);
+    
+    // Reset processing flag
+    link.dataset.processing = 'false';
   });
   
   function handleLikeClick(likeButton) {
     const claimId = likeButton.getAttribute('data-claim-id');
     const theoryId = likeButton.getAttribute('data-theory-id');
+    const commentId = likeButton.getAttribute('data-comment-id');
+    const likeId = likeButton.getAttribute('data-like-id');
     const isLiked = likeButton.classList.contains('liked');
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
     
     let url, method;
     if (isLiked) {
-      url = likeButton.href;
+      // For DELETE, use the href if it has like_id, otherwise construct it
+      if (likeButton.href && likeButton.href.includes('/likes/')) {
+        url = likeButton.href;
+      } else if (likeId) {
+        // Construct URL with like_id
+        if (commentId) {
+          if (claimId) {
+            url = `/claims/${claimId}/comments/${commentId}/likes/${likeId}`;
+          } else if (theoryId) {
+            url = `/theories/${theoryId}/comments/${commentId}/likes/${likeId}`;
+          }
+        } else if (claimId) {
+          url = `/claims/${claimId}/likes/${likeId}`;
+        } else if (theoryId) {
+          url = `/theories/${theoryId}/likes/${likeId}`;
+        }
+      } else {
+        // Fallback: try to extract from href
+        url = likeButton.href;
+      }
       method = 'DELETE';
     } else {
-      if (claimId) {
+      if (commentId) {
+        // Comment likes are nested under claims or theories
+        if (claimId) {
+          url = `/claims/${claimId}/comments/${commentId}/likes`;
+        } else if (theoryId) {
+          url = `/theories/${theoryId}/comments/${commentId}/likes`;
+        } else {
+          // Fallback: extract from href
+          const href = likeButton.href;
+          if (href.includes('/claims/')) {
+            const match = href.match(/\/claims\/(\d+)\/comments\/(\d+)/);
+            if (match) {
+              url = `/claims/${match[1]}/comments/${match[2]}/likes`;
+            }
+          } else if (href.includes('/theories/')) {
+            const match = href.match(/\/theories\/(\d+)\/comments\/(\d+)/);
+            if (match) {
+              url = `/theories/${match[1]}/comments/${match[2]}/likes`;
+            }
+          }
+        }
+      } else if (claimId) {
         url = `/claims/${claimId}/likes`;
       } else if (theoryId) {
         url = `/theories/${theoryId}/likes`;
@@ -51,7 +125,7 @@ document.addEventListener('DOMContentLoaded', function() {
       method = 'POST';
     }
     
-    fetch(url, {
+    return fetch(url, {
       method: method,
       headers: {
         'Content-Type': 'application/json',
@@ -65,17 +139,51 @@ document.addEventListener('DOMContentLoaded', function() {
       if (data.status === 'success') {
         updateLikeButton(likeButton, data);
       }
+      return data;
     })
     .catch(error => {
       console.error('Error liking/unliking:', error);
+      likeButton.dataset.processing = 'false';
+      throw error;
     });
   }
   
   function updateLikeButton(link, data) {
-    // Update like count
+    // Update like count for feed items
     const likeCountSpan = link.querySelector('.like-count');
     if (likeCountSpan) {
       likeCountSpan.textContent = data.likes_count;
+    }
+    
+    // Update comment like count inline
+    const commentId = link.getAttribute('data-comment-id');
+    if (commentId) {
+      const commentItem = link.closest('.comment-item');
+      if (commentItem) {
+        let likeCountInline = commentItem.querySelector('.comment-likes-count-inline');
+        const likesCount = data.likes_count || 0;
+        
+        if (likesCount > 0) {
+          if (!likeCountInline) {
+            // Create the inline like count element
+            const textWrapper = commentItem.querySelector('.comment-text-wrapper');
+            if (textWrapper) {
+              likeCountInline = document.createElement('span');
+              likeCountInline.className = 'comment-likes-count-inline';
+              likeCountInline.innerHTML = `<i class="fas fa-thumbs-up"></i> ${likesCount}`;
+              textWrapper.appendChild(likeCountInline);
+            }
+          } else {
+            // Update existing like count
+            likeCountInline.innerHTML = `<i class="fas fa-thumbs-up"></i> ${likesCount}`;
+          }
+        } else {
+          // Remove like count if no likes
+          if (likeCountInline) {
+            likeCountInline.remove();
+          }
+        }
+      }
     }
     
     // Determine likeable type and ID
@@ -83,7 +191,23 @@ document.addEventListener('DOMContentLoaded', function() {
     const theoryId = link.getAttribute('data-theory-id');
     
     let basePath, likeableId;
-    if (claimId) {
+    if (commentId) {
+      // For comments, extract from href
+      const href = link.href;
+      if (href.includes('/claims/')) {
+        const match = href.match(/\/claims\/(\d+)\/comments\/(\d+)/);
+        if (match) {
+          basePath = `claims/${match[1]}/comments/${match[2]}`;
+          likeableId = null; // Not needed for comments
+        }
+      } else if (href.includes('/theories/')) {
+        const match = href.match(/\/theories\/(\d+)\/comments\/(\d+)/);
+        if (match) {
+          basePath = `theories/${match[1]}/comments/${match[2]}`;
+          likeableId = null; // Not needed for comments
+        }
+      }
+    } else if (claimId) {
       basePath = 'claims';
       likeableId = claimId;
     } else if (theoryId) {
@@ -97,16 +221,51 @@ document.addEventListener('DOMContentLoaded', function() {
     if (link.classList.contains('liked')) {
       // User unliked - change to like button
       link.classList.remove('liked');
-      link.href = `/${basePath}/${likeableId}/likes`;
+      if (commentId) {
+        // Extract claim_id or theory_id and comment_id from current href
+        const href = link.href;
+        if (href.includes('/claims/')) {
+          const match = href.match(/\/claims\/(\d+)\/comments\/(\d+)/);
+          if (match) {
+            link.href = `/claims/${match[1]}/comments/${match[2]}/likes`;
+          }
+        } else if (href.includes('/theories/')) {
+          const match = href.match(/\/theories\/(\d+)\/comments\/(\d+)/);
+          if (match) {
+            link.href = `/theories/${match[1]}/comments/${match[2]}/likes`;
+          }
+        }
+      } else {
+        link.href = `/${basePath}/${likeableId}/likes`;
+      }
       link.setAttribute('data-method', 'post');
       link.setAttribute('data-remote', 'true');
+      // Remove like_id data attribute if it exists
+      link.removeAttribute('data-like-id');
     } else {
       // User liked - change to unlike button
       link.classList.add('liked');
       if (data.like_id) {
-        link.href = `/${basePath}/${likeableId}/likes/${data.like_id}`;
+        if (commentId) {
+          // Extract claim_id or theory_id and comment_id from current href
+          const href = link.href;
+          if (href.includes('/claims/')) {
+            const match = href.match(/\/claims\/(\d+)\/comments\/(\d+)/);
+            if (match) {
+              link.href = `/claims/${match[1]}/comments/${match[2]}/likes/${data.like_id}`;
+            }
+          } else if (href.includes('/theories/')) {
+            const match = href.match(/\/theories\/(\d+)\/comments\/(\d+)/);
+            if (match) {
+              link.href = `/theories/${match[1]}/comments/${match[2]}/likes/${data.like_id}`;
+            }
+          }
+        } else {
+          link.href = `/${basePath}/${likeableId}/likes/${data.like_id}`;
+        }
         link.setAttribute('data-method', 'delete');
         link.setAttribute('data-remote', 'true');
+        link.setAttribute('data-like-id', data.like_id);
       }
     }
   }
@@ -114,11 +273,13 @@ document.addEventListener('DOMContentLoaded', function() {
   // Handle AJAX errors
   document.body.addEventListener('ajax:error', function(event) {
     const [data, status, xhr] = event.detail;
-    const link = event.target.closest('.feed-like');
+    const link = event.target.closest('.feed-like, .comment-like');
     
     if (link) {
       const errorMsg = data && data.message ? data.message : 'Unable to like/unlike. Please try again.';
       console.error('Like error:', errorMsg);
+      // Reset processing flag on error
+      link.dataset.processing = 'false';
     }
   });
 });

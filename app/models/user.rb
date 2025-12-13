@@ -10,6 +10,7 @@ class User < ApplicationRecord
   has_many :chargebee_billings, dependent: :destroy
   has_many :ai_evidence_usages, dependent: :destroy
   has_many :likes, dependent: :destroy
+  has_many :comments, dependent: :destroy
 
   has_many :added_peers, -> { where(status: 'accepted') }, class_name: 'Peer', foreign_key: 'user_id', dependent: :destroy
   has_many :peers, through: :added_peers, source: :peer

@@ -339,7 +339,7 @@ class ClaimsController < ApplicationController
   private
 
   def set_claim
-    @claim = Claim.includes(:likes).find(params[:id])
+    @claim = Claim.includes(:likes, comments: [:user, :likes]).find(params[:id])
   end
 
   def store_claim_result(claim)

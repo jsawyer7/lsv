@@ -62,16 +62,37 @@
                         <i class="fas fa-thumbs-up"></i> <span class="like-count"><%= theory.likes.count %></span>
                       <% end %>
                     <% end %>
+                    <span class="feed-comment-count">
+                      <i class="fas fa-comment"></i> <span class="comment-count"><%= theory.comments.count %></span>
+                    </span>
                   </div>
                 <% else %>
                   <div class="feed-card-actions">
                     <span class="feed-like"><i class="fas fa-thumbs-up"></i> <span class="like-count"><%= theory.likes.count %></span></span>
+                    <span class="feed-comment-count">
+                      <i class="fas fa-comment"></i> <span class="comment-count"><%= theory.comments.count %></span>
+                    </span>
                   </div>
                 <% end %>
                 <span class="feed-card-date"><%= theory.created_at.strftime('%d %b, %Y') %></span>
                 <a class="feed-card-link" href="#">View Details</a>
               <% end %>
             </div>
+            
+            <% unless theory.status == 'draft' %>
+              <div class="feed-card-comments" data-theory-id="<%= theory.id %>">
+                <div class="comments-list-mini">
+                  <% theory.comments.recent.limit(3).each do |comment| %>
+                    <%= render 'comments/comment', comment: comment %>
+                  <% end %>
+                </div>
+                <% if user_signed_in? %>
+                  <div class="comment-form-mini">
+                    <%= render 'comments/form', commentable: theory %>
+                  </div>
+                <% end %>
+              </div>
+            <% end %>
           </div>
         <% end %>
       <% else %>

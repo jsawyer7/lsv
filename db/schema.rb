@@ -194,6 +194,17 @@ ActiveRecord::Schema[7.0].define(version: 2025_12_11_183213) do
     t.index ["user_id"], name: "index_claims_on_user_id"
   end
 
+  create_table "comments", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "commentable_type", null: false
+    t.bigint "commentable_id", null: false
+    t.text "content", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["commentable_type", "commentable_id"], name: "index_comments_on_commentable"
+    t.index ["user_id"], name: "index_comments_on_user_id"
+  end
+
   create_table "directions", force: :cascade do |t|
     t.text "code", null: false
     t.text "name", null: false
@@ -496,6 +507,7 @@ ActiveRecord::Schema[7.0].define(version: 2025_12_11_183213) do
   add_foreign_key "chargebee_subscriptions", "chargebee_plans"
   add_foreign_key "chargebee_subscriptions", "users"
   add_foreign_key "claims", "users"
+  add_foreign_key "comments", "users"
   add_foreign_key "evidences", "claims"
   add_foreign_key "follows", "users"
   add_foreign_key "follows", "users", column: "followed_user"
