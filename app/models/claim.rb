@@ -4,6 +4,7 @@ class Claim < ApplicationRecord
   has_many :reasonings, as: :reasonable, dependent: :destroy
   has_many :evidences, dependent: :destroy
   has_many :likes, as: :likeable, dependent: :destroy
+  has_many :comments, as: :commentable, dependent: :destroy
 
   validates :content, presence: true
 

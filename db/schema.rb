@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2025_11_22_150000) do
+ActiveRecord::Schema[7.0].define(version: 2025_11_22_160001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -180,6 +180,17 @@ ActiveRecord::Schema[7.0].define(version: 2025_11_22_150000) do
     t.index ["normalized_content_hash", "user_id"], name: "index_claims_on_normalized_content_hash_and_user_id"
     t.index ["normalized_content_hash"], name: "index_claims_on_normalized_content_hash"
     t.index ["user_id"], name: "index_claims_on_user_id"
+  end
+
+  create_table "comments", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "commentable_type", null: false
+    t.bigint "commentable_id", null: false
+    t.text "content", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["commentable_type", "commentable_id"], name: "index_comments_on_commentable"
+    t.index ["user_id"], name: "index_comments_on_user_id"
   end
 
   create_table "directions", force: :cascade do |t|
@@ -484,6 +495,7 @@ ActiveRecord::Schema[7.0].define(version: 2025_11_22_150000) do
   add_foreign_key "chargebee_subscriptions", "chargebee_plans"
   add_foreign_key "chargebee_subscriptions", "users"
   add_foreign_key "claims", "users"
+  add_foreign_key "comments", "users"
   add_foreign_key "evidences", "claims"
   add_foreign_key "follows", "users"
   add_foreign_key "follows", "users", column: "followed_user"

@@ -27,6 +27,9 @@ Rails.application.routes.draw do
   resources :claims do
     resources :challenges, only: [:create, :show]
     resources :likes, only: [:create, :destroy]
+    resources :comments, only: [:create, :destroy] do
+      resources :likes, only: [:create, :destroy]
+    end
     post :validate_claim, on: :collection
     post :validate_evidence, on: :collection
     post :generate_ai_evidence, on: :collection
@@ -71,15 +74,19 @@ Rails.application.routes.draw do
   get '/users/:id/profile', to: 'users#profile', as: :user_profile
   get '/users/:id/profile/infinite', to: 'users#profile_infinite', as: :user_profile_infinite
 
-  resources :theories, only: [:index, :new, :create, :edit, :update, :destroy] do
+  # Specific theory routes must come before resources to avoid route conflicts
+  get 'theories/public', to: 'theories#public_theories', as: :public_theories
+  get 'theories/public_infinite', to: 'theories#public_infinite', as: :public_infinite_theories
+
+  resources :theories, only: [:index, :new, :create, :show, :edit, :update, :destroy] do
     resources :likes, only: [:create, :destroy]
+    resources :comments, only: [:create, :destroy] do
+      resources :likes, only: [:create, :destroy]
+    end
     collection do
       get :infinite
     end
   end
-
-  get 'theories/public', to: 'theories#public_theories', as: :public_theories
-  get 'theories/public_infinite', to: 'theories#public_infinite', as: :public_infinite_theories
 
   resource :settings, only: [:edit, :update] do
     get :notifications, on: :collection
