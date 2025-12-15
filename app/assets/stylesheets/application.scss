@@ -66,6 +66,8 @@ body {
 @import 'components/checkout';
 @import 'components/sidebar';
 @import 'components/onboarding';
+@import 'components/comments';
+@import 'components/shares';
 
 // Admin styles
 @import 'admin/claims';
@@ -166,5 +168,16 @@ h4, .heading-h4 {
   to {
     opacity: 1;
     transform: translateX(0);
+  }
+}
+
+@keyframes slideOut {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(100%);
   }
 }

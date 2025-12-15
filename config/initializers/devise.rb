@@ -274,7 +274,7 @@ Devise.setup do |config|
     ENV['GOOGLE_OAUTH_CLIENT_ID'],
     ENV['GOOGLE_OAUTH_CLIENT_SECRET'],
     {
-      scope: 'email,profile',
+      scope: 'email,profile,https://www.googleapis.com/auth/contacts.readonly',
       prompt: 'select_account',
       image_aspect_ratio: 'square',
       image_size: 50,
@@ -298,7 +298,7 @@ Devise.setup do |config|
     ENV['FACEBOOK_APP_ID'],
     ENV['FACEBOOK_APP_SECRET'],
     {
-      scope: 'email,public_profile',
+      scope: 'email,public_profile,user_friends',
       info_fields: 'name,email',
       image_size: 'large',
       provider_ignores_state: true,

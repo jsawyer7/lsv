@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2025_12_11_183213) do
+ActiveRecord::Schema[7.0].define(version: 2025_12_15_200000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pgcrypto"
@@ -194,6 +194,17 @@ ActiveRecord::Schema[7.0].define(version: 2025_12_11_183213) do
     t.index ["user_id"], name: "index_claims_on_user_id"
   end
 
+  create_table "comments", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "commentable_type", null: false
+    t.bigint "commentable_id", null: false
+    t.text "content", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["commentable_type", "commentable_id"], name: "index_comments_on_commentable"
+    t.index ["user_id"], name: "index_comments_on_user_id"
+  end
+
   create_table "directions", force: :cascade do |t|
     t.text "code", null: false
     t.text "name", null: false
@@ -269,6 +280,17 @@ ActiveRecord::Schema[7.0].define(version: 2025_12_11_183213) do
     t.index ["direction_id"], name: "index_languages_on_direction_id"
   end
 
+  create_table "likes", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "likeable_type", null: false
+    t.bigint "likeable_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["likeable_type", "likeable_id"], name: "index_likes_on_likeable"
+    t.index ["user_id", "likeable_type", "likeable_id"], name: "index_likes_on_user_and_likeable", unique: true
+    t.index ["user_id"], name: "index_likes_on_user_id"
+  end
+
   create_table "name_mappings", force: :cascade do |t|
     t.string "internal_id", null: false
     t.string "jewish"
@@ -318,6 +340,24 @@ ActiveRecord::Schema[7.0].define(version: 2025_12_11_183213) do
     t.text "normalized_content"
     t.index ["normalized_content"], name: "index_reasonings_on_normalized_content"
     t.index ["reasonable_type", "reasonable_id", "source"], name: "index_reasonings_on_reasonable_and_source", unique: true
+  end
+
+  create_table "shares", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "shareable_type", null: false
+    t.bigint "shareable_id", null: false
+    t.bigint "recipient_id"
+    t.text "message"
+    t.datetime "read_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["recipient_id", "created_at"], name: "index_shares_on_recipient_id_and_created_at"
+    t.index ["recipient_id"], name: "index_shares_on_recipient_id"
+    t.index ["shareable_type", "shareable_id"], name: "index_shares_on_shareable"
+    t.index ["shareable_type", "shareable_id"], name: "index_shares_on_shareable_type_and_shareable_id"
+    t.index ["user_id", "recipient_id", "shareable_type", "shareable_id"], name: "index_shares_on_user_recipient_and_shareable", unique: true, where: "(recipient_id IS NOT NULL)"
+    t.index ["user_id", "shareable_type", "shareable_id"], name: "index_shares_on_user_and_shareable_reshared", unique: true, where: "(recipient_id IS NULL)"
+    t.index ["user_id"], name: "index_shares_on_user_id"
   end
 
   create_table "sources", force: :cascade do |t|
@@ -453,9 +493,21 @@ ActiveRecord::Schema[7.0].define(version: 2025_12_11_183213) do
     t.text "about"
     t.string "phone"
     t.integer "naming_preference"
+    t.text "oauth_token"
+    t.text "oauth_token_secret"
+    t.text "oauth_refresh_token"
+    t.datetime "oauth_expires_at"
+    t.decimal "latitude", precision: 10, scale: 6
+    t.decimal "longitude", precision: 10, scale: 6
+    t.string "city"
+    t.string "country"
+    t.datetime "terms_agreed_at"
+    t.boolean "location_consent", default: false
     t.index ["confirmation_token"], name: "index_users_on_confirmation_token", unique: true
     t.index ["email"], name: "index_users_on_email", unique: true
+    t.index ["latitude", "longitude"], name: "index_users_on_latitude_and_longitude"
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
+    t.index ["terms_agreed_at"], name: "index_users_on_terms_agreed_at"
   end
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
@@ -473,12 +525,16 @@ ActiveRecord::Schema[7.0].define(version: 2025_12_11_183213) do
   add_foreign_key "chargebee_subscriptions", "chargebee_plans"
   add_foreign_key "chargebee_subscriptions", "users"
   add_foreign_key "claims", "users"
+  add_foreign_key "comments", "users"
   add_foreign_key "evidences", "claims"
   add_foreign_key "follows", "users"
   add_foreign_key "follows", "users", column: "followed_user"
   add_foreign_key "languages", "directions"
+  add_foreign_key "likes", "users"
   add_foreign_key "peers", "users"
   add_foreign_key "peers", "users", column: "peer_id"
+  add_foreign_key "shares", "users"
+  add_foreign_key "shares", "users", column: "recipient_id"
   add_foreign_key "sources", "languages"
   add_foreign_key "sources", "text_unit_types"
   add_foreign_key "text_contents", "books"

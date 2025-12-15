@@ -13,27 +13,192 @@ document.addEventListener('DOMContentLoaded', function() {
   let page = 1;
   let loading = false;
   let hasMore = true;
+  
+  // Helper function to escape HTML
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+  
+  // Helper function to get time ago
+  function getTimeAgo(date) {
+    const seconds = Math.floor((new Date() - date) / 1000);
+    if (seconds < 60) return 'less than a minute';
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes} minute${minutes > 1 ? 's' : ''}`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours} hour${hours > 1 ? 's' : ''}`;
+    const days = Math.floor(hours / 24);
+    if (days < 7) return `${days} day${days > 1 ? 's' : ''}`;
+    const weeks = Math.floor(days / 7);
+    if (weeks < 4) return `${weeks} week${weeks > 1 ? 's' : ''}`;
+    const months = Math.floor(days / 30);
+    if (months < 12) return `${months} month${months > 12 ? 's' : ''}`;
+    const years = Math.floor(days / 365);
+    return `${years} year${years > 1 ? 's' : ''}`;
+  }
 
   function renderClaim(claim) {
+    // Check if this is a reshared item
+    const isReshared = claim.is_reshared || false;
+    const resharedBy = claim.reshared_by || null;
+    const reshareMessage = claim.reshare_message || null;
+    
     // Show full_name, then email, then fallback to User #id
     let userDisplay = claim.user && claim.user.full_name ? claim.user.full_name :
                       (claim.user && claim.user.email ? claim.user.email : `User #${claim.user_id}`);
+    
+    // Determine like button HTML
+    let likeButtonHtml;
+    const likesCount = claim.likes_count || 0;
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+    
+    if (claim.user_liked && claim.like_id) {
+      // User has liked - show unlike button
+      likeButtonHtml = `<a href="/claims/${claim.id}/likes/${claim.like_id}" class="feed-like liked" data-method="delete" data-remote="true" data-claim-id="${claim.id}" data-like-id="${claim.like_id}">
+        <i class="fas fa-thumbs-up"></i> <span class="like-count">${likesCount}</span>
+      </a>`;
+    } else {
+      // User hasn't liked - show like button
+      likeButtonHtml = `<a href="/claims/${claim.id}/likes" class="feed-like" data-method="post" data-remote="true" data-claim-id="${claim.id}">
+        <i class="fas fa-thumbs-up"></i> <span class="like-count">${likesCount}</span>
+      </a>`;
+    }
+    
+    // Reshared header
+    let resharedHeaderHtml = '';
+    if (isReshared && resharedBy) {
+      const resharedByName = resharedBy.full_name || resharedBy.email || 'Someone';
+      const resharedByAvatar = resharedBy.avatar_url || '/assets/default-avatar.png';
+      resharedHeaderHtml = `
+        <div class="feed-reshared-header">
+          <div class="feed-reshared-info">
+            <i class="fas fa-share"></i>
+            <img src="${resharedByAvatar}" class="feed-reshared-avatar" alt="${resharedByName}" />
+            <span class="feed-reshared-label"><strong>${escapeHtml(resharedByName)}</strong> shared</span>
+          </div>
+        </div>
+      `;
+    }
+    
+    // Build comments HTML
+    let commentsHtml = '';
+    if (claim.comments && claim.comments.length > 0) {
+      commentsHtml = '<div class="comments-list-mini">';
+      claim.comments.forEach(comment => {
+        const commentUser = comment.user && comment.user.full_name ? comment.user.full_name : (comment.user && comment.user.email ? comment.user.email : 'Anonymous');
+        const commentAvatar = comment.user && comment.user.avatar_url ? comment.user.avatar_url : '/assets/default-avatar.png';
+        const commentDate = new Date(comment.created_at);
+        const timeAgo = getTimeAgo(commentDate);
+        
+        commentsHtml += `
+          <div class="comment-item comment-item-mini" id="comment-${comment.id}">
+            <div class="comment-wrapper">
+              <div class="comment-avatar-container">
+                <img src="${commentAvatar}" class="comment-avatar" alt="${commentUser}" />
+              </div>
+              <div class="comment-content-wrapper">
+                <div class="comment-bubble">
+                  <div class="comment-header">
+                    <span class="comment-author"><strong>${commentUser}</strong></span>
+                  </div>
+                  <div class="comment-text-wrapper">
+                    <span class="comment-text">${escapeHtml(comment.content)}</span>
+                    ${comment.likes_count > 0 ? `<span class="comment-likes-count-inline"><i class="fas fa-thumbs-up"></i> ${comment.likes_count}</span>` : ''}
+                  </div>
+                  <div class="comment-meta">
+                    <div class="comment-meta-left">
+                      <span class="comment-date">${timeAgo}</span>
+                      <span class="comment-like-link">
+                        <a href="/claims/${claim.id}/comments/${comment.id}/likes" class="comment-like" data-method="post" data-remote="true" data-comment-id="${comment.id}" data-claim-id="${claim.id}">Like</a>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+      commentsHtml += '</div>';
+    }
+    
+    // Comment form HTML - get current user avatar from claim data or page
+    let currentUserAvatar = '/assets/default-avatar.png';
+    
+    // First try to get from claim data (if available)
+    if (claim.current_user && claim.current_user.avatar_url) {
+      currentUserAvatar = claim.current_user.avatar_url;
+    } else {
+      // Fallback: Try multiple selectors to find current user avatar on page
+      const avatarSelectors = [
+        '.comment-form-avatar',
+        '.comment-avatar',
+        '.my-claim-avatar',
+        '.feed-card-user img',
+        '.user-avatar img'
+      ];
+      
+      for (const selector of avatarSelectors) {
+        const avatarEl = document.querySelector(selector);
+        if (avatarEl && avatarEl.src && !avatarEl.src.includes('default-avatar')) {
+          currentUserAvatar = avatarEl.src;
+          break;
+        }
+      }
+    }
+    
+    const commentFormHtml = `
+      <div class="comment-form-container">
+        <form class="comment-form" action="/claims/${claim.id}/comments" method="post" data-remote="true">
+          <input type="hidden" name="authenticity_token" value="${csrfToken}">
+          <div class="comment-form-wrapper">
+            <div class="comment-form-avatar-container">
+              <img src="${currentUserAvatar}" class="comment-form-avatar" alt="User" onerror="this.src='/assets/default-avatar.png'" />
+            </div>
+            <div class="comment-form-input-wrapper">
+              <textarea name="comment[content]" placeholder="Write a comment..." class="comment-textarea" rows="1" required></textarea>
+              <div class="comment-form-actions">
+                <button type="submit" class="comment-submit-btn">Post Comment</button>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+    `;
+    
     return `
-      <div class="feed-card">
+      <div class="feed-card ${isReshared ? 'feed-card-reshared' : ''}">
+        ${resharedHeaderHtml}
         <div class="feed-card-header">
           <div class="feed-card-badge-user">
             <span class="feed-card-badge fact">Fact</span>
             <span class="feed-card-user">${userDisplay}</span>
           </div>
         </div>
+        ${reshareMessage ? `<div class="feed-reshare-message">${escapeHtml(reshareMessage)}</div>` : ''}
         <div class="feed-card-title">${claim.content.substring(0, 80)}${claim.content.length > 80 ? '...' : ''}</div>
         <div class="feed-card-content">${claim.content}</div>
         <div class="feed-card-footer">
           <div class="feed-card-actions">
-            <span class="feed-like"><i class="fas fa-thumbs-up"></i> 1.1k</span>
+            ${likeButtonHtml}
+            <span class="feed-comment-count">
+              <i class="fas fa-comment"></i> <span class="comment-count">${claim.comments_count || 0}</span>
+            </span>
+            <button class="feed-share-btn" data-shareable-type="claim" data-shareable-id="${claim.id}" data-toggle="modal" data-target="#shareModal">
+              <i class="fas fa-share"></i> Share
+            </button>
+            <button class="feed-reshare-btn" data-claim-id="${claim.id}">
+              <i class="fas fa-retweet"></i> Reshare
+            </button>
           </div>
           <span class="feed-card-date">${new Date(claim.created_at).toLocaleDateString()}</span>
           <a class="feed-card-link" href="/claims/${claim.id}">View Details</a>
+        </div>
+        <div class="feed-card-comments" data-claim-id="${claim.id}">
+          ${commentsHtml}
+          ${commentFormHtml}
         </div>
       </div>
     `;
@@ -62,6 +227,67 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   feedList.addEventListener('scroll', onFeedScroll);
+  
+  // Handle like button clicks for dynamically added elements
+  feedList.addEventListener('click', function(e) {
+    const likeButton = e.target.closest('.feed-like');
+    if (!likeButton || likeButton.tagName !== 'A') return;
+    
+    e.preventDefault();
+    const claimId = likeButton.getAttribute('data-claim-id');
+    const isLiked = likeButton.classList.contains('liked');
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+    
+    let url, method;
+    if (isLiked) {
+      // Unlike - extract like ID from href
+      url = likeButton.href;
+      method = 'DELETE';
+    } else {
+      // Like
+      url = `/claims/${claimId}/likes`;
+      method = 'POST';
+    }
+    
+    fetch(url, {
+      method: method,
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': csrfToken,
+        'Accept': 'application/json'
+      },
+      credentials: 'same-origin'
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.status === 'success') {
+        const likeCountSpan = likeButton.querySelector('.like-count');
+        if (likeCountSpan) {
+          likeCountSpan.textContent = data.likes_count;
+        }
+        
+        if (isLiked) {
+          // User unliked - change to like button
+          likeButton.classList.remove('liked');
+          likeButton.href = `/claims/${claimId}/likes`;
+          likeButton.setAttribute('data-method', 'post');
+          likeButton.setAttribute('data-remote', 'true');
+        } else {
+          // User liked - change to unlike button
+          likeButton.classList.add('liked');
+          if (data.like_id) {
+            likeButton.href = `/claims/${claimId}/likes/${data.like_id}`;
+            likeButton.setAttribute('data-method', 'delete');
+            likeButton.setAttribute('data-remote', 'true');
+          }
+        }
+      }
+    })
+    .catch(error => {
+      console.error('Error liking/unliking:', error);
+    });
+  });
+  
   fetchClaims();
 });
 </script> 

@@ -9,6 +9,11 @@ class User < ApplicationRecord
   has_many :chargebee_subscriptions, dependent: :destroy
   has_many :chargebee_billings, dependent: :destroy
   has_many :ai_evidence_usages, dependent: :destroy
+  has_many :likes, dependent: :destroy
+  has_many :comments, dependent: :destroy
+  has_many :shares, dependent: :destroy
+  has_many :received_shares, class_name: 'Share', foreign_key: 'recipient_id', dependent: :destroy
+  has_many :reshared_items, -> { where(recipient_id: nil) }, class_name: 'Share', dependent: :destroy
 
   has_many :added_peers, -> { where(status: 'accepted') }, class_name: 'Peer', foreign_key: 'user_id', dependent: :destroy
   has_many :peers, through: :added_peers, source: :peer
@@ -148,25 +153,45 @@ class User < ApplicationRecord
 
     if user
       # Update existing user's OAuth credentials
-      user.update(
+      update_params = {
         provider: auth.provider,
         uid: auth.uid,
         full_name: user.full_name.presence || auth.info.name,
         avatar_url: auth.info.image
-      )
+      }
+
+      # Store OAuth tokens for API access
+      if auth.credentials.present?
+        update_params[:oauth_token] = auth.credentials.token if auth.credentials.token.present?
+        update_params[:oauth_token_secret] = auth.credentials.secret if auth.credentials.secret.present?
+        update_params[:oauth_refresh_token] = auth.credentials.refresh_token if auth.credentials.refresh_token.present?
+        update_params[:oauth_expires_at] = Time.at(auth.credentials.expires_at) if auth.credentials.expires_at.present?
+      end
+
+      user.update(update_params)
     else
       # Create new user if none exists
       # For X OAuth, email might not be available, so we'll use a placeholder
       email = auth.info.email.presence || "#{auth.info.screen_name}@twitter.com"
 
-      user = User.new(
+      user_params = {
         email: email,
         password: Devise.friendly_token[0, 20],
         full_name: auth.info.name,
         avatar_url: auth.info.image,
         provider: auth.provider,
         uid: auth.uid
-      )
+      }
+
+      # Store OAuth tokens for API access
+      if auth.credentials.present?
+        user_params[:oauth_token] = auth.credentials.token if auth.credentials.token.present?
+        user_params[:oauth_token_secret] = auth.credentials.secret if auth.credentials.secret.present?
+        user_params[:oauth_refresh_token] = auth.credentials.refresh_token if auth.credentials.refresh_token.present?
+        user_params[:oauth_expires_at] = Time.at(auth.credentials.expires_at) if auth.credentials.expires_at.present?
+      end
+
+      user = User.new(user_params)
       user.skip_confirmation!
       user.confirm
       user.save!
