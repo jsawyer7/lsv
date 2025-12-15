@@ -27,8 +27,10 @@ Rails.application.routes.draw do
   resources :claims do
     resources :challenges, only: [:create, :show]
     resources :likes, only: [:create, :destroy]
+    resources :shares, only: [:create]
     resources :comments, only: [:create, :destroy] do
       resources :likes, only: [:create, :destroy]
+      resources :shares, only: [:create]
     end
     post :validate_claim, on: :collection
     post :validate_evidence, on: :collection
@@ -58,6 +60,13 @@ Rails.application.routes.draw do
   get '/sources', to: 'static#sources'
   get 'feeds', to: 'feeds#index'
   get 'feeds/infinite', to: 'feeds#infinite'
+  get 'shared', to: 'shares#index', as: :shared_feed
+  get 'shared/infinite', to: 'shares#infinite', as: :shared_feed_infinite
+  post 'shares/:id/reshare', to: 'shares#reshare', as: :reshare_share
+  post 'claims/:claim_id/reshare', to: 'shares#reshare', as: :reshare_claim
+  post 'theories/:theory_id/reshare', to: 'shares#reshare', as: :reshare_theory
+  post 'claims/:claim_id/comments/:comment_id/reshare', to: 'shares#reshare', as: :reshare_claim_comment
+  post 'theories/:theory_id/comments/:comment_id/reshare', to: 'shares#reshare', as: :reshare_theory_comment
   get 'contact', to: 'static#contact'
   post 'contact', to: 'static#send_contact_message'
 
@@ -80,8 +89,10 @@ Rails.application.routes.draw do
 
   resources :theories, only: [:index, :new, :create, :show, :edit, :update, :destroy] do
     resources :likes, only: [:create, :destroy]
+    resources :shares, only: [:create]
     resources :comments, only: [:create, :destroy] do
       resources :likes, only: [:create, :destroy]
+      resources :shares, only: [:create]
     end
     collection do
       get :infinite

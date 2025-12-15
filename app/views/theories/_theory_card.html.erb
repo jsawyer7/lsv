@@ -42,6 +42,12 @@
           <span class="feed-comment-count">
             <i class="fas fa-comment"></i> <span class="comment-count"><%= theory.comments.visible_to(current_user).count %></span>
           </span>
+          <button class="feed-share-btn" data-shareable-type="theory" data-shareable-id="<%= theory.id %>" data-toggle="modal" data-target="#shareModal">
+            <i class="fas fa-share"></i> Share
+          </button>
+          <button class="feed-reshare-btn" data-theory-id="<%= theory.id %>">
+            <i class="fas fa-retweet"></i> Reshare
+          </button>
         </div>
       <% else %>
         <div class="feed-card-actions">
@@ -59,7 +65,7 @@
   <% unless theory.status == 'draft' %>
     <div class="feed-card-comments" data-theory-id="<%= theory.id %>">
       <div class="comments-list-mini">
-        <% theory.comments.visible_to(current_user).recent.limit(3).each do |comment| %>
+        <% theory.comments.visible_to(current_user).recent.each do |comment| %>
           <%= render 'comments/comment', comment: comment %>
         <% end %>
       </div>

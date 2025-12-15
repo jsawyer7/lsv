@@ -40,6 +40,11 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function renderClaim(claim) {
+    // Check if this is a reshared item
+    const isReshared = claim.is_reshared || false;
+    const resharedBy = claim.reshared_by || null;
+    const reshareMessage = claim.reshare_message || null;
+    
     // Show full_name, then email, then fallback to User #id
     let userDisplay = claim.user && claim.user.full_name ? claim.user.full_name :
                       (claim.user && claim.user.email ? claim.user.email : `User #${claim.user_id}`);
@@ -59,6 +64,22 @@ document.addEventListener('DOMContentLoaded', function() {
       likeButtonHtml = `<a href="/claims/${claim.id}/likes" class="feed-like" data-method="post" data-remote="true" data-claim-id="${claim.id}">
         <i class="fas fa-thumbs-up"></i> <span class="like-count">${likesCount}</span>
       </a>`;
+    }
+    
+    // Reshared header
+    let resharedHeaderHtml = '';
+    if (isReshared && resharedBy) {
+      const resharedByName = resharedBy.full_name || resharedBy.email || 'Someone';
+      const resharedByAvatar = resharedBy.avatar_url || '/assets/default-avatar.png';
+      resharedHeaderHtml = `
+        <div class="feed-reshared-header">
+          <div class="feed-reshared-info">
+            <i class="fas fa-share"></i>
+            <img src="${resharedByAvatar}" class="feed-reshared-avatar" alt="${resharedByName}" />
+            <span class="feed-reshared-label"><strong>${escapeHtml(resharedByName)}</strong> shared</span>
+          </div>
+        </div>
+      `;
     }
     
     // Build comments HTML
@@ -148,13 +169,15 @@ document.addEventListener('DOMContentLoaded', function() {
     `;
     
     return `
-      <div class="feed-card">
+      <div class="feed-card ${isReshared ? 'feed-card-reshared' : ''}">
+        ${resharedHeaderHtml}
         <div class="feed-card-header">
           <div class="feed-card-badge-user">
             <span class="feed-card-badge fact">Fact</span>
             <span class="feed-card-user">${userDisplay}</span>
           </div>
         </div>
+        ${reshareMessage ? `<div class="feed-reshare-message">${escapeHtml(reshareMessage)}</div>` : ''}
         <div class="feed-card-title">${claim.content.substring(0, 80)}${claim.content.length > 80 ? '...' : ''}</div>
         <div class="feed-card-content">${claim.content}</div>
         <div class="feed-card-footer">
@@ -163,6 +186,12 @@ document.addEventListener('DOMContentLoaded', function() {
             <span class="feed-comment-count">
               <i class="fas fa-comment"></i> <span class="comment-count">${claim.comments_count || 0}</span>
             </span>
+            <button class="feed-share-btn" data-shareable-type="claim" data-shareable-id="${claim.id}" data-toggle="modal" data-target="#shareModal">
+              <i class="fas fa-share"></i> Share
+            </button>
+            <button class="feed-reshare-btn" data-claim-id="${claim.id}">
+              <i class="fas fa-retweet"></i> Reshare
+            </button>
           </div>
           <span class="feed-card-date">${new Date(claim.created_at).toLocaleDateString()}</span>
           <a class="feed-card-link" href="/claims/${claim.id}">View Details</a>

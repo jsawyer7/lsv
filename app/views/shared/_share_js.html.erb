@@ -1,0 +1,168 @@
+<script>
+(function() {
+  let currentShareableType = null;
+  let currentShareableId = null;
+  let currentClaimId = null;
+  let currentTheoryId = null;
+
+  // Function to show flash messages
+  function showFlashMessage(message, type) {
+    // Check if flash container exists, if not create it
+    let flashContainer = document.querySelector('.flash-container');
+    if (!flashContainer) {
+      flashContainer = document.createElement('div');
+      flashContainer.className = 'flash-container';
+      document.body.appendChild(flashContainer);
+    }
+
+    // Create flash message element
+    const flashMessage = document.createElement('div');
+    flashMessage.className = `flash-message ${type}`;
+    flashMessage.textContent = message;
+
+    // Add to container
+    flashContainer.appendChild(flashMessage);
+
+    // Auto remove after 3 seconds
+    setTimeout(() => {
+      flashMessage.style.animation = 'slideOut 0.3s ease-out';
+      setTimeout(() => {
+        flashMessage.remove();
+        // Remove container if empty
+        if (flashContainer.children.length === 0) {
+          flashContainer.remove();
+        }
+      }, 300);
+    }, 3000);
+  }
+
+  // Handle share button clicks
+  document.addEventListener('click', function(e) {
+    const shareBtn = e.target.closest('.feed-share-btn, .comment-share-btn');
+    if (shareBtn) {
+      e.preventDefault();
+      
+      currentShareableType = shareBtn.getAttribute('data-shareable-type');
+      currentShareableId = shareBtn.getAttribute('data-shareable-id');
+      currentClaimId = shareBtn.getAttribute('data-claim-id');
+      currentTheoryId = shareBtn.getAttribute('data-theory-id');
+      
+      // Open modal (using Bootstrap 5)
+      const modal = document.getElementById('shareModal');
+      if (modal) {
+        const bsModal = new bootstrap.Modal(modal);
+        bsModal.show();
+      }
+    }
+  });
+
+  // Handle share form submission
+  const shareForm = document.getElementById('shareForm');
+  if (shareForm) {
+    shareForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      const formData = new FormData(shareForm);
+      const recipientIds = Array.from(document.querySelectorAll('.share-peer-checkbox:checked')).map(cb => cb.value);
+      
+      if (recipientIds.length === 0) {
+        showFlashMessage('Please select at least one peer to share with.', 'alert');
+        return;
+      }
+      
+      formData.append('recipient_ids[]', recipientIds);
+      
+      // Build the correct URL based on shareable type
+      let shareUrl = '';
+      if (currentShareableType === 'claim') {
+        shareUrl = `/claims/${currentShareableId}/shares`;
+      } else if (currentShareableType === 'theory') {
+        shareUrl = `/theories/${currentShareableId}/shares`;
+      } else if (currentShareableType === 'comment') {
+        if (currentClaimId) {
+          shareUrl = `/claims/${currentClaimId}/comments/${currentShareableId}/shares`;
+        } else if (currentTheoryId) {
+          shareUrl = `/theories/${currentTheoryId}/comments/${currentShareableId}/shares`;
+        }
+      }
+      
+      // Get CSRF token
+      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+      
+      // Build form data for Rails
+      const railsFormData = new FormData();
+      recipientIds.forEach(id => {
+        railsFormData.append('recipient_ids[]', id);
+      });
+      const message = formData.get('message');
+      if (message) {
+        railsFormData.append('message', message);
+      }
+      
+      fetch(shareUrl, {
+        method: 'POST',
+        headers: {
+          'X-CSRF-Token': csrfToken,
+          'Accept': 'application/json'
+        },
+        body: railsFormData
+      })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        return response.json();
+      })
+      .then(data => {
+        if (data.status === 'success') {
+          // Close modal (using Bootstrap 5)
+          const modal = document.getElementById('shareModal');
+          if (modal) {
+            const bsModal = bootstrap.Modal.getInstance(modal);
+            if (bsModal) {
+              bsModal.hide();
+            }
+          }
+          
+          // Reset form
+          shareForm.reset();
+          
+          // Uncheck all checkboxes
+          document.querySelectorAll('.share-peer-checkbox').forEach(cb => {
+            cb.checked = false;
+          });
+          
+          // Show success flash message (if flash container exists)
+          showFlashMessage(data.message || 'Shared successfully!', 'notice');
+        } else {
+          showFlashMessage(data.message || 'Failed to share. Please try again.', 'alert');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        showFlashMessage('An error occurred. Please try again.', 'alert');
+      });
+    });
+  }
+
+  // Reset form when modal is closed
+  const shareModal = document.getElementById('shareModal');
+  if (shareModal) {
+    shareModal.addEventListener('hidden.bs.modal', function() {
+      const form = document.getElementById('shareForm');
+      if (form) {
+        form.reset();
+      }
+      // Uncheck all checkboxes
+      document.querySelectorAll('.share-peer-checkbox').forEach(cb => {
+        cb.checked = false;
+      });
+      currentShareableType = null;
+      currentShareableId = null;
+      currentClaimId = null;
+      currentTheoryId = null;
+    });
+  }
+})();
+</script>
+

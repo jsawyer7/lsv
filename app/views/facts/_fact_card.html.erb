@@ -26,6 +26,9 @@
         <span class="feed-comment-count">
           <i class="fas fa-comment"></i> <span class="comment-count"><%= fact.comments.visible_to(current_user).count %></span>
         </span>
+        <button class="feed-share-btn" data-shareable-type="claim" data-shareable-id="<%= fact.id %>" data-toggle="modal" data-target="#shareModal">
+          <i class="fas fa-share"></i> Share
+        </button>
       </div>
     <% else %>
       <div class="feed-card-actions">
@@ -41,7 +44,7 @@
   
   <div class="feed-card-comments" data-claim-id="<%= fact.id %>">
     <div class="comments-list-mini">
-      <% fact.comments.visible_to(current_user).recent.limit(3).each do |comment| %>
+      <% fact.comments.visible_to(current_user).recent.each do |comment| %>
         <%= render 'comments/comment', comment: comment %>
       <% end %>
     </div>

@@ -51,6 +51,17 @@
                   <% end %>
                 <% end %>
               </span>
+              <span class="comment-share-link">
+                <% if comment.commentable.is_a?(Claim) %>
+                  <button class="comment-share-btn" data-shareable-type="comment" data-shareable-id="<%= comment.id %>" data-claim-id="<%= comment.commentable.id %>" data-toggle="modal" data-target="#shareModal">
+                    Share
+                  </button>
+                <% elsif comment.commentable.is_a?(Theory) %>
+                  <button class="comment-share-btn" data-shareable-type="comment" data-shareable-id="<%= comment.id %>" data-theory-id="<%= comment.commentable.id %>" data-toggle="modal" data-target="#shareModal">
+                    Share
+                  </button>
+                <% end %>
+              </span>
             <% end %>
           </div>
         </div>
