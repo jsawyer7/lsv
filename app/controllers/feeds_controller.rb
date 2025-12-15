@@ -8,11 +8,13 @@ class FeedsController < ApplicationController
   def infinite
     page = params[:page].to_i > 0 ? params[:page].to_i : 1
     per_page = 20
-    claims = Claim.published_facts.includes(:user, :likes, comments: [:user, :likes]).order(created_at: :desc).offset((page - 1) * per_page).limit(per_page)
+    claims = Claim.published_facts.includes(:user, :likes).order(created_at: :desc).offset((page - 1) * per_page).limit(per_page)
     render json: {
       claims: claims.map { |claim|
         user_like = current_user ? claim.likes.find_by(user: current_user) : nil
-        comments_data = claim.comments.recent.limit(3).map do |comment|
+        # Filter comments to only show those visible to current user (peer network only)
+        visible_comments = claim.comments.visible_to(current_user).recent.limit(3)
+        comments_data = visible_comments.map do |comment|
           {
             id: comment.id,
             content: comment.content,
@@ -30,7 +32,7 @@ class FeedsController < ApplicationController
           likes_count: claim.likes.count,
           user_liked: user_like.present?,
           like_id: user_like&.id,
-          comments_count: claim.comments.count,
+          comments_count: claim.comments.visible_to(current_user).count,
           comments: comments_data,
           user: {
             full_name: claim.user&.full_name,

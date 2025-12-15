@@ -40,14 +40,14 @@
             <% end %>
           <% end %>
           <span class="feed-comment-count">
-            <i class="fas fa-comment"></i> <span class="comment-count"><%= theory.comments.count %></span>
+            <i class="fas fa-comment"></i> <span class="comment-count"><%= theory.comments.visible_to(current_user).count %></span>
           </span>
         </div>
       <% else %>
         <div class="feed-card-actions">
           <span class="feed-like"><i class="fas fa-thumbs-up"></i> <span class="like-count"><%= theory.likes.count %></span></span>
           <span class="feed-comment-count">
-            <i class="fas fa-comment"></i> <span class="comment-count"><%= theory.comments.count %></span>
+            <i class="fas fa-comment"></i> <span class="comment-count"><%= theory.comments.visible_to(current_user).count %></span>
           </span>
         </div>
       <% end %>
@@ -59,7 +59,7 @@
   <% unless theory.status == 'draft' %>
     <div class="feed-card-comments" data-theory-id="<%= theory.id %>">
       <div class="comments-list-mini">
-        <% theory.comments.recent.limit(3).each do |comment| %>
+        <% theory.comments.visible_to(current_user).recent.limit(3).each do |comment| %>
           <%= render 'comments/comment', comment: comment %>
         <% end %>
       </div>

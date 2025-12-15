@@ -7,9 +7,10 @@ class TheoriesController < ApplicationController
     search = params[:search]
     @filters = %w[public in_review draft]
     @current_status = status
-    @theories = current_user.theories.where(status: status).includes(:likes, comments: [:user, :likes])
+    @theories = current_user.theories.where(status: status).includes(:likes)
     @theories = @theories.where('title ILIKE ? OR description ILIKE ?', "%#{search}%", "%#{search}%") if search.present?
     @theories = @theories.order(created_at: :desc).limit(10)
+    # Note: Comments will be filtered in the view using visible_to scope
   end
 
   def new
@@ -37,9 +38,10 @@ class TheoriesController < ApplicationController
     status = params[:status] || 'public'
     search = params[:search]
     page = params[:page].to_i
-    theories = current_user.theories.where(status: status).includes(:likes, comments: [:user, :likes])
+    theories = current_user.theories.where(status: status).includes(:likes)
     theories = theories.where('title ILIKE ? OR description ILIKE ?', "%#{search}%", "%#{search}%") if search.present?
     theories = theories.order(created_at: :desc).offset(10 * page).limit(10)
+    # Note: Comments will be filtered in the view using visible_to scope
     render json: {
       theories: theories.map { |theory|
         user_like = current_user ? theory.likes.find_by(user: current_user) : nil
@@ -54,7 +56,9 @@ class TheoriesController < ApplicationController
   end
 
   def show
-    @theory = Theory.includes(comments: [:user, :likes]).find(params[:id])
+    @theory = Theory.find(params[:id])
+    # Filter comments to only show those visible to current user (peer network only)
+    @visible_comments = @theory.comments.visible_to(current_user).includes(:user, :likes)
   end
 
   def edit
@@ -92,7 +96,8 @@ class TheoriesController < ApplicationController
     page = params[:page].to_i > 0 ? params[:page].to_i : 1
     per_page = 20
     offset = (page - 1) * per_page
-    theories = Theory.where.not(status: 'draft').includes(:likes, comments: [:user, :likes]).order(created_at: :desc).offset(offset).limit(per_page)
+    theories = Theory.where.not(status: 'draft').includes(:likes).order(created_at: :desc).offset(offset).limit(per_page)
+    # Note: Comments will be filtered in the view using visible_to scope
     render json: {
       theories: theories.map { |theory| render_to_string(partial: 'theory_card', formats: [:html], locals: { theory: theory }) },
       next_page: theories.size == per_page ? page + 1 : nil

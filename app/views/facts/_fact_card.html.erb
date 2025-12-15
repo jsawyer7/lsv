@@ -24,14 +24,14 @@
           <% end %>
         <% end %>
         <span class="feed-comment-count">
-          <i class="fas fa-comment"></i> <span class="comment-count"><%= fact.comments.count %></span>
+          <i class="fas fa-comment"></i> <span class="comment-count"><%= fact.comments.visible_to(current_user).count %></span>
         </span>
       </div>
     <% else %>
       <div class="feed-card-actions">
         <span class="feed-like"><i class="fas fa-thumbs-up"></i> <span class="like-count"><%= fact.likes.count %></span></span>
         <span class="feed-comment-count">
-          <i class="fas fa-comment"></i> <span class="comment-count"><%= fact.comments.count %></span>
+          <i class="fas fa-comment"></i> <span class="comment-count"><%= fact.comments.visible_to(current_user).count %></span>
         </span>
       </div>
     <% end %>
@@ -41,7 +41,7 @@
   
   <div class="feed-card-comments" data-claim-id="<%= fact.id %>">
     <div class="comments-list-mini">
-      <% fact.comments.recent.limit(3).each do |comment| %>
+      <% fact.comments.visible_to(current_user).recent.limit(3).each do |comment| %>
         <%= render 'comments/comment', comment: comment %>
       <% end %>
     </div>

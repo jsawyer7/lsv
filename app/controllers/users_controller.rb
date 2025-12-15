@@ -13,7 +13,8 @@ class UsersController < ApplicationController
     user = User.find(params[:id])
     page = params[:page].to_i > 0 ? params[:page].to_i : 1
     per_page = 10
-    claims = user.claims.includes(:likes, comments: [:user, :likes]).order(created_at: :desc).offset((page - 1) * per_page).limit(per_page)
+    claims = user.claims.includes(:likes).order(created_at: :desc).offset((page - 1) * per_page).limit(per_page)
+    # Note: Comments will be filtered in the view using visible_to scope
     render json: {
       claims: claims.map { |claim|
         user_like = current_user ? claim.likes.find_by(user: current_user) : nil

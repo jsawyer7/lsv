@@ -82,7 +82,7 @@
             <% unless theory.status == 'draft' %>
               <div class="feed-card-comments" data-theory-id="<%= theory.id %>">
                 <div class="comments-list-mini">
-                  <% theory.comments.recent.limit(3).each do |comment| %>
+                  <% theory.comments.visible_to(current_user).recent.limit(3).each do |comment| %>
                     <%= render 'comments/comment', comment: comment %>
                   <% end %>
                 </div>
