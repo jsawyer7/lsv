@@ -51,33 +51,6 @@ class TextContentValidationService
       }
     end
 
-    # CRITICAL: Verify Swete fidelity against canonical text
-    if swete_source? && @text_content.content.present?
-      begin
-        fidelity_validator = SweteFidelityValidator.new(
-          @source.code,
-          @book.code,
-          @chapter,
-          @verse
-        )
-        
-        if fidelity_validator.canonical_exists?
-          fidelity_validator.verify(@text_content.content)
-          Rails.logger.info "Swete fidelity verified during validation for #{@text_content.unit_key}"
-        else
-          Rails.logger.warn "Canonical text not found for #{@text_content.unit_key} - skipping fidelity check"
-        end
-      rescue SweteFidelityError => e
-        Rails.logger.error "Swete fidelity error during validation for #{@text_content.unit_key}: #{e.message}"
-        return {
-          status: 'error',
-          error: "Swete fidelity mismatch: #{e.message}",
-          is_accurate: false,
-          validation_flags: ['SWETE_FIDELITY_MISMATCH']
-        }
-      end
-    end
-    
     unless @text_content.content.present?
       return {
         status: 'error',
@@ -86,16 +59,61 @@ class TextContentValidationService
       }
     end
 
-    result = perform_validation
-    
-    if result[:status] == 'success'
-      update_validation_fields(result)
-      log_validation(result)
-      result
-    else
-      Rails.logger.error "Validation failed: #{result[:error]}"
-      result
-    end
+    # Deterministic validation pipeline (no AI self-validation)
+    pipeline = Verifaith::TextContentValidationPipeline.new(
+      text_content: @text_content,
+      source_text: @text_content.content,
+      word_for_word: @text_content.word_for_word_array,
+      lsv_literal_reconstruction: @text_content.lsv_literal_reconstruction,
+      genre_code: @text_content.genre_code,
+      addressed_party_code: @text_content.addressed_party_code,
+      responsible_party_code: @text_content.responsible_party_code
+    )
+
+    validation = pipeline.run
+
+    is_accurate = validation.ok?
+
+    # Derive coarse booleans from flags/meta
+    character_accurate = !validation.flags.include?('CANONICAL_MISMATCH') &&
+                         !validation.flags.include?('SWETE_CONTAMINATION')
+
+    lexical_coverage_complete = !validation.flags.include?('WFW_TOKEN_NOT_IN_SOURCE') &&
+                                !validation.flags.include?('WFW_BASE_GLOSS_MISSING')
+
+    lsv_translation_valid = !validation.flags.include?('LSV_MISSING') &&
+                            !validation.flags.include?('WFW_BASE_GLOSS_MISSING')
+
+    accuracy_percentage = is_accurate ? 100 : 0
+
+    # Map deterministic validation into the legacy result shape expected by callers
+    result = {
+      status: is_accurate ? 'success' : 'error',
+      is_accurate: is_accurate,
+      character_accurate: character_accurate,
+      lexical_coverage_complete: lexical_coverage_complete,
+      lsv_translation_valid: lsv_translation_valid,
+      accuracy_percentage: accuracy_percentage,
+      character_accuracy: {
+        'total_characters' => @text_content.content.length,
+        'matching_characters' => is_accurate ? @text_content.content.length : 0,
+        'discrepancies_count' => is_accurate ? 0 : 1
+      },
+      discrepancies: [],
+      lexical_coverage_issues: lexical_coverage_complete ? [] : (validation.meta[:missing_tokens] || []),
+      lsv_translation_issues: [],
+      lsv_rule_violations: [],
+      missing_required_fields: (validation.meta[:missing] || []).map { |field|
+        { 'field' => field, 'issue' => 'Missing or invalid' }
+      },
+      validation_flags: validation.flags,
+      validation_notes: (validation.warnings + validation.errors).join(' | '),
+      raw_response: nil
+    }
+
+    update_validation_fields(result)
+    log_validation(result)
+    result
   rescue => e
     Rails.logger.error "Error in TextContentValidationService: #{e.message}"
     Rails.logger.error e.backtrace.join("\n")

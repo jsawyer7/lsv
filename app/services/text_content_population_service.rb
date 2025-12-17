@@ -42,81 +42,102 @@ class TextContentPopulationService
     # Set status to processing
     @text_content.update_column(:population_status, 'processing')
 
-    # Fetch exact source text and word-for-word translation
+    # Fetch reconstructed source text and word-for-word translation
     result = fetch_source_content
 
     if result[:status] == 'success'
-      # Step 1: Verify Swete fidelity BEFORE any processing (only if canonical exists)
-      if swete_source?
-        begin
-          fidelity_validator = SweteFidelityValidator.new(
-            @source.code,
-            @book.code,
-            @chapter,
-            @verse
+      # Step 1: Apply generic metadata inference (replaces hard-coded logic)
+      # This works for all sources, not just LXX
+      result = apply_generic_metadata_inference(result)
+
+      # Step 2: Deterministic local validation (no AI self-validation)
+      pipeline = Verifaith::TextContentValidationPipeline.new(
+        text_content: @text_content,
+        source_text: result[:source_text],
+        word_for_word: result[:word_for_word],
+        lsv_literal_reconstruction: result[:lsv_literal_reconstruction],
+        genre_code: result[:genre_code],
+        addressed_party_code: result[:addressed_party_code],
+        responsible_party_code: result[:responsible_party_code]
+      )
+
+      validation = pipeline.run
+
+      if validation.ok?
+        # Step 3: Basic structural checks before saving
+        validation_result = validate_ai_response(result)
+
+        if validation_result[:valid]
+          update_text_content(result)
+          log_population(result)
+
+          # Mark as success; canonical fidelity information is stored in validation meta/flags
+          @text_content.update_columns(
+            population_status: 'success',
+            population_error_message: nil
           )
-          
-          # Verify source text against canonical (verify method now handles missing canonical gracefully)
-          result[:source_text] = fidelity_validator.verify(result[:source_text])
-          
-          # Check if canonical exists to determine if we verified or skipped
-          if fidelity_validator.canonical_exists?
-            Rails.logger.info "Swete fidelity verified for #{@text_content.unit_key}"
-          else
-            Rails.logger.warn "Canonical text not found for #{@text_content.unit_key} - fidelity check skipped (will be added later)"
-          end
-        rescue SweteFidelityError => e
-          # Catch fidelity mismatches and contamination errors
-          error_type = e.respond_to?(:error_type) ? e.error_type : 'FIDELITY_MISMATCH'
-          error_msg = if error_type == 'CONTAMINATION' || error_type == 'THEODOTION_BYZANTINE_EXPANSION'
-            "Swete contamination detected: #{e.message.split("\n").first}"
-          else
-            "Swete fidelity mismatch: #{e.message.split("\n").first}"
-          end
-          
-          Rails.logger.error "Swete validation error for #{@text_content.unit_key}: #{error_msg}"
-          Rails.logger.error "Error type: #{error_type}"
-          
+
+          {
+            status: 'success',
+            data: result.merge(
+              validation_flags: validation.flags,
+              validation_warnings: validation.warnings,
+              validation_meta: validation.meta
+            ),
+            overwrote: force && @text_content.content_populated?
+          }
+        else
+          # Structural validation failed (missing core fields, etc.)
+          error_msg = validation_result[:error] || 'AI response validation failed'
           @text_content.update_columns(
             population_status: 'error',
             population_error_message: error_msg.truncate(1000)
           )
-          return {
+          Rails.logger.error "AI response validation failed: #{error_msg}"
+          {
             status: 'error',
             error: error_msg,
-            is_accurate: false,
-            error_type: error_type
+            flags: validation.flags,
+            warnings: validation.warnings,
+            meta: validation.meta
           }
         end
-      end
-      
-      # Step 2: Apply generic metadata inference (replaces hard-coded logic)
-      # This works for all sources, not just LXX
-      result = apply_generic_metadata_inference(result)
-      
-      # Step 3: Validate response before saving
-      validation_result = validate_ai_response(result)
-      
-      if validation_result[:valid]
-        update_text_content(result)
-        log_population(result)
-        
-        # Mark as success
-        @text_content.update_columns(
-          population_status: 'success',
-          population_error_message: nil
-        )
-        
-        { status: 'success', data: result, overwrote: force && @text_content.content_populated? }
       else
-        # Mark as error with validation message
-        error_msg = validation_result[:error] || 'AI response validation failed'
+        # Deterministic validators failed – treat as needs_repair if canonical mismatch, else error
+        flags = validation.flags
+        canonical_status = validation.meta[:canonical_fidelity]
+
+        error_msg =
+          if flags.include?('CANONICAL_MISMATCH')
+            'Canonical fidelity mismatch detected during population'
+          elsif flags.include?('SWETE_CONTAMINATION')
+            'Swete contamination detected during population'
+          else
+            validation.errors.join('; ').presence || 'Deterministic validation failed'
+          end
+
+        new_status =
+          if canonical_status == 'MISMATCH'
+            'needs_repair'
+          else
+            'error'
+          end
+
         @text_content.update_columns(
-          population_status: 'error',
+          population_status: new_status,
           population_error_message: error_msg.truncate(1000)
         )
-        Rails.logger.error "AI response validation failed: #{error_msg}"
-        { status: 'error', error: error_msg }
+
+        Rails.logger.error "Deterministic validation failed for #{@text_content.unit_key}: #{error_msg}"
+
+        {
+          status: new_status,
+          error: error_msg,
+          flags: flags,
+          warnings: validation.warnings,
+          meta: validation.meta,
+          is_accurate: false
+        }
       end
     elsif result[:status] == 'unavailable'
       # Mark as unavailable
