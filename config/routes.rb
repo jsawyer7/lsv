@@ -19,10 +19,19 @@ Rails.application.routes.draw do
   # Onboarding routes
   patch 'onboarding', to: 'onboarding#update'
 
+  # Terms and consent routes
+  post 'accept_terms', to: 'users#accept_terms'
+
   resources :claims, only: [:new, :create, :show, :index, :edit, :update, :destroy]
 
   resources :claims do
     resources :challenges, only: [:create, :show]
+    resources :likes, only: [:create, :destroy]
+    resources :shares, only: [:create]
+    resources :comments, only: [:create, :destroy] do
+      resources :likes, only: [:create, :destroy]
+      resources :shares, only: [:create]
+    end
     post :validate_claim, on: :collection
     post :validate_evidence, on: :collection
     post :generate_ai_evidence, on: :collection
@@ -51,6 +60,13 @@ Rails.application.routes.draw do
   get '/sources', to: 'static#sources'
   get 'feeds', to: 'feeds#index'
   get 'feeds/infinite', to: 'feeds#infinite'
+  get 'shared', to: 'shares#index', as: :shared_feed
+  get 'shared/infinite', to: 'shares#infinite', as: :shared_feed_infinite
+  post 'shares/:id/reshare', to: 'shares#reshare', as: :reshare_share
+  post 'claims/:claim_id/reshare', to: 'shares#reshare', as: :reshare_claim
+  post 'theories/:theory_id/reshare', to: 'shares#reshare', as: :reshare_theory
+  post 'claims/:claim_id/comments/:comment_id/reshare', to: 'shares#reshare', as: :reshare_claim_comment
+  post 'theories/:theory_id/comments/:comment_id/reshare', to: 'shares#reshare', as: :reshare_theory_comment
   get 'contact', to: 'static#contact'
   post 'contact', to: 'static#send_contact_message'
 
@@ -67,14 +83,21 @@ Rails.application.routes.draw do
   get '/users/:id/profile', to: 'users#profile', as: :user_profile
   get '/users/:id/profile/infinite', to: 'users#profile_infinite', as: :user_profile_infinite
 
-  resources :theories, only: [:index, :new, :create, :edit, :update, :destroy] do
+  # Specific theory routes must come before resources to avoid route conflicts
+  get 'theories/public', to: 'theories#public_theories', as: :public_theories
+  get 'theories/public_infinite', to: 'theories#public_infinite', as: :public_infinite_theories
+
+  resources :theories, only: [:index, :new, :create, :show, :edit, :update, :destroy] do
+    resources :likes, only: [:create, :destroy]
+    resources :shares, only: [:create]
+    resources :comments, only: [:create, :destroy] do
+      resources :likes, only: [:create, :destroy]
+      resources :shares, only: [:create]
+    end
     collection do
       get :infinite
     end
   end
-
-  get 'theories/public', to: 'theories#public_theories', as: :public_theories
-  get 'theories/public_infinite', to: 'theories#public_infinite', as: :public_infinite_theories
 
   resource :settings, only: [:edit, :update] do
     get :notifications, on: :collection
@@ -113,28 +136,28 @@ Rails.application.routes.draw do
   # Note: Redis connection is configured in config/initializers/sidekiq.rb
   require 'sidekiq/web'
   require 'sidekiq/cron/web' if defined?(Sidekiq::Cron)
-  
+
   # Protect Sidekiq web UI with basic auth in production
   if Rails.env.production?
     Sidekiq::Web.use Rack::Auth::Basic do |username, password|
       expected_username = ENV.fetch('SIDEKIQ_USERNAME', 'admin')
       expected_password = ENV.fetch('SIDEKIQ_PASSWORD', 'password')
-      
+
       # Use secure_compare for constant-time comparison to prevent timing attacks
       username_match = ActiveSupport::SecurityUtils.secure_compare(
         username.to_s,
         expected_username
       )
-      
+
       password_match = ActiveSupport::SecurityUtils.secure_compare(
         password.to_s,
         expected_password
       )
-      
+
       # Return boolean result (both must match)
       username_match && password_match
     end
   end
-  
+
   mount Sidekiq::Web => '/sidekiq'
 end

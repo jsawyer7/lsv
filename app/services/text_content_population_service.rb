@@ -42,33 +42,102 @@ class TextContentPopulationService
     # Set status to processing
     @text_content.update_column(:population_status, 'processing')
 
-    # Fetch exact source text and word-for-word translation
+    # Fetch reconstructed source text and word-for-word translation
     result = fetch_source_content
 
     if result[:status] == 'success'
-      # Validate response before saving
-      validation_result = validate_ai_response(result)
-      
-      if validation_result[:valid]
-        update_text_content(result)
-        log_population(result)
-        
-        # Mark as success
-        @text_content.update_columns(
-          population_status: 'success',
-          population_error_message: nil
-        )
-        
-        { status: 'success', data: result, overwrote: force && @text_content.content_populated? }
+      # Step 1: Apply generic metadata inference (replaces hard-coded logic)
+      # This works for all sources, not just LXX
+      result = apply_generic_metadata_inference(result)
+
+      # Step 2: Deterministic local validation (no AI self-validation)
+      pipeline = Verifaith::TextContentValidationPipeline.new(
+        text_content: @text_content,
+        source_text: result[:source_text],
+        word_for_word: result[:word_for_word],
+        lsv_literal_reconstruction: result[:lsv_literal_reconstruction],
+        genre_code: result[:genre_code],
+        addressed_party_code: result[:addressed_party_code],
+        responsible_party_code: result[:responsible_party_code]
+      )
+
+      validation = pipeline.run
+
+      if validation.ok?
+        # Step 3: Basic structural checks before saving
+        validation_result = validate_ai_response(result)
+
+        if validation_result[:valid]
+          update_text_content(result)
+          log_population(result)
+
+          # Mark as success; canonical fidelity information is stored in validation meta/flags
+          @text_content.update_columns(
+            population_status: 'success',
+            population_error_message: nil
+          )
+
+          {
+            status: 'success',
+            data: result.merge(
+              validation_flags: validation.flags,
+              validation_warnings: validation.warnings,
+              validation_meta: validation.meta
+            ),
+            overwrote: force && @text_content.content_populated?
+          }
+        else
+          # Structural validation failed (missing core fields, etc.)
+          error_msg = validation_result[:error] || 'AI response validation failed'
+          @text_content.update_columns(
+            population_status: 'error',
+            population_error_message: error_msg.truncate(1000)
+          )
+          Rails.logger.error "AI response validation failed: #{error_msg}"
+          {
+            status: 'error',
+            error: error_msg,
+            flags: validation.flags,
+            warnings: validation.warnings,
+            meta: validation.meta
+          }
+        end
       else
-        # Mark as error with validation message
-        error_msg = validation_result[:error] || 'AI response validation failed'
+        # Deterministic validators failed – treat as needs_repair if canonical mismatch, else error
+        flags = validation.flags
+        canonical_status = validation.meta[:canonical_fidelity]
+
+        error_msg =
+          if flags.include?('CANONICAL_MISMATCH')
+            'Canonical fidelity mismatch detected during population'
+          elsif flags.include?('SWETE_CONTAMINATION')
+            'Swete contamination detected during population'
+          else
+            validation.errors.join('; ').presence || 'Deterministic validation failed'
+          end
+
+        new_status =
+          if canonical_status == 'MISMATCH'
+            'needs_repair'
+          else
+            'error'
+          end
+
         @text_content.update_columns(
-          population_status: 'error',
+          population_status: new_status,
           population_error_message: error_msg.truncate(1000)
         )
-        Rails.logger.error "AI response validation failed: #{error_msg}"
-        { status: 'error', error: error_msg }
+
+        Rails.logger.error "Deterministic validation failed for #{@text_content.unit_key}: #{error_msg}"
+
+        {
+          status: new_status,
+          error: error_msg,
+          flags: flags,
+          warnings: validation.warnings,
+          meta: validation.meta,
+          is_accurate: false
+        }
       end
     elsif result[:status] == 'unavailable'
       # Mark as unavailable
@@ -379,15 +448,34 @@ class TextContentPopulationService
       • CHURCH          – Specific church/assembly as speaker.
       • NOT_SPECIFIED   – Narrator / no explicit speaker.
 
-      Detection:
-      - Look for speech verbs ("said", "says", "spoke", "answered", etc.).
-      - The grammatical subject of the speech verb is the responsible party.
-      - If subject is a pronoun ("he said", "they said"), use nearest clear antecedent.
-      - If there is no speech verb and the verse is narrator description → NOT_SPECIFIED.
+      Detection (ORDER OF OPERATIONS - CRITICAL):
+      
+      1. SPEECH SEGMENT DETECTION (First Priority):
+         - Look for speech intro patterns: "λέγει κύριος", "τάδε λέγει κύριος", "εἶπεν ὁ θεός", 
+           "εἶπεν Δαυίδ", "εἶπεν Ἰώβ", etc.
+         - When a speech intro is found, start a speech block with that speaker.
+         - Continue the speech block until another explicit speaker intro appears or a narrative break occurs.
+         - For verses inside a speech block, use the block's speaker as responsible_party.
+         - DO NOT apply personified speech rules to verses inside speech blocks.
+      
+      2. EXPLICIT IDENTIFIERS (Second Priority):
+         - Look for speech verbs ("said", "says", "spoke", "answered", etc.) in the current verse.
+         - The grammatical subject of the speech verb is the responsible party.
+         - If subject is a pronoun ("he said", "they said"), use nearest clear antecedent.
+      
+      3. PERSONIFIED SPEECH FALLBACK (Third Priority - Only if not in speech segment):
+         - If verse is NOT in a known speech segment AND contains first-person markers (ἐγώ, μου, με, etc.)
+           AND personified entities (σοφία/Wisdom, ἀμπελών/vineyard, ἀγαπητός/beloved, Σιών/Zion):
+         - Set responsible_party_code = NOT_SPECIFIED
+         - Set addressed_party_code = NOT_SPECIFIED
+         - This handles Wisdom in Proverbs 8, vineyard parables, etc.
+      
+      4. DEFAULT (Last Resort):
+         - If there is no speech verb and the verse is narrator description → NOT_SPECIFIED.
 
       CONTINUITY:
-      - If a single speaker continues across verses, maintain the same responsible_party_code
-        until a new speaker appears.
+      - If a single speaker continues across verses (within a speech segment), maintain the same responsible_party_code
+        until a new speaker appears or the speech segment ends.
 
       NOT_SPECIFIED:
       - Use NOT_SPECIFIED when the text does not clearly indicate audience or speaker
@@ -624,10 +712,71 @@ class TextContentPopulationService
   end
 
   # ===========================
+  # DIVINE SPEECH DETECTION (LXX)
+  # ===========================
+
+  # Known divine speech verses in LXX (whitelist for bulletproof detection)
+  def swete_source?
+    @source.code == 'LXX_SWETE' || 
+    @source.name.include?('Swete') || 
+    @source.code&.include?('SWETE')
+  end
+
+  def lxx_source?
+    swete_source? ||
+    @source.name.include?('Septuagint') ||
+    @source.code&.include?('LXX')
+  end
+
+  # Apply generic metadata inference (replaces hard-coded book/verse logic)
+  # This works for all sources and all verses without special cases
+  def apply_generic_metadata_inference(result)
+    greek_text = result[:source_text] || @text_content.content || ''
+    return result if greek_text.blank?
+
+    # Get existing metadata from result or text_content
+    existing_responsible_code = result[:responsible_party_code] || @text_content.responsible_party_code || 'NOT_SPECIFIED'
+    existing_addressed_code = result[:addressed_party_code] || @text_content.addressed_party_code || 'NOT_SPECIFIED'
+    existing_responsible_custom = result[:responsible_party_custom_name] || @text_content.responsible_party_custom_name
+
+    # Use generic inference service
+    inference_service = GenericMetadataInferenceService.new(
+      greek_text,
+      genre_code: result[:genre_code],
+      existing_responsible_code: existing_responsible_code,
+      existing_addressed_code: existing_addressed_code,
+      existing_responsible_custom: existing_responsible_custom
+    )
+
+    inferred_metadata = inference_service.infer_metadata
+
+    # Apply inferred metadata to result
+    result[:responsible_party_code] = inferred_metadata[:responsible_party_code]
+    result[:responsible_party_custom_name] = inferred_metadata[:responsible_party_custom_name]
+    result[:addressed_party_code] = inferred_metadata[:addressed_party_code]
+
+    # Log if metadata changed
+    if inferred_metadata[:responsible_party_code] != existing_responsible_code ||
+       inferred_metadata[:addressed_party_code] != existing_addressed_code
+      Rails.logger.info "Generic metadata inference for #{@text_content.unit_key}: " \
+        "responsible=#{inferred_metadata[:responsible_party_code]}(#{inferred_metadata[:responsible_party_custom_name]}), " \
+        "addressed=#{inferred_metadata[:addressed_party_code]}"
+    end
+
+    result
+  end
+
+  # ===========================
   # SAVE RESULTS
   # ===========================
 
   def update_text_content(result)
+    # STEP 1: Validate word-for-word layer for Swete sources
+    # Ensure glosses don't invent words that aren't in the source text
+    if swete_source? && result[:word_for_word].present?
+      validate_word_for_word_layer!(result[:source_text], result[:word_for_word])
+    end
+
     word_for_word_data = {
       tokens: result[:word_for_word] || [],
       lsv_notes: result[:lsv_notes] || {}
@@ -655,6 +804,45 @@ class TextContentPopulationService
     end
 
     @text_content.update!(update_params)
+  end
+
+  # Validate word-for-word layer: ensure all Greek tokens exist in source text
+  # This prevents glosses from inventing words that aren't in Swete
+  def validate_word_for_word_layer!(source_text, word_for_word_tokens)
+    return unless source_text.present? && word_for_word_tokens.is_a?(Array)
+
+    source_text_normalized = source_text.downcase.gsub(/[·,.;:!?«»"ʼ'']/, '')
+    missing_tokens = []
+
+    word_for_word_tokens.each do |token_data|
+      next unless token_data.is_a?(Hash)
+      
+      greek_token = token_data['token'] || token_data[:token]
+      next unless greek_token.present?
+
+      # Normalize token for comparison (remove punctuation, lowercase)
+      token_normalized = greek_token.downcase.gsub(/[·,.;:!?«»"ʼ'']/, '')
+      
+      # Check if token exists in source text
+      unless source_text_normalized.include?(token_normalized)
+        missing_tokens << greek_token
+      end
+    end
+
+    if missing_tokens.any?
+      error_msg = "Word-for-word layer contains tokens not in source text: #{missing_tokens.join(', ')}"
+      Rails.logger.error "Swete word-for-word validation failed for #{@text_content.unit_key}: #{error_msg}"
+      raise SweteFidelityError.new(
+        error_msg,
+        error_type: 'WORD_FOR_WORD_INVALID',
+        details: {
+          book: @book.code,
+          chapter: @chapter,
+          verse: @verse,
+          missing_tokens: missing_tokens
+        }
+      )
+    end
   end
 
   def log_population(result)

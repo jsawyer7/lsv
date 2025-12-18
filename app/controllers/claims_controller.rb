@@ -339,7 +339,9 @@ class ClaimsController < ApplicationController
   private
 
   def set_claim
-    @claim = Claim.find(params[:id])
+    @claim = Claim.includes(:likes).find(params[:id])
+    # Filter comments to only show those visible to current user (peer network only)
+    @visible_comments = @claim.comments.visible_to(current_user).includes(:user, :likes)
   end
 
   def store_claim_result(claim)

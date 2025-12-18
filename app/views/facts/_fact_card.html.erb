@@ -11,7 +11,47 @@
   </div>
   <div class="feed-card-content"><%= fact.content %></div>
   <div class="feed-card-footer">
+      <% if user_signed_in? %>
+      <% user_like = fact.likes.find_by(user: current_user) %>
+      <div class="feed-card-actions">
+        <% if user_like %>
+          <%= link_to claim_like_path(fact, user_like), method: :delete, remote: true, class: 'feed-like liked', data: { claim_id: fact.id } do %>
+            <i class="fas fa-thumbs-up"></i> <span class="like-count"><%= fact.likes.count %></span>
+          <% end %>
+        <% else %>
+          <%= link_to claim_likes_path(fact), method: :post, remote: true, class: 'feed-like', data: { claim_id: fact.id } do %>
+            <i class="fas fa-thumbs-up"></i> <span class="like-count"><%= fact.likes.count %></span>
+          <% end %>
+        <% end %>
+        <span class="feed-comment-count">
+          <i class="fas fa-comment"></i> <span class="comment-count"><%= fact.comments.visible_to(current_user).count %></span>
+        </span>
+        <button class="feed-share-btn" data-shareable-type="claim" data-shareable-id="<%= fact.id %>" data-toggle="modal" data-target="#shareModal">
+          <i class="fas fa-share"></i> Share
+        </button>
+      </div>
+    <% else %>
+      <div class="feed-card-actions">
+        <span class="feed-like"><i class="fas fa-thumbs-up"></i> <span class="like-count"><%= fact.likes.count %></span></span>
+        <span class="feed-comment-count">
+          <i class="fas fa-comment"></i> <span class="comment-count"><%= fact.comments.visible_to(current_user).count %></span>
+        </span>
+      </div>
+    <% end %>
     <span class="feed-card-date"><%= fact.created_at.strftime('%d %b, %Y') %></span>
     <%= link_to 'View Details', claim_path(fact), class: 'feed-card-link' %>
+  </div>
+  
+  <div class="feed-card-comments" data-claim-id="<%= fact.id %>">
+    <div class="comments-list-mini">
+      <% fact.comments.visible_to(current_user).recent.each do |comment| %>
+        <%= render 'comments/comment', comment: comment %>
+      <% end %>
+    </div>
+    <% if user_signed_in? %>
+      <div class="comment-form-mini">
+        <%= render 'comments/form', commentable: fact %>
+      </div>
+    <% end %>
   </div>
 </div> 

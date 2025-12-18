@@ -10,13 +10,16 @@ class PeersController < ApplicationController
     when 'following'
       @following = current_user.following.page(params[:page]).per(8)
     else
-      # Only exclude users with an accepted peer relationship
-      accepted_peer_ids = Peer.where(user_id: current_user.id, status: 'accepted').pluck(:peer_id) +
-                          Peer.where(peer_id: current_user.id, status: 'accepted').pluck(:user_id)
-      @suggested_users = User.where.not(id: current_user.id)
-                            .where.not(id: accepted_peer_ids)
-                            .order('RANDOM()')
-                            .page(params[:page]).per(8)
+      # Use recommendation service for intelligent peer suggestions
+      recommendation_service = PeerRecommendationService.new(current_user)
+      recommendations = recommendation_service.recommendations(limit: 50)
+
+      # Extract users from recommendations
+      recommended_users = recommendations.map { |r| r[:user] }
+      @recommendation_reasons = recommendations.index_by { |r| r[:user].id }
+
+      # Paginate the recommendations
+      @suggested_users = Kaminari.paginate_array(recommended_users).page(params[:page]).per(8)
     end
     @my_peers = current_user.peers.limit(5)
     @my_peers_count = current_user.peers.count

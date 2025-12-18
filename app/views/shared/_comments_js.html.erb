@@ -1,0 +1,111 @@
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Auto-resize textarea
+  function autoResizeTextarea(textarea) {
+    textarea.style.height = 'auto';
+    textarea.style.height = Math.min(textarea.scrollHeight, 200) + 'px';
+  }
+  
+  // Initialize auto-resize for all comment textareas
+  document.querySelectorAll('.comment-textarea').forEach(textarea => {
+    textarea.addEventListener('input', function() {
+      autoResizeTextarea(this);
+    });
+    // Set initial height
+    if (textarea.value) {
+      autoResizeTextarea(textarea);
+    }
+  });
+  
+  // Handle comment form submission
+  document.body.addEventListener('ajax:success', function(event) {
+    const [data, status, xhr] = event.detail;
+    const form = event.target.closest('.comment-form');
+    
+    if (form && data.status === 'success' && data.comment) {
+      // Clear and reset textarea
+      const textarea = form.querySelector('.comment-textarea');
+      if (textarea) {
+        textarea.value = '';
+        textarea.style.height = '36px';
+      }
+      
+      // Find the comments list - could be in detail page or card
+      const commentsList = document.getElementById('comments-list') || form.closest('.feed-card-comments')?.querySelector('.comments-list-mini');
+      
+      if (commentsList && data.comment) {
+        const temp = document.createElement('div');
+        temp.innerHTML = data.comment;
+        const commentElement = temp.firstElementChild;
+        
+        // Add mini class if in card
+        if (form.closest('.feed-card-comments')) {
+          commentElement.classList.add('comment-item-mini');
+        }
+        
+        commentsList.insertBefore(commentElement, commentsList.firstChild);
+        
+        // Update comment count in card footer
+        const feedCard = form.closest('.feed-card');
+        if (feedCard) {
+          const commentCountSpan = feedCard.querySelector('.comment-count');
+          if (commentCountSpan) {
+            const currentCount = parseInt(commentCountSpan.textContent) || 0;
+            commentCountSpan.textContent = currentCount + 1;
+          }
+        }
+        
+        // Update comment count in detail page
+        const commentCountLabel = document.querySelector('.claim-details-label');
+        if (commentCountLabel && commentCountLabel.textContent.includes('Comments')) {
+          const currentCount = parseInt(commentCountLabel.textContent.match(/\d+/)?.[0] || '0');
+          commentCountLabel.textContent = commentCountLabel.textContent.replace(/\(\d+\)/, `(${currentCount + 1})`);
+        }
+      }
+    }
+  });
+  
+  // Handle comment deletion
+  document.body.addEventListener('ajax:success', function(event) {
+    const [data, status, xhr] = event.detail;
+    const deleteLink = event.target.closest('.comment-delete');
+    
+    if (deleteLink && data.status === 'success') {
+      const commentItem = deleteLink.closest('.comment-item');
+      if (commentItem) {
+        commentItem.remove();
+        
+        // Update comment count in card footer
+        const feedCard = deleteLink.closest('.feed-card');
+        if (feedCard) {
+          const commentCountSpan = feedCard.querySelector('.comment-count');
+          if (commentCountSpan) {
+            const currentCount = parseInt(commentCountSpan.textContent) || 0;
+            const newCount = Math.max(0, currentCount - 1);
+            commentCountSpan.textContent = newCount;
+          }
+        }
+        
+        // Update comment count in detail page
+        const commentCountLabel = document.querySelector('.claim-details-label');
+        if (commentCountLabel && commentCountLabel.textContent.includes('Comments')) {
+          const currentCount = parseInt(commentCountLabel.textContent.match(/\d+/)?.[0] || '0');
+          const newCount = Math.max(0, currentCount - 1);
+          commentCountLabel.textContent = commentCountLabel.textContent.replace(/\(\d+\)/, `(${newCount})`);
+        }
+      }
+    }
+  });
+  
+  // Handle dynamically added comment forms
+  document.body.addEventListener('DOMNodeInserted', function(event) {
+    if (event.target.classList && event.target.classList.contains('comment-textarea')) {
+      const textarea = event.target;
+      textarea.addEventListener('input', function() {
+        autoResizeTextarea(this);
+      });
+    }
+  });
+});
+</script>
+

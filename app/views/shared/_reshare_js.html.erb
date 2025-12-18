@@ -1,0 +1,100 @@
+<script>
+(function() {
+  // Handle reshare button clicks globally
+  document.addEventListener('click', function(e) {
+    const reshareBtn = e.target.closest('.feed-reshare-btn, .shared-reshare-btn');
+    if (reshareBtn) {
+      e.preventDefault();
+      
+      const shareId = reshareBtn.getAttribute('data-share-id');
+      const claimId = reshareBtn.getAttribute('data-claim-id');
+      const theoryId = reshareBtn.getAttribute('data-theory-id');
+      
+      // Disable button to prevent double-clicks
+      reshareBtn.disabled = true;
+      const originalText = reshareBtn.innerHTML;
+      reshareBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Resharing...';
+      
+      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+      let reshareUrl = '';
+      
+      if (shareId) {
+        // Resharing from shared feed
+        reshareUrl = `/shares/${shareId}/reshare`;
+      } else if (claimId) {
+        // Resharing directly from a claim
+        reshareUrl = `/claims/${claimId}/reshare`;
+      } else if (theoryId) {
+        // Resharing directly from a theory
+        reshareUrl = `/theories/${theoryId}/reshare`;
+      } else {
+        reshareBtn.disabled = false;
+        reshareBtn.innerHTML = originalText;
+        return;
+      }
+      
+      fetch(reshareUrl, {
+        method: 'POST',
+        headers: {
+          'X-CSRF-Token': csrfToken,
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({})
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.status === 'success') {
+          showFlashMessage(data.message || 'Reshared to your feed!', 'notice');
+          // Update button to show success state
+          reshareBtn.innerHTML = '<i class="fas fa-check"></i> Reshared';
+          reshareBtn.style.color = '#10b981';
+          // Optionally redirect to feeds after a delay
+          if (shareId) {
+            setTimeout(() => {
+              window.location.href = '/feeds';
+            }, 1000);
+          }
+        } else {
+          showFlashMessage(data.message || 'Failed to reshare. Please try again.', 'alert');
+          reshareBtn.disabled = false;
+          reshareBtn.innerHTML = originalText;
+        }
+      })
+      .catch(error => {
+        console.error('Error resharing:', error);
+        showFlashMessage('An error occurred. Please try again.', 'alert');
+        reshareBtn.disabled = false;
+        reshareBtn.innerHTML = originalText;
+      });
+    }
+  });
+
+  // Function to show flash messages
+  function showFlashMessage(message, type) {
+    let flashContainer = document.querySelector('.flash-container');
+    if (!flashContainer) {
+      flashContainer = document.createElement('div');
+      flashContainer.className = 'flash-container';
+      document.body.appendChild(flashContainer);
+    }
+
+    const flashMessage = document.createElement('div');
+    flashMessage.className = `flash-message ${type}`;
+    flashMessage.textContent = message;
+
+    flashContainer.appendChild(flashMessage);
+
+    setTimeout(() => {
+      flashMessage.style.animation = 'slideOut 0.3s ease-out';
+      setTimeout(() => {
+        flashMessage.remove();
+        if (flashContainer.children.length === 0) {
+          flashContainer.remove();
+        }
+      }, 300);
+    }, 3000);
+  }
+})();
+</script>
+

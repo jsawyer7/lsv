@@ -1,0 +1,53 @@
+<!-- Share Modal -->
+<div class="modal fade" id="shareModal" tabindex="-1" role="dialog" aria-labelledby="shareModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content share-modal-content">
+      <div class="modal-header share-modal-header">
+        <h5 class="modal-title" id="shareModalLabel">Share with Peers</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body share-modal-body">
+        <%= form_with url: '#', method: :post, id: 'shareForm', class: 'share-form' do |f| %>
+          <div class="share-message-section">
+            <%= f.label :message, "Add a message (optional)", class: 'share-message-label' %>
+            <%= f.text_area :message, placeholder: 'Write a message...', class: 'share-message-textarea', rows: 3 %>
+          </div>
+          
+          <div class="share-peers-section">
+            <label class="share-peers-label">Select Peers</label>
+            <div class="share-peers-list" id="sharePeersList">
+              <% if user_signed_in? %>
+                <% all_peers = (current_user.peers + current_user.peer_users).uniq %>
+                <% if all_peers.any? %>
+                  <% all_peers.each do |peer| %>
+                    <div class="share-peer-item">
+                      <label class="share-peer-checkbox-label">
+                        <input type="checkbox" name="recipient_ids[]" value="<%= peer.id %>" class="share-peer-checkbox">
+                        <div class="share-peer-info">
+                          <img src="<%= peer.avatar_url.presence || asset_path('default-avatar.png') %>" class="share-peer-avatar" alt="<%= peer.full_name.presence || peer.email %>" />
+                          <span class="share-peer-name"><%= peer.full_name.presence || peer.email %></span>
+                        </div>
+                      </label>
+                    </div>
+                  <% end %>
+                <% else %>
+                  <div class="share-no-peers">
+                    <p>You don't have any peers yet. <a href="<%= peers_path %>">Add peers</a> to share content with them.</p>
+                  </div>
+                <% end %>
+              <% end %>
+            </div>
+          </div>
+          
+          <div class="share-modal-actions">
+            <button type="button" class="btn btn-secondary share-cancel-btn" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary share-submit-btn" id="shareSubmitBtn">Share</button>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>
+

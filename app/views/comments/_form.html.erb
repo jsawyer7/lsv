@@ -1,0 +1,18 @@
+<% if user_signed_in? %>
+  <div class="comment-form-container">
+    <%= form_with model: [commentable, Comment.new], remote: true, class: 'comment-form' do |f| %>
+      <div class="comment-form-wrapper">
+        <div class="comment-form-avatar-container">
+          <img src="<%= current_user&.avatar_url.presence || asset_path('default-avatar.png') %>" class="comment-form-avatar" alt="<%= current_user.full_name.presence || current_user.email %>" />
+        </div>
+        <div class="comment-form-input-wrapper">
+          <%= f.text_area :content, placeholder: 'Write a comment...', class: 'comment-textarea', rows: 1, required: true %>
+          <div class="comment-form-actions">
+            <%= f.submit 'Post Comment', class: 'comment-submit-btn' %>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+<% end %>
+

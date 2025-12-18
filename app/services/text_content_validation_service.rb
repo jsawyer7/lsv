@@ -3,6 +3,32 @@ require 'json'
 require 'uri'
 
 class TextContentValidationService
+  # Protected particles that must NEVER be removed from Swete 1894 text
+  SWETE_PROTECTED_PARTICLES = %w[
+    καὶ δέ τέ γάρ οὖν μέν ἀλλά ἄρα τοιγαρουν
+  ].freeze
+
+  # Known verse boundary differences between Swete 1894 and Hebrew/English numbering
+  # Format: { book_code => { swete_chapter => { swete_verse => { hebrew_chapter: X, hebrew_verse: "Y-Z" } } } }
+  SWETE_VERSE_BOUNDARY_DIFFERENCES = {
+    'ISA' => {
+      9 => {
+        6 => { hebrew_chapter: 9, hebrew_verse: '5-6', note: 'Swete treats as one verse (9:6), Hebrew/English splits into 9:5 and 9:6' }
+      },
+      38 => {
+        9 => { hebrew_chapter: 38, hebrew_verse: '9-20', note: 'Swete treats as separate "writing of Hezekiah"' }
+      }
+    },
+    'HOS' => {
+      # Minor differences in Hosea 1-3
+      # Add specific entries as discovered
+    },
+    'PSA' => {
+      # Swete follows LXX psalm numbering (differs in ~10 places from MT)
+      # Add specific entries as discovered
+    }
+  }.freeze
+
   def initialize(text_content)
     @text_content = text_content
     @source = text_content.source
@@ -14,6 +40,17 @@ class TextContentValidationService
   def validate_content
     Rails.logger.info "Validating content for #{@text_content.unit_key}"
     
+    # CRITICAL: Check for empty/missing content in Swete source
+    if swete_source? && @text_content.content.blank?
+      Rails.logger.error "SWETE VALIDATION ERROR: #{@text_content.unit_key} is completely blank/empty. Swete 1894 should have text for this verse."
+      return {
+        status: 'error',
+        error: 'Swete 1894 source has text for this verse but record is empty - requires re-processing',
+        is_accurate: false,
+        validation_flags: ['SWETE_MISSING_CONTENT']
+      }
+    end
+
     unless @text_content.content.present?
       return {
         status: 'error',
@@ -22,16 +59,61 @@ class TextContentValidationService
       }
     end
 
-    result = perform_validation
-    
-    if result[:status] == 'success'
-      update_validation_fields(result)
-      log_validation(result)
-      result
-    else
-      Rails.logger.error "Validation failed: #{result[:error]}"
-      result
-    end
+    # Deterministic validation pipeline (no AI self-validation)
+    pipeline = Verifaith::TextContentValidationPipeline.new(
+      text_content: @text_content,
+      source_text: @text_content.content,
+      word_for_word: @text_content.word_for_word_array,
+      lsv_literal_reconstruction: @text_content.lsv_literal_reconstruction,
+      genre_code: @text_content.genre_code,
+      addressed_party_code: @text_content.addressed_party_code,
+      responsible_party_code: @text_content.responsible_party_code
+    )
+
+    validation = pipeline.run
+
+    is_accurate = validation.ok?
+
+    # Derive coarse booleans from flags/meta
+    character_accurate = !validation.flags.include?('CANONICAL_MISMATCH') &&
+                         !validation.flags.include?('SWETE_CONTAMINATION')
+
+    lexical_coverage_complete = !validation.flags.include?('WFW_TOKEN_NOT_IN_SOURCE') &&
+                                !validation.flags.include?('WFW_BASE_GLOSS_MISSING')
+
+    lsv_translation_valid = !validation.flags.include?('LSV_MISSING') &&
+                            !validation.flags.include?('WFW_BASE_GLOSS_MISSING')
+
+    accuracy_percentage = is_accurate ? 100 : 0
+
+    # Map deterministic validation into the legacy result shape expected by callers
+    result = {
+      status: is_accurate ? 'success' : 'error',
+      is_accurate: is_accurate,
+      character_accurate: character_accurate,
+      lexical_coverage_complete: lexical_coverage_complete,
+      lsv_translation_valid: lsv_translation_valid,
+      accuracy_percentage: accuracy_percentage,
+      character_accuracy: {
+        'total_characters' => @text_content.content.length,
+        'matching_characters' => is_accurate ? @text_content.content.length : 0,
+        'discrepancies_count' => is_accurate ? 0 : 1
+      },
+      discrepancies: [],
+      lexical_coverage_issues: lexical_coverage_complete ? [] : (validation.meta[:missing_tokens] || []),
+      lsv_translation_issues: [],
+      lsv_rule_violations: [],
+      missing_required_fields: (validation.meta[:missing] || []).map { |field|
+        { 'field' => field, 'issue' => 'Missing or invalid' }
+      },
+      validation_flags: validation.flags,
+      validation_notes: (validation.warnings + validation.errors).join(' | '),
+      raw_response: nil
+    }
+
+    update_validation_fields(result)
+    log_validation(result)
+    result
   rescue => e
     Rails.logger.error "Error in TextContentValidationService: #{e.message}"
     Rails.logger.error e.backtrace.join("\n")
@@ -43,6 +125,27 @@ class TextContentValidationService
   end
 
   private
+
+  def swete_source?
+    @source.code == 'LXX_SWETE' || 
+    @source.name.include?('Swete') || 
+    @source.name.include?('Septuagint') ||
+    @source.code&.include?('LXX') ||
+    @source.code&.include?('SWETE')
+  end
+
+  def swete_verse_boundary_info
+    return nil unless swete_source?
+    
+    book_diff = SWETE_VERSE_BOUNDARY_DIFFERENCES[@book.code]
+    return nil unless book_diff
+    
+    chapter_diff = book_diff[@chapter]
+    return nil unless chapter_diff
+    
+    verse_diff = chapter_diff[@verse]
+    verse_diff
+  end
 
   def perform_validation
     max_retries = 3
@@ -166,6 +269,89 @@ class TextContentValidationService
     end
   end
 
+  def swete_validation_rules
+    return '' unless swete_source?
+    
+    <<~SWETE_RULES
+      ================================================================================
+      ⚠️ CRITICAL: SWETE 1894 SOURCE TEXT PROTECTION RULES ⚠️
+      ================================================================================
+      
+      The Septuagint (H.B. Swete 1894–1909) source text MUST be preserved EXACTLY as printed.
+      These rules are MANDATORY and override all other validation rules.
+      
+      1. SOURCE TEXT LAYER: NEVER ALTER SWETE'S PRINTED GREEK
+      - Do NOT normalize, re-punctuate, or "clean" anything
+      - Do NOT remove any particles (καὶ, δέ, τέ, γάρ, οὖν, μέν, ἀλλά, ἄρα, τοιγαρουν) 
+        even if they look "redundant" to modern eyes
+      - Do NOT change punctuation: commas ↔ ano-teleia (·) ↔ high dots ↔ semicolons
+      - Swete's punctuation is part of the 1894 edition and must be preserved 1:1
+      - Do NOT split or merge verses based on Hebrew/English numbering
+      - ALWAYS follow Swete's own printed verse boundaries exactly
+      
+      2. VERSE BOUNDARY RULE (CRITICAL)
+      - Use Swete's own verse divisions from the 1894 page scans/diplomatic text
+      - NEVER use Hebrew, English, Rahlfs, or Göttingen versification for the primary key
+      - Primary verse_id = Swete's native verse_id (e.g., Isaiah 9:6 is ONE verse in Swete)
+      - Optional: Store secondary mapping field for user display (e.g., "9:5-6" for Hebrew)
+      - Known divergence points (~40 in whole OT):
+        * Isaiah 9:5–6: Swete = one verse (9:6), Hebrew/English = two verses
+          → If validating Isaiah 9:6, expect ONE verse covering what Hebrew calls 9:5-6
+        * Isaiah 38:9–20: Swete treats as separate "writing of Hezekiah"
+        * Hosea 1–3: minor differences
+        * Psalms: Swete follows LXX psalm numbering (differs in ~10 places)
+      - VALIDATION: If verse boundary does not match Swete's native division → FAIL validation
+      - VALIDATION: If text appears split/merged based on Hebrew numbering → FAIL validation
+      
+      3. PARTICLE & CONJUNCTION PROTECTION RULE (CRITICAL)
+      Protected particles that MUST NEVER be removed when Swete prints them:
+      - καὶ (and) - MOST COMMON, frequently dropped incorrectly
+      - δέ (but, and)
+      - τέ (and, both)
+      - γάρ (for)
+      - οὖν (therefore, then)
+      - μέν (indeed, on the one hand)
+      - ἀλλά (but)
+      - ἄρα (then, therefore)
+      - τοιγαρουν (therefore)
+      
+      VALIDATION CHECK (MANDATORY):
+      - Extract ALL protected particles from the Swete 1894 source text
+      - For EACH protected particle found in source, verify it exists in provided text
+      - If ANY protected particle is missing where Swete source has it → FAIL validation immediately
+      - If source has "καὶ" and provided text is missing "καὶ" → TEXT_MISMATCH error + SWETE_PARTICLE_MISSING flag
+      - Example: Isaiah 9:6 - if Swete has "υἱὸς καὶ" and provided text has "υἱὸς" (missing καὶ) → FAIL
+      - This check takes precedence over all other validation - missing particles = automatic failure
+      
+      4. PUNCTUATION FIDELITY RULE (CRITICAL)
+      - Output punctuation MUST match Swete source punctuation character-for-character
+      - Do NOT change: commas ↔ ano-teleia (·) ↔ high dots ↔ semicolons ↔ periods
+      - Swete's punctuation marks are part of the 1894 edition and must be preserved exactly
+      - VALIDATION CHECK (MANDATORY):
+        * Compare punctuation character-by-character: commas, ano-teleia (·), high dots, semicolons, periods
+        * If ANY punctuation mark differs → FAIL validation immediately
+        * If output_punctuation != swete_source_punctuation → TEXT_MISMATCH error + SWETE_PUNCTUATION_MISMATCH flag
+        * Do NOT accept modernized punctuation (e.g., changing · to comma, or comma to period)
+        * Punctuation differences are character accuracy errors - they make the text NOT 100% accurate
+      
+      5. CHARACTER-BY-CHARACTER ACCURACY FOR SWETE
+      - Every character must match exactly: letters, diacritics, punctuation, spacing
+      - No normalization of accents, breathing marks, or punctuation
+      - No modernizing of orthography
+      - Preserve Swete's exact typography from 1894 edition
+      
+      ================================================================================
+      SWETE VALIDATION FLAGS
+      ================================================================================
+      Add these flags if Swete rules are violated:
+      - SWETE_PARTICLE_MISSING: A protected particle (καὶ, δέ, etc.) is missing
+      - SWETE_PUNCTUATION_MISMATCH: Punctuation does not match Swete 1894 exactly
+      - SWETE_VERSE_BOUNDARY_MISMATCH: Verse boundary does not match Swete's native division
+      - SWETE_TEXT_ALTERATION: Source text has been normalized, cleaned, or altered
+      
+    SWETE_RULES
+  end
+
   def system_prompt
     <<~PROMPT
       You are a strict textual validation expert. Your job is to verify:
@@ -173,6 +359,8 @@ class TextContentValidationService
       2. Complete lexical coverage in word-for-word translation
       3. LSV translation built strictly from word-for-word chart
       4. LSV rule compliance (no philosophical/theological imports)
+      
+      #{swete_validation_rules if swete_source?}
       
       ================================================================================
       ⚠️ CRITICAL: CAPITALIZATION VALIDATION REQUIREMENT ⚠️
@@ -349,6 +537,8 @@ class TextContentValidationService
       VALIDATION TASK
       ================================================================================
       
+      #{swete_source_validation_header if swete_source?}
+      
       ⚠️ CRITICAL CAPITALIZATION VALIDATION ⚠️
       The Westcott-Hort 1881 source uses SPECIFIC capitalization:
       - "ἐν" should be lowercase (even as first word), NOT "Ἐν" - John 1:1 starts with lowercase "ἐν"
@@ -433,7 +623,7 @@ class TextContentValidationService
             "issue": "description of missing field or invalid classification"
           }
         ],
-        "validation_flags": ["OK" | "TEXT_MISMATCH" | "MISSING_LEXICAL_MEANINGS" | "INVALID_MEANING" | "LSV_RULE_VIOLATION" | "MISSING_REQUIRED_FIELDS" | "INVALID_GENRE"],
+        "validation_flags": ["OK" | "TEXT_MISMATCH" | "MISSING_LEXICAL_MEANINGS" | "INVALID_MEANING" | "LSV_RULE_VIOLATION" | "MISSING_REQUIRED_FIELDS" | "INVALID_GENRE" | "SWETE_PARTICLE_MISSING" | "SWETE_PUNCTUATION_MISMATCH" | "SWETE_VERSE_BOUNDARY_MISMATCH" | "SWETE_TEXT_ALTERATION"],
         "validation_notes": "Detailed notes about the validation"
       }
       
@@ -515,6 +705,31 @@ class TextContentValidationService
       - If no speech verb → responsible_party = NOT_SPECIFIED
       - Example: John 1:38 (λέγει with Jesus as subject) → responsible_party = INDIVIDUAL (NOT NOT_SPECIFIED)
       
+      ⚠️ CRITICAL: DIVINE SPEECH DETECTION (LXX Sources):
+      For Septuagint (Swete 1894) sources, check for divine speech patterns:
+      
+      1. Vocative "ὁ θεός" + 2nd person pronouns (σου, σε, σοι, σὲ):
+         - If verse contains "ὁ θεός" AND any 2nd person pronoun → responsible_party_code MUST = INDIVIDUAL, responsible_party_custom_name MUST = "GOD"
+         - Example: Psalm 44:7 (ὁ θρόνος σου ὁ θεός) → responsible_party = INDIVIDUAL, custom_name = "GOD"
+      
+      2. Standard divine speech formulas:
+         - "ἐγὼ κύριος" → responsible_party = INDIVIDUAL, custom_name = "GOD"
+         - "λέγει κύριος" → responsible_party = INDIVIDUAL, custom_name = "GOD"
+         - "κύριος εἶπεν" → responsible_party = INDIVIDUAL, custom_name = "GOD"
+         - "θεὸς εἶπεν" → responsible_party = INDIVIDUAL, custom_name = "GOD"
+         - "τάδε λέγει κύριος" → responsible_party = INDIVIDUAL, custom_name = "GOD"
+         - "ἐγέννησά σε" → responsible_party = INDIVIDUAL, custom_name = "GOD"
+         - "Ἐγώ εἰμι ὁ ὤν" → responsible_party = INDIVIDUAL, custom_name = "GOD"
+      
+      3. Known divine speech verses (whitelist):
+         - Psalm 44:7 (LXX) / 45:6-7 (Hebrew) → responsible_party = INDIVIDUAL, custom_name = "GOD"
+         - Psalm 109:3 (LXX) / 110:3 (Hebrew) → responsible_party = INDIVIDUAL, custom_name = "GOD"
+         - Exodus 3:14 → responsible_party = INDIVIDUAL, custom_name = "GOD"
+      
+      VALIDATION CHECK:
+      - If divine speech is detected but responsible_party_code ≠ INDIVIDUAL or responsible_party_custom_name ≠ "GOD" → add to missing_required_fields with issue "INVALID_RESPONSIBLE_PARTY: Divine speech detected but not assigned correctly"
+      - This check takes precedence over general responsible party detection
+      
       ⚠️ CRITICAL ADDRESSED PARTY VALIDATION:
       - Check if verse contains recipient markers (αὐτῷ/αὐτοῖς, πρός + accusative, indirect-object pronouns)
       - If recipient marker exists → addressed_party MUST = entity that marker refers to
@@ -539,7 +754,109 @@ class TextContentValidationService
       - Add "LSV_RULE_VIOLATION" if notes contain philosophical/theological imports
       - Add "MISSING_REQUIRED_FIELDS" if genre_code, addressed_party_code, or responsible_party_code is missing
       - Add "INVALID_GENRE" if genre_code is incorrect (e.g., GOSPEL_TEACHING_SAYING when it should be NARRATIVE for narrator describing event)
+      - Add "SWETE_PARTICLE_MISSING" if a protected particle (καὶ, δέ, etc.) is missing from Swete 1894 source
+      - Add "SWETE_PUNCTUATION_MISMATCH" if punctuation does not match Swete 1894 exactly
+      - Add "SWETE_VERSE_BOUNDARY_MISMATCH" if verse boundary does not match Swete's native division
+      - Add "SWETE_TEXT_ALTERATION" if source text has been normalized, cleaned, or altered
+      
+      #{swete_validation_checks if swete_source?}
     PROMPT
+  end
+
+  def swete_source_validation_header
+    verse_boundary_note = ''
+    if swete_verse_boundary_info
+      info = swete_verse_boundary_info
+      verse_boundary_note = "\n      ⚠️ VERSE BOUNDARY ALERT: This verse (#{@book.code} #{@chapter}:#{@verse}) is a known divergence point.\n" +
+                            "         Swete treats this as ONE verse, but Hebrew/English splits it as #{info[:hebrew_chapter]}:#{info[:hebrew_verse]}.\n" +
+                            "         The provided text MUST match Swete's single-verse format, NOT the split Hebrew format.\n" +
+                            "         #{info[:note]}\n"
+    end
+
+    <<~HEADER
+      ================================================================================
+      ⚠️ CRITICAL: SWETE 1894 SOURCE VALIDATION ⚠️
+      ================================================================================
+      This is the Septuagint (H.B. Swete 1894–1909) source. The following rules are MANDATORY:
+      #{verse_boundary_note}
+      1. PROTECTED PARTICLES: Check that ALL particles are present:
+         - καὶ, δέ, τέ, γάρ, οὖν, μέν, ἀλλά, ἄρα, τοιγαρουν
+         - If ANY particle is missing where Swete has it → FAIL validation IMMEDIATELY
+         - Missing particles = automatic validation failure (character_accurate = false)
+      
+      2. PUNCTUATION FIDELITY: Punctuation must match Swete 1894 exactly:
+         - commas ↔ ano-teleia (·) ↔ high dots ↔ semicolons
+         - If punctuation differs → FAIL validation IMMEDIATELY
+         - Punctuation differences = character accuracy errors
+      
+      3. VERSE BOUNDARIES: Use Swete's native verse divisions:
+         - Follow Swete's printed boundaries exactly (not Hebrew/English)
+         - If verse appears split/merged based on Hebrew numbering → FAIL validation
+      
+      4. NO TEXT ALTERATION: Do NOT normalize, clean, or modernize:
+         - Preserve Swete's exact typography from 1894
+         - No orthographic normalization
+         - No punctuation modernization
+         - No particle removal (even if "redundant")
+      
+      ================================================================================
+    HEADER
+  end
+
+  def swete_validation_checks
+    <<~CHECKS
+      8. SWETE 1894 SPECIFIC VALIDATION CHECKS (MANDATORY):
+      
+      a. PROTECTED PARTICLE CHECK (MANDATORY - AUTOMATIC FAILURE IF VIOLATED):
+      - Protected particles list: #{SWETE_PROTECTED_PARTICLES.join(', ')}
+      - Extract ALL protected particles from the Swete 1894 source text
+      - For EACH protected particle found in source, verify it exists in provided text
+      - If source has "καὶ" and provided text is missing "καὶ" → add to discrepancies with type "SWETE_PARTICLE_MISSING"
+      - If ANY protected particle is missing → set character_accurate = false IMMEDIATELY
+      - If ANY protected particle is missing → set is_accurate = false IMMEDIATELY
+      - Add flag "SWETE_PARTICLE_MISSING" if any particle is missing
+      - This check takes precedence over all other validation - missing particles = automatic failure
+      - Example: Isaiah 9:6 - if Swete has "υἱὸς καὶ" and provided text has "υἱὸς" (missing καὶ) → FAIL
+      - CRITICAL: Do NOT accept text that is missing any particle that Swete prints
+      
+      b. PUNCTUATION FIDELITY CHECK (MANDATORY - AUTOMATIC FAILURE IF VIOLATED):
+      - Compare punctuation character-for-character: commas, ano-teleia (·), high dots, semicolons, periods
+      - If ANY punctuation mark differs → add to discrepancies with type "SWETE_PUNCTUATION_MISMATCH"
+      - If punctuation differs → set character_accurate = false IMMEDIATELY
+      - If punctuation differs → set is_accurate = false IMMEDIATELY
+      - Add flag "SWETE_PUNCTUATION_MISMATCH" if punctuation does not match exactly
+      - Do NOT accept modernized punctuation (e.g., changing · to comma, or comma to period)
+      - Punctuation differences are character accuracy errors - they make the text NOT 100% accurate
+      - CRITICAL: Swete's punctuation is part of the 1894 edition - it must be preserved exactly
+      
+      c. VERSE BOUNDARY CHECK:
+      - Verify verse boundary matches Swete's native division (not Hebrew/English)
+      - Known divergence points (hard-coded in validator):
+        * Isaiah 9:6: Swete = ONE verse covering Hebrew 9:5-6
+        * Isaiah 38:9–20: Swete treats as separate "writing of Hezekiah"
+        * Hosea 1–3: minor differences
+        * Psalms: Swete follows LXX psalm numbering (differs in ~10 places)
+      - VALIDATION CHECK:
+        * If current verse is a known divergence point (e.g., Isaiah 9:6), verify text covers full Swete verse
+        * If text appears split/merged based on Hebrew/English numbering → add flag "SWETE_VERSE_BOUNDARY_MISMATCH"
+        * If verse boundary does not match Swete's native division → set character_accurate = false
+        * This is NOT just informational - verse boundary mismatch = validation failure
+      
+      d. TEXT ALTERATION CHECK:
+      - Verify no normalization, cleaning, or modernization has occurred
+      - Check for orthographic changes (e.g., modernizing accents, breathing marks)
+      - If text appears normalized/cleaned → add flag "SWETE_TEXT_ALTERATION"
+      - If text appears normalized/cleaned → set character_accurate = false
+      
+      e. OVERALL SWETE ACCURACY:
+      - Set character_accurate = false if ANY Swete-specific check fails:
+        * Missing protected particle
+        * Punctuation mismatch
+        * Text alteration detected
+      - Add appropriate flags: SWETE_PARTICLE_MISSING, SWETE_PUNCTUATION_MISMATCH, SWETE_TEXT_ALTERATION
+      - These flags take precedence over general character accuracy checks
+      
+    CHECKS
   end
 
   def update_validation_fields(result)

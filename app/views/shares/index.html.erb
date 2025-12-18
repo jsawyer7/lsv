@@ -1,0 +1,18 @@
+<div class="shared-feed-container">
+  <div class="shared-feed-header">
+    <h1>Shared with Me</h1>
+    <p class="shared-feed-subtitle">Items shared by your peers</p>
+  </div>
+  
+  <div class="shared-feed-content" id="sharedFeedContent">
+    <!-- Shared items will be loaded here via infinite scroll -->
+  </div>
+  
+  <div class="shared-feed-loading" id="sharedFeedLoading" style="display: none;">
+    <p>Loading...</p>
+  </div>
+</div>
+
+<%= render 'shared/shared_feed_js' %>
+
+

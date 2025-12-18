@@ -34,6 +34,11 @@
       <%= image_tag 'peers-icon.png', alt: '', class: 'nav-icon', size: '22x22' %>
       <span class="nav-text">Peers</span>
     <% end %>
+    
+    <%= link_to shared_feed_path, class: "nav-item #{'active' if current_page?(shared_feed_path)}" do %>
+      <i class="fas fa-share-alt nav-icon" style="font-size: 22px; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;"></i>
+      <span class="nav-text">Shared</span>
+    <% end %>
 
     <a href="#" class="nav-item upcoming"><%= image_tag 'groups-icon.png', alt: '', class: 'nav-icon', size: '22x22' %><span class="nav-text">Groups</span></a>
   </div>

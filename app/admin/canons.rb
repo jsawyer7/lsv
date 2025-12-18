@@ -234,35 +234,40 @@ ActiveAdmin.register Canon do
       end
     end
 
-    if canon.books.any?
-      div class: "row mt-4" do
-        div class: "col-12" do
-          div class: "materio-card" do
-            div class: "materio-header" do
-              h5 class: "mb-0 fw-semibold" do
-                i class: "ri ri-book-line me-2"
-                "Books in this Canon"
-              end
+    # Books Management Section
+    div class: "row mt-4" do
+      div class: "col-12" do
+        div class: "materio-card" do
+          div class: "materio-header d-flex justify-content-between align-items-center" do
+            h5 class: "mb-0 fw-semibold" do
+              i class: "ri ri-book-line me-2"
+              "Books in this Canon"
             end
-            div class: "card-body p-4" do
+            div do
+              link_to "Add Book to Canon", "#{new_admin_canon_book_path}?canon_id=#{canon.id}", class: "btn btn-sm btn-primary"
+            end
+          end
+          div class: "card-body p-4" do
+            if canon.canon_books.any?
               div class: "table-responsive" do
-                table class: "table table-sm" do
-                  thead do
+                table class: "table table-sm table-hover" do
+                  thead class: "table-light" do
                     tr do
-                      th "Sequence"
+                      th "Sequence", style: "width: 100px;"
                       th "Book"
                       th "Code"
                       th "Included"
+                      th "Actions", style: "width: 150px;"
                     end
                   end
                   tbody do
                     canon.canon_books.includes(:book).ordered.each do |canon_book|
                       tr do
                         td do
-                          span class: "badge bg-secondary" do canon_book.seq_no end
+                          span class: "badge bg-secondary fs-6" do canon_book.seq_no end
                         end
                         td do
-                          link_to canon_book.book.std_name, admin_book_path(canon_book.book), class: "text-decoration-none"
+                          link_to canon_book.book.std_name, admin_book_path(canon_book.book), class: "text-decoration-none fw-semibold"
                         end
                         td do
                           span class: "badge bg-primary" do canon_book.book.code end
@@ -272,10 +277,25 @@ ActiveAdmin.register Canon do
                             canon_book.included_bool? ? 'Yes' : 'No'
                           end
                         end
+                        td do
+                          raw("<div class='d-flex gap-2'>
+                            <a href='#{edit_admin_canon_book_path(canon_book)}' class='btn btn-sm btn-outline-secondary' title='Edit sequence and details'>
+                              <i class='ri ri-edit-line'></i> Edit
+                            </a>
+                            <a href='#{admin_canon_book_path(canon_book)}' class='btn btn-sm btn-outline-danger' data-method='delete' data-confirm='Remove this book from canon?' title='Remove from canon'>
+                              <i class='ri ri-delete-bin-line'></i>
+                            </a>
+                          </div>")
+                        end
                       end
                     end
                   end
                 end
+              end
+            else
+              div class: "text-center py-5 text-muted" do
+                p "No books added to this canon yet.", class: "mb-2"
+                link_to "Add First Book", "#{new_admin_canon_book_path}?canon_id=#{canon.id}", class: "btn btn-primary"
               end
             end
           end

@@ -19,11 +19,18 @@ class TextContentPopulateJob < ApplicationJob
 
     case result[:status]
     when 'success'
+      # Deterministic validators already ran inside TextContentPopulationService.
+      # At this point, content is populated and passed local validation.
       Rails.logger.info "TextContentPopulateJob: Successfully populated #{text_content.unit_key}"
     when 'already_populated'
+      # Content already exists; deterministic validation may be run separately if desired.
       Rails.logger.info "TextContentPopulateJob: Already populated #{text_content.unit_key}"
     when 'unavailable'
       Rails.logger.warn "TextContentPopulateJob: Text unavailable for #{text_content.unit_key}"
+    when 'needs_repair'
+      # Canonical mismatch or other deterministic validator failure that is repairable.
+      # Do not retry endlessly; leave in needs_repair state for manual or targeted repair job.
+      Rails.logger.warn "TextContentPopulateJob: Needs repair for #{text_content.unit_key}: #{result[:error]}"
     when 'error'
       Rails.logger.error "TextContentPopulateJob: Error populating #{text_content.unit_key}: #{result[:error]}"
       raise "Population failed: #{result[:error]}" # This will trigger retry

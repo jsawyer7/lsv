@@ -1,0 +1,361 @@
+// Facebook-style Comments
+.feed-card-comments {
+  padding: 12px 16px;
+  border-top: 1px solid #e4e6eb;
+  background-color: #f0f2f5;
+}
+
+.comments-list-mini,
+.comments-list {
+  margin-bottom: 12px;
+}
+
+.comment-item {
+  margin-bottom: 12px;
+  padding: 0;
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.comment-wrapper {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin-bottom: 0;
+  line-height: 1.2;
+}
+
+.comment-avatar-container {
+  flex-shrink: 0;
+}
+
+.comment-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  cursor: pointer;
+}
+
+.comment-content-wrapper {
+  flex: 1;
+  min-width: 0;
+  line-height: 1.2;
+}
+
+.comment-bubble {
+  background-color: transparent;
+  border-radius: 0;
+  padding: 0;
+  position: relative;
+  display: block;
+  width: 100%;
+  word-wrap: break-word;
+  box-sizing: border-box;
+}
+
+.comment-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2px;
+  line-height: 1.2;
+}
+
+.comment-author {
+  color: #050505;
+  font-size: 15px;
+  font-weight: 600;
+  margin-right: 8px;
+  line-height: 1.33;
+  
+  strong {
+    font-weight: 600;
+  }
+}
+
+.comment-actions {
+  margin-left: auto;
+  
+  .comment-delete {
+    color: #65676b;
+    font-size: 12px;
+    padding: 4px;
+    opacity: 0;
+    transition: opacity 0.2s;
+    text-decoration: none;
+    
+    &:hover {
+      color: #f02849;
+    }
+  }
+}
+
+.comment-item:hover .comment-delete {
+  opacity: 1;
+}
+
+.comment-text-wrapper {
+  display: block;
+  word-wrap: break-word;
+  padding: 10px;
+}
+
+.comment-text {
+  color: #050505;
+  font-size: 15px;
+  line-height: 1.33;
+  word-wrap: break-word;
+  margin: 0;
+  padding: 0;
+  display: inline;
+  
+  p {
+    margin: 0 !important;
+    padding: 0 !important;
+    line-height: 1.33;
+    display: inline;
+  }
+}
+
+.comment-likes-count-inline {
+  color: #1877f2;
+  font-size: 15px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 600;
+  margin-left: 4px;
+  vertical-align: baseline;
+  
+  i {
+    font-size: 14px;
+    color: #1877f2;
+  }
+}
+
+.comment-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 2px;
+  font-size: 12px;
+  color: #65676b;
+  line-height: 1.2;
+  flex-wrap: wrap;
+}
+
+.comment-meta-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.comment-meta-right {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+}
+
+.comment-date {
+  font-size: 12px;
+  color: #65676b;
+  text-transform: lowercase;
+}
+
+.comment-like-link {
+  .comment-like {
+    color: #65676b;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 12px;
+    padding: 0;
+    border-radius: 2px;
+    transition: color 0.2s;
+    cursor: pointer;
+    background: none;
+    border: none;
+    
+    &:hover {
+      text-decoration: underline;
+      color: #1877f2;
+    }
+    
+    &.liked {
+      color: #1877f2;
+      
+      &:hover {
+        color: #166fe5;
+      }
+    }
+  }
+}
+
+.comment-likes-count {
+  color: #1877f2;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 600;
+  
+  i {
+    font-size: 12px;
+    color: #1877f2;
+  }
+}
+
+// Hide the old like count in meta if inline version exists
+.comment-meta-right {
+  display: none;
+}
+
+// Comment Form - Facebook Style
+.comment-form-container {
+  margin-top: 8px;
+}
+
+.comment-form-wrapper {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.comment-form-avatar-container {
+  flex-shrink: 0;
+}
+
+.comment-form-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.comment-form-input-wrapper {
+  flex: 1;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.comment-textarea {
+  width: 100%;
+  min-height: 36px;
+  max-height: 200px;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 20px;
+  background-color: #f0f2f5;
+  font-size: 15px;
+  line-height: 1.33;
+  resize: none;
+  font-family: inherit;
+  color: #050505;
+  transition: background-color 0.2s;
+  
+  &:focus {
+    outline: none;
+    background-color: #fff;
+    box-shadow: 0 0 0 1px #e4e6eb;
+  }
+  
+  &::placeholder {
+    color: #65676b;
+  }
+}
+
+.comment-form-actions {
+  display: none;
+  margin-top: 8px;
+  text-align: right;
+  padding-right: 4px;
+}
+
+.comment-form:focus-within .comment-form-actions {
+  display: block;
+}
+
+.comment-submit-btn {
+  background-color: #1877f2;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  
+  &:hover {
+    background-color: #166fe5;
+  }
+  
+  &:active {
+    background-color: #1565c0;
+  }
+}
+
+// Mini comment item for cards
+.comment-item-mini {
+  margin-bottom: 8px;
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
+  
+  .comment-wrapper {
+    gap: 6px;
+  }
+  
+  .comment-bubble {
+    background-color: transparent;
+    padding: 0;
+  }
+  
+  .comment-author {
+    font-size: 13px;
+    line-height: 1.2;
+  }
+  
+  .comment-text {
+    font-size: 14px;
+    line-height: 1.3;
+  }
+  
+  .comment-avatar {
+    width: 28px;
+    height: 28px;
+  }
+  
+  .comment-meta {
+    font-size: 11px;
+    margin-top: 2px;
+  }
+}
+
+// Comment count in feed card footer
+.feed-comment-count {
+  color: #65676b;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: color 0.2s;
+  
+  &:hover {
+    color: #1877f2;
+  }
+  
+  i {
+    font-size: 14px;
+  }
+  
+  .comment-count {
+    font-weight: 500;
+  }
+}
+
