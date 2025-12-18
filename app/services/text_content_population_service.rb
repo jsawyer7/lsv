@@ -51,6 +51,7 @@ class TextContentPopulationService
       result = apply_generic_metadata_inference(result)
 
       # Step 2: Deterministic local validation (no AI self-validation)
+      # Use :populate mode to allow fixable style/gloss issues through as warnings
       pipeline = Verifaith::TextContentValidationPipeline.new(
         text_content: @text_content,
         source_text: result[:source_text],
@@ -58,7 +59,8 @@ class TextContentPopulationService
         lsv_literal_reconstruction: result[:lsv_literal_reconstruction],
         genre_code: result[:genre_code],
         addressed_party_code: result[:addressed_party_code],
-        responsible_party_code: result[:responsible_party_code]
+        responsible_party_code: result[:responsible_party_code],
+        mode: :populate
       )
 
       validation = pipeline.run
@@ -71,14 +73,18 @@ class TextContentPopulationService
           update_text_content(result)
           log_population(result)
 
-          # Mark as success; canonical fidelity information is stored in validation meta/flags
+          # In populate mode, warnings are acceptable (style/gloss drift)
+          # Store warnings and repair hints for potential future repair
+          status = validation.warnings.any? ? 'provisional_ok' : 'success'
+          
+          # Mark as success or provisional_ok; canonical fidelity information is stored in validation meta/flags
           @text_content.update_columns(
-            population_status: 'success',
+            population_status: status,
             population_error_message: nil
           )
 
           {
-            status: 'success',
+            status: status,
             data: result.merge(
               validation_flags: validation.flags,
               validation_warnings: validation.warnings,

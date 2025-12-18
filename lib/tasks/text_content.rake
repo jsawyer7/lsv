@@ -2733,43 +2733,125 @@ namespace :lexical do
 
         while retry_count < max_retries && !populated_successfully
           begin
+            Rails.logger.info "[POPULATION] Starting population attempt #{retry_count + 1}/#{max_retries} for #{text_content.unit_key}"
+            puts "  [LOG] Attempt #{retry_count + 1}/#{max_retries}: Starting population..."
+            
             population_service = TextContentPopulationService.new(text_content.reload)
+            Rails.logger.info "[POPULATION] Created TextContentPopulationService for #{text_content.unit_key}"
+            
             population_result = population_service.populate_content_fields(force: force || retry_count > 0)
+            Rails.logger.info "[POPULATION] Received result for #{text_content.unit_key}: #{population_result.inspect[0..500]}"
+            
+            # Extract status and error for logging
+            status_val = population_result.is_a?(Hash) ? (population_result[:status] || population_result['status'] || 'nil') : 'not_a_hash'
+            error_val = population_result.is_a?(Hash) ? (population_result[:error] || population_result['error'] || 'no_error_key') : 'not_a_hash'
+            puts "  [LOG] Result received - status=#{status_val}, error=#{error_val[0..200]}"
+            STDOUT.flush
 
             case population_result[:status]
             when 'success'
+              Rails.logger.info "[POPULATION] SUCCESS for #{text_content.unit_key}"
               stats[:populated] += 1
               puts "  ✓ Populated successfully (deterministic validators passed)"
               populated_successfully = true
+            when 'provisional_ok'
+              Rails.logger.info "[POPULATION] PROVISIONAL_OK for #{text_content.unit_key}"
+              stats[:populated] += 1
+              warnings = population_result[:validation_warnings] || []
+              flags = population_result[:validation_flags] || []
+              puts "  ✓ Populated (provisional_ok - has warnings)"
+              if warnings.any?
+                puts "    Warnings: #{warnings.join('; ')}"
+                Rails.logger.warn "[POPULATION] Warnings: #{warnings.join('; ')}"
+              end
+              if flags.any?
+                puts "    Flags: #{flags.join(', ')}"
+                Rails.logger.warn "[POPULATION] Flags: #{flags.join(', ')}"
+              end
+              populated_successfully = true
             when 'already_populated'
+              Rails.logger.info "[POPULATION] ALREADY_POPULATED for #{text_content.unit_key}"
               stats[:already_populated] += 1
               puts "  → Already populated (skipped population; use FORCE=true to repopulate)"
               populated_successfully = true
             when 'needs_repair'
-              stats[:errors] << { book: book.code, chapter: chapter, verse: verse, error: "Needs repair: #{population_result[:error]}" }
-              puts "  ✗ Marked as needs_repair: #{population_result[:error]}"
+              error_msg = population_result[:error] || 'Unknown error'
+              Rails.logger.error "[POPULATION] NEEDS_REPAIR for #{text_content.unit_key}: #{error_msg}"
+              stats[:errors] << { book: book.code, chapter: chapter, verse: verse, error: "Needs repair: #{error_msg}" }
+              puts "  ✗ Marked as needs_repair: #{error_msg}"
+              if population_result[:flags]
+                puts "    Flags: #{population_result[:flags].join(', ')}"
+                Rails.logger.error "[POPULATION] Flags: #{population_result[:flags].join(', ')}"
+              end
               populated_successfully = true
             else
+              # UNKNOWN STATUS - Log everything
+              Rails.logger.error "[POPULATION] UNKNOWN STATUS for #{text_content.unit_key}"
+              Rails.logger.error "[POPULATION] Result class: #{population_result.class}"
+              Rails.logger.error "[POPULATION] Result: #{population_result.inspect}"
+              
+              puts ""
+              puts "  ========== POPULATION FAILED - DETAILED LOG =========="
+              puts "  [LOG] Status: #{status_val}"
+              puts "  [LOG] Result class: #{population_result.class}"
+              puts "  [LOG] Result keys: #{population_result.respond_to?(:keys) ? population_result.keys.inspect : 'N/A'}"
+              puts "  [LOG] Full result: #{population_result.inspect[0..600]}"
+              puts "  ======================================================"
+              puts ""
+              STDOUT.flush
+              
+              # Build error message
+              error_parts = []
+              error_parts << "Status: #{status_val}"
+              if population_result.is_a?(Hash)
+                error_msg = population_result[:error] || population_result['error'] || 
+                           population_result[:message] || population_result['message']
+                error_parts << error_msg if error_msg
+                
+                flags = population_result[:flags] || population_result['flags'] || []
+                error_parts << "Flags: #{flags.join(', ')}" if flags.any?
+                
+                validation_flags = population_result[:validation_flags] || population_result['validation_flags'] || []
+                error_parts << "Validation flags: #{validation_flags.join(', ')}" if validation_flags.any?
+              end
+              error_parts << "Result: #{population_result.inspect[0..300]}"
+              full_error = error_parts.join(' | ')
+              
               retry_count += 1
+              Rails.logger.error "[POPULATION] Retry #{retry_count}/#{max_retries} for #{text_content.unit_key}"
+              
               if retry_count < max_retries
-                puts "  ⚠ Population failed (retry #{retry_count}/#{max_retries}): #{population_result[:error]}"
+                Rails.logger.error "[POPULATION] Error details: #{full_error[0..500]}"
+                puts "  ⚠ Population failed (retry #{retry_count}/#{max_retries}): #{full_error}"
+                STDOUT.flush
                 sleep 2
                 next
               else
-                stats[:errors] << { book: book.code, chapter: chapter, verse: verse, error: population_result[:error] }
-                puts "  ✗ Failed after #{max_retries} retries: #{population_result[:error]}"
+                stats[:errors] << { book: book.code, chapter: chapter, verse: verse, error: full_error }
+                puts "  ✗ Failed after #{max_retries} retries: #{full_error}"
+                STDOUT.flush
                 populated_successfully = true  # Stop retrying
               end
             end
           rescue => e
             retry_count += 1
+            error_details = "#{e.class.name}: #{e.message}"
+            if e.backtrace && e.backtrace.any?
+              error_details += "\n    #{e.backtrace.first(5).join("\n    ")}"
+            end
+            
+            Rails.logger.error "[POPULATION] EXCEPTION for #{text_content.unit_key}: #{error_details}"
+            Rails.logger.error "[POPULATION] Full backtrace: #{e.backtrace.join("\n")}"
+            
             if retry_count < max_retries
-              puts "  ⚠ Exception (retry #{retry_count}/#{max_retries}): #{e.message}"
+              puts "  ⚠ Exception (retry #{retry_count}/#{max_retries}): #{error_details}"
+              STDOUT.flush
               sleep 2
               next
             else
-              stats[:errors] << { book: book.code, chapter: chapter, verse: verse, error: e.message }
-              puts "  ✗ Exception after #{max_retries} retries: #{e.message}"
+              stats[:errors] << { book: book.code, chapter: chapter, verse: verse, error: error_details }
+              puts "  ✗ Exception after #{max_retries} retries: #{error_details}"
+              STDOUT.flush
               populated_successfully = true
             end
           end
@@ -3024,42 +3106,165 @@ namespace :lexical do
 
         while retry_count < max_retries && !populated_successfully
           begin
+            Rails.logger.info "[POPULATION] Starting population attempt #{retry_count + 1}/#{max_retries} for #{text_content.unit_key}"
+            puts "  [LOG] Attempt #{retry_count + 1}/#{max_retries}: Starting population..."
+            
             population_service = TextContentPopulationService.new(text_content.reload)
+            Rails.logger.info "[POPULATION] Created TextContentPopulationService for #{text_content.unit_key}"
+            
             population_result = population_service.populate_content_fields(force: force || retry_count > 0)
+            Rails.logger.info "[POPULATION] Received result for #{text_content.unit_key}: #{population_result.inspect[0..500]}"
+            
+            # Debug: Always log the result - FORCE OUTPUT
+            status_debug = population_result.is_a?(Hash) ? (population_result[:status] || population_result['status'] || 'nil') : 'not_a_hash'
+            error_debug = population_result.is_a?(Hash) ? (population_result[:error] || population_result['error'] || 'no_error_key') : 'not_a_hash'
+            puts "  [LOG] Result received - status=#{status_debug}, error=#{error_debug[0..200]}"
+            STDOUT.flush
 
             if population_result[:status] == 'success'
+              Rails.logger.info "[POPULATION] SUCCESS for #{text_content.unit_key}"
               stats[:populated] += 1
               puts "  ✓ Populated successfully (deterministic validators passed)"
               populated_successfully = true
+            elsif population_result[:status] == 'provisional_ok'
+              Rails.logger.info "[POPULATION] PROVISIONAL_OK for #{text_content.unit_key}"
+              stats[:populated] += 1
+              warnings = population_result[:validation_warnings] || []
+              flags = population_result[:validation_flags] || []
+              puts "  ✓ Populated (provisional_ok - has warnings)"
+              if warnings.any?
+                puts "    Warnings: #{warnings.join('; ')}"
+                Rails.logger.warn "[POPULATION] Warnings for #{text_content.unit_key}: #{warnings.join('; ')}"
+              end
+              if flags.any?
+                puts "    Flags: #{flags.join(', ')}"
+                Rails.logger.warn "[POPULATION] Flags for #{text_content.unit_key}: #{flags.join(', ')}"
+              end
+              populated_successfully = true
             elsif population_result[:status] == 'already_populated'
+              Rails.logger.info "[POPULATION] ALREADY_POPULATED for #{text_content.unit_key}"
               stats[:already_populated] += 1
               puts "  → Already populated (skipped population; use FORCE=true to repopulate)"
               populated_successfully = true
             elsif population_result[:status] == 'needs_repair'
-              stats[:errors] << { book: book.code, chapter: chapter, verse: verse, error: "Needs repair: #{population_result[:error]}" }
-              puts "  ✗ Marked as needs_repair: #{population_result[:error]}"
+              error_msg = population_result[:error] || 'Unknown error'
+              Rails.logger.error "[POPULATION] NEEDS_REPAIR for #{text_content.unit_key}: #{error_msg}"
+              stats[:errors] << { book: book.code, chapter: chapter, verse: verse, error: "Needs repair: #{error_msg}" }
+              puts "  ✗ Marked as needs_repair: #{error_msg}"
+              if population_result[:flags]
+                puts "    Flags: #{population_result[:flags].join(', ')}"
+                Rails.logger.error "[POPULATION] Flags: #{population_result[:flags].join(', ')}"
+              end
               populated_successfully = true
             else
+              # UNKNOWN STATUS - Log everything
+              Rails.logger.error "[POPULATION] UNKNOWN STATUS for #{text_content.unit_key}"
+              Rails.logger.error "[POPULATION] Result class: #{population_result.class}"
+              Rails.logger.error "[POPULATION] Result: #{population_result.inspect}"
+              
+              puts ""
+              puts "  ========== POPULATION FAILED - DETAILED LOG =========="
+              puts "  [LOG] Status: #{population_result.is_a?(Hash) ? (population_result[:status] || population_result['status'] || 'MISSING') : 'NOT_A_HASH'}"
+              puts "  [LOG] Result class: #{population_result.class}"
+              puts "  [LOG] Result keys: #{population_result.respond_to?(:keys) ? population_result.keys.inspect : 'N/A'}"
+              puts "  [LOG] Full result: #{population_result.inspect[0..600]}"
+              puts "  ======================================================"
+              puts ""
+              STDOUT.flush
+              
+              # Extract error message from various possible keys
+              error_msg = nil
+              if population_result.is_a?(Hash)
+                error_msg = population_result[:error] || 
+                            population_result['error'] ||
+                            population_result[:message] || 
+                            population_result['message']
+              end
+              
+              status_val = if population_result.is_a?(Hash)
+                population_result[:status] || population_result['status'] || 'unknown'
+              else
+                'not_a_hash'
+              end
+              
+              error_msg ||= "Status: #{status_val}"
+              
+              $stdout.puts "  [DEBUG] Extracted error_msg: #{error_msg.inspect}"
+              $stdout.flush
+              
+              # Include additional context
+              error_details = [error_msg]
+              
+              # Check both symbol and string keys
+              if population_result.is_a?(Hash)
+                flags = population_result[:flags] || population_result['flags'] || []
+                warnings = population_result[:warnings] || population_result['warnings'] || []
+                validation_flags = population_result[:validation_flags] || population_result['validation_flags'] || []
+                validation_warnings = population_result[:validation_warnings] || population_result['validation_warnings'] || []
+                
+                if flags.any?
+                  error_details << "Flags: #{flags.join(', ')}"
+                end
+                if warnings.any?
+                  error_details << "Warnings: #{warnings.join('; ')}"
+                end
+                if validation_flags.any?
+                  error_details << "Validation flags: #{validation_flags.join(', ')}"
+                end
+                if validation_warnings.any?
+                  error_details << "Validation warnings: #{validation_warnings.join('; ')}"
+                end
+              end
+              
+              # Always show full result for debugging
+              error_details << "Full result: #{population_result.inspect[0..1000]}"
+              
+              full_error = error_details.join(' | ')
+              
+              $stdout.puts "  [DEBUG] Full error message: #{full_error[0..500]}"
+              $stdout.flush
+              
               retry_count += 1
+              Rails.logger.error "[POPULATION] Retry #{retry_count}/#{max_retries} for #{text_content.unit_key}"
+              
               if retry_count < max_retries
-                puts "  ⚠ Population failed (retry #{retry_count}/#{max_retries}): #{population_result[:error]}"
+                # Ensure we always have an error message
+                display_error = full_error.to_s.strip
+                display_error = "Status: #{status_val}" if display_error.empty?
+                Rails.logger.error "[POPULATION] Error details: #{display_error[0..500]}"
+                puts "  ⚠ Population failed (retry #{retry_count}/#{max_retries}): #{display_error}"
+                STDOUT.flush
                 sleep 2
                 next
               else
-                stats[:errors] << { book: book.code, chapter: chapter, verse: verse, error: population_result[:error] }
-                puts "  ✗ Failed after #{max_retries} retries: #{population_result[:error]}"
+                # Ensure we always have an error message
+                display_error = full_error.to_s.strip
+                display_error = "Status: #{status_val}" if display_error.empty?
+                stats[:errors] << { book: book.code, chapter: chapter, verse: verse, error: display_error }
+                puts "  ✗ Failed after #{max_retries} retries: #{display_error}"
                 populated_successfully = true  # Stop retrying
               end
             end
           rescue => e
             retry_count += 1
+            error_details = "#{e.class.name}: #{e.message}"
+            if e.backtrace && e.backtrace.any?
+              # Show first few lines of backtrace for debugging
+              error_details += "\n    #{e.backtrace.first(5).join("\n    ")}"
+            end
+            
+            Rails.logger.error "[POPULATION] EXCEPTION for #{text_content.unit_key}: #{error_details}"
+            Rails.logger.error "[POPULATION] Full backtrace: #{e.backtrace.join("\n")}"
+            
             if retry_count < max_retries
-              puts "  ⚠ Exception (retry #{retry_count}/#{max_retries}): #{e.message}"
+              puts "  ⚠ Exception (retry #{retry_count}/#{max_retries}): #{error_details}"
+              STDOUT.flush
               sleep 2
               next
             else
-              stats[:errors] << { book: book.code, chapter: chapter, verse: verse, error: e.message }
-              puts "  ✗ Exception after #{max_retries} retries: #{e.message}"
+              stats[:errors] << { book: book.code, chapter: chapter, verse: verse, error: error_details }
+              puts "  ✗ Exception after #{max_retries} retries: #{error_details}"
+              STDOUT.flush
               populated_successfully = true
             end
           end

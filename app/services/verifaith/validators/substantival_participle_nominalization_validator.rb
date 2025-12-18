@@ -20,8 +20,9 @@ module Verifaith
         /\b[\w-]+-one\b/i  # being-one, having-one, etc.
       ].freeze
 
-      def initialize(lsv_literal_reconstruction:)
+      def initialize(lsv_literal_reconstruction:, mode: :verify)
         @lsv = lsv_literal_reconstruction.to_s
+        @mode = mode.to_sym
       end
 
       def validate
@@ -37,14 +38,30 @@ module Verifaith
         end
 
         if banned_found.any?
-          return ValidatorResult.fail(
-            errors: "Substantival participle nominalization detected: #{banned_found.join(', ')}",
-            flags: ['LSV_SUBSTANTIVAL_PARTICIPLE_NOMINALIZATION'],
-            meta: {
-              detected_nominalizations: banned_found,
-              suggestion: 'Use "one-<gloss>" or "<gloss>-one" format instead'
-            }
-          )
+          suggestion = 'Use "one-<gloss>" or "<gloss>-one" format instead (e.g., "the being" → "the being-one" or "one-being")'
+          
+          # Mode-based severity: warn in populate, fail in verify
+          if @mode == :populate
+            return ValidatorResult.warn(
+              warnings: "Substantival participle nominalization detected: #{banned_found.join(', ')}. #{suggestion}",
+              flags: ['LSV_SUBSTANTIVAL_PARTICIPLE_NOMINALIZATION'],
+              meta: {
+                detected_nominalizations: banned_found,
+                suggestion: suggestion,
+                repair_hint: "Never output '#{banned_found.first}'; output '#{banned_found.first.gsub(/\bthe\s+(\w+)\b/i, 'the \1-one')}' or 'one-\1' instead."
+              }
+            )
+          else
+            # :verify mode - hard fail
+            return ValidatorResult.fail(
+              errors: "Substantival participle nominalization detected: #{banned_found.join(', ')}",
+              flags: ['LSV_SUBSTANTIVAL_PARTICIPLE_NOMINALIZATION'],
+              meta: {
+                detected_nominalizations: banned_found,
+                suggestion: suggestion
+              }
+            )
+          end
         end
 
         ValidatorResult.ok
