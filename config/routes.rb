@@ -15,6 +15,7 @@ Rails.application.routes.draw do
   end
 
   get 'dashboard', to: 'dashboard#index'
+  get 'veritalk', to: 'dashboard#veritalk', as: :veritalk
 
   # Onboarding routes
   patch 'onboarding', to: 'onboarding#update'
@@ -47,6 +48,8 @@ Rails.application.routes.draw do
   resources :evidences, only: [] do
     resources :challenges, only: [:create]
   end
+
+  post '/veritalk/chat', to: 'veritalk#chat'
 
   post '/ai/claim_suggestion', to: 'ai#claim_suggestion'
   post '/ai/evidence_suggestion', to: 'ai#evidence_suggestion'

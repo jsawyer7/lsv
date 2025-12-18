@@ -1,0 +1,121 @@
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('veritalk-form');
+    const input = document.getElementById('veritalk-input');
+    const messagesDiv = document.getElementById('veritalk-messages');
+    const conversationIdInput = document.getElementById('veritalk-conversation-id');
+
+    if (!form || !input || !messagesDiv) {
+      return;
+    }
+
+    let isStreaming = false;
+
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const text = input.value.trim();
+      if (!text || isStreaming) return;
+
+      appendMessage('user', text);
+      input.value = '';
+
+      startVeritalkStream(text);
+    });
+
+    function appendMessage(role, content) {
+      const div = document.createElement('div');
+      div.className = 'veritalk-message ' + role;
+      div.textContent = content;
+      messagesDiv.appendChild(div);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+
+    async function startVeritalkStream(message) {
+      isStreaming = true;
+
+      const thinkingDiv = document.createElement('div');
+      thinkingDiv.className = 'veritalk-message assistant thinking';
+      thinkingDiv.textContent = 'VeriTalk is thinking...';
+      messagesDiv.appendChild(thinkingDiv);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+      const payload = {
+        message: message
+      };
+
+      if (conversationIdInput && conversationIdInput.value) {
+        payload.conversation_id = conversationIdInput.value;
+      }
+
+      try {
+        const response = await fetch('/veritalk/chat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+          },
+          body: JSON.stringify(payload)
+        });
+
+        // Check if response is OK and is actually a stream
+        if (!response.ok) {
+          const errorText = await response.text();
+          // Check if we got HTML (redirect page) instead of error message
+          if (errorText.includes('<!DOCTYPE html>') || errorText.includes('<html>')) {
+            thinkingDiv.textContent = 'AI features require an active subscription. Please upgrade your plan to use VeriTalk.';
+          } else {
+            thinkingDiv.textContent = errorText || 'Sorry, VeriTalk had a problem.';
+          }
+          isStreaming = false;
+          return;
+        }
+
+        // Check content type to ensure it's a stream
+        const contentType = response.headers.get('Content-Type');
+        if (contentType && !contentType.includes('text/event-stream') && !contentType.includes('text/plain')) {
+          thinkingDiv.textContent = 'AI features require an active subscription. Please upgrade your plan to use VeriTalk.';
+          isStreaming = false;
+          return;
+        }
+
+        const newConversationId = response.headers.get('X-Veritalk-Conversation-Id');
+        if (newConversationId && conversationIdInput) {
+          conversationIdInput.value = newConversationId;
+        }
+
+        if (!response.body) {
+          thinkingDiv.textContent = 'Sorry, VeriTalk had a problem.';
+          isStreaming = false;
+          return;
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+
+        let assistantText = '';
+        thinkingDiv.textContent = '';
+        thinkingDiv.classList.remove('thinking');
+
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          if (!value) continue;
+
+          const chunk = decoder.decode(value);
+          assistantText += chunk;
+          thinkingDiv.textContent = assistantText;
+          messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        thinkingDiv.classList.add('assistant-final');
+        isStreaming = false;
+      } catch (error) {
+        console.error('VeriTalk error:', error);
+        thinkingDiv.textContent = 'Sorry, VeriTalk is unavailable right now.';
+        isStreaming = false;
+      }
+    }
+  });
+</script>
+
+
