@@ -1,0 +1,15 @@
+{
+  "λόγος": {
+    "primary": "word",
+    "secondary": ["message", "saying", "speech"]
+  },
+  "κύριος": {
+    "primary": "lord",
+    "secondary": ["master", "sir"]
+  },
+  "θεός": {
+    "primary": "god",
+    "secondary": ["deity", "divine"]
+  }
+}
+
