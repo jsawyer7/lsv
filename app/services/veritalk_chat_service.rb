@@ -1,8 +1,6 @@
 require 'openai'
 
 class VeritalkChatService
-  MAX_RECENT_MESSAGES = 10
-
   def initialize(user:, conversation:, user_message_text:)
     @user = user
     @conversation = conversation
@@ -77,28 +75,21 @@ class VeritalkChatService
       content: system_prompt
     }
 
-    # Add compact summary lines as lightweight memory
+    # Add compact summary lines of last 5 messages as lightweight memory
     summary_lines = @conversation.conversation_summaries.order(position: :asc).pluck(:content)
     if summary_lines.any?
       summary_text = summary_lines.each_with_index.map { |line, idx| "#{idx + 1}. #{line}" }.join("\n")
       messages << {
         role: "assistant",
-        content: "Short summary of this conversation so far:\n#{summary_text}"
+        content: "Short summary of recent conversation:\n#{summary_text}"
       }
     end
 
-    # Add last N full messages (user + assistant) to give detailed recent context
-    recent_messages = @conversation
-                      .conversation_messages
-                      .reorder(position: :asc)
-                      .last(MAX_RECENT_MESSAGES)
-
-    recent_messages.each do |msg|
-      messages << {
-        role: msg.role,
-        content: msg.content
-      }
-    end
+    # Add the current user question (full text)
+    messages << {
+      role: "user",
+      content: @user_message_text
+    }
 
     messages
   end
@@ -144,13 +135,12 @@ class VeritalkChatService
     PROMPT
   end
 
-  # Very lightweight, non-AI summary builder that can later be replaced by
-  # a dedicated AI-powered summarizer / validator.
+  # Store summaries of the last 5 messages for context
   def update_summaries!
     recent_messages = @conversation
                        .conversation_messages
                        .reorder(position: :asc)
-                       .last(10)
+                       .last(5)
 
     # Pair messages roughly as (user, assistant) and build compact lines
     pairs = recent_messages.each_slice(2).to_a
