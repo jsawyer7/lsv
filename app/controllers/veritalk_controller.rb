@@ -29,21 +29,6 @@ class VeritalkController < ApplicationController
     response.stream.close
   end
 
-  private
-
-  def find_or_create_conversation
-    if params[:conversation_id].present?
-      current_user.conversations.find_by(id: params[:conversation_id]) || create_new_conversation
-    else
-      create_new_conversation
-    end
-  end
-
-  def create_new_conversation
-    # Topic will be auto-generated from the first message by the service
-    current_user.conversations.create!(topic: "VeriTalk conversation")
-  end
-
   def messages
     conversation = current_user.conversations.find_by(id: params[:id])
 
@@ -77,5 +62,34 @@ class VeritalkController < ApplicationController
     else
       render json: { conversation_id: nil }
     end
+  end
+
+  def conversations_list
+    conversations = current_user.conversations.order(updated_at: :desc).limit(50).map do |conv|
+      {
+        id: conv.id,
+        topic: conv.topic,
+        message_count: conv.conversation_messages.count,
+        updated_at: conv.updated_at,
+        created_at: conv.created_at
+      }
+    end
+
+    render json: { conversations: conversations }
+  end
+
+  private
+
+  def find_or_create_conversation
+    if params[:conversation_id].present?
+      current_user.conversations.find_by(id: params[:conversation_id]) || create_new_conversation
+    else
+      create_new_conversation
+    end
+  end
+
+  def create_new_conversation
+    # Topic will be auto-generated from the first message by the service
+    current_user.conversations.create!(topic: "VeriTalk conversation")
   end
 end

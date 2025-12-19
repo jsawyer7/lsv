@@ -1,13 +1,19 @@
 <script>
-  document.addEventListener('DOMContentLoaded', function() {
+  // Use both DOMContentLoaded and window load to ensure everything is ready
+  function initVeritalk() {
     const form = document.getElementById('veritalk-form');
     const input = document.getElementById('veritalk-input');
     const messagesDiv = document.getElementById('veritalk-messages');
     const conversationIdInput = document.getElementById('veritalk-conversation-id');
 
     if (!form || !input || !messagesDiv) {
+      console.log('VeriTalk elements not found, retrying...');
+      // Retry after a short delay if elements aren't ready
+      setTimeout(initVeritalk, 200);
       return;
     }
+
+    console.log('VeriTalk initialized');
 
     let isStreaming = false;
     
@@ -19,22 +25,29 @@
 
     // Load conversation history on page load
     async function loadConversationHistory() {
+      console.log('Loading conversation history...');
+      
       // Try to get conversation_id from localStorage first
       let conversationId = localStorage.getItem('veritalk_conversation_id');
+      console.log('Conversation ID from localStorage:', conversationId);
       
       // If no conversation_id in localStorage, try to get from hidden input (for new conversations)
       if (!conversationId && conversationIdInput && conversationIdInput.value) {
         conversationId = conversationIdInput.value;
+        console.log('Conversation ID from hidden input:', conversationId);
       }
 
       // If still no conversation_id, try to get the latest conversation
       if (!conversationId) {
         try {
+          console.log('Fetching latest conversation...');
           const response = await fetch('/veritalk/latest');
           if (response.ok) {
             const data = await response.json();
+            console.log('Latest conversation data:', data);
             if (data.conversation_id) {
               conversationId = data.conversation_id;
+              console.log('Using latest conversation ID:', conversationId);
             }
           }
         } catch (error) {
@@ -45,9 +58,11 @@
       // Load messages if we have a conversation_id
       if (conversationId) {
         try {
+          console.log('Loading messages for conversation:', conversationId);
           const response = await fetch(`/veritalk/conversation/${conversationId}/messages`);
           if (response.ok) {
             const data = await response.json();
+            console.log('Loaded conversation data:', data);
             
             // Store conversation_id
             if (conversationIdInput) {
@@ -63,12 +78,26 @@
 
             // Load messages
             if (data.messages && data.messages.length > 0) {
-              data.messages.forEach(msg => {
+              console.log('Loading', data.messages.length, 'messages');
+              // Clear any existing messages first (including welcome message)
+              messagesDiv.innerHTML = '';
+              
+              data.messages.forEach((msg, index) => {
                 appendMessage(msg.role, msg.content, false); // false = don't animate on load
               });
-              messagesDiv.scrollTop = messagesDiv.scrollHeight;
+              
+              // Scroll to bottom after a brief delay to ensure DOM is updated
+              setTimeout(() => {
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+              }, 50);
+              
+              console.log('Messages loaded successfully');
+            } else {
+              console.log('No messages found in conversation');
+              // Keep welcome message if no messages
             }
           } else {
+            console.log('Conversation not found, clearing localStorage');
             // Conversation not found, clear localStorage
             localStorage.removeItem('veritalk_conversation_id');
             if (conversationIdInput) {
@@ -78,11 +107,15 @@
         } catch (error) {
           console.error('Error loading conversation history:', error);
         }
+      } else {
+        console.log('No conversation ID found, showing welcome message');
       }
     }
 
-    // Load history on page load
-    loadConversationHistory();
+    // Load history on page load - use a small delay to ensure DOM is ready
+    setTimeout(() => {
+      loadConversationHistory();
+    }, 200);
 
     form.addEventListener('submit', function(e) {
       e.preventDefault();
@@ -248,6 +281,7 @@
           }
           // Store in localStorage for persistence across page refreshes
           localStorage.setItem('veritalk_conversation_id', newConversationId);
+          console.log('Saved conversation ID to localStorage:', newConversationId);
         }
 
         if (!response.body) {
@@ -311,6 +345,286 @@
         }
       }
     }
+  }
+
+  // Initialize when DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initVeritalk);
+  } else {
+    // DOM is already ready
+    initVeritalk();
+  }
+
+  // Also try on window load as a fallback
+  window.addEventListener('load', function() {
+    // Only load history if messages div is empty (hasn't been loaded yet)
+    const messagesDiv = document.getElementById('veritalk-messages');
+    if (messagesDiv && messagesDiv.querySelectorAll('.veritalk-message').length === 0) {
+      const welcome = messagesDiv.querySelector('.veritalk-welcome');
+      // If only welcome message exists, try loading history
+      if (welcome && messagesDiv.children.length === 1) {
+        console.log('Window loaded, checking for conversation history...');
+        const conversationId = localStorage.getItem('veritalk_conversation_id');
+        if (conversationId) {
+          fetch(`/veritalk/conversation/${conversationId}/messages`)
+            .then(response => response.json())
+            .then(data => {
+              if (data.messages && data.messages.length > 0) {
+                welcome.remove();
+                data.messages.forEach(msg => {
+                  const messageDiv = document.createElement('div');
+                  messageDiv.className = 'veritalk-message ' + msg.role;
+                  messageDiv.style.animation = 'none';
+                  
+                  if (msg.role === 'assistant') {
+                    const avatar = document.createElement('div');
+                    avatar.className = 'veritalk-message-avatar';
+                    avatar.innerHTML = '<i class="fas fa-robot"></i>';
+                    messageDiv.appendChild(avatar);
+                  }
+                  
+                  const contentDiv = document.createElement('div');
+                  contentDiv.className = 'veritalk-message-content';
+                  contentDiv.textContent = msg.content;
+                  messageDiv.appendChild(contentDiv);
+                  
+                  messagesDiv.appendChild(messageDiv);
+                });
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+                
+                const conversationIdInput = document.getElementById('veritalk-conversation-id');
+                if (conversationIdInput) {
+                  conversationIdInput.value = data.conversation_id;
+                }
+              }
+            })
+            .catch(error => console.error('Error loading history on window load:', error));
+        }
+      }
+    }
+  });
+
+  // History Sidebar Functionality
+  document.addEventListener('DOMContentLoaded', function() {
+    const historyBtn = document.getElementById('veritalk-history-btn');
+    const historySidebar = document.getElementById('veritalk-history-sidebar');
+    const historyClose = document.getElementById('veritalk-history-close');
+    const historyOverlay = document.getElementById('veritalk-history-overlay');
+    const newChatBtn = document.getElementById('veritalk-new-chat-btn');
+    const conversationsList = document.getElementById('veritalk-conversations-list');
+    const conversationIdInput = document.getElementById('veritalk-conversation-id');
+    const messagesDiv = document.getElementById('veritalk-messages');
+
+    if (!historyBtn || !historySidebar || !historyClose || !historyOverlay) {
+      return;
+    }
+
+    // Open sidebar
+    function openHistorySidebar() {
+      // Close user profile dropdown if open
+      const dropdownMenu = document.querySelector('.dropdown-menu');
+      const userInfo = document.querySelector('.user-info');
+      if (dropdownMenu && dropdownMenu.classList.contains('show')) {
+        dropdownMenu.classList.remove('show');
+        if (userInfo) {
+          userInfo.classList.remove('active');
+        }
+      }
+      
+      historySidebar.classList.add('active');
+      historyOverlay.classList.add('active');
+      document.body.style.overflow = 'hidden';
+      loadConversationsList();
+    }
+
+    // Close sidebar
+    function closeHistorySidebar() {
+      historySidebar.classList.remove('active');
+      historyOverlay.classList.remove('active');
+      document.body.style.overflow = '';
+    }
+
+    // Load conversations list
+    async function loadConversationsList() {
+      if (!conversationsList) return;
+
+      conversationsList.innerHTML = '<div class="veritalk-history-loading">Loading conversations...</div>';
+
+      try {
+        const response = await fetch('/veritalk/conversations');
+        if (response.ok) {
+          const data = await response.json();
+          
+          if (data.conversations && data.conversations.length > 0) {
+            conversationsList.innerHTML = '';
+            
+            data.conversations.forEach(conv => {
+              const item = document.createElement('div');
+              item.className = 'veritalk-conversation-item';
+              
+              // Check if this is the active conversation
+              const currentConvId = conversationIdInput ? conversationIdInput.value : localStorage.getItem('veritalk_conversation_id');
+              if (currentConvId && currentConvId == conv.id) {
+                item.classList.add('active');
+              }
+              
+              item.innerHTML = `
+                <div class="veritalk-conversation-topic">${escapeHtml(conv.topic)}</div>
+                <div class="veritalk-conversation-meta">
+                  <span class="veritalk-conversation-count">
+                    <i class="fas fa-comments"></i>
+                    ${conv.message_count} messages
+                  </span>
+                  <span>${formatDate(conv.updated_at)}</span>
+                </div>
+              `;
+              
+              item.addEventListener('click', function() {
+                loadConversation(conv.id);
+                closeHistorySidebar();
+              });
+              
+              conversationsList.appendChild(item);
+            });
+          } else {
+            conversationsList.innerHTML = `
+              <div class="veritalk-empty-history">
+                <h3>No chat history available</h3>
+                <p>Your future conversations will appear here.</p>
+              </div>
+            `;
+          }
+        } else {
+          conversationsList.innerHTML = '<div class="veritalk-history-loading">Error loading conversations</div>';
+        }
+      } catch (error) {
+        console.error('Error loading conversations:', error);
+        conversationsList.innerHTML = '<div class="veritalk-history-loading">Error loading conversations</div>';
+      }
+    }
+
+    // Load a specific conversation
+    async function loadConversation(conversationId) {
+      if (!messagesDiv) return;
+
+      try {
+        const response = await fetch(`/veritalk/conversation/${conversationId}/messages`);
+        if (response.ok) {
+          const data = await response.json();
+          
+          // Store conversation_id
+          if (conversationIdInput) {
+            conversationIdInput.value = data.conversation_id;
+          }
+          localStorage.setItem('veritalk_conversation_id', data.conversation_id);
+
+          // Clear messages and load new ones
+          messagesDiv.innerHTML = '';
+          
+          if (data.messages && data.messages.length > 0) {
+            data.messages.forEach(msg => {
+              const messageDiv = document.createElement('div');
+              messageDiv.className = 'veritalk-message ' + msg.role;
+              messageDiv.style.animation = 'none';
+              
+              if (msg.role === 'assistant') {
+                const avatar = document.createElement('div');
+                avatar.className = 'veritalk-message-avatar';
+                avatar.innerHTML = '<i class="fas fa-robot"></i>';
+                messageDiv.appendChild(avatar);
+              }
+              
+              const contentDiv = document.createElement('div');
+              contentDiv.className = 'veritalk-message-content';
+              contentDiv.textContent = msg.content;
+              messageDiv.appendChild(contentDiv);
+              
+              messagesDiv.appendChild(messageDiv);
+            });
+            
+            setTimeout(() => {
+              messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            }, 50);
+          }
+          
+          // Reload conversations list to update active state
+          loadConversationsList();
+        }
+      } catch (error) {
+        console.error('Error loading conversation:', error);
+      }
+    }
+
+    // Start new chat
+    function startNewChat() {
+      if (conversationIdInput) {
+        conversationIdInput.value = '';
+      }
+      localStorage.removeItem('veritalk_conversation_id');
+      
+      // Clear messages and show welcome
+      if (messagesDiv) {
+        messagesDiv.innerHTML = `
+          <div class="veritalk-welcome">
+            <div class="veritalk-welcome-icon">
+              <i class="fas fa-comments"></i>
+            </div>
+            <h3>How can I help you today?</h3>
+            <p>I can help you with questions about religious texts, historical context, original languages, and translations.</p>
+          </div>
+        `;
+      }
+      
+      closeHistorySidebar();
+    }
+
+    // Helper functions
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function formatDate(dateString) {
+      const date = new Date(dateString);
+      const now = new Date();
+      const diffTime = Math.abs(now - date);
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      if (diffDays === 1) {
+        return 'Today';
+      } else if (diffDays === 2) {
+        return 'Yesterday';
+      } else if (diffDays <= 7) {
+        return `${diffDays - 1} days ago`;
+      } else {
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      }
+    }
+
+    // Event listeners
+    if (historyBtn) {
+      historyBtn.addEventListener('click', openHistorySidebar);
+    }
+
+    if (historyClose) {
+      historyClose.addEventListener('click', closeHistorySidebar);
+    }
+
+    if (historyOverlay) {
+      historyOverlay.addEventListener('click', closeHistorySidebar);
+    }
+
+    if (newChatBtn) {
+      newChatBtn.addEventListener('click', startNewChat);
+    }
+
+    // Close on Escape key
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape' && historySidebar.classList.contains('active')) {
+        closeHistorySidebar();
+      }
+    });
   });
 </script>
 
