@@ -235,19 +235,6 @@ ActiveRecord::Schema[7.0].define(version: 2025_12_17_120000) do
     t.index ["user_id"], name: "index_conversations_on_user_id"
   end
 
-  create_table "customers", force: :cascade do |t|
-    t.string "chargebee_id"
-    t.bigint "user_id", null: false
-    t.string "email"
-    t.string "first_name"
-    t.string "last_name"
-    t.string "company"
-    t.string "phone"
-    t.jsonb "metadata"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["user_id"], name: "index_customers_on_user_id"
-  end
 
   create_table "directions", force: :cascade do |t|
     t.text "code", null: false
