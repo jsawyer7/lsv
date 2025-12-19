@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2025_12_17_120000) do
+ActiveRecord::Schema[7.0].define(version: 2025_12_18_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pgcrypto"
@@ -539,6 +539,21 @@ ActiveRecord::Schema[7.0].define(version: 2025_12_17_120000) do
     t.index ["latitude", "longitude"], name: "index_users_on_latitude_and_longitude"
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
     t.index ["terms_agreed_at"], name: "index_users_on_terms_agreed_at"
+  end
+
+  create_table "veritalk_validators", force: :cascade do |t|
+    t.string "name", null: false
+    t.text "description"
+    t.text "system_prompt", null: false
+    t.boolean "is_active", default: false, null: false
+    t.integer "version", default: 1, null: false
+    t.string "created_by_type"
+    t.bigint "created_by_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["created_by_type", "created_by_id"], name: "index_veritalk_validators_on_created_by"
+    t.index ["is_active"], name: "index_veritalk_validators_on_is_active"
+    t.index ["name"], name: "index_veritalk_validators_on_name"
   end
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"

@@ -29,6 +29,7 @@ class VeritalkChatService
 
     assistant_text = +""
 
+    # First, collect the full response
     @client.chat(
       parameters: {
         model: "gpt-4o",
@@ -37,17 +38,25 @@ class VeritalkChatService
         stream: proc do |chunk, _bytesize|
           content = chunk.dig("choices", 0, "delta", "content")
           next unless content
-
           assistant_text << content
-          response.stream.write(content)
         end
       }
     )
 
-    # Persist assistant message
+    # Extract the actual response text (handles JSON responses)
+    cleaned_text = extract_assistant_response(assistant_text)
+
+    # Stream the cleaned text to the user
+    # Write in chunks for better performance while maintaining streaming appearance
+    chunk_size = 10
+    cleaned_text.chars.each_slice(chunk_size) do |chunk|
+      response.stream.write(chunk.join)
+    end
+
+    # Persist the cleaned assistant message
     @conversation.conversation_messages.create!(
       role: 'assistant',
-      content: assistant_text
+      content: cleaned_text
     )
 
     # Update compact summary lines for future turns
@@ -95,6 +104,20 @@ class VeritalkChatService
   end
 
   def system_prompt
+    # Get the active validator from database, or fallback to default
+    validator = VeritalkValidator.current
+
+    if validator&.system_prompt.present?
+      Rails.logger.info "VeriTalk: Using database validator '#{validator.name}' (ID: #{validator.id}, Version: #{validator.version})"
+      validator.system_prompt
+    else
+      Rails.logger.warn "VeriTalk: No active validator found in database, using default fallback prompt"
+      # Fallback to default prompt if no validator is set up
+      default_system_prompt
+    end
+  end
+
+  def default_system_prompt
     <<~PROMPT
       You are VeriTalk, the AI assistant for VeriFaith.
 
@@ -211,6 +234,58 @@ class VeritalkChatService
       Rails.logger.error "VeriTalk topic generation error: #{e.message}"
       # Don't fail the whole request if topic generation fails
     end
+  end
+
+  def extract_assistant_response(text)
+    return text if text.blank?
+
+    # Try to parse as JSON (most common case)
+    begin
+      parsed = JSON.parse(text.strip)
+      if parsed.is_a?(Hash)
+        # Check for assistant_response first (normal response)
+        if parsed['assistant_response'].present?
+          Rails.logger.info "VeriTalk: Extracted assistant_response from JSON response"
+          return parsed['assistant_response'].to_s
+        # Check for user_followup (redirect/off-topic response)
+        # The validator should provide the complete message in user_followup
+        elsif parsed['user_followup'].present?
+          Rails.logger.info "VeriTalk: Extracted user_followup from JSON response (route: #{parsed['route']})"
+          return parsed['user_followup'].to_s
+        end
+      end
+    rescue JSON::ParserError => e
+      # Not valid JSON, try other methods
+      Rails.logger.debug "VeriTalk: JSON parse failed: #{e.message}"
+    end
+
+    # Check if text contains JSON-like structure (starts with { and has response fields)
+    # This handles cases where there might be extra whitespace or the JSON is incomplete
+    if text.strip.start_with?('{') && (text.include?('assistant_response') || text.include?('user_followup'))
+      # Try to extract JSON from the text (might have extra text before/after)
+      # Use a more flexible regex to find the JSON object
+      json_match = text.match(/\{[\s\S]*\}/m)
+      if json_match
+        begin
+          parsed = JSON.parse(json_match[0])
+          if parsed.is_a?(Hash)
+            if parsed['assistant_response'].present?
+              Rails.logger.info "VeriTalk: Extracted assistant_response from JSON in text"
+              return parsed['assistant_response'].to_s
+            elsif parsed['user_followup'].present?
+              Rails.logger.info "VeriTalk: Extracted user_followup from JSON in text (route: #{parsed['route']})"
+              return parsed['user_followup'].to_s
+            end
+          end
+        rescue JSON::ParserError => e
+          Rails.logger.debug "VeriTalk: Failed to parse extracted JSON: #{e.message}"
+        end
+      end
+    end
+
+    # Not JSON or no response field, return original text
+    Rails.logger.debug "VeriTalk: Response is not JSON or doesn't contain response fields, returning as-is"
+    text
   end
 
   def openai_api_key

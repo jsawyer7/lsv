@@ -40,7 +40,7 @@
       <% end %>
     </li>
 
-    <% veritalk_controllers = %w[conversations conversation_messages] %>
+    <% veritalk_controllers = %w[conversations conversation_messages veritalk_validators] %>
     <% veritalk_active = veritalk_controllers.include?(controller_name) %>
 
     <!-- VeriTalk Conversations (Collapsible Group) -->
@@ -58,6 +58,11 @@
         <li class="menu-item <%= 'active' if controller_name == 'conversation_messages' %>">
           <%= link_to admin_conversation_messages_path, class: "menu-link" do %>
             <div data-i18n="Messages">Messages</div>
+          <% end %>
+        </li>
+        <li class="menu-item <%= 'active' if controller_name == 'veritalk_validators' %>">
+          <%= link_to admin_veritalk_validators_path, class: "menu-link" do %>
+            <div data-i18n="Validators">Validators</div>
           <% end %>
         </li>
       </ul>
