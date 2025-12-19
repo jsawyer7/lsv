@@ -10,6 +10,79 @@
     }
 
     let isStreaming = false;
+    
+    // Initialize send button state
+    const sendBtn = document.getElementById('veritalk-send-btn');
+    if (sendBtn) {
+      sendBtn.disabled = !input.value.trim();
+    }
+
+    // Load conversation history on page load
+    async function loadConversationHistory() {
+      // Try to get conversation_id from localStorage first
+      let conversationId = localStorage.getItem('veritalk_conversation_id');
+      
+      // If no conversation_id in localStorage, try to get from hidden input (for new conversations)
+      if (!conversationId && conversationIdInput && conversationIdInput.value) {
+        conversationId = conversationIdInput.value;
+      }
+
+      // If still no conversation_id, try to get the latest conversation
+      if (!conversationId) {
+        try {
+          const response = await fetch('/veritalk/latest');
+          if (response.ok) {
+            const data = await response.json();
+            if (data.conversation_id) {
+              conversationId = data.conversation_id;
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching latest conversation:', error);
+        }
+      }
+
+      // Load messages if we have a conversation_id
+      if (conversationId) {
+        try {
+          const response = await fetch(`/veritalk/conversation/${conversationId}/messages`);
+          if (response.ok) {
+            const data = await response.json();
+            
+            // Store conversation_id
+            if (conversationIdInput) {
+              conversationIdInput.value = data.conversation_id;
+            }
+            localStorage.setItem('veritalk_conversation_id', data.conversation_id);
+
+            // Clear welcome message
+            const welcome = messagesDiv.querySelector('.veritalk-welcome');
+            if (welcome) {
+              welcome.remove();
+            }
+
+            // Load messages
+            if (data.messages && data.messages.length > 0) {
+              data.messages.forEach(msg => {
+                appendMessage(msg.role, msg.content, false); // false = don't animate on load
+              });
+              messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            }
+          } else {
+            // Conversation not found, clear localStorage
+            localStorage.removeItem('veritalk_conversation_id');
+            if (conversationIdInput) {
+              conversationIdInput.value = '';
+            }
+          }
+        } catch (error) {
+          console.error('Error loading conversation history:', error);
+        }
+      }
+    }
+
+    // Load history on page load
+    loadConversationHistory();
 
     form.addEventListener('submit', function(e) {
       e.preventDefault();
@@ -22,20 +95,86 @@
       startVeritalkStream(text);
     });
 
-    function appendMessage(role, content) {
-      const div = document.createElement('div');
-      div.className = 'veritalk-message ' + role;
-      div.textContent = content;
-      messagesDiv.appendChild(div);
+    // Auto-resize textarea
+    input.addEventListener('input', function() {
+      this.style.height = 'auto';
+      this.style.height = Math.min(this.scrollHeight, 200) + 'px';
+      
+      // Enable/disable send button
+      const sendBtn = document.getElementById('veritalk-send-btn');
+      if (sendBtn) {
+        sendBtn.disabled = !this.value.trim() || isStreaming;
+      }
+    });
+
+    // Handle Enter key (Shift+Enter for new line)
+    input.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        if (!isStreaming && this.value.trim()) {
+          form.dispatchEvent(new Event('submit'));
+        }
+      }
+    });
+
+    function appendMessage(role, content, animate = true) {
+      // Remove welcome message if it exists
+      const welcome = messagesDiv.querySelector('.veritalk-welcome');
+      if (welcome) {
+        welcome.remove();
+      }
+
+      const messageDiv = document.createElement('div');
+      messageDiv.className = 'veritalk-message ' + role;
+      if (!animate) {
+        messageDiv.style.animation = 'none';
+      }
+      
+      if (role === 'assistant') {
+        const avatar = document.createElement('div');
+        avatar.className = 'veritalk-message-avatar';
+        avatar.innerHTML = '<i class="fas fa-robot"></i>';
+        messageDiv.appendChild(avatar);
+      }
+      
+      const contentDiv = document.createElement('div');
+      contentDiv.className = 'veritalk-message-content';
+      contentDiv.textContent = content;
+      messageDiv.appendChild(contentDiv);
+      
+      messagesDiv.appendChild(messageDiv);
       messagesDiv.scrollTop = messagesDiv.scrollHeight;
     }
 
     async function startVeritalkStream(message) {
       isStreaming = true;
+      
+      // Disable input and send button
+      input.disabled = true;
+      const sendBtn = document.getElementById('veritalk-send-btn');
+      if (sendBtn) {
+        sendBtn.disabled = true;
+      }
+
+      // Remove welcome message if it exists
+      const welcome = messagesDiv.querySelector('.veritalk-welcome');
+      if (welcome) {
+        welcome.remove();
+      }
 
       const thinkingDiv = document.createElement('div');
       thinkingDiv.className = 'veritalk-message assistant thinking';
-      thinkingDiv.textContent = 'VeriTalk is thinking...';
+      
+      const avatar = document.createElement('div');
+      avatar.className = 'veritalk-message-avatar';
+      avatar.innerHTML = '<i class="fas fa-robot"></i>';
+      thinkingDiv.appendChild(avatar);
+      
+      const contentDiv = document.createElement('div');
+      contentDiv.className = 'veritalk-message-content';
+      contentDiv.textContent = 'VeriTalk is thinking...';
+      thinkingDiv.appendChild(contentDiv);
+      
       messagesDiv.appendChild(thinkingDiv);
       messagesDiv.scrollTop = messagesDiv.scrollHeight;
 
@@ -60,32 +199,70 @@
         // Check if response is OK and is actually a stream
         if (!response.ok) {
           const errorText = await response.text();
+          const contentDiv = thinkingDiv.querySelector('.veritalk-message-content');
           // Check if we got HTML (redirect page) instead of error message
           if (errorText.includes('<!DOCTYPE html>') || errorText.includes('<html>')) {
-            thinkingDiv.textContent = 'AI features require an active subscription. Please upgrade your plan to use VeriTalk.';
+            if (contentDiv) {
+              contentDiv.textContent = 'AI features require an active subscription. Please upgrade your plan to use VeriTalk.';
+            } else {
+              thinkingDiv.textContent = 'AI features require an active subscription. Please upgrade your plan to use VeriTalk.';
+            }
           } else {
-            thinkingDiv.textContent = errorText || 'Sorry, VeriTalk had a problem.';
+            if (contentDiv) {
+              contentDiv.textContent = errorText || 'Sorry, VeriTalk had a problem.';
+            } else {
+              thinkingDiv.textContent = errorText || 'Sorry, VeriTalk had a problem.';
+            }
           }
           isStreaming = false;
+          input.disabled = false;
+          const sendBtn = document.getElementById('veritalk-send-btn');
+          if (sendBtn) {
+            sendBtn.disabled = !input.value.trim();
+          }
           return;
         }
 
         // Check content type to ensure it's a stream
         const contentType = response.headers.get('Content-Type');
         if (contentType && !contentType.includes('text/event-stream') && !contentType.includes('text/plain')) {
-          thinkingDiv.textContent = 'AI features require an active subscription. Please upgrade your plan to use VeriTalk.';
+          const contentDiv = thinkingDiv.querySelector('.veritalk-message-content');
+          if (contentDiv) {
+            contentDiv.textContent = 'AI features require an active subscription. Please upgrade your plan to use VeriTalk.';
+          } else {
+            thinkingDiv.textContent = 'AI features require an active subscription. Please upgrade your plan to use VeriTalk.';
+          }
           isStreaming = false;
+          input.disabled = false;
+          const sendBtn = document.getElementById('veritalk-send-btn');
+          if (sendBtn) {
+            sendBtn.disabled = !input.value.trim();
+          }
           return;
         }
 
         const newConversationId = response.headers.get('X-Veritalk-Conversation-Id');
-        if (newConversationId && conversationIdInput) {
-          conversationIdInput.value = newConversationId;
+        if (newConversationId) {
+          if (conversationIdInput) {
+            conversationIdInput.value = newConversationId;
+          }
+          // Store in localStorage for persistence across page refreshes
+          localStorage.setItem('veritalk_conversation_id', newConversationId);
         }
 
         if (!response.body) {
-          thinkingDiv.textContent = 'Sorry, VeriTalk had a problem.';
+          const contentDiv = thinkingDiv.querySelector('.veritalk-message-content');
+          if (contentDiv) {
+            contentDiv.textContent = 'Sorry, VeriTalk had a problem.';
+          } else {
+            thinkingDiv.textContent = 'Sorry, VeriTalk had a problem.';
+          }
           isStreaming = false;
+          input.disabled = false;
+          const sendBtn = document.getElementById('veritalk-send-btn');
+          if (sendBtn) {
+            sendBtn.disabled = !input.value.trim();
+          }
           return;
         }
 
@@ -93,7 +270,8 @@
         const decoder = new TextDecoder();
 
         let assistantText = '';
-        thinkingDiv.textContent = '';
+        const contentDiv = thinkingDiv.querySelector('.veritalk-message-content');
+        contentDiv.textContent = '';
         thinkingDiv.classList.remove('thinking');
 
         while (true) {
@@ -103,16 +281,34 @@
 
           const chunk = decoder.decode(value);
           assistantText += chunk;
-          thinkingDiv.textContent = assistantText;
+          contentDiv.textContent = assistantText;
           messagesDiv.scrollTop = messagesDiv.scrollHeight;
         }
 
         thinkingDiv.classList.add('assistant-final');
         isStreaming = false;
+        
+        // Re-enable input and send button
+        input.disabled = false;
+        input.focus();
+        if (sendBtn) {
+          sendBtn.disabled = !input.value.trim();
+        }
       } catch (error) {
         console.error('VeriTalk error:', error);
-        thinkingDiv.textContent = 'Sorry, VeriTalk is unavailable right now.';
+        const contentDiv = thinkingDiv.querySelector('.veritalk-message-content');
+        if (contentDiv) {
+          contentDiv.textContent = 'Sorry, VeriTalk is unavailable right now.';
+        } else {
+          thinkingDiv.textContent = 'Sorry, VeriTalk is unavailable right now.';
+        }
         isStreaming = false;
+        
+        // Re-enable input and send button
+        input.disabled = false;
+        if (sendBtn) {
+          sendBtn.disabled = !input.value.trim();
+        }
       }
     }
   });

@@ -11,6 +11,14 @@ class ConversationMessage < ApplicationRecord
 
   default_scope { order(position: :asc) }
 
+  def self.ransackable_attributes(auth_object = nil)
+    %w[id conversation_id role content position created_at updated_at]
+  end
+
+  def self.ransackable_associations(auth_object = nil)
+    %w[conversation]
+  end
+
   private
 
   def assign_position

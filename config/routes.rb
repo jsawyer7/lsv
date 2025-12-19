@@ -50,6 +50,8 @@ Rails.application.routes.draw do
   end
 
   post '/veritalk/chat', to: 'veritalk#chat'
+  get '/veritalk/conversation/:id/messages', to: 'veritalk#messages', as: :veritalk_messages
+  get '/veritalk/latest', to: 'veritalk#latest_conversation', as: :veritalk_latest
 
   post '/ai/claim_suggestion', to: 'ai#claim_suggestion'
   post '/ai/evidence_suggestion', to: 'ai#evidence_suggestion'

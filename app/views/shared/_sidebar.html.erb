@@ -40,7 +40,28 @@
       <% end %>
     </li>
 
-        
+    <% veritalk_controllers = %w[conversations conversation_messages] %>
+    <% veritalk_active = veritalk_controllers.include?(controller_name) %>
+
+    <!-- VeriTalk Conversations (Collapsible Group) -->
+    <li class="menu-item <%= 'open active' if veritalk_active %>">
+      <a class="menu-link menu-toggle" href="javascript:void(0);">
+        <i class="menu-icon icon-base ri ri-chat-3-line"></i>
+        <div data-i18n="VeriTalk">VeriTalk</div>
+      </a>
+      <ul class="menu-sub">
+        <li class="menu-item <%= 'active' if controller_name == 'conversations' %>">
+          <%= link_to admin_conversations_path, class: "menu-link" do %>
+            <div data-i18n="Conversations">Conversations</div>
+          <% end %>
+        </li>
+        <li class="menu-item <%= 'active' if controller_name == 'conversation_messages' %>">
+          <%= link_to admin_conversation_messages_path, class: "menu-link" do %>
+            <div data-i18n="Messages">Messages</div>
+          <% end %>
+        </li>
+      </ul>
+    </li>
 
     <% data_tables_controllers = %w[directions languages sources books canons canon_books text_unit_types text_contents name_mappings text_translations] %>
     <% data_tables_active = data_tables_controllers.include?(controller_name) %>

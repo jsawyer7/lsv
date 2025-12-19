@@ -1,28 +1,45 @@
 <div class="veritalk-container">
   <div class="veritalk-header">
-    <h2 class="veritalk-title">VeriTalk</h2>
-    <p class="veritalk-subtitle">
-      Ask about scriptures, religious history, original languages, and translations. VeriTalk follows LSV-style rules for clear, factual claims.
-    </p>
+    <div class="veritalk-header-content">
+      <h1 class="veritalk-title">VeriTalk</h1>
+      <p class="veritalk-subtitle">
+        Ask about scriptures, religious history, original languages, and translations
+      </p>
+    </div>
   </div>
 
   <input type="hidden" id="veritalk-conversation-id" value="">
 
-  <div id="veritalk-messages" class="veritalk-messages"></div>
-
-  <form id="veritalk-form" class="veritalk-form">
-    <div class="veritalk-input-row">
-      <textarea
-        id="veritalk-input"
-        class="veritalk-input"
-        rows="2"
-        placeholder="Ask VeriTalk a question about religion, history, languages, or translations..."
-      ></textarea>
-      <button type="submit" class="veritalk-send-button">
-        Send
-      </button>
+  <div id="veritalk-messages" class="veritalk-messages">
+    <div class="veritalk-welcome">
+      <div class="veritalk-welcome-icon">
+        <i class="fas fa-comments"></i>
+      </div>
+      <h3>How can I help you today?</h3>
+      <p>I can help you with questions about religious texts, historical context, original languages, and translations.</p>
     </div>
-  </form>
+  </div>
+
+  <div class="veritalk-input-container">
+    <form id="veritalk-form" class="veritalk-form">
+      <div class="veritalk-input-wrapper">
+        <textarea
+          id="veritalk-input"
+          class="veritalk-input"
+          rows="1"
+          placeholder="Message VeriTalk..."
+          autocomplete="off"
+          spellcheck="true"
+        ></textarea>
+        <button type="submit" class="veritalk-send-button" id="veritalk-send-btn" disabled>
+          <i class="fas fa-paper-plane"></i>
+        </button>
+      </div>
+    </form>
+    <div class="veritalk-footer">
+      <p class="veritalk-disclaimer">VeriTalk can make mistakes. Check important information.</p>
+    </div>
+  </div>
 </div>
 
 

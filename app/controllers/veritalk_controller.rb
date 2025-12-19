@@ -43,4 +43,39 @@ class VeritalkController < ApplicationController
     # Topic will be auto-generated from the first message by the service
     current_user.conversations.create!(topic: "VeriTalk conversation")
   end
+
+  def messages
+    conversation = current_user.conversations.find_by(id: params[:id])
+
+    unless conversation
+      render json: { error: 'Conversation not found' }, status: :not_found
+      return
+    end
+
+    messages = conversation.conversation_messages.order(position: :asc).map do |msg|
+      {
+        id: msg.id,
+        role: msg.role,
+        content: msg.content,
+        position: msg.position,
+        created_at: msg.created_at
+      }
+    end
+
+    render json: {
+      conversation_id: conversation.id,
+      topic: conversation.topic,
+      messages: messages
+    }
+  end
+
+  def latest_conversation
+    conversation = current_user.conversations.order(updated_at: :desc).first
+
+    if conversation
+      render json: { conversation_id: conversation.id }
+    else
+      render json: { conversation_id: nil }
+    end
+  end
 end
