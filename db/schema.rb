@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2025_12_15_200000) do
+ActiveRecord::Schema[7.0].define(version: 2025_12_18_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pgcrypto"
@@ -204,6 +204,37 @@ ActiveRecord::Schema[7.0].define(version: 2025_12_15_200000) do
     t.index ["commentable_type", "commentable_id"], name: "index_comments_on_commentable"
     t.index ["user_id"], name: "index_comments_on_user_id"
   end
+
+  create_table "conversation_messages", force: :cascade do |t|
+    t.bigint "conversation_id", null: false
+    t.string "role", null: false
+    t.text "content", null: false
+    t.integer "position", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["conversation_id", "position"], name: "index_conversation_messages_on_conversation_id_and_position", unique: true
+    t.index ["conversation_id"], name: "index_conversation_messages_on_conversation_id"
+  end
+
+  create_table "conversation_summaries", force: :cascade do |t|
+    t.bigint "conversation_id", null: false
+    t.text "content", null: false
+    t.integer "position", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["conversation_id", "position"], name: "index_conversation_summaries_on_conversation_id_and_position", unique: true
+    t.index ["conversation_id"], name: "index_conversation_summaries_on_conversation_id"
+  end
+
+  create_table "conversations", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "topic", null: false
+    t.text "summary"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id"], name: "index_conversations_on_user_id"
+  end
+
 
   create_table "directions", force: :cascade do |t|
     t.text "code", null: false
@@ -510,6 +541,21 @@ ActiveRecord::Schema[7.0].define(version: 2025_12_15_200000) do
     t.index ["terms_agreed_at"], name: "index_users_on_terms_agreed_at"
   end
 
+  create_table "veritalk_validators", force: :cascade do |t|
+    t.string "name", null: false
+    t.text "description"
+    t.text "system_prompt", null: false
+    t.boolean "is_active", default: false, null: false
+    t.integer "version", default: 1, null: false
+    t.string "created_by_type"
+    t.bigint "created_by_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["created_by_type", "created_by_id"], name: "index_veritalk_validators_on_created_by"
+    t.index ["is_active"], name: "index_veritalk_validators_on_is_active"
+    t.index ["name"], name: "index_veritalk_validators_on_name"
+  end
+
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "ai_evidence_usages", "users"
@@ -526,6 +572,9 @@ ActiveRecord::Schema[7.0].define(version: 2025_12_15_200000) do
   add_foreign_key "chargebee_subscriptions", "users"
   add_foreign_key "claims", "users"
   add_foreign_key "comments", "users"
+  add_foreign_key "conversation_messages", "conversations"
+  add_foreign_key "conversation_summaries", "conversations"
+  add_foreign_key "conversations", "users"
   add_foreign_key "evidences", "claims"
   add_foreign_key "follows", "users"
   add_foreign_key "follows", "users", column: "followed_user"
