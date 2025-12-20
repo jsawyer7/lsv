@@ -796,11 +796,32 @@ class TextContentPopulationService
       content_populated_by: GROK_MODEL
     }
 
+    # Universal: Enforce text_unit_type based on unit_key shape
+    # TRAD|BOOK|CH|VS (4 parts) => Verse
+    # TRAD|BOOK|CH (3 parts) => Chapter
+    if @text_content.unit_key.present?
+      expected_type_code = enforce_text_unit_type_from_key(@text_content.unit_key)
+      if expected_type_code
+        expected_type = TextUnitType.unscoped.find_by(code: expected_type_code)
+        if expected_type && @text_content.text_unit_type_id != expected_type.id
+          Rails.logger.warn "[TEXT_UNIT_TYPE] Correcting text_unit_type for #{@text_content.unit_key}: #{@text_content.text_unit_type&.code} => #{expected_type_code}"
+          update_params[:text_unit_type_id] = expected_type.id
+        end
+      end
+    end
+
     # Required classification fields; use NOT_SPECIFIED when missing
     update_params[:addressed_party_code] = result[:addressed_party_code].presence || 'NOT_SPECIFIED'
     update_params[:addressed_party_custom_name] = result[:addressed_party_custom_name] if result[:addressed_party_custom_name].present?
     update_params[:responsible_party_code] = result[:responsible_party_code].presence || 'NOT_SPECIFIED'
-    update_params[:responsible_party_custom_name] = result[:responsible_party_custom_name] if result[:responsible_party_custom_name].present?
+    
+    # Universal Metadata Neutrality Rule: If responsible_party_code == NOT_SPECIFIED,
+    # then responsible_party_custom_name must be null
+    if update_params[:responsible_party_code] == 'NOT_SPECIFIED'
+      update_params[:responsible_party_custom_name] = nil
+    else
+      update_params[:responsible_party_custom_name] = result[:responsible_party_custom_name] if result[:responsible_party_custom_name].present?
+    end
 
     if result[:genre_code].present?
       update_params[:genre_code] = result[:genre_code]
@@ -810,6 +831,24 @@ class TextContentPopulationService
     end
 
     @text_content.update!(update_params)
+  end
+
+  # Universal: Enforce text_unit_type based on unit_key shape
+  # TRAD|BOOK|CH|VS (4 parts) => BIB_VERSE
+  # TRAD|BOOK|CH (3 parts) => BIB_CHAPTER
+  def enforce_text_unit_type_from_key(unit_key)
+    return nil unless unit_key.present?
+    
+    parts = unit_key.to_s.split('|')
+    
+    case parts.length
+    when 4
+      'BIB_VERSE'  # TRAD|BOOK|CH|VS
+    when 3
+      'BIB_CHAPTER'  # TRAD|BOOK|CH
+    else
+      nil  # Unknown shape, don't enforce
+    end
   end
 
   # Validate word-for-word layer: ensure all Greek tokens exist in source text

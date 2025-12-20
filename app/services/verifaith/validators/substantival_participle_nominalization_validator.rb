@@ -1,5 +1,8 @@
 module Verifaith
   module Validators
+    # Universal renderer guard: prevents substantival participle nominalizations
+    # from appearing in Phase-2 (LSV) output, even if token table is "okay".
+    # This catches regressions that slip through during string assembly.
     class SubstantivalParticipleNominalizationValidator
       # Banned nominalizations that should not appear in LSV
       BANNED_NOMINALIZATIONS = [
@@ -12,6 +15,15 @@ module Verifaith
         /\bthe\s+coming\b/i,
         /\bthe\s+saying\b/i,
         /\bthe\s+speaking\b/i
+      ].freeze
+
+      # Universal renderer guard: forbidden phrases in Phase-2 output
+      # These catch regressions even if token table is correct
+      FORBIDDEN_PHRASES = [
+        /\bthe\s+being\b/i,
+        /\bThe\s+being\b/,
+        /\bThe\s+Being\b/,
+        /\bBeing\b(?=[\s\.;,]|$)/i  # Standalone "Being" at end or before punctuation
       ].freeze
 
       # Preferred format patterns (one-<gloss> or <gloss>-one)
@@ -28,7 +40,7 @@ module Verifaith
       def validate
         return ValidatorResult.ok if @lsv.strip.empty?
 
-        # Check for banned nominalizations
+        # PHASE 1: Check for banned nominalizations (general pattern matching)
         banned_found = []
         BANNED_NOMINALIZATIONS.each do |pattern|
           if @lsv.match?(pattern)
@@ -37,27 +49,40 @@ module Verifaith
           end
         end
 
-        if banned_found.any?
-          suggestion = 'Use "one-<gloss>" or "<gloss>-one" format instead (e.g., "the being" → "the being-one" or "one-being")'
+        # PHASE 2: Universal renderer guard (catches regressions in Phase-2 output)
+        # This is specifically for εἰμί participle reification but applies universally
+        renderer_guard_violations = []
+        FORBIDDEN_PHRASES.each do |pattern|
+          if @lsv.match?(pattern)
+            match = @lsv.match(pattern)
+            renderer_guard_violations << match[0] if match
+          end
+        end
+
+        # Combine violations
+        all_violations = (banned_found + renderer_guard_violations).uniq
+
+        if all_violations.any?
+          suggestion = 'Use "one-<gloss>" or "<gloss>-one" format instead (e.g., "the being" → "the being-one" or "one-being"). For substantival εἰμί participles, use "(one) being" or "one who is".'
           
           # Mode-based severity: warn in populate, fail in verify
           if @mode == :populate
             return ValidatorResult.warn(
-              warnings: "Substantival participle nominalization detected: #{banned_found.join(', ')}. #{suggestion}",
+              warnings: "Substantival participle nominalization detected: #{all_violations.join(', ')}. #{suggestion}",
               flags: ['LSV_SUBSTANTIVAL_PARTICIPLE_NOMINALIZATION'],
               meta: {
-                detected_nominalizations: banned_found,
+                detected_nominalizations: all_violations,
                 suggestion: suggestion,
-                repair_hint: "Never output '#{banned_found.first}'; output '#{banned_found.first.gsub(/\bthe\s+(\w+)\b/i, 'the \1-one')}' or 'one-\1' instead."
+                repair_hint: "Never output '#{all_violations.first}'; output '#{all_violations.first.gsub(/\bthe\s+(\w+)\b/i, 'the \1-one')}' or 'one-\1' instead. For εἰμί participles, use '(one) being'."
               }
             )
           else
             # :verify mode - hard fail
             return ValidatorResult.fail(
-              errors: "Substantival participle nominalization detected: #{banned_found.join(', ')}",
+              errors: "Substantival participle nominalization detected: #{all_violations.join(', ')}. #{suggestion}",
               flags: ['LSV_SUBSTANTIVAL_PARTICIPLE_NOMINALIZATION'],
               meta: {
-                detected_nominalizations: banned_found,
+                detected_nominalizations: all_violations,
                 suggestion: suggestion
               }
             )

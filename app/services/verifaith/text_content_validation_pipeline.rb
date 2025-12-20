@@ -107,6 +107,14 @@ module Verifaith
         ).validate
       )
 
+      # 6a) εἰμί Participle Reification Validator (grammar-level, WFW token validation)
+      result.merge!(
+        Validators::EimiParticipleReificationValidator.new(
+          word_for_word: @wfw,
+          mode: @mode
+        ).validate
+      )
+
       # 7) Ensure LSV is chart-derived (minimal enforcement)
       result.merge!(
         Validators::LsvFromChartValidator.new(
@@ -116,7 +124,7 @@ module Verifaith
         ).validate
       )
 
-      # 8) Substantival Participle Nominalization Validator
+      # 8) Substantival Participle Nominalization Validator (renderer guard)
       result.merge!(
         Validators::SubstantivalParticipleNominalizationValidator.new(
           lsv_literal_reconstruction: @lsv,
