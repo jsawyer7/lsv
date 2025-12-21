@@ -14,6 +14,7 @@ class User < ApplicationRecord
   has_many :shares, dependent: :destroy
   has_many :received_shares, class_name: 'Share', foreign_key: 'recipient_id', dependent: :destroy
   has_many :reshared_items, -> { where(recipient_id: nil) }, class_name: 'Share', dependent: :destroy
+  has_many :conversations, dependent: :destroy
 
   has_many :added_peers, -> { where(status: 'accepted') }, class_name: 'Peer', foreign_key: 'user_id', dependent: :destroy
   has_many :peers, through: :added_peers, source: :peer
