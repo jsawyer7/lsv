@@ -3302,11 +3302,14 @@ namespace :lexical do
       puts "Done!"
     end
 
-    desc "Enqueue Septuagint LXX population job via Sidekiq. Usage: rake 'lexical:enqueue_lxx_job[source_id]' or with FORCE_CREATE=true FORCE_POPULATE=true"
+    desc "Enqueue Septuagint LXX population job via Sidekiq. Usage: rake 'lexical:enqueue_lxx_job[source_id]' or with FORCE_CREATE=true FORCE_POPULATE=true. By default, processes only Torah books (GEN, EXO, LEV, NUM, DEU)."
     task :enqueue_lxx_job, [:source_id] => :environment do |t, args|
       source_id = args[:source_id]&.to_i
       force_create = ENV['FORCE_CREATE'] == 'true'
       force_populate = ENV['FORCE_POPULATE'] == 'true'
+      
+      # Books to process: Torah (Pentateuch) only
+      book_codes = ['GEN', 'EXO', 'LEV', 'NUM', 'DEU']
       
       puts "=" * 80
       puts "Enqueuing PopulateSeptuagintLxxJob"
@@ -3314,33 +3317,89 @@ namespace :lexical do
       puts "Source ID: #{source_id || 'AUTO (will find or create)'}"
       puts "Force Create: #{force_create ? 'YES' : 'NO'}"
       puts "Force Populate: #{force_populate ? 'YES' : 'NO'}"
+      puts "Books to process: #{book_codes.join(', ')}"
       puts ""
       
-      # Check if already completed (unless forcing)
-      unless force_populate
-        source = if source_id
-          Source.unscoped.find_by(id: source_id.to_i)
-        else
-          Source.unscoped.where('name ILIKE ? OR name ILIKE ? OR name ILIKE ? OR code ILIKE ?',
-                                '%Swete%', '%Septuagint%', '%LXX%', '%SWETE%').first
-        end
-        
-        if source
-          total_verses = TextContent.unscoped.where(source_id: source.id).count
-          success_verses = TextContent.unscoped.where(source_id: source.id, population_status: 'success').count
-          completion_rate = total_verses > 0 ? (success_verses.to_f / total_verses * 100) : 0
-          
-          # Only consider complete if 100% successful (strict requirement)
-          if success_verses == total_verses && total_verses > 0
-            puts "⚠ Already completed (100% success - #{success_verses}/#{total_verses} verses)"
-            puts "Use FORCE_POPULATE=true to rerun"
-            exit 0
-          end
-        end
+      # Find or create source
+      source = if source_id
+        Source.unscoped.find_by(id: source_id.to_i)
+      else
+        Source.unscoped.where('name ILIKE ? OR name ILIKE ? OR name ILIKE ? OR code ILIKE ?',
+                              '%Swete%', '%Septuagint%', '%LXX%', '%SWETE%').first
       end
       
+      unless source
+        puts "✗ Source not found. Will be created by job."
+      end
+      
+      # STEP 1: Clear content for specified books
+      puts "=" * 80
+      puts "STEP 1: Clearing Content for Specified Books"
+      puts "=" * 80
+      puts ""
+      
+      if source
+        books = Book.unscoped.where(code: book_codes)
+        cleared_count = 0
+        total_to_clear = 0
+        
+        books.each do |book|
+          text_contents = TextContent.unscoped.where(source_id: source.id, book_id: book.id)
+          count = text_contents.count
+          total_to_clear += count
+          
+          if count > 0
+            puts "Clearing content for #{book.std_name} (#{book.code}): #{count} verse(s)..."
+            
+            text_contents.find_each do |tc|
+              begin
+                tc.update!(
+                  content: '',
+                  word_for_word_translation: [],
+                  lsv_literal_reconstruction: nil,
+                  content_populated_at: nil,
+                  content_populated_by: nil,
+                  content_validated_at: nil,
+                  content_validated_by: nil,
+                  content_validation_result: nil,
+                  validation_notes: nil,
+                  population_status: 'pending',
+                  population_error_message: nil
+                )
+                cleared_count += 1
+              rescue => e
+                Rails.logger.error "Failed to clear #{tc.unit_key}: #{e.message}"
+              end
+            end
+            
+            puts "  ✓ Cleared #{count} verse(s) for #{book.std_name}"
+          else
+            puts "  → No records found for #{book.std_name} (#{book.code})"
+          end
+        end
+        
+        puts ""
+        puts "Clearing Summary:"
+        puts "  Total verses cleared: #{cleared_count}/#{total_to_clear}"
+        puts ""
+      else
+        puts "⚠ Source not found yet. Content will be cleared during job execution if needed."
+        puts ""
+      end
+      
+      # STEP 2: Enqueue the job with book filter
+      puts "=" * 80
+      puts "STEP 2: Enqueuing Population Job"
+      puts "=" * 80
+      puts ""
+      
       # Enqueue the job (using ActiveJob's perform_later which works with Sidekiq)
-      job = PopulateSeptuagintLxxJob.perform_later(source_id, force_create: force_create, force_populate: force_populate)
+      job = PopulateSeptuagintLxxJob.perform_later(
+        source_id, 
+        force_create: force_create, 
+        force_populate: force_populate,
+        book_codes: book_codes
+      )
       
       if job
         puts "✓ Job enqueued successfully"
@@ -3351,11 +3410,11 @@ namespace :lexical do
         puts ""
         puts "This job will:"
         puts "  1. Create or find Septuagint Swete source"
-        puts "  2. Create text content records for ALL Old Testament books (all chapters, all verses)"
-        puts "  3. Enqueue individual TextContentPopulateJob for each verse"
+        puts "  2. Create text content records for: #{book_codes.join(', ')}"
+        puts "  3. Enqueue individual TextContentPopulateJob for each verse in these books"
         puts ""
         puts "Note: Make sure OLD_TESTAMENT_VERSE_COUNTS in VerseCountReference has verse counts"
-        puts "      for all OT books you want to process."
+        puts "      for all books you want to process."
       else
         puts "✗ Failed to enqueue job"
         exit 1

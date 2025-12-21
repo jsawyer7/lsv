@@ -22,6 +22,18 @@ class TextContentPopulateJob < ApplicationJob
       # Deterministic validators already ran inside TextContentPopulationService.
       # At this point, content is populated and passed local validation.
       Rails.logger.info "TextContentPopulateJob: Successfully populated #{text_content.unit_key}"
+    when 'provisional_ok'
+      # Content populated but has validation warnings (e.g., gloss priority drift, substantival participle warnings).
+      # This is acceptable in :populate mode; content is usable but may need review.
+      warnings = result[:validation_warnings] || []
+      flags = result[:validation_flags] || []
+      Rails.logger.info "TextContentPopulateJob: Populated #{text_content.unit_key} with warnings (provisional_ok)"
+      if warnings.any?
+        Rails.logger.warn "TextContentPopulateJob: Warnings for #{text_content.unit_key}: #{warnings.join('; ')}"
+      end
+      if flags.any?
+        Rails.logger.warn "TextContentPopulateJob: Validation flags for #{text_content.unit_key}: #{flags.join(', ')}"
+      end
     when 'already_populated'
       # Content already exists; deterministic validation may be run separately if desired.
       Rails.logger.info "TextContentPopulateJob: Already populated #{text_content.unit_key}"
