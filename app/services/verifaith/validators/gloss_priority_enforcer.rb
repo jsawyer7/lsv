@@ -1,9 +1,10 @@
 module Verifaith
   module Validators
     class GlossPriorityEnforcer
-      def initialize(word_for_word:, lsv_literal_reconstruction:)
+      def initialize(word_for_word:, lsv_literal_reconstruction:, mode: :verify)
         @wfw = word_for_word || []
         @lsv = lsv_literal_reconstruction.to_s
+        @mode = mode.to_sym
       end
 
       def validate
@@ -47,16 +48,36 @@ module Verifaith
         # without corresponding WFW entries that justify them
 
         errors = []
+        warnings = []
         flags = []
 
         if wfw_violations.any?
-          errors << "WFW base_gloss not using primary gloss (#{wfw_violations.count} instance(s))"
-          flags << 'WFW_PRIMARY_GLOSS_DRIFT'
+          violation_msg = "WFW base_gloss not using primary gloss (#{wfw_violations.count} instance(s))"
+          
+          # Build repair hint with specific lemma→gloss mappings
+          repair_hints = wfw_violations.map do |v|
+            "For lemma '#{v[:lemma]}', use primary gloss '#{v[:expected_primary]}' instead of '#{v[:base_gloss]}'"
+          end
+          
+          if @mode == :populate
+            warnings << violation_msg
+            flags << 'WFW_PRIMARY_GLOSS_DRIFT'
+          else
+            errors << violation_msg
+            flags << 'WFW_PRIMARY_GLOSS_DRIFT'
+          end
         end
 
         if lsv_violations.any?
-          errors << "LSV using secondary gloss without override (#{lsv_violations.count} instance(s))"
-          flags << 'LSV_PRIMARY_GLOSS_DRIFT'
+          violation_msg = "LSV using secondary gloss without override (#{lsv_violations.count} instance(s))"
+          
+          if @mode == :populate
+            warnings << violation_msg
+            flags << 'LSV_PRIMARY_GLOSS_DRIFT'
+          else
+            errors << violation_msg
+            flags << 'LSV_PRIMARY_GLOSS_DRIFT'
+          end
         end
 
         if errors.any?
@@ -66,6 +87,18 @@ module Verifaith
             meta: {
               wfw_violations: wfw_violations,
               lsv_violations: lsv_violations
+            }
+          )
+        end
+
+        if warnings.any?
+          return ValidatorResult.warn(
+            warnings: warnings.join('; '),
+            flags: flags,
+            meta: {
+              wfw_violations: wfw_violations,
+              lsv_violations: lsv_violations,
+              repair_hints: repair_hints || []
             }
           )
         end

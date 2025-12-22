@@ -51,6 +51,7 @@ class TextContentPopulationService
       result = apply_generic_metadata_inference(result)
 
       # Step 2: Deterministic local validation (no AI self-validation)
+      # Use :populate mode to allow fixable style/gloss issues through as warnings
       pipeline = Verifaith::TextContentValidationPipeline.new(
         text_content: @text_content,
         source_text: result[:source_text],
@@ -58,7 +59,8 @@ class TextContentPopulationService
         lsv_literal_reconstruction: result[:lsv_literal_reconstruction],
         genre_code: result[:genre_code],
         addressed_party_code: result[:addressed_party_code],
-        responsible_party_code: result[:responsible_party_code]
+        responsible_party_code: result[:responsible_party_code],
+        mode: :populate
       )
 
       validation = pipeline.run
@@ -71,14 +73,18 @@ class TextContentPopulationService
           update_text_content(result)
           log_population(result)
 
-          # Mark as success; canonical fidelity information is stored in validation meta/flags
+          # In populate mode, warnings are acceptable (style/gloss drift)
+          # Store warnings and repair hints for potential future repair
+          status = validation.warnings.any? ? 'provisional_ok' : 'success'
+          
+          # Mark as success or provisional_ok; canonical fidelity information is stored in validation meta/flags
           @text_content.update_columns(
-            population_status: 'success',
+            population_status: status,
             population_error_message: nil
           )
 
           {
-            status: 'success',
+            status: status,
             data: result.merge(
               validation_flags: validation.flags,
               validation_warnings: validation.warnings,
@@ -790,11 +796,32 @@ class TextContentPopulationService
       content_populated_by: GROK_MODEL
     }
 
+    # Universal: Enforce text_unit_type based on unit_key shape
+    # TRAD|BOOK|CH|VS (4 parts) => Verse
+    # TRAD|BOOK|CH (3 parts) => Chapter
+    if @text_content.unit_key.present?
+      expected_type_code = enforce_text_unit_type_from_key(@text_content.unit_key)
+      if expected_type_code
+        expected_type = TextUnitType.unscoped.find_by(code: expected_type_code)
+        if expected_type && @text_content.text_unit_type_id != expected_type.id
+          Rails.logger.warn "[TEXT_UNIT_TYPE] Correcting text_unit_type for #{@text_content.unit_key}: #{@text_content.text_unit_type&.code} => #{expected_type_code}"
+          update_params[:text_unit_type_id] = expected_type.id
+        end
+      end
+    end
+
     # Required classification fields; use NOT_SPECIFIED when missing
     update_params[:addressed_party_code] = result[:addressed_party_code].presence || 'NOT_SPECIFIED'
     update_params[:addressed_party_custom_name] = result[:addressed_party_custom_name] if result[:addressed_party_custom_name].present?
     update_params[:responsible_party_code] = result[:responsible_party_code].presence || 'NOT_SPECIFIED'
-    update_params[:responsible_party_custom_name] = result[:responsible_party_custom_name] if result[:responsible_party_custom_name].present?
+    
+    # Universal Metadata Neutrality Rule: If responsible_party_code == NOT_SPECIFIED,
+    # then responsible_party_custom_name must be null
+    if update_params[:responsible_party_code] == 'NOT_SPECIFIED'
+      update_params[:responsible_party_custom_name] = nil
+    else
+      update_params[:responsible_party_custom_name] = result[:responsible_party_custom_name] if result[:responsible_party_custom_name].present?
+    end
 
     if result[:genre_code].present?
       update_params[:genre_code] = result[:genre_code]
@@ -804,6 +831,24 @@ class TextContentPopulationService
     end
 
     @text_content.update!(update_params)
+  end
+
+  # Universal: Enforce text_unit_type based on unit_key shape
+  # TRAD|BOOK|CH|VS (4 parts) => BIB_VERSE
+  # TRAD|BOOK|CH (3 parts) => BIB_CHAPTER
+  def enforce_text_unit_type_from_key(unit_key)
+    return nil unless unit_key.present?
+    
+    parts = unit_key.to_s.split('|')
+    
+    case parts.length
+    when 4
+      'BIB_VERSE'  # TRAD|BOOK|CH|VS
+    when 3
+      'BIB_CHAPTER'  # TRAD|BOOK|CH
+    else
+      nil  # Unknown shape, don't enforce
+    end
   end
 
   # Validate word-for-word layer: ensure all Greek tokens exist in source text

@@ -30,6 +30,11 @@
       <span class="nav-text">My Theories</span>
     <% end %>
     
+    <%= link_to veritalk_path, class: "nav-item #{'active' if current_page?(veritalk_path)}" do %>
+      <i class="fas fa-comments nav-icon" style="font-size: 22px; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;"></i>
+      <span class="nav-text">VeriTalk</span>
+    <% end %>
+    
     <%= link_to peers_path, class: "nav-item #{'active' if current_page?(peers_path) || request.path =~ %r{^/users/\d+/profile/?$}}" do %>
       <%= image_tag 'peers-icon.png', alt: '', class: 'nav-icon', size: '22x22' %>
       <span class="nav-text">Peers</span>

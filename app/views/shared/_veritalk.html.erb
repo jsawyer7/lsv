@@ -1,0 +1,77 @@
+<div class="veritalk-container">
+  <div class="veritalk-header">
+    <div class="veritalk-header-content">
+      <h1 class="veritalk-title">VeriTalk</h1>
+      <p class="veritalk-subtitle">
+        Ask about scriptures, religious history, original languages, and translations
+      </p>
+    </div>
+    <button class="veritalk-history-button" id="veritalk-history-btn" title="History">
+      <i class="fas fa-history"></i>
+    </button>
+  </div>
+
+  <input type="hidden" id="veritalk-conversation-id" value="">
+
+  <div id="veritalk-messages" class="veritalk-messages">
+    <div class="veritalk-welcome">
+      <div class="veritalk-welcome-icon">
+        <i class="fas fa-comments"></i>
+      </div>
+      <h3>How can I help you today?</h3>
+      <p>I can help you with questions about religious texts, historical context, original languages, and translations.</p>
+    </div>
+  </div>
+
+  <div class="veritalk-input-container">
+    <form id="veritalk-form" class="veritalk-form">
+      <div class="veritalk-input-wrapper">
+        <textarea
+          id="veritalk-input"
+          class="veritalk-input"
+          rows="1"
+          placeholder="Message VeriTalk..."
+          autocomplete="off"
+          spellcheck="true"
+        ></textarea>
+        <button type="submit" class="veritalk-send-button" id="veritalk-send-btn" disabled>
+          <i class="fas fa-paper-plane"></i>
+        </button>
+      </div>
+    </form>
+    <div class="veritalk-footer">
+      <p class="veritalk-disclaimer">VeriTalk can make mistakes. Check important information.</p>
+    </div>
+  </div>
+
+  <!-- History Sidebar -->
+  <div class="veritalk-history-sidebar" id="veritalk-history-sidebar">
+    <div class="veritalk-history-header">
+      <h2 class="veritalk-history-title">History</h2>
+      <button class="veritalk-history-close" id="veritalk-history-close">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    
+    <div class="veritalk-history-tabs">
+      <button class="veritalk-history-tab active" data-tab="chats">Chats</button>
+    </div>
+
+    <div class="veritalk-history-content">
+      <div class="veritalk-history-tab-content active" data-content="chats">
+        <button class="veritalk-new-chat-btn" id="veritalk-new-chat-btn">
+          <i class="fas fa-plus"></i>
+          <span>New Chat</span>
+        </button>
+        <div class="veritalk-conversations-list" id="veritalk-conversations-list">
+          <div class="veritalk-history-loading">Loading conversations...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Overlay when sidebar is open -->
+  <div class="veritalk-history-overlay" id="veritalk-history-overlay"></div>
+</div>
+
+

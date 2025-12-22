@@ -60,6 +60,7 @@ class TextContentValidationService
     end
 
     # Deterministic validation pipeline (no AI self-validation)
+    # Use :verify mode for strict enforcement (lockdown mode)
     pipeline = Verifaith::TextContentValidationPipeline.new(
       text_content: @text_content,
       source_text: @text_content.content,
@@ -67,7 +68,8 @@ class TextContentValidationService
       lsv_literal_reconstruction: @text_content.lsv_literal_reconstruction,
       genre_code: @text_content.genre_code,
       addressed_party_code: @text_content.addressed_party_code,
-      responsible_party_code: @text_content.responsible_party_code
+      responsible_party_code: @text_content.responsible_party_code,
+      mode: :verify
     )
 
     validation = pipeline.run

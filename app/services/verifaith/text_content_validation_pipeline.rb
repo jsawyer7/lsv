@@ -1,6 +1,9 @@
 module Verifaith
   class TextContentValidationPipeline
-    def initialize(text_content:, source_text:, word_for_word:, lsv_literal_reconstruction:, genre_code:, addressed_party_code:, responsible_party_code:)
+    # Mode determines severity of certain validators:
+    # - :populate (bulk ingest) → allow "fixable" style/gloss issues through as warnings
+    # - :verify (lockdown) → enforce those same rules as failures
+    def initialize(text_content:, source_text:, word_for_word:, lsv_literal_reconstruction:, genre_code:, addressed_party_code:, responsible_party_code:, mode: :verify)
       @tc = text_content
       @source = text_content.source
       @sc = SourceClassifier.new(@source)
@@ -10,6 +13,7 @@ module Verifaith
       @genre_code = genre_code
       @addressed_party_code = addressed_party_code
       @responsible_party_code = responsible_party_code
+      @mode = mode.to_sym
     end
 
     def run
@@ -98,7 +102,16 @@ module Verifaith
       result.merge!(
         Validators::GlossPriorityEnforcer.new(
           word_for_word: @wfw,
-          lsv_literal_reconstruction: @lsv
+          lsv_literal_reconstruction: @lsv,
+          mode: @mode
+        ).validate
+      )
+
+      # 6a) εἰμί Participle Reification Validator (grammar-level, WFW token validation)
+      result.merge!(
+        Validators::EimiParticipleReificationValidator.new(
+          word_for_word: @wfw,
+          mode: @mode
         ).validate
       )
 
@@ -111,10 +124,11 @@ module Verifaith
         ).validate
       )
 
-      # 8) Substantival Participle Nominalization Validator
+      # 8) Substantival Participle Nominalization Validator (renderer guard)
       result.merge!(
         Validators::SubstantivalParticipleNominalizationValidator.new(
-          lsv_literal_reconstruction: @lsv
+          lsv_literal_reconstruction: @lsv,
+          mode: @mode
         ).validate
       )
 

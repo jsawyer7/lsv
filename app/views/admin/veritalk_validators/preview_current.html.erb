@@ -1,0 +1,87 @@
+<div class="page-header mb-4">
+  <div class="d-flex justify-content-between align-items-center">
+    <div>
+      <h1>Current VeriTalk Prompt Preview</h1>
+      <p class="text-muted mb-0">This is the exact prompt that VeriTalk is using right now</p>
+    </div>
+    <div>
+      <%= link_to "Back to Validators", admin_veritalk_validators_path, class: "btn btn-outline-secondary" %>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-12">
+    <div class="materio-card">
+      <div class="materio-header">
+        <h5 class="mb-0 fw-semibold">
+          <i class="ri ri-file-text-line me-2"></i>
+          Prompt Source Information
+        </h5>
+      </div>
+      <div class="card-body p-4">
+        <div class="mb-3">
+          <strong>Source:</strong> 
+          <span class="badge bg-<%= @source == 'Database Validator' ? 'success' : 'warning' %>">
+            <%= @source %>
+          </span>
+        </div>
+        <div class="mb-3">
+          <strong>Validator Info:</strong> 
+          <span class="text-muted"><%= @validator_info %></span>
+        </div>
+        <% if @current_validator %>
+          <div class="alert alert-info">
+            <i class="ri ri-information-line me-2"></i>
+            <strong>Note:</strong> Check your Rails logs when VeriTalk runs to see: 
+            <code>"VeriTalk: Using database validator '#{@current_validator.name}' (ID: #{@current_validator.id}, Version: #{@current_validator.version})"</code>
+          </div>
+        <% else %>
+          <div class="alert alert-warning">
+            <i class="ri ri-alert-line me-2"></i>
+            <strong>Warning:</strong> No active validator found. VeriTalk is using the default fallback prompt. 
+            Create and activate a validator in the admin UI to use a custom prompt.
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12">
+    <div class="materio-card">
+      <div class="materio-header">
+        <h5 class="mb-0 fw-semibold">
+          <i class="ri ri-code-line me-2"></i>
+          System Prompt (What VeriTalk Actually Uses)
+        </h5>
+      </div>
+      <div class="card-body p-4">
+        <div class="bg-light p-4 rounded border">
+          <pre class="mb-0 text-dark" style="white-space: pre-wrap; font-family: 'Courier New', monospace; font-size: 13px; line-height: 1.6; margin: 0;"><%= @service_prompt %></pre>
+        </div>
+        <div class="mt-3">
+          <small class="text-muted">
+            Character count: <%= @service_prompt.length %> | Word count: <%= @service_prompt.split.size %>
+          </small>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="mt-4">
+  <div class="alert alert-primary">
+    <h6 class="fw-bold mb-2">
+      <i class="ri ri-question-line me-2"></i>
+      How to Verify This is Working:
+    </h6>
+    <ol class="mb-0">
+      <li>Make sure a validator is marked as <strong>active</strong> in the Validators list</li>
+      <li>Check your Rails server logs when you send a message in VeriTalk</li>
+      <li>Look for the log message: <code>"VeriTalk: Using database validator..."</code></li>
+      <li>If you see <code>"VeriTalk: No active validator found..."</code>, activate a validator</li>
+      <li>Test VeriTalk's responses to ensure they match your validator's instructions</li>
+    </ol>
+  </div>
+</div>
+

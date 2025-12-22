@@ -52,3 +52,6 @@ genre_types.each do |gt|
   end
 end
 puts "✓ Genre Types seeded"
+
+# Load VeriTalk validator seeds
+load Rails.root.join('db', 'seeds', 'veritalk_validators.rb')

@@ -19,7 +19,7 @@ class PopulateSeptuagintLxxJob < ApplicationJob
     # etc.
   }.freeze
 
-  def perform(source_id = nil, force_create: false, force_populate: false)
+  def perform(source_id = nil, force_create: false, force_populate: false, book_codes: nil)
     # Find or create Septuagint Swete source
     source = find_or_create_source(source_id)
     unless source
@@ -64,16 +64,36 @@ class PopulateSeptuagintLxxJob < ApplicationJob
     Rails.cache.write('lxx_population_attempted', true, expires_in: 1.year)
     Rails.cache.delete('lxx_population_error')
 
+    # Filter books if specified
+    books_to_process = if book_codes.present? && book_codes.is_a?(Array)
+      book_codes
+    else
+      nil  # Process all OT books
+    end
+    
+    if books_to_process
+      Rails.logger.info "PopulateSeptuagintLxxJob: Processing only specified books: #{books_to_process.join(', ')}"
+    else
+      Rails.logger.info "PopulateSeptuagintLxxJob: Processing all Old Testament books"
+    end
+
     # Step 1: Create all text content records (if needed)
     if force_create || TextContent.unscoped.where(source_id: source.id).count == 0
       Rails.logger.info "Creating text content records..."
-      creation_result = create_all_records(source, force: force_create)
+      creation_result = create_all_records(source, force: force_create, book_codes: books_to_process)
       Rails.logger.info "Created: #{creation_result[:total_created]}, Existing: #{creation_result[:total_existing]}"
     end
 
     # Step 2: Enqueue individual jobs for each verse that needs population
     # Also include verses that failed fidelity check
     scope = TextContent.unscoped.where(source_id: source.id)
+    
+    # Filter by book codes if specified
+    if books_to_process
+      book_ids = Book.unscoped.where(code: books_to_process).pluck(:id)
+      scope = scope.where(book_id: book_ids)
+      Rails.logger.info "Filtered scope to #{books_to_process.count} book(s): #{books_to_process.join(', ')}"
+    end
     
     unless force_populate
       # Include verses that need population OR failed fidelity
@@ -156,12 +176,14 @@ class PopulateSeptuagintLxxJob < ApplicationJob
     source
   end
 
-  def create_all_records(source, force: false)
-    ot_book_codes = VerseCountReference::OLD_TESTAMENT_BOOKS
+  def create_all_records(source, force: false, book_codes: nil)
+    # Use specified book codes or all OT books
+    books_to_process = book_codes || VerseCountReference::OLD_TESTAMENT_BOOKS
+    
     total_created = 0
     total_existing = 0
 
-    ot_book_codes.each_with_index do |book_code, index|
+    books_to_process.each_with_index do |book_code, index|
       book = Book.unscoped.find_by(code: book_code)
       unless book
         Rails.logger.warn "Book not found: #{book_code}"
@@ -206,7 +228,7 @@ class PopulateSeptuagintLxxJob < ApplicationJob
       total_existing += book_existing
 
       if (index + 1) % 5 == 0 || book_created > 0
-        Rails.logger.info "[#{index + 1}/#{ot_book_codes.count}] #{book.code}: Created: #{book_created}, Existing: #{book_existing}"
+        Rails.logger.info "[#{index + 1}/#{books_to_process.count}] #{book.code}: Created: #{book_created}, Existing: #{book_existing}"
       end
     end
 

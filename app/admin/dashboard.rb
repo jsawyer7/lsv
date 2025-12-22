@@ -173,7 +173,24 @@ ActiveAdmin.register_page "Dashboard" do
           end
         end
 
-        div class: "col-md-9" do
+        div class: "col-md-3" do
+          div class: "card" do
+            div class: "card-body" do
+              div class: "d-flex justify-content-between align-items-start" do
+                div do
+                  h6 "VeriTalk Conversations", class: "card-title text-muted mb-1"
+                  h3 Conversation.count, class: "text-primary mb-0"
+                  small "Total conversations", class: "text-muted"
+                end
+                div class: "avatar avatar-sm bg-primary rounded-circle d-flex align-items-center justify-content-center" do
+                  i class: "ri ri-chat-3-line text-white"
+                end
+              end
+            end
+          end
+        end
+
+        div class: "col-md-6" do
           div class: "card" do
             div class: "card-body" do
               h5 "Quick Stats", class: "card-title"
