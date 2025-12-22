@@ -1050,11 +1050,12 @@ class TextContentPopulationService
             next # Retry the loop
           else
             error_body = begin
-              JSON.parse(response.body)
+              parsed = JSON.parse(response.body)
+              parsed.is_a?(Hash) ? parsed : { error: { message: parsed.to_s } }
             rescue JSON::ParserError
               { error: { message: response.message } }
             end
-            error_msg = error_body.dig('error', 'message') || response.message
+            error_msg = error_body.is_a?(Hash) ? (error_body.dig('error', 'message') || response.message) : response.message
             Rails.logger.error "Grok API rate limit error after #{max_retries} retries: #{error_msg}"
             raise "Grok API rate limit error: #{error_msg}"
           end
@@ -1067,21 +1068,23 @@ class TextContentPopulationService
             next # Retry the loop
           else
             error_body = begin
-              JSON.parse(response.body)
+              parsed = JSON.parse(response.body)
+              parsed.is_a?(Hash) ? parsed : { error: { message: parsed.to_s } }
             rescue JSON::ParserError
               { error: { message: response.message } }
             end
-            error_msg = error_body.dig('error', 'message') || response.message
+            error_msg = error_body.is_a?(Hash) ? (error_body.dig('error', 'message') || response.message) : response.message
             Rails.logger.error "Grok API server error after #{max_retries} retries: #{error_msg}"
             raise "Grok API server error (#{response.code}): #{error_msg}"
           end
         elsif !response.is_a?(Net::HTTPSuccess)
           error_body = begin
-            JSON.parse(response.body)
+            parsed = JSON.parse(response.body)
+            parsed.is_a?(Hash) ? parsed : { error: { message: parsed.to_s } }
           rescue JSON::ParserError
             { error: { message: response.message } }
           end
-          error_msg = error_body.dig('error', 'message') || response.message
+          error_msg = error_body.is_a?(Hash) ? (error_body.dig('error', 'message') || response.message) : response.message
           Rails.logger.error "Grok API error (#{response.code}): #{error_msg}"
           Rails.logger.error "Response body: #{response.body[0..500]}"
           raise "Grok API error (#{response.code}): #{error_msg}"

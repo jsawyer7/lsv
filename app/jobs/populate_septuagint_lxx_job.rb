@@ -97,9 +97,15 @@ class PopulateSeptuagintLxxJob < ApplicationJob
     
     unless force_populate
       # Include verses that need population OR failed fidelity
+      # EXCLUDE error records that were attempted recently (within last 10 minutes)
+      # This prevents re-enqueuing jobs that are currently failing/retrying
+      # Only re-enqueue errors that are old enough to have exhausted their retries
+      recent_attempt_threshold = 10.minutes.ago
       scope = scope.where(
         "(population_status != 'success' OR population_status IS NULL) OR " \
-        "(population_status = 'success' AND population_error_message LIKE '%fidelity%')"
+        "(population_status = 'success' AND population_error_message LIKE '%fidelity%') OR " \
+        "(population_status = 'error' AND (last_population_attempt_at IS NULL OR last_population_attempt_at < ?))",
+        recent_attempt_threshold
       )
     end
 
