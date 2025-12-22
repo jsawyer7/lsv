@@ -12,7 +12,6 @@
 
 ActiveRecord::Schema[7.0].define(version: 2025_12_18_000000) do
   # These are extensions that must be enabled in order to support this database
-  enable_extension "pg_stat_statements"
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
   enable_extension "vector"
@@ -234,7 +233,6 @@ ActiveRecord::Schema[7.0].define(version: 2025_12_18_000000) do
     t.datetime "updated_at", null: false
     t.index ["user_id"], name: "index_conversations_on_user_id"
   end
-
 
   create_table "directions", force: :cascade do |t|
     t.text "code", null: false
@@ -512,6 +510,16 @@ ActiveRecord::Schema[7.0].define(version: 2025_12_18_000000) do
     t.datetime "remember_created_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.text "oauth_token"
+    t.text "oauth_token_secret"
+    t.text "oauth_refresh_token"
+    t.datetime "oauth_expires_at"
+    t.decimal "latitude", precision: 10, scale: 6
+    t.decimal "longitude", precision: 10, scale: 6
+    t.string "city"
+    t.string "country"
+    t.datetime "terms_agreed_at"
+    t.boolean "location_consent", default: false
     t.string "confirmation_token"
     t.datetime "confirmed_at"
     t.datetime "confirmation_sent_at"
@@ -524,16 +532,6 @@ ActiveRecord::Schema[7.0].define(version: 2025_12_18_000000) do
     t.text "about"
     t.string "phone"
     t.integer "naming_preference"
-    t.text "oauth_token"
-    t.text "oauth_token_secret"
-    t.text "oauth_refresh_token"
-    t.datetime "oauth_expires_at"
-    t.decimal "latitude", precision: 10, scale: 6
-    t.decimal "longitude", precision: 10, scale: 6
-    t.string "city"
-    t.string "country"
-    t.datetime "terms_agreed_at"
-    t.boolean "location_consent", default: false
     t.index ["confirmation_token"], name: "index_users_on_confirmation_token", unique: true
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["latitude", "longitude"], name: "index_users_on_latitude_and_longitude"
