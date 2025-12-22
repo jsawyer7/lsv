@@ -48,22 +48,36 @@ class TextContentPopulationService
     if result[:status] == 'success'
       # Step 1: Apply generic metadata inference (replaces hard-coded logic)
       # This works for all sources, not just LXX
-      result = apply_generic_metadata_inference(result)
+      begin
+        result = apply_generic_metadata_inference(result)
+      rescue => e
+        Rails.logger.error "Error in apply_generic_metadata_inference: #{e.class.name}: #{e.message}"
+        Rails.logger.error e.backtrace.join("\n")
+        raise
+      end
 
       # Step 2: Deterministic local validation (no AI self-validation)
       # Use :populate mode to allow fixable style/gloss issues through as warnings
-      pipeline = Verifaith::TextContentValidationPipeline.new(
-        text_content: @text_content,
-        source_text: result[:source_text],
-        word_for_word: result[:word_for_word],
-        lsv_literal_reconstruction: result[:lsv_literal_reconstruction],
-        genre_code: result[:genre_code],
-        addressed_party_code: result[:addressed_party_code],
-        responsible_party_code: result[:responsible_party_code],
-        mode: :populate
-      )
+      begin
+        pipeline = Verifaith::TextContentValidationPipeline.new(
+          text_content: @text_content,
+          source_text: result[:source_text],
+          word_for_word: result[:word_for_word],
+          lsv_literal_reconstruction: result[:lsv_literal_reconstruction],
+          genre_code: result[:genre_code],
+          addressed_party_code: result[:addressed_party_code],
+          responsible_party_code: result[:responsible_party_code],
+          mode: :populate
+        )
 
-      validation = pipeline.run
+        validation = pipeline.run
+      rescue => e
+        Rails.logger.error "Error in validation pipeline: #{e.class.name}: #{e.message}"
+        Rails.logger.error "Backtrace: #{e.backtrace.join("\n")}"
+        Rails.logger.error "Result keys: #{result.keys.inspect}" if result.is_a?(Hash)
+        Rails.logger.error "Result[:source_text] type: #{result[:source_text].class}" if result.is_a?(Hash)
+        raise
+      end
 
       if validation.ok?
         # Step 3: Basic structural checks before saving
@@ -1055,7 +1069,18 @@ class TextContentPopulationService
             rescue JSON::ParserError
               { error: { message: response.message } }
             end
-            error_msg = error_body.is_a?(Hash) ? (error_body.dig('error', 'message') || response.message) : response.message
+            # Handle both { "error": "string" } and { "error": { "message": "string" } } formats
+            error_msg = if error_body.is_a?(Hash)
+              if error_body['error'].is_a?(Hash)
+                error_body.dig('error', 'message') || response.message
+              elsif error_body['error'].is_a?(String)
+                error_body['error']
+              else
+                response.message
+              end
+            else
+              response.message
+            end
             Rails.logger.error "Grok API rate limit error after #{max_retries} retries: #{error_msg}"
             raise "Grok API rate limit error: #{error_msg}"
           end
@@ -1073,7 +1098,18 @@ class TextContentPopulationService
             rescue JSON::ParserError
               { error: { message: response.message } }
             end
-            error_msg = error_body.is_a?(Hash) ? (error_body.dig('error', 'message') || response.message) : response.message
+            # Handle both { "error": "string" } and { "error": { "message": "string" } } formats
+            error_msg = if error_body.is_a?(Hash)
+              if error_body['error'].is_a?(Hash)
+                error_body.dig('error', 'message') || response.message
+              elsif error_body['error'].is_a?(String)
+                error_body['error']
+              else
+                response.message
+              end
+            else
+              response.message
+            end
             Rails.logger.error "Grok API server error after #{max_retries} retries: #{error_msg}"
             raise "Grok API server error (#{response.code}): #{error_msg}"
           end
@@ -1084,7 +1120,18 @@ class TextContentPopulationService
           rescue JSON::ParserError
             { error: { message: response.message } }
           end
-          error_msg = error_body.is_a?(Hash) ? (error_body.dig('error', 'message') || response.message) : response.message
+          # Handle both { "error": "string" } and { "error": { "message": "string" } } formats
+          error_msg = if error_body.is_a?(Hash)
+            if error_body['error'].is_a?(Hash)
+              error_body.dig('error', 'message') || response.message
+            elsif error_body['error'].is_a?(String)
+              error_body['error']
+            else
+              response.message
+            end
+          else
+            response.message
+          end
           Rails.logger.error "Grok API error (#{response.code}): #{error_msg}"
           Rails.logger.error "Response body: #{response.body[0..500]}"
           raise "Grok API error (#{response.code}): #{error_msg}"
