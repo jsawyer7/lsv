@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2025_12_18_000000) do
+ActiveRecord::Schema[7.0].define(version: 2025_12_24_101110) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pgcrypto"
@@ -232,6 +232,9 @@ ActiveRecord::Schema[7.0].define(version: 2025_12_18_000000) do
     t.text "summary"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.text "rolling_summary"
+    t.datetime "last_summary_update_at"
+    t.integer "message_count_since_summary"
     t.index ["user_id"], name: "index_conversations_on_user_id"
   end
 
@@ -533,6 +536,7 @@ ActiveRecord::Schema[7.0].define(version: 2025_12_18_000000) do
     t.string "country"
     t.datetime "terms_agreed_at"
     t.boolean "location_consent", default: false
+    t.text "veritalk_profile_memory"
     t.index ["confirmation_token"], name: "index_users_on_confirmation_token", unique: true
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["latitude", "longitude"], name: "index_users_on_latitude_and_longitude"
