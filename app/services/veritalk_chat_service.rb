@@ -32,7 +32,7 @@ class VeritalkChatService
 
     assistant_text = +""
 
-    # First, collect the full response
+
     @client.chat(
       parameters: {
         model: "gpt-4o",
@@ -41,20 +41,17 @@ class VeritalkChatService
         stream: proc do |chunk, _bytesize|
           content = chunk.dig("choices", 0, "delta", "content")
           next unless content
+
           assistant_text << content
+
+
+          response.stream.write(content)
         end
       }
     )
 
-    # Extract the actual response text (handles JSON responses)
+    
     cleaned_text = extract_assistant_response(assistant_text)
-
-    # Stream the cleaned text to the user
-    # Write in chunks for better performance while maintaining streaming appearance
-    chunk_size = 10
-    cleaned_text.chars.each_slice(chunk_size) do |chunk|
-      response.stream.write(chunk.join)
-    end
 
     # Persist the cleaned assistant message
     @conversation.conversation_messages.create!(

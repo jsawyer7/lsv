@@ -308,15 +308,67 @@
         contentDiv.textContent = '';
         thinkingDiv.classList.remove('thinking');
 
-        while (true) {
-          const { value, done } = await reader.read();
-          if (done) break;
-          if (!value) continue;
+        let isTyping = false;
+        let typingTimeout = null;
 
-          const chunk = decoder.decode(value);
-          assistantText += chunk;
+        // Read stream and display with character-by-character typing effect
+        let buffer = '';
+        
+        const updateContent = () => {
+          // Update content with text
           contentDiv.textContent = assistantText;
           messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        };
+        
+        const typeCharacter = () => {
+          if (buffer.length > 0) {
+            const char = buffer[0];
+            buffer = buffer.slice(1);
+            assistantText += char;
+            updateContent();
+            
+            // Continue typing if there's more in buffer
+            if (buffer.length > 0) {
+              // Increased delay for slower, more visible typing effect
+              typingTimeout = setTimeout(typeCharacter, 30); // 30ms delay per character
+            } else {
+              // No more in buffer, but might get more from stream
+              isTyping = false;
+            }
+          } else {
+            isTyping = false;
+          }
+        };
+
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) {
+            // Process any remaining buffer
+            while (buffer.length > 0) {
+              typeCharacter();
+              await new Promise(resolve => setTimeout(resolve, 30)); // Increased delay
+            }
+            // Clear any pending timeout
+            if (typingTimeout) {
+              clearTimeout(typingTimeout);
+            }
+            // Set final content
+            contentDiv.textContent = assistantText;
+            break;
+          }
+          if (!value) continue;
+
+          // Add delay between chunks for more visible effect
+          await new Promise(resolve => setTimeout(resolve, 50)); // 50ms delay between chunks
+
+          const chunk = decoder.decode(value, { stream: true });
+          buffer += chunk;
+          
+          // Start typing if not already typing
+          if (!isTyping && buffer.length > 0) {
+            isTyping = true;
+            typeCharacter();
+          }
         }
 
         thinkingDiv.classList.add('assistant-final');

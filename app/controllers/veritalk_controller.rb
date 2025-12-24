@@ -4,7 +4,9 @@ class VeritalkController < ApplicationController
   before_action :authenticate_user!
 
   def chat
-    response.headers['Content-Type'] = 'text/event-stream'
+    response.headers['Content-Type'] = 'text/plain; charset=utf-8'
+    response.headers['Cache-Control'] = 'no-cache'
+    response.headers['X-Accel-Buffering'] = 'no' # Disable nginx buffering
 
     conversation = find_or_create_conversation
     response.headers['X-Veritalk-Conversation-Id'] = conversation.id.to_s
