@@ -1,5 +1,5 @@
 ActiveAdmin.register Conversation do
-  permit_params :topic, :user_id, :summary
+  permit_params :topic, :user_id, :summary, :rolling_summary, :message_count_since_summary, :last_summary_update_at
 
   menu label: "VeriTalk Conversations", priority: 4
 
@@ -248,12 +248,76 @@ ActiveAdmin.register Conversation do
                 div class: "fw-semibold text-dark" do simple_format(conversation.summary) end
               end
             end
+
+            # Rolling Summary Info
+            div class: "mt-3 pt-3 border-top" do
+              div class: "d-flex justify-content-between align-items-center mb-2" do
+                span class: "text-muted small fw-semibold" do "Messages Since Summary:" end
+                span class: "fw-semibold" do
+                  conversation.message_count_since_summary || 0
+                end
+              end
+              if conversation.last_summary_update_at
+                div class: "d-flex justify-content-between align-items-center" do
+                  span class: "text-muted small fw-semibold" do "Last Summary Update:" end
+                  span class: "fw-semibold" do conversation.last_summary_update_at.strftime("%b %d, %Y %I:%M %p") end
+                end
+              end
+            end
           end
         end
       end
 
-      # Right Column - Messages
+      # Right Column - Messages and Rolling Summary
       div class: "col-lg-8" do
+        # Rolling Summary Section
+        if conversation.rolling_summary.present?
+          div class: "materio-card mb-4" do
+            div class: "materio-header" do
+              h5 class: "mb-0 fw-semibold" do
+                i class: "ri ri-file-list-line me-2"
+                "Rolling Summary"
+              end
+            end
+            div class: "card-body p-4" do
+              div class: "alert alert-info mb-3" do
+                i class: "ri ri-information-line me-2"
+                strong "Rolling Summary"
+                " - This summary gets constantly updated as the conversation evolves. It captures thread goals, key decisions, constraints, UX insights, and open items."
+              end
+              div class: "bg-light p-3 rounded border" do
+                pre class: "mb-0 text-dark", style: "white-space: pre-wrap; font-family: 'Courier New', monospace; font-size: 13px; line-height: 1.6; margin: 0;" do
+                  conversation.rolling_summary
+                end
+              end
+              div class: "mt-3" do
+                small class: "text-muted" do
+                  "Character count: #{conversation.rolling_summary.length} | Word count: #{conversation.rolling_summary.split.size}"
+                end
+              end
+              if conversation.last_summary_update_at
+                div class: "mt-2" do
+                  small class: "text-muted" do
+                    "Last updated: #{conversation.last_summary_update_at.strftime('%b %d, %Y at %I:%M %p')}"
+                  end
+                end
+              end
+            end
+          end
+        else
+          div class: "materio-card mb-4" do
+            div class: "card-body p-4" do
+              div class: "alert alert-info mb-0" do
+                i class: "ri ri-information-line me-2"
+                strong "Rolling Summary"
+                " - This summary gets constantly updated as the conversation evolves. "
+                "No rolling summary yet. Summary will be generated after #{10 - (conversation.message_count_since_summary || 0)} more messages or when a goal/constraint change is detected."
+              end
+            end
+          end
+        end
+
+        # Messages Section
         div class: "materio-card" do
           div class: "materio-header" do
             h5 class: "mb-0 fw-semibold" do
@@ -351,6 +415,13 @@ ActiveAdmin.register Conversation do
           f.input :user, as: :select, collection: User.all.map { |u| [u.email, u.id] }
           f.input :topic
           f.input :summary, as: :text, input_html: { rows: 4 }
+          f.input :rolling_summary, as: :text,
+                  input_html: {
+                    rows: 15,
+                    class: "form-control font-monospace",
+                    style: "font-family: 'Courier New', monospace; font-size: 13px;"
+                  },
+                  hint: "Rolling conversation summary (auto-generated, but can be manually edited). Format: Thread goal, Key decisions, Constraints, UX/intent notes, Open items."
         end
 
         div class: "mt-4 pt-4 border-top" do

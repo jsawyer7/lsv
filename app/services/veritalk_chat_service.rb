@@ -1,6 +1,10 @@
 require 'openai'
 
 class VeritalkChatService
+  # Token budget constants
+  RAW_WINDOW_TOKEN_BUDGET = 2000 # ~55-65% of input context budget
+  MIN_TURNS_TO_INCLUDE = 2 # Always include at least 2 complete turns
+
   def initialize(user:, conversation:, user_message_text:)
     @user = user
     @conversation = conversation
@@ -23,6 +27,7 @@ class VeritalkChatService
     # Auto-generate or update topic from conversation if it's still the default
     update_topic_if_needed!
 
+    # Build messages payload following exact spec order
     messages_payload = build_messages_payload
 
     assistant_text = +""
@@ -57,8 +62,11 @@ class VeritalkChatService
       content: cleaned_text
     )
 
-    # Update compact summary lines for future turns
-    update_summaries!
+    # Update rolling summary if needed (after assistant response)
+    update_rolling_summary_if_needed!
+
+    # Increment message count since last summary
+    @conversation.increment!(:message_count_since_summary)
   rescue => e
     Rails.logger.error "VeriTalk stream error: #{e.message}"
     raise
@@ -66,26 +74,53 @@ class VeritalkChatService
 
   private
 
+  # Build messages payload following exact spec order
   def build_messages_payload
     messages = []
 
-    # Core system behaviour
+    # 1. system: VERITALK_CONTRACT (the main contract)
     messages << {
       role: "system",
       content: system_prompt
     }
 
-    # Add compact summary lines of last 5 messages as lightweight memory
-    summary_lines = @conversation.conversation_summaries.order(position: :asc).pluck(:content)
-    if summary_lines.any?
-      summary_text = summary_lines.each_with_index.map { |line, idx| "#{idx + 1}. #{line}" }.join("\n")
+    # 2. system: USER_PROFILE_MEMORY (stable preferences + constraints)
+    user_profile = user_profile_memory
+    if user_profile.present?
       messages << {
-        role: "assistant",
-        content: "Short summary of recent conversation:\n#{summary_text}"
+        role: "system",
+        content: "USER_PROFILE_MEMORY:\n#{user_profile}"
       }
     end
 
-    # Add the current user question (full text)
+    # 3. system: ROLLING_CONVERSATION_SUMMARY (latest only)
+    rolling_summary = @conversation.rolling_summary
+    if rolling_summary.present?
+      messages << {
+        role: "system",
+        content: "ROLLING_CONVERSATION_SUMMARY:\n#{rolling_summary}"
+      }
+    end
+
+    # 4. system: SOURCE TEXTS (if verse references detected)
+    verse_texts = detect_and_fetch_verse_texts
+    if verse_texts.present?
+      messages << {
+        role: "system",
+        content: "SOURCE TEXTS (exact; quote from these only):\n#{verse_texts}"
+      }
+    end
+
+    # 5. assistant/user: RECENT_RAW_MESSAGES_WINDOW (verbatim recent messages, token-budgeted)
+    recent_messages = select_recent_messages_window
+    recent_messages.each do |msg|
+      messages << {
+        role: msg.role,
+        content: msg.content
+      }
+    end
+
+    # 6. user: CURRENT_USER_MESSAGE
     messages << {
       role: "user",
       content: @user_message_text
@@ -135,41 +170,284 @@ class VeritalkChatService
     PROMPT
   end
 
-  # Store summaries of the last 5 messages for context
-  def update_summaries!
-    recent_messages = @conversation
-                       .conversation_messages
-                       .reorder(position: :asc)
-                       .last(5)
+  # USER_PROFILE_MEMORY (stable preferences + constraints)
+  def user_profile_memory
+    return nil unless @user.veritalk_profile_memory.present?
 
-    # Pair messages roughly as (user, assistant) and build compact lines
-    pairs = recent_messages.each_slice(2).to_a
+    @user.veritalk_profile_memory
+  end
 
-    summary_lines = pairs.map do |user_msg, ai_msg|
-      next unless user_msg
+  # Select recent messages within token budget (token-budgeted, not hard-count)
+  def select_recent_messages_window
+    all_messages = @conversation.conversation_messages.order(position: :asc)
+    return [] if all_messages.empty?
 
-      user_text = truncate_content(user_msg.content)
-      ai_text = ai_msg ? truncate_content(ai_msg.content) : ""
+    # Start with most recent and work backward
+    selected = []
+    token_count = 0
+    messages_to_check = all_messages.last(20).reverse # Check last 20 messages max
 
-      if ai_text.present?
-        "User: #{user_text} | AI: #{ai_text}"
+    messages_to_check.each do |msg|
+      msg_tokens = estimate_tokens(msg.content)
+
+      # Always include at least MIN_TURNS_TO_INCLUDE complete turns
+      if selected.length < MIN_TURNS_TO_INCLUDE * 2
+        selected.unshift(msg)
+        token_count += msg_tokens
+      elsif token_count + msg_tokens <= RAW_WINDOW_TOKEN_BUDGET
+        selected.unshift(msg)
+        token_count += msg_tokens
       else
-        "User: #{user_text}"
-      end
-    end.compact
-
-    ConversationSummary.transaction do
-      @conversation.conversation_summaries.destroy_all
-
-      summary_lines.each_with_index do |line, idx|
-        @conversation.conversation_summaries.create!(
-          content: line,
-          position: idx + 1
-        )
+        # If a single message is huge, truncate it or exclude it
+        if msg_tokens > RAW_WINDOW_TOKEN_BUDGET * 0.5 # Message is >50% of budget
+          # Exclude huge messages and rely on rolling summary
+          Rails.logger.warn "VeriTalk: Excluding large message (#{msg_tokens} tokens) from window, relying on rolling summary"
+          break
+        else
+          # Token budget exceeded, stop adding messages
+          break
+        end
       end
     end
+
+    # Ensure we have complete turns (user+assistant pairs) when possible
+    # If we have an odd number and more than minimum, try to balance
+    if selected.length.odd? && selected.length > MIN_TURNS_TO_INCLUDE * 2
+      # Remove the oldest message to make it even (complete turns)
+      selected.shift
+    end
+
+    selected
+  end
+
+  def estimate_tokens(text)
+    # Rough estimation: ~4 characters per token
+    (text.to_s.length / 4.0).ceil
+  end
+
+  # Update rolling summary when needed
+  def update_rolling_summary_if_needed!
+    should_update =
+      @conversation.message_count_since_summary >= 10 || # Every 10 messages (8-12 range)
+      @conversation.rolling_summary.blank? || # First summary
+      goal_or_constraint_changed? || # User changed goals or constraints
+      decision_made? || # A decision was made
+      major_constraint_introduced? || # Major constraint introduced
+      ux_friction_detected? # Notable UX issue discovered
+
+    return unless should_update
+
+    generate_rolling_summary
   rescue => e
-    Rails.logger.error "VeriTalk summary update error: #{e.message}"
+    Rails.logger.error "VeriTalk rolling summary update error: #{e.message}"
+  end
+
+  def generate_rolling_summary
+    # Get messages since last summary update (or all if no summary exists)
+    since_time = @conversation.last_summary_update_at || @conversation.created_at
+    recent_messages = @conversation
+                       .conversation_messages
+                       .where("created_at > ?", since_time)
+                       .order(position: :asc)
+
+    # If no new messages, use last 10 messages for initial summary
+    if recent_messages.empty?
+      recent_messages = @conversation.conversation_messages.order(position: :asc).last(10)
+    end
+
+    return if recent_messages.empty?
+
+    # Build context for summarization
+    previous_summary = @conversation.rolling_summary || "No previous summary."
+    messages_text = recent_messages.map { |m| "#{m.role}: #{m.content}" }.join("\n\n")
+
+    summary_prompt = <<~PROMPT
+      Update the rolling conversation summary based on the previous summary and new messages.
+
+      Previous summary:
+      #{previous_summary}
+
+      New messages since last summary:
+      #{messages_text}
+
+      Generate a new rolling summary with these exact fields:
+      Thread goal:
+      Key decisions:
+      Constraints:
+      UX/intent notes:
+      Open items:
+
+      Instructions:
+      - Keep it concise, decision/goal/constraint-oriented
+      - Include UX insights and user friction points under "UX/intent notes"
+      - Put topic facts under "Key decisions"
+      - Put user objections/friction under "UX/intent notes"
+      - Do NOT create a theology essay
+      - Focus on what decisions were made and why
+      - Capture product insights, not just topic summaries
+    PROMPT
+
+    begin
+      response = @client.chat(
+        parameters: {
+          model: "gpt-4o",
+          messages: [
+            {
+              role: "system",
+              content: "You are a conversation summarizer. Generate structured rolling summaries focusing on goals, decisions, constraints, and UX insights. Always use the exact field format specified."
+            },
+            { role: "user", content: summary_prompt }
+          ],
+          temperature: 0.3,
+          max_tokens: 500
+        }
+      )
+
+      new_summary = response.dig("choices", 0, "message", "content")&.strip
+      if new_summary.present?
+        @conversation.update!(
+          rolling_summary: new_summary,
+          last_summary_update_at: Time.current,
+          message_count_since_summary: 0
+        )
+        Rails.logger.info "VeriTalk: Updated rolling summary for conversation #{@conversation.id}"
+      end
+    rescue => e
+      Rails.logger.error "VeriTalk rolling summary generation error: #{e.message}"
+    end
+  end
+
+  def goal_or_constraint_changed?
+    # Check if user message contains goal/constraint change indicators
+    change_indicators = [
+      "now let's", "let's focus on", "change to", "instead of",
+      "no quotes", "always show", "prefer", "don't use", "stop using"
+    ]
+
+    change_indicators.any? { |indicator| @user_message_text.downcase.include?(indicator) }
+  end
+
+  def decision_made?
+    # Check if assistant response or user message indicates a decision was made
+    decision_indicators = [
+      "we will", "we'll", "decision:", "decided", "agreed to", "will use"
+    ]
+
+    # Check last assistant message for decisions
+    last_assistant = @conversation.conversation_messages.where(role: 'assistant').order(position: :desc).first
+    if last_assistant
+      decision_indicators.any? { |indicator| last_assistant.content.downcase.include?(indicator) }
+    else
+      false
+    end
+  end
+
+  def major_constraint_introduced?
+    # Check if a major constraint was introduced
+    constraint_indicators = [
+      "no quotes unless", "must show", "require", "mandatory", "hard rule"
+    ]
+
+    constraint_indicators.any? { |indicator| @user_message_text.downcase.include?(indicator) }
+  end
+
+  def ux_friction_detected?
+    # Check for UX friction indicators
+    friction_indicators = [
+      "expected", "wanted", "confusing", "unclear", "frustrating", "doesn't work",
+      "should show", "missing", "not showing"
+    ]
+
+    friction_indicators.any? { |indicator| @user_message_text.downcase.include?(indicator) }
+  end
+
+  # Detect verse references and fetch verse texts from database
+  def detect_and_fetch_verse_texts
+    verse_references = []
+
+    # Bible pattern: "John 10:30", "1 John 1:1", "Revelation 3:16"
+    bible_pattern = /\b(\d?\s*[A-Za-z]+(?:\s+[A-Za-z]+)?)\s+(\d+):(\d+)/i
+    @user_message_text.scan(bible_pattern).each do |match|
+      book_name = match[0].strip
+      chapter = match[1].to_i
+      verse = match[2].to_i
+      verse_references << { type: :bible, book: book_name, chapter: chapter, verse: verse }
+    end
+
+    # Quran pattern: "Quran 2:255", "Surah 2:255", "Qur'an 2:255"
+    quran_pattern = /\b(Quran|Qur'an|Surah)\s+(\d+):(\d+)/i
+    @user_message_text.scan(quran_pattern).each do |match|
+      surah = match[1].to_i
+      ayah = match[2].to_i
+      verse_references << { type: :quran, surah: surah, ayah: ayah }
+    end
+
+    return nil if verse_references.empty?
+
+    # Fetch verse texts from database
+    verse_texts = verse_references.map do |ref|
+      fetch_verse_text(ref)
+    end.compact
+
+    return nil if verse_texts.empty?
+
+    verse_texts.join("\n\n")
+  end
+
+  def fetch_verse_text(ref)
+    case ref[:type]
+    when :bible
+      fetch_bible_verse(ref[:book], ref[:chapter], ref[:verse])
+    when :quran
+      fetch_quran_verse(ref[:surah], ref[:ayah])
+    else
+      nil
+    end
+  end
+
+  def fetch_bible_verse(book_name, chapter, verse)
+    # Try to find book by name (case-insensitive)
+    book = Book.where('LOWER(std_name) = LOWER(?) OR LOWER(code) = LOWER(?)', book_name, book_name).first
+    return nil unless book
+
+    # Try to find canonical text first (most reliable - Westcott-Hort 1881)
+    begin
+      canonical = CanonicalSourceText.find_canonical('WH', book.code, chapter, verse)
+      if canonical&.canonical_text.present?
+        return "#{book.std_name} #{chapter}:#{verse} (Westcott-Hort 1881):\n#{canonical.canonical_text}"
+      end
+    rescue => e
+      Rails.logger.debug "VeriTalk: Canonical text lookup failed: #{e.message}"
+    end
+
+    # Fallback: try to find in text_contents
+    text_content = TextContent.joins(:source, :book)
+                              .where(books: { code: book.code })
+                              .where(unit_group: chapter, unit: verse)
+                              .where(sources: { name: ['Westcott-Hort 1881', 'WH'] })
+                              .first
+
+    if text_content&.original_text.present?
+      return "#{book.std_name} #{chapter}:#{verse}:\n#{text_content.original_text}"
+    end
+
+    nil
+  end
+
+  def fetch_quran_verse(surah, ayah)
+    # Quran verse fetching - implement based on your Quran data structure
+    # This is a placeholder - adjust based on your actual Quran source structure
+    text_content = TextContent.joins(:source, :book)
+                              .where(books: { code: 'QRN' }) # Adjust based on your Quran book code
+                              .where(unit_group: surah, unit: ayah)
+                              .where(sources: { name: ['Quran'] })
+                              .first
+
+    if text_content&.original_text.present?
+      return "Quran #{surah}:#{ayah}:\n#{text_content.original_text}"
+    end
+
+    nil
   end
 
   def truncate_content(text, max_length: 160)
