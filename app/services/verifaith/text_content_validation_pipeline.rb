@@ -27,6 +27,7 @@ module Verifaith
       # 5. Swete contamination checks (fail-fast when contaminated)
       # 6. Word-for-word token presence (edition-aware punctuation)
       # 7. GlossPriorityEnforcer (WFW layer)
+      # 7a. WFW Policy Gate (insertion validation - validates licensed insertions)
       # 8. Ensure LSV is chart-derived (minimal enforcement)
       # 9. SubstantivalParticipleNominalizationValidator
       # 10. PunctuationBoundaryValidator
@@ -107,7 +108,21 @@ module Verifaith
         ).validate
       )
 
-      # 6a) εἰμί Participle Reification Validator (grammar-level, WFW token validation)
+      # 6a) WFW Policy Gate (insertion validation)
+      # Validates that English insertions are properly licensed and don't collapse Greek structure
+      wfw_gate_result = Validators::WfwPolicyGateValidator.new(
+        source_text: @source_text,
+        word_for_word: @wfw,
+        lsv_literal_reconstruction: @lsv,
+        mode: @mode
+      ).validate
+      
+      # Fail fast on WFW policy gate violations
+      return wfw_gate_result unless wfw_gate_result.ok?
+      
+      result.merge!(wfw_gate_result)
+
+      # 6b) εἰμί Participle Reification Validator (grammar-level, WFW token validation)
       result.merge!(
         Validators::EimiParticipleReificationValidator.new(
           word_for_word: @wfw,
