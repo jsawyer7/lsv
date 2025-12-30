@@ -3302,14 +3302,16 @@ namespace :lexical do
       puts "Done!"
     end
 
-    desc "Enqueue Septuagint LXX population job via Sidekiq. Usage: rake 'lexical:enqueue_lxx_job[source_id]' or with FORCE_CREATE=true FORCE_POPULATE=true. By default, processes only Torah books (GEN, EXO, LEV, NUM, DEU)."
+    desc "Enqueue Septuagint LXX population job via Sidekiq. Usage: rake 'lexical:enqueue_lxx_job[source_id]' or with FORCE_CREATE=true FORCE_POPULATE=true. Processes all Old Testament books by default."
     task :enqueue_lxx_job, [:source_id] => :environment do |t, args|
       source_id = args[:source_id]&.to_i
       force_create = ENV['FORCE_CREATE'] == 'true'
       force_populate = ENV['FORCE_POPULATE'] == 'true'
       
-      # Books to process: Torah (Pentateuch) only
-      book_codes = ['GEN', 'EXO', 'LEV', 'NUM', 'DEU']
+      # Books to process: All Old Testament books (or nil to process all)
+      # Passing nil will make the job use VerseCountReference::OLD_TESTAMENT_BOOKS
+      book_codes = nil
+      all_ot_books = VerseCountReference::OLD_TESTAMENT_BOOKS
       
       puts "=" * 80
       puts "Enqueuing PopulateSeptuagintLxxJob"
@@ -3317,7 +3319,8 @@ namespace :lexical do
       puts "Source ID: #{source_id || 'AUTO (will find or create)'}"
       puts "Force Create: #{force_create ? 'YES' : 'NO'}"
       puts "Force Populate: #{force_populate ? 'YES' : 'NO'}"
-      puts "Books to process: #{book_codes.join(', ')}"
+      puts "Books to process: ALL Old Testament books (#{all_ot_books.count} books)"
+      puts "  #{all_ot_books.join(', ')}"
       puts ""
       
       # Find or create source
@@ -3332,14 +3335,16 @@ namespace :lexical do
         puts "✗ Source not found. Will be created by job."
       end
       
-      # STEP 1: Clear content for specified books
+      # STEP 1: Clear content for all Old Testament books
       puts "=" * 80
-      puts "STEP 1: Clearing Content for Specified Books"
+      puts "STEP 1: Clearing Content for All Old Testament Books"
       puts "=" * 80
       puts ""
       
       if source
-        books = Book.unscoped.where(code: book_codes)
+        # Use all OT books for clearing
+        books_to_clear = book_codes || all_ot_books
+        books = Book.unscoped.where(code: books_to_clear)
         cleared_count = 0
         total_to_clear = 0
         
@@ -3381,6 +3386,7 @@ namespace :lexical do
         puts ""
         puts "Clearing Summary:"
         puts "  Total verses cleared: #{cleared_count}/#{total_to_clear}"
+        puts "  Books processed: #{books.count}/#{books_to_clear.count}"
         puts ""
       else
         puts "⚠ Source not found yet. Content will be cleared during job execution if needed."
@@ -3410,11 +3416,23 @@ namespace :lexical do
         puts ""
         puts "This job will:"
         puts "  1. Create or find Septuagint Swete source"
-        puts "  2. Create text content records for: #{book_codes.join(', ')}"
+        puts "  2. Create text content records for all Old Testament books (#{all_ot_books.count} books)"
         puts "  3. Enqueue individual TextContentPopulateJob for each verse in these books"
         puts ""
         puts "Note: Make sure OLD_TESTAMENT_VERSE_COUNTS in VerseCountReference has verse counts"
         puts "      for all books you want to process."
+        puts ""
+        puts "⚠️  WARNING: This will process ALL Old Testament books. This is a large operation!"
+        begin
+          estimated_verses = all_ot_books.sum do |code|
+            VerseCountReference.chapters_for_book(code).sum do |ch|
+              VerseCountReference.expected_verses(code, ch) || 0
+            end
+          end
+          puts "   Estimated verses: ~#{estimated_verses}"
+        rescue => e
+          puts "   (Unable to calculate estimated verse count)"
+        end
       else
         puts "✗ Failed to enqueue job"
         exit 1
