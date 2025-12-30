@@ -27,14 +27,48 @@
       </div>
       
       <div class="settings-form-group">
+        <%= f.label :religious_tradition, 'Which religious tradition best reflects your background or familiarity?' %>
+        <%= f.select :religious_tradition, 
+            options_for_select([
+              ['', ''],
+              ['Jewish', 'jewish'],
+              ['Christian', 'christian'],
+              ['Muslim', 'muslim'],
+              ['Other', 'other'],
+              ['None', 'not_specified']
+            ], @user.religious_tradition),
+            {},
+            { class: 'settings-select', onchange: 'toggleTraditionCanon()' } %>
+      </div>
+
+      <div class="settings-form-group" id="tradition-canon-group" style="display: none;">
+        <%= f.label :tradition_canon, 'Which tradition\'s source texts should we use by default?' %>
+        <%= f.select :tradition_canon, 
+            options_for_select([
+              ['', '']
+            ], @user.tradition_canon),
+            {},
+            { class: 'settings-select', id: 'tradition-canon-select', 'data-initial-value' => @user.tradition_canon } %>
+      </div>
+
+      <div class="settings-form-group">
+        <%= f.label :favorite_teachers, 'Who are your favorite religious teachers or theology leaders?' %>
+        <%= f.text_area :favorite_teachers, class: 'settings-textarea', rows: 3, placeholder: 'Enter names separated by commas' %>
+      </div>
+      
+      <div class="settings-form-group">
         <%= f.label :naming_preference, 'Naming Preference' %>
-        <div class="settings-preference-options">
-          <% @naming_preferences.each do |preference| %>
-            <div class="settings-preference-option">
-              <%= f.radio_button :naming_preference, preference[:id], id: "settings_#{preference[:id]}" %>
-              <%= f.label "naming_preference_#{preference[:id]}", preference[:name], for: "settings_#{preference[:id]}" %>
-              <span class="settings-preference-desc"><%= preference[:description] %></span>
-            </div>
+        <%= f.select :naming_preference, 
+            options_for_select(
+              [['', '']] + @naming_preferences.map { |pref| [pref[:name], pref[:id], { 'data-description' => pref[:description] }] },
+              @user.naming_preference
+            ),
+            {},
+            { class: 'settings-select', onchange: 'updateNamingPreferenceDescription()' } %>
+        <div class="settings-select-description" id="naming-preference-description" style="margin-top: 8px; color: #666; font-size: 14px;">
+          <% if @user.naming_preference %>
+            <% selected_pref = @naming_preferences.find { |p| p[:id] == @user.naming_preference } %>
+            <%= selected_pref[:description] if selected_pref %>
           <% end %>
         </div>
       </div>

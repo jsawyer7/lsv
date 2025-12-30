@@ -1171,5 +1171,123 @@ document.addEventListener('click', function(e) {
 document.addEventListener('DOMContentLoaded', function() {
   hideAvatarLoader();
   hideBackgroundLoader();
+  // Initialize tradition canon display on page load
+  // Use setTimeout to ensure DOM is fully ready
+  setTimeout(function() {
+    // Store current tradition canon value before toggling
+    const traditionCanonSelect = document.getElementById('tradition-canon-select');
+    if (traditionCanonSelect) {
+      // Get the value from data attribute (set by Rails) or from the select element
+      const initialValue = traditionCanonSelect.getAttribute('data-initial-value');
+      const currentValue = traditionCanonSelect.value || initialValue;
+      if (currentValue) {
+        traditionCanonSelect.setAttribute('data-current-value', currentValue);
+      }
+    }
+    toggleTraditionCanon();
+    updateNamingPreferenceDescription();
+  }, 100);
 });
+
+// Canon options for different traditions
+const canonOptions = {
+  jewish: [
+    ['', ''],
+    ['Rabbinic Judaism (Tanakh / Masoretic tradition)', 'rabbinic_judaism'],
+    ['Samaritan (Samaritan Pentateuch tradition)', 'samaritan'],
+    ['Not sure (use neutral defaults)', 'not_sure_jewish']
+  ],
+  christian: [
+    ['', ''],
+    ['Protestant Canon', 'protestant_canon'],
+    ['Roman Catholic Canon', 'roman_catholic_canon'],
+    ['Latter-day Saints', 'latter_day_saints'],
+    ['Syriac (Peshitta) Canon', 'syriac_peshitta_canon'],
+    ['Ethiopian Canon', 'ethiopian_canon'],
+    ['Armenian Apostolic Canon', 'armenian_apostolic_canon'],
+    ['Coptic Orthodox Canon', 'coptic_orthodox_canon'],
+    ['Georgian Orthodox Canon', 'georgian_orthodox_canon'],
+    ['Russian Orthodox Canon', 'russian_orthodox_canon'],
+    ['Greek Orthodox Canon', 'greek_orthodox_canon'],
+    ['Anglican Canon', 'anglican_canon'],
+    ['Lutheran Canon', 'lutheran_canon'],
+    ['Church of the East (Assyrian) Canon', 'church_of_the_east_assyr'],
+    ['Eastern Orthodox Canon', 'eastern_orthodox_canon'],
+    ['Western Orthodox Canon', 'western_orthodox_canon']
+  ]
+};
+
+// Function to toggle tradition canon options based on selected religious tradition
+function toggleTraditionCanon() {
+  const traditionCanonGroup = document.getElementById('tradition-canon-group');
+  const traditionCanonSelect = document.getElementById('tradition-canon-select');
+  
+  // Get selected religious tradition from dropdown
+  const religiousTraditionSelect = document.querySelector('select[name="user[religious_tradition]"]');
+  
+  if (!religiousTraditionSelect || !traditionCanonSelect) {
+    if (traditionCanonGroup) {
+      traditionCanonGroup.style.display = 'none';
+    }
+    return;
+  }
+  
+  // Store current value before changing options (check both value and selected option)
+  const currentValue = traditionCanonSelect.value || (traditionCanonSelect.selectedOptions.length > 0 ? traditionCanonSelect.selectedOptions[0].value : '');
+  if (currentValue) {
+    traditionCanonSelect.setAttribute('data-current-value', currentValue);
+  }
+  
+  const tradition = religiousTraditionSelect.value;
+  
+  if (tradition === 'jewish' || tradition === 'christian') {
+    traditionCanonGroup.style.display = 'block';
+    
+    // Clear existing options
+    traditionCanonSelect.innerHTML = '';
+    
+    // Get the appropriate canon options
+    const options = canonOptions[tradition] || [];
+    
+    // Add options to the select
+    options.forEach(function(option) {
+      const optionElement = document.createElement('option');
+      optionElement.value = option[1];
+      optionElement.textContent = option[0];
+      traditionCanonSelect.appendChild(optionElement);
+    });
+    
+    // Restore previously selected value if it exists and is valid for this tradition
+    const savedValue = traditionCanonSelect.getAttribute('data-current-value');
+    if (savedValue && options.some(opt => opt[1] === savedValue)) {
+      traditionCanonSelect.value = savedValue;
+    }
+  } else {
+    // Hide canon options for muslim, other, or not_specified
+    traditionCanonGroup.style.display = 'none';
+    traditionCanonSelect.value = '';
+    traditionCanonSelect.removeAttribute('data-current-value');
+  }
+}
+
+// Function to update naming preference description
+function updateNamingPreferenceDescription() {
+  const namingPreferenceSelect = document.querySelector('select[name="user[naming_preference]"]');
+  const descriptionElement = document.getElementById('naming-preference-description');
+  
+  if (!namingPreferenceSelect || !descriptionElement) return;
+  
+  const selectedValue = namingPreferenceSelect.value;
+  const selectedOption = namingPreferenceSelect.options[namingPreferenceSelect.selectedIndex];
+  
+  // Get description from data attribute or text
+  const description = selectedOption.getAttribute('data-description') || '';
+  
+  if (description && selectedValue) {
+    descriptionElement.textContent = description;
+    descriptionElement.style.display = 'block';
+  } else {
+    descriptionElement.style.display = 'none';
+  }
+}
 </script> 
