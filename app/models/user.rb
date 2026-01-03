@@ -51,6 +51,38 @@ class User < ApplicationRecord
     arabic: 2
   }
 
+  # Define religious traditions (using string values)
+  enum religious_tradition: {
+    jewish: 'jewish',
+    christian: 'christian',
+    muslim: 'muslim',
+    other: 'other',
+    not_specified: 'not_specified'
+  }
+
+  # Define tradition canons (using string values)
+  enum tradition_canon: {
+    rabbinic_judaism: 'rabbinic_judaism',
+    samaritan: 'samaritan',
+    not_sure_jewish: 'not_sure_jewish',
+    # Christian canons
+    protestant_canon: 'protestant_canon',
+    roman_catholic_canon: 'roman_catholic_canon',
+    latter_day_saints: 'latter_day_saints',
+    syriac_peshitta_canon: 'syriac_peshitta_canon',
+    ethiopian_canon: 'ethiopian_canon',
+    armenian_apostolic_canon: 'armenian_apostolic_canon',
+    coptic_orthodox_canon: 'coptic_orthodox_canon',
+    georgian_orthodox_canon: 'georgian_orthodox_canon',
+    russian_orthodox_canon: 'russian_orthodox_canon',
+    greek_orthodox_canon: 'greek_orthodox_canon',
+    anglican_canon: 'anglican_canon',
+    lutheran_canon: 'lutheran_canon',
+    church_of_the_east_assyr: 'church_of_the_east_assyr',
+    eastern_orthodox_canon: 'eastern_orthodox_canon',
+    western_orthodox_canon: 'western_orthodox_canon'
+  }
+
 
   # Set default role before creation
   before_create :set_default_role

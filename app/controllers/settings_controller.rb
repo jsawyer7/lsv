@@ -542,7 +542,7 @@ class SettingsController < ApplicationController
   end
 
   def user_params
-    params.require(:user).permit(:full_name, :phone, :email, :about, :avatar, :avatar_cache, :remove_avatar, :background_image, :remove_background_image, :naming_preference)
+    params.require(:user).permit(:full_name, :phone, :email, :about, :avatar, :avatar_cache, :remove_avatar, :background_image, :remove_background_image, :naming_preference, :religious_tradition, :tradition_canon, :favorite_teachers)
   end
 
   def clean_plan_name(plan_name)

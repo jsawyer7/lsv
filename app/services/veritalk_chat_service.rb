@@ -50,7 +50,7 @@ class VeritalkChatService
       }
     )
 
-    
+
     cleaned_text = extract_assistant_response(assistant_text)
 
     # Persist the cleaned assistant message
@@ -169,9 +169,97 @@ class VeritalkChatService
 
   # USER_PROFILE_MEMORY (stable preferences + constraints)
   def user_profile_memory
-    return nil unless @user.veritalk_profile_memory.present?
+    # Build profile from user settings
+    profile_parts = []
 
-    @user.veritalk_profile_memory
+    # Religious tradition
+    if @user.religious_tradition.present? && @user.religious_tradition != 'not_specified'
+      tradition_name = format_religious_tradition(@user.religious_tradition)
+      profile_parts << "Religious tradition: #{tradition_name}"
+    end
+
+    # Tradition canon (only if religious tradition is set)
+    if @user.tradition_canon.present? && (@user.religious_tradition == 'jewish' || @user.religious_tradition == 'christian')
+      canon_name = format_tradition_canon(@user.tradition_canon)
+      profile_parts << "Source text canon: #{canon_name}"
+    end
+
+    # Naming preference
+    if @user.naming_preference.present?
+      naming_name = format_naming_preference(@user.naming_preference)
+      profile_parts << "Naming preference: #{naming_name}"
+    end
+
+    # Favorite teachers
+    if @user.favorite_teachers.present?
+      profile_parts << "Favorite religious teachers/theology leaders: #{@user.favorite_teachers.strip}"
+    end
+
+    # Combine manual profile memory if present
+    if @user.veritalk_profile_memory.present?
+      profile_parts << @user.veritalk_profile_memory
+    end
+
+    return nil if profile_parts.empty?
+
+    profile_parts.join("\n")
+  end
+
+  def format_religious_tradition(tradition)
+    case tradition
+    when 'jewish'
+      'Jewish'
+    when 'christian'
+      'Christian'
+    when 'muslim'
+      'Muslim'
+    when 'other'
+      'Other'
+    else
+      tradition.humanize
+    end
+  end
+
+  def format_tradition_canon(canon)
+    # Format canon names to be more readable
+    canon_name = canon.humanize
+
+    # Special formatting for specific canons
+    canon_mappings = {
+      'rabbinic_judaism' => 'Rabbinic Judaism (Tanakh / Masoretic tradition)',
+      'samaritan' => 'Samaritan (Samaritan Pentateuch tradition)',
+      'not_sure_jewish' => 'Not sure (use neutral defaults)',
+      'protestant_canon' => 'Protestant Canon',
+      'roman_catholic_canon' => 'Roman Catholic Canon',
+      'latter_day_saints' => 'Latter-day Saints',
+      'syriac_peshitta_canon' => 'Syriac (Peshitta) Canon',
+      'ethiopian_canon' => 'Ethiopian Canon',
+      'armenian_apostolic_canon' => 'Armenian Apostolic Canon',
+      'coptic_orthodox_canon' => 'Coptic Orthodox Canon',
+      'georgian_orthodox_canon' => 'Georgian Orthodox Canon',
+      'russian_orthodox_canon' => 'Russian Orthodox Canon',
+      'greek_orthodox_canon' => 'Greek Orthodox Canon',
+      'anglican_canon' => 'Anglican Canon',
+      'lutheran_canon' => 'Lutheran Canon',
+      'church_of_the_east_assyr' => 'Church of the East (Assyrian) Canon',
+      'eastern_orthodox_canon' => 'Eastern Orthodox Canon',
+      'western_orthodox_canon' => 'Western Orthodox Canon'
+    }
+
+    canon_mappings[canon] || canon_name
+  end
+
+  def format_naming_preference(preference)
+    case preference
+    when 'hebrew_aramaic'
+      'Hebrew/Aramaic (Yeshua, Mashiach, etc.)'
+    when 'greco_latin_english'
+      'English (Jesus, Messiah, etc.)'
+    when 'arabic'
+      'Arabic (Isa, Masih, etc.)'
+    else
+      preference.humanize
+    end
   end
 
   # Select recent messages within token budget (token-budgeted, not hard-count)
