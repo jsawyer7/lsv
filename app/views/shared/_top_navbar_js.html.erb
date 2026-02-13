@@ -1,0 +1,67 @@
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+  
+    class TopNavbarDropdown {
+      constructor() {
+        this.meTab = document.getElementById('me-tab');
+        this.dropdownMenu = this.meTab?.querySelector('.dropdown-menu');
+        this.isDropdownOpen = false;
+        
+        this.init();
+      }
+      
+      init() {
+        this.bindEvents();
+      }
+      
+      bindEvents() {
+       
+        if (this.meTab && this.dropdownMenu) {
+          this.meTab.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.toggleDropdown();
+          });
+        }
+        
+        
+        document.addEventListener('click', (e) => {
+          if (!this.meTab?.contains(e.target)) {
+            this.closeDropdown();
+          }
+        });
+        
+       
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape') {
+            this.closeDropdown();
+          }
+        });
+      }
+      
+      toggleDropdown() {
+        if (this.isDropdownOpen) {
+          this.closeDropdown();
+        } else {
+          this.showDropdown();
+        }
+      }
+      
+      showDropdown() {
+        this.dropdownMenu?.classList.add('show');
+        this.meTab?.classList.add('active');
+        this.isDropdownOpen = true;
+      }
+      
+      closeDropdown() {
+        this.dropdownMenu?.classList.remove('show');
+        this.meTab?.classList.remove('active');
+        this.isDropdownOpen = false;
+      }
+    }
+    
+    
+    new TopNavbarDropdown();
+  });
+</script>
+
+

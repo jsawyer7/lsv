@@ -1,0 +1,123 @@
+<nav class="top-navbar">
+  <div class="top-navbar-container">
+    <!-- Logo -->
+    <div class="top-navbar-logo">
+      <%= link_to root_path do %>
+        <%= image_tag "verifaith-logo.png", alt: "VeriFaith Logo", class: "logo-img" %>
+      <% end %>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="top-navbar-search">
+      <%= form_with url: dashboard_path, method: :get, local: true, class: "search-form", data: { controller: "search" } do |f| %>
+        <%= image_tag "search.svg", alt: "Search", class: "search-icon-img" %>
+        <%= f.text_field :search, 
+            placeholder: "Search",
+            value: params[:search],
+            class: "search-input",
+            data: { search_target: "input" } %>
+      <% end %>
+    </div>
+
+
+    <div class="feeds-tab-wrapper">
+      <%= link_to feeds_path, class: "nav-tab feeds-tab #{'active' if current_page?(feeds_path)}" do %>
+        <%= image_tag 'feeds.svg', alt: 'Feeds', class: 'nav-tab-icon' %>
+        <span class="nav-tab-text">Feeds</span>
+      <% end %>
+    </div>
+    
+    <div class="top-navbar-nav">
+
+      <!-- My Peers -->
+      <%= link_to peers_path, class: "nav-tab vertical-tab #{'active' if current_page?(peers_path) || request.path =~ %r{^/users/\d+/profile/?$}}" do %>
+        <%= image_tag 'mypeers.svg', alt: 'My Peers', class: 'nav-tab-icon' %>
+        <span class="nav-tab-text">My Peers</span>
+      <% end %>
+
+      <!-- Groups -->
+      <a href="#" class="nav-tab vertical-tab upcoming">
+        <%= image_tag 'groups.svg', alt: 'Groups', class: 'nav-tab-icon' %>
+        <span class="nav-tab-text">Groups</span>
+      </a>
+
+      <!-- Notifications -->
+      <%= link_to notifications_settings_path, class: "nav-tab vertical-tab notifications-tab #{'active' if current_page?(notifications_settings_path)}" do %>
+        <div class="notification-icon-wrapper">
+          <%= image_tag 'notification.svg', alt: 'Notifications', class: 'nav-tab-icon' %>
+          <span class="notification-badge">1</span>
+        </div>
+        <span class="nav-tab-text">Notifications</span>
+      <% end %>
+
+      <!-- Me (Profile) -->
+      <div class="nav-tab me-tab" id="me-tab" data-action="click->dropdown#toggle">
+        <% if user_signed_in? %>
+          <%= image_tag current_user.avatar_url.presence || 'default-avatar.png', alt: 'Profile', class: 'me-profile-pic' %>
+        <% else %>
+          <%= image_tag 'default-avatar.png', alt: 'Profile', class: 'me-profile-pic' %>
+        <% end %>
+        <div class="me-text-arrow">
+          <span class="nav-tab-text">Me</span>
+          <%= image_tag 'mearrow.svg', alt: 'Arrow', class: 'me-arrow' %>
+        </div>
+        
+        <!-- Dropdown Menu -->
+        <div class="dropdown-menu">
+          <div class="dropdown-content main-content">
+            <div class="settings-menu-container">
+              <div class="settings-menu-item <%= 'active' if local_assigns[:active] == 'edit' %>">
+                <%= link_to(edit_settings_path, data: { turbo: false }, class: 'settings-menu-link') do %>
+                  <div class="settings-icon-wrapper">
+                    <%= image_tag('edit-profile.svg', class: 'settings-menu-icon') %>
+                  </div>
+                  <span class="settings-text">Edit Profile</span>
+                <% end %>
+              </div>
+              
+              <div class="settings-menu-item upcoming">
+                <div class="settings-menu-link">
+                  <div class="settings-icon-wrapper">
+                    <%= image_tag('security.png', class: 'settings-menu-icon') %>
+                  </div>
+                  <span class="settings-text">Security</span>
+                </div>
+              </div>
+              
+              <div class="settings-menu-item <%= 'active' if local_assigns[:active] == 'notifications' %>">
+                <%= link_to(notifications_settings_path, data: { turbo: false }, class: 'settings-menu-link') do %>
+                  <div class="settings-icon-wrapper">
+                    <%= image_tag('settings-notification.svg', class: 'settings-menu-icon') %>
+                  </div>
+                  <span class="settings-text">Notifications</span>
+                <% end %>
+              </div>
+              
+              <div class="settings-menu-item <%= 'active' if local_assigns[:active] == 'subscription' %>">
+                <%= link_to(subscription_settings_path, data: { turbo: false }, class: 'settings-menu-link') do %>
+                  <div class="settings-icon-wrapper">
+                    <%= image_tag('Subscription.svg', class: 'settings-menu-icon') %>
+                  </div>
+                  <span class="settings-text">Subscription</span>
+                <% end %>
+              </div>
+            </div>
+            <%= button_to destroy_user_session_path, method: :delete, class: "dropdown-item" do %>
+              <i class="fas fa-sign-out-alt"></i>
+              <span>Log Out</span>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+
+ 
+    <div class="new-claim-btn-wrapper">
+      <%= link_to new_claim_path, class: "new-claim-btn" do %>
+        <%= image_tag 'newclaim.png', alt: 'New Claim', class: 'new-claim-icon' %>
+        <span class="new-claim-text">New Claim</span>
+      <% end %>
+    </div>
+  </div>
+</nav>
+

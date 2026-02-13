@@ -1,23 +1,13 @@
 <nav class="dashboard-nav">
-  <div class="i-nav-logo">
-    <%= link_to root_path do %>
-      <%= image_tag "white-logo.png", alt: "VeriFaith Logo" %>
-    <% end %>
-  </div>
-
   <div class="nav-items">
-    <%= link_to feeds_path, class: "nav-item #{'active' if current_page?(feeds_path)}" do %>
-      <%= image_tag 'feed-icon.png', alt: '', class: 'nav-icon', size: '22x22' %>
-      <span class="nav-text">Feed</span>
-    <% end %>
-    
     <%= link_to facts_path, class: "nav-item #{'active' if request.path.start_with?('/facts') || (controller_name == 'claims' && action_name == 'show' && defined?(@claim) && @claim.fact? && @claim.user != current_user)}" do %>
       <%= image_tag 'fact-icon.png', alt: '', class: 'nav-icon', size: '22x22' %>
       <span class="nav-text">Facts</span>
     <% end %>
-    <%= link_to public_theories_path, class: "nav-item #{'active' if request.path.start_with?('/theories/public')}" do %>
-      <%= image_tag 'thoeries-icon.png', alt: '', class: 'nav-icon', size: '22x22' %>
-      <span class="nav-text">Theories</span>
+    
+    <%= link_to dashboard_path, class: "nav-item #{'active' if current_page?(dashboard_path)}" do %>
+      <%= image_tag 'my-claims-icon.png', alt: '', class: 'nav-icon', size: '22x22' %>
+      <span class="nav-text">Claims</span>
     <% end %>
 
     <%= link_to claims_path, class: "nav-item #{'active' if request.path.start_with?('/claims') && !(controller_name == 'claims' && action_name == 'show' && defined?(@claim) && @claim.fact? && @claim.user != current_user)}" do %>
@@ -25,47 +15,14 @@
       <span class="nav-text">My Claims</span>
     <% end %>
 
+    <%= link_to public_theories_path, class: "nav-item #{'active' if request.path.start_with?('/theories/public')}" do %>
+      <%= image_tag 'thoeries-icon.png', alt: '', class: 'nav-icon', size: '22x22' %>
+      <span class="nav-text">Theories</span>
+    <% end %>
+
     <%= link_to theories_path, class: "nav-item #{'active' if current_page?(theories_path) || current_page?(new_theory_path)}" do %>
       <%= image_tag 'my-theories-icon.png', alt: '', class: 'nav-icon', size: '22x22' %>
       <span class="nav-text">My Theories</span>
     <% end %>
-    
-    <%= link_to veritalk_path, class: "nav-item #{'active' if current_page?(veritalk_path)}" do %>
-      <i class="fas fa-comments nav-icon" style="font-size: 22px; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;"></i>
-      <span class="nav-text">VeriTalk</span>
-    <% end %>
-    
-    <%= link_to peers_path, class: "nav-item #{'active' if current_page?(peers_path) || request.path =~ %r{^/users/\d+/profile/?$}}" do %>
-      <%= image_tag 'peers-icon.png', alt: '', class: 'nav-icon', size: '22x22' %>
-      <span class="nav-text">Peers</span>
-    <% end %>
-    
-    <%= link_to shared_feed_path, class: "nav-item #{'active' if current_page?(shared_feed_path)}" do %>
-      <i class="fas fa-share-alt nav-icon" style="font-size: 22px; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;"></i>
-      <span class="nav-text">Shared</span>
-    <% end %>
-
-    <a href="#" class="nav-item upcoming"><%= image_tag 'groups-icon.png', alt: '', class: 'nav-icon', size: '22x22' %><span class="nav-text">Groups</span></a>
-  </div>
-
-  <div class="nav-section-title">Sources</div>
-  <div class="nav-items nav-sources">
-    <%= link_to sources_path, class: "nav-item #{'active' if current_page?(sources_path)}" do %>
-      <%= image_tag 'source-icon.png', alt: '', class: 'nav-icon', size: '22x22' %>
-      <span class="nav-text">Sources & Attribution</span>
-    <% end %>
-    <a href="#" class="nav-item upcoming"><%= image_tag 'source-icon.png', alt: '', class: 'nav-icon', size: '22x22' %><span class="nav-text">Catholic Bible</span></a>
-    <a href="#" class="nav-item upcoming"><%= image_tag 'sourses-icon.png', alt: '', class: 'nav-icon', size: '22x22' %><span class="nav-text">Add New Source</span></a>
-  </div>
-
-  <div class="nav-items nav-settings">
-    <% if user_signed_in? && current_user.admin? %>
-      <%= link_to admin_root_path, class: "nav-item #{'active' if request.path.start_with?('/admin')}" do %>
-        <i class="fas fa-shield-alt nav-icon" style="font-size: 22px; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;"></i>
-        <span class="nav-text">Admin Dashboard</span>
-      <% end %>
-    <% end %>
-    
-
   </div>
 </nav> 
