@@ -1,0 +1,118 @@
+.user-info-block {
+  position: fixed;
+  width: 17.5rem;
+  height: 14.9375rem;
+  top: 5.9375rem;
+  left: 5rem;
+  border-radius: 0.5rem;
+  background: #FFFFFF;
+  opacity: 1;
+  z-index: 1001;
+  overflow: hidden;
+  box-shadow: 0 0.125rem 0.5rem rgba(0, 0, 0, 0.1);
+  
+  // Background Picture
+  .user-info-background {
+    position: absolute;
+    width: 17.5rem;
+    height: 4.625rem;
+    top: 0;
+    left: 0;
+    opacity: 1;
+    overflow: hidden;
+    
+    .background-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    
+    .background-placeholder {
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+  }
+  
+  // Profile Picture
+  .user-info-profile-pic {
+    position: absolute;
+    width: 5rem;
+    height: 5rem;
+    top: 2.375rem;
+    left: 1.5rem;
+    border-radius: 100px;
+    border: 0.1875rem solid #FFFFFF;
+    background: #FFFFFF;
+    overflow: hidden;
+    z-index: 1;
+    
+    .profile-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 100px;
+    }
+  }
+  
+  // User Name
+  .user-info-name {
+    position: absolute;
+    width: 8.1875rem;
+    height: 1.4375rem;
+    top: 8.375rem;
+    left: 1.5rem;
+    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-weight: 600;
+    font-style: normal;
+    font-size: 1.25rem;
+    line-height: 100%;
+    letter-spacing: 0%;
+    color: #171717;
+    opacity: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  // About
+  .user-info-about {
+    position: absolute;
+    width: 11.125rem;
+    height: 1.25rem;
+    top: 10.3125rem;
+    left: 1.5rem;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-weight: 500;
+    font-style: normal;
+    font-size: 1rem;
+    line-height: 1.25rem;
+    letter-spacing: 0%;
+    color: #171717;
+    opacity: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  // Address
+  .user-info-address {
+    position: absolute;
+    width: 9.4375rem;
+    height: 1.25rem;
+    top: 12.0625rem;
+    left: 1.5rem;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-weight: 400;
+    font-style: normal;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    letter-spacing: 0%;
+    color: #4C4C4C;
+    opacity: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+

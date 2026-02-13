@@ -15,6 +15,7 @@ Rails.application.routes.draw do
   end
 
   get 'dashboard', to: 'dashboard#index'
+  get 'all-claims', to: 'dashboard#claims', as: :claims_page
   get 'veritalk', to: 'dashboard#veritalk', as: :veritalk
 
   # Onboarding routes

@@ -10,4 +10,8 @@ class DashboardController < ApplicationController
   def veritalk
     @conversations = current_user.conversations.order(updated_at: :desc).limit(50)
   end
+
+  def claims
+  
+  end
 end
