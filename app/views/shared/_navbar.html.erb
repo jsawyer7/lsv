@@ -1,28 +1,33 @@
 <nav class="dashboard-nav">
   <div class="nav-items">
-    <%= link_to facts_path, class: "nav-item #{'active' if request.path.start_with?('/facts') || (controller_name == 'claims' && action_name == 'show' && defined?(@claim) && @claim.fact? && @claim.user != current_user)}" do %>
-      <%= image_tag 'fact-icon.png', alt: '', class: 'nav-icon', size: '22x22' %>
+    <%= link_to facts_path, class: "nav-item nav-item-facts #{'active' if request.path.start_with?('/facts') || (controller_name == 'claims' && action_name == 'show' && defined?(@claim) && @claim.fact? && @claim.user != current_user)}" do %>
+      <%= image_tag 'Fact.svg', alt: '', class: 'nav-icon' %>
       <span class="nav-text">Facts</span>
     <% end %>
     
-    <%= link_to dashboard_path, class: "nav-item #{'active' if current_page?(dashboard_path)}" do %>
-      <%= image_tag 'my-claims-icon.png', alt: '', class: 'nav-icon', size: '22x22' %>
+    <%= link_to claims_page_path, class: "nav-item nav-item-claims #{'active' if current_page?(claims_page_path)}" do %>
+      <%= image_tag 'claims.svg', alt: '', class: 'nav-icon' %>
       <span class="nav-text">Claims</span>
     <% end %>
 
-    <%= link_to claims_path, class: "nav-item #{'active' if request.path.start_with?('/claims') && !(controller_name == 'claims' && action_name == 'show' && defined?(@claim) && @claim.fact? && @claim.user != current_user)}" do %>
-      <%= image_tag 'my-claims-icon.png', alt: '', class: 'nav-icon', size: '22x22' %>
+    <%= link_to claims_path, class: "nav-item nav-item-myclaims #{'active' if request.path.start_with?('/claims') && !(controller_name == 'claims' && action_name == 'show' && defined?(@claim) && @claim.fact? && @claim.user != current_user)}" do %>
+      <%= image_tag 'myclaims.svg', alt: '', class: 'nav-icon' %>
       <span class="nav-text">My Claims</span>
     <% end %>
 
-    <%= link_to public_theories_path, class: "nav-item #{'active' if request.path.start_with?('/theories/public')}" do %>
-      <%= image_tag 'thoeries-icon.png', alt: '', class: 'nav-icon', size: '22x22' %>
+    <%= link_to public_theories_path, class: "nav-item nav-item-theories #{'active' if request.path.start_with?('/theories/public')}" do %>
+      <%= image_tag 'theories.svg', alt: '', class: 'nav-icon' %>
       <span class="nav-text">Theories</span>
     <% end %>
 
-    <%= link_to theories_path, class: "nav-item #{'active' if current_page?(theories_path) || current_page?(new_theory_path)}" do %>
-      <%= image_tag 'my-theories-icon.png', alt: '', class: 'nav-icon', size: '22x22' %>
+    <%= link_to theories_path, class: "nav-item nav-item-mytheories #{'active' if current_page?(theories_path) || current_page?(new_theory_path)}" do %>
+      <%= image_tag 'mytheories.svg', alt: '', class: 'nav-icon' %>
       <span class="nav-text">My Theories</span>
+    <% end %>
+
+    <%= link_to veritalk_path, class: "nav-item nav-item-veritalk #{'active' if request.path.start_with?('/veritalk')}" do %>
+      <%= image_tag 'veritalk.svg', alt: '', class: 'nav-icon' %>
+      <span class="nav-text">VeriTalk</span>
     <% end %>
   </div>
 </nav> 
