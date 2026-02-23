@@ -58,7 +58,7 @@ class CommentsController < ApplicationController
   def render_comment(comment)
     ApplicationController.render(
       partial: 'comments/comment',
-      locals: { comment: comment }
+      locals: { comment: comment, current_user: current_user }
     )
   end
 end

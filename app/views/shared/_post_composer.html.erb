@@ -1,0 +1,22 @@
+<% if user_signed_in? %>
+  <div class="post-composer-block">
+   
+    <div class="post-composer-profile-pic">
+      <% if current_user.avatar_url.present? %>
+        <%= image_tag current_user.avatar_url, alt: current_user.full_name || "Profile", class: "profile-img" %>
+      <% else %>
+        <%= image_tag 'default-avatar.png', alt: "Profile", class: "profile-img" %>
+      <% end %>
+    </div>
+    
+    
+    <div class="post-composer-field">
+      <input 
+        type="text" 
+        class="post-composer-input" 
+        placeholder="What's in your mind, <%= current_user.first_name || 'User' %>?"
+      />
+    </div>
+  </div>
+<% end %>
+

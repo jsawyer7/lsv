@@ -155,38 +155,7 @@ document.addEventListener('DOMContentLoaded', function() {
       likeCountSpan.textContent = data.likes_count;
     }
     
-    // Update comment like count inline
     const commentId = link.getAttribute('data-comment-id');
-    if (commentId) {
-      const commentItem = link.closest('.comment-item');
-      if (commentItem) {
-        let likeCountInline = commentItem.querySelector('.comment-likes-count-inline');
-        const likesCount = data.likes_count || 0;
-        
-        if (likesCount > 0) {
-          if (!likeCountInline) {
-            // Create the inline like count element
-            const textWrapper = commentItem.querySelector('.comment-text-wrapper');
-            if (textWrapper) {
-              likeCountInline = document.createElement('span');
-              likeCountInline.className = 'comment-likes-count-inline';
-              likeCountInline.innerHTML = `<i class="fas fa-thumbs-up"></i> ${likesCount}`;
-              textWrapper.appendChild(likeCountInline);
-            }
-          } else {
-            // Update existing like count
-            likeCountInline.innerHTML = `<i class="fas fa-thumbs-up"></i> ${likesCount}`;
-          }
-        } else {
-          // Remove like count if no likes
-          if (likeCountInline) {
-            likeCountInline.remove();
-          }
-        }
-      }
-    }
-    
-    // Determine likeable type and ID
     const claimId = link.getAttribute('data-claim-id');
     const theoryId = link.getAttribute('data-theory-id');
     
@@ -217,12 +186,22 @@ document.addEventListener('DOMContentLoaded', function() {
       return;
     }
     
-    // Toggle button state
     if (link.classList.contains('liked')) {
-      // User unliked - change to like button
       link.classList.remove('liked');
+      const countNumber = link.querySelector('.comment-like-count-number');
+      const likesCount = data.likes_count || 0;
+      
       if (commentId) {
-        // Extract claim_id or theory_id and comment_id from current href
+        if (countNumber) {
+          if (likesCount > 0) {
+            countNumber.textContent = likesCount;
+          } else {
+            countNumber.remove();
+          }
+        }
+      }
+      
+      if (commentId) {
         const href = link.href;
         if (href.includes('/claims/')) {
           const match = href.match(/\/claims\/(\d+)\/comments\/(\d+)/);
@@ -240,14 +219,23 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       link.setAttribute('data-method', 'post');
       link.setAttribute('data-remote', 'true');
-      // Remove like_id data attribute if it exists
       link.removeAttribute('data-like-id');
     } else {
-      // User liked - change to unlike button
       link.classList.add('liked');
+      const existingCount = link.querySelector('.comment-like-count-number');
+      const likesCount = data.likes_count || 0;
+      
+      if (!existingCount) {
+        const countSpan = document.createElement('span');
+        countSpan.className = 'comment-like-count-number';
+        countSpan.textContent = likesCount;
+        link.appendChild(countSpan);
+      } else {
+        existingCount.textContent = likesCount;
+      }
+      
       if (data.like_id) {
         if (commentId) {
-          // Extract claim_id or theory_id and comment_id from current href
           const href = link.href;
           if (href.includes('/claims/')) {
             const match = href.match(/\/claims\/(\d+)\/comments\/(\d+)/);

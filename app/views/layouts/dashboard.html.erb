@@ -17,6 +17,10 @@
   <body>
     <%= render 'shared/top_navbar' %>
     <%= render 'shared/user_info_block' %>
+    <% if controller_name == 'feeds' && action_name == 'index' %>
+      <%= render 'shared/post_composer' %>
+      <%= render 'shared/sort_divider' %>
+    <% end %>
     <div class="dashboard-container">
       <%= render 'shared/navbar' %>
 

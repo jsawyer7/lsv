@@ -39,6 +39,7 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  background-color: #F4F2EE;
 }
 
 // Import component styles after variables are defined
@@ -71,6 +72,9 @@ body {
 @import 'components/veritalk';
 @import 'components/top_navbar';
 @import 'components/user_info_block';
+@import 'components/post_composer';
+@import 'components/sort_divider';
+@import 'components/feed_card';
 
 // Admin styles
 @import 'admin/claims';

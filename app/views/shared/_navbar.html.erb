@@ -1,4 +1,4 @@
-<nav class="dashboard-nav">
+<nav class="dashboard-nav <%= 'has-admin' if user_signed_in? && current_user.admin? %>">
   <div class="nav-items">
     <%= link_to facts_path, class: "nav-item nav-item-facts #{'active' if request.path.start_with?('/facts') || (controller_name == 'claims' && action_name == 'show' && defined?(@claim) && @claim.fact? && @claim.user != current_user)}" do %>
       <%= image_tag 'Fact.svg', alt: '', class: 'nav-icon' %>
@@ -28,6 +28,13 @@
     <%= link_to veritalk_path, class: "nav-item nav-item-veritalk #{'active' if request.path.start_with?('/veritalk')}" do %>
       <%= image_tag 'veritalk.svg', alt: '', class: 'nav-icon' %>
       <span class="nav-text">VeriTalk</span>
+    <% end %>
+
+    <% if user_signed_in? && current_user.admin? %>
+      <%= link_to admin_dashboard_path, class: "nav-item nav-item-admin #{'active' if request.path.start_with?('/admin')}" do %>
+        <%= image_tag 'settings-icon.png', alt: '', class: 'nav-icon' %>
+        <span class="nav-text">Admin Dashboard</span>
+      <% end %>
     <% end %>
   </div>
 </nav> 

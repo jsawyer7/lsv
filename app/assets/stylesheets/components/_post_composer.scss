@@ -1,0 +1,66 @@
+.post-composer-block {
+  position: fixed;
+  width: 39.25rem;
+  height: 4.5rem;
+  top: 5.9375rem;
+  left: 24.375rem;
+  border-radius: 0.5rem;
+  background: #FFFFFF;
+  opacity: 1;
+  z-index: 2;
+  overflow: hidden;
+  
+  // Profile Picture
+  .post-composer-profile-pic {
+    position: absolute;
+    width: 3rem;
+    height: 3rem;
+    top: 0.75rem;
+    left: 1rem;
+    border-radius: 100px;
+    overflow: hidden;
+    z-index: 1;
+    
+    .profile-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 100px;
+    }
+  }
+  
+  // Input Field
+  .post-composer-field {
+    position: absolute;
+    width: 33.5rem;
+    height: 3rem;
+    top: 0.75rem;
+    left: 4.75rem;
+    border-radius: 100px;
+    background: #F2F4F7;
+    opacity: 1;
+    
+    .post-composer-input {
+      width: 100%;
+      height: 100%;
+      border: none;
+      outline: none;
+      background: transparent;
+      padding: 0 1rem;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-weight: 400;
+      font-style: normal;
+      font-size: 0.875rem;
+      line-height: 1.25rem;
+      letter-spacing: 0%;
+      color: #111827;
+      border-radius: 100px;
+      
+      &::placeholder {
+        color: #939393;
+        opacity: 1;
+      }
+    }
+  }
+}
+

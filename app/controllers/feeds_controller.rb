@@ -46,38 +46,11 @@ class FeedsController < ApplicationController
       claims: all_items.map { |item|
         if item[:type] == 'claim'
           claim = item[:data]
-          user_like = current_user ? claim.likes.find_by(user: current_user) : nil
-          # Filter comments to only show those visible to current user (peer network only)
-          visible_comments = claim.comments.visible_to(current_user).recent
-          comments_data = visible_comments.map do |comment|
-            {
-              id: comment.id,
-              content: comment.content,
-              user: {
-                full_name: comment.user&.full_name,
-                email: comment.user&.email,
-                avatar_url: comment.user&.avatar_url
-              },
-              created_at: comment.created_at,
-              likes_count: comment.likes.count
-            }
-          end
-          claim.as_json(only: [:id, :created_at, :user_id]).merge(
-            content: claim.content_for_user(current_user),
-            likes_count: claim.likes.count,
-            user_liked: user_like.present?,
-            like_id: user_like&.id,
-            comments_count: claim.comments.visible_to(current_user).count,
-            comments: comments_data,
-            user: {
-              full_name: claim.user&.full_name,
-              email: claim.user&.email
-            },
-            current_user: {
-              avatar_url: current_user&.avatar_url
-            },
-            is_reshared: false
-          )
+          {
+            html: render_to_string(partial: 'shared/feed_card', locals: { fact: claim }, formats: [:html]),
+            id: claim.id,
+            created_at: claim.created_at
+          }
         else
           # Reshared item
           share = item[:data]
@@ -85,62 +58,14 @@ class FeedsController < ApplicationController
 
           case shareable
           when Claim
-            user_like = current_user ? shareable.likes.find_by(user: current_user) : nil
-            visible_comments = shareable.comments.visible_to(current_user).recent
-            comments_data = visible_comments.map do |comment|
-              {
-                id: comment.id,
-                content: comment.content,
-                user: {
-                  full_name: comment.user&.full_name,
-                  email: comment.user&.email,
-                  avatar_url: comment.user&.avatar_url
-                },
-                created_at: comment.created_at,
-                likes_count: comment.likes.count
-              }
-            end
-
-            shareable.as_json(only: [:id, :created_at, :user_id]).merge(
-              content: shareable.content_for_user(current_user),
-              likes_count: shareable.likes.count,
-              user_liked: user_like.present?,
-              like_id: user_like&.id,
-              comments_count: shareable.comments.visible_to(current_user).count,
-              comments: comments_data,
-              user: {
-                full_name: shareable.user&.full_name,
-                email: shareable.user&.email
-              },
-              current_user: {
-                avatar_url: current_user&.avatar_url
-              },
-              is_reshared: true,
-              reshared_by: {
-                full_name: share.user&.full_name,
-                email: share.user&.email,
-                avatar_url: share.user&.avatar_url
-              },
-              reshare_message: share.message
-            )
+            {
+              html: render_to_string(partial: 'shared/feed_card_reshare', locals: { share: share, fact: shareable }, formats: [:html]),
+              id: shareable.id,
+              created_at: share.created_at
+            }
           when Theory
-            user_like = current_user ? shareable.likes.find_by(user: current_user) : nil
-            shareable.as_json(only: [:id, :title, :description, :created_at]).merge(
-              likes_count: shareable.likes.count,
-              user_liked: user_like.present?,
-              like_id: user_like&.id,
-              user: {
-                full_name: shareable.user&.full_name,
-                email: shareable.user&.email
-              },
-              is_reshared: true,
-              reshared_by: {
-                full_name: share.user&.full_name,
-                email: share.user&.email,
-                avatar_url: share.user&.avatar_url
-              },
-              reshare_message: share.message
-            )
+            # For theories, we can handle separately if needed
+            nil
           else
             nil
           end
