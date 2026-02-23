@@ -4,7 +4,7 @@
 .dashboard-container {
   display: flex;
   min-height: 100vh;
-  background-color: #f8f9fe;
+  background-color: #F4F2EE;
   padding-left: 0;
   padding-top: 4rem; 
 }
@@ -93,6 +93,11 @@
   padding: 0;
   overflow: hidden;
   box-shadow: 0 0.125rem 0.5rem rgba(0, 0, 0, 0.1);
+  transition: height 0.2s ease;
+
+  &.has-admin {
+    height: 22.5rem;
+  }
 
   @media (max-width: 48rem) {
     width: 15rem;
@@ -161,6 +166,13 @@
     &.nav-item-veritalk {
       width: 6.5625rem;
       top: 16.5rem;
+      left: 1.5rem;
+    }
+
+    // Admin Dashboard
+    &.nav-item-admin {
+      width: 10.5rem;
+      top: 19.5rem;
       left: 1.5rem;
     }
 
@@ -379,19 +391,10 @@
   display: flex;
   gap: 0;
   align-items: flex-start;
-  background: #fff;
+  background: #F4F2EE;
   min-height: 100vh;
 }
-.feed-center {
-  flex: 1 1 0;
-  max-width: none;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  background: #fff;
-  padding-top: 4rem;
-}
+
 .feed-header {
   padding: 24px 32px 12px 32px;
   display: flex;
@@ -434,14 +437,41 @@
   }
 }
 .feed-list {
-  flex: 1 1 0;
+  position: absolute;
+  top: 12.9375rem;
+  left: 24.375rem;
+  width: 39.25rem;
   overflow-y: auto;
-  max-height: calc(100vh - 120px);
+  overflow-x: visible;
+  max-height: calc(100vh - 12.9375rem - 2rem);
   display: flex;
   flex-direction: column;
-  gap: 0;
-  padding-bottom: 80px;
-  background: #fff;
+  gap: 1rem;
+  padding-bottom: 2rem;
+  background: transparent;
+  pointer-events: auto;
+  
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  
+  &::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .feed-card-block {
+    flex-shrink: 0;
+    pointer-events: auto;
+  }
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+  }
 }
 .feed-loader {
   text-align: center;
@@ -450,28 +480,622 @@
   margin: 18px 0;
 }
 .feed-rightbar {
+  position: relative;
   width: 320px;
   min-width: 260px;
   max-width: 340px;
-  padding: 32px 0 0 0;
-  position: sticky;
-  top: 0;
+  padding: 0;
   align-self: flex-start;
-  background: #fff;
-  border-left: 1.5px solid #e5e7eb;
+  background: transparent;
   min-height: 100vh;
-}
-.feed-top-picks, .feed-who-to-follow {
-  background: #fff;
-  border-radius: 14px;
-  box-shadow: 0 2px 8px rgba(30,41,59,0.04);
-  padding: 18px 18px 18px 18px;
-  margin-bottom: 22px;
-  h3 {
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: #23263b;
-    margin-bottom: 12px;
+  
+  .theories-top-picks {
+    top: 35.063rem;
+    left: 65.5rem;
+    position: fixed;
+    width: 19.5rem;
+    height: 19.938rem;
+    margin-bottom: 1rem;
+    border-radius: 0.5rem;
+    background: #FFFFFF;
+    opacity: 1;
+    padding: 0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    
+    h3, h4 {
+      position: absolute;
+      width: 118px;
+      height: 21px;
+      top: 24px;
+      left: 24px;
+      font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-weight: 500;
+      font-style: normal;
+      font-size: 18px;
+      line-height: 100%;
+      letter-spacing: 0%;
+      color: #171717;
+      opacity: 1;
+      margin: 0;
+      padding: 0;
+    }
+    
+    .tp-pick-item {
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      padding: 0 0 0 24px;
+      margin-bottom: 30px;
+      
+      &:first-of-type {
+        margin-top: 75px;
+      }
+      
+      .tp-profile-section {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px;
+      }
+      
+      .tp-avatar {
+        width: 30px;
+        height: 30px;
+        border-radius: 100px;
+        object-fit: cover;
+        opacity: 1;
+        flex-shrink: 0;
+      }
+      
+      .tp-name-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      
+      .tp-name {
+        width: 92px;
+        height: 19px;
+        font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        font-weight: 400;
+        font-style: normal;
+        font-size: 16px;
+        line-height: 100%;
+        letter-spacing: 0%;
+        color: #171717;
+        opacity: 1;
+        margin: 0;
+        padding: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      
+      .tp-verified {
+        width: 18px;
+        height: 18px;
+        opacity: 1;
+        flex-shrink: 0;
+      }
+      
+      .tp-title {
+        width: 344px;
+        max-width: calc(100% - 48px);
+        height: 18px;
+        font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        font-weight: 500;
+        font-style: normal;
+        font-size: 15px;
+        line-height: 100%;
+        letter-spacing: 0%;
+        color: #171717;
+        opacity: 1;
+        margin: 0;
+        padding: 0;
+        margin-bottom:20px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      
+      .tp-date {
+        width: 83px;
+        height: 16px;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        font-weight: 400;
+        font-style: normal;
+        font-size: 13px;
+        line-height: 16px;
+        letter-spacing: 0%;
+        color: #4C4C4C;
+        opacity: 1;
+        margin: 0;
+        padding: 0;
+      }
+    }
+  }
+  
+  .feed-top-picks {
+    position: fixed;
+    width: 312px;
+    height: 319px;
+    top: 561px;
+    left: 1048px;
+    border-radius: 8px;
+    background: #FFFFFF;
+    opacity: 1;
+    padding: 0;
+    z-index: 100;
+    transform: none;
+    
+    h3, h4 {
+      position: absolute;
+      width: 118px;
+      height: 21px;
+      top: 24px;
+      left: 24px;
+      font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-weight: 500;
+      font-style: normal;
+      font-size: 18px;
+      line-height: 100%;
+      letter-spacing: 0%;
+      color: #171717;
+      opacity: 1;
+      margin: 0;
+      padding: 0;
+    }
+    
+    .tp-pick-item {
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      padding: 0 24px;
+      margin-bottom: 16px;
+      
+      &:first-of-type {
+        margin-top: 65px;
+      }
+      
+      .tp-profile-section {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px;
+      }
+      
+      .tp-avatar {
+        width: 30px;
+        height: 30px;
+        border-radius: 100px;
+        object-fit: cover;
+        opacity: 1;
+        flex-shrink: 0;
+      }
+      
+      .tp-name-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      
+      .tp-name {
+        width: 92px;
+        height: 19px;
+        font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        font-weight: 400;
+        font-style: normal;
+        font-size: 16px;
+        line-height: 100%;
+        letter-spacing: 0%;
+        color: #171717;
+        opacity: 1;
+        margin: 0;
+        padding: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      
+      .tp-verified {
+        width: 18px;
+        height: 18px;
+        opacity: 1;
+        flex-shrink: 0;
+      }
+      
+      .tp-title {
+        width: 344px;
+        max-width: calc(100% - 48px);
+        height: 18px;
+        font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        font-weight: 500;
+        font-style: normal;
+        font-size: 15px;
+        line-height: 100%;
+        letter-spacing: 0%;
+        color: #171717;
+        opacity: 1;
+        margin: 0;
+        padding: 0;
+        margin-bottom: 8px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      
+      .tp-date {
+        width: 83px;
+        height: 16px;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        font-weight: 400;
+        font-style: normal;
+        font-size: 13px;
+        line-height: 16px;
+        letter-spacing: 0%;
+        color: #4C4C4C;
+        opacity: 1;
+        margin: 0;
+        padding: 0;
+      }
+    }
+  }
+  
+  .theories-who-to-follow {
+    top: 5.938rem;
+    left: 65.5rem;
+    position: fixed;
+    width: 19.5rem;
+    height: 27.875rem;
+    margin-bottom: 1rem;
+    border-radius: 0.5rem;
+    background: #FFFFFF;
+    opacity: 1;
+    padding: 0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    
+    h3, h4 {
+      position: absolute;
+      width: 118px;
+      height: 21px;
+      top: 24px;
+      left: 24px;
+      font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-weight: 500;
+      font-style: normal;
+      font-size: 18px;
+      line-height: 100%;
+      letter-spacing: 0%;
+      color: #171717;
+      opacity: 1;
+      margin: 0;
+      padding: 0;
+    }
+    
+    .wtf-user-wrapper {
+      padding: 0 20px;
+      margin-bottom: 16px;
+      
+      &:first-of-type {
+        margin-top: 65px;
+      }
+    }
+    
+    .wtf-user {
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      
+      .wtf-content-row {
+        display: flex;
+        flex-direction: row;
+        align-items: flex-start;
+        gap: 2px;
+      }
+      
+      .wtf-avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 100px;
+        object-fit: cover;
+        flex-shrink: 0;
+      }
+      
+      .wtf-info {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+      }
+      
+      .wtf-name-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 4px;
+      }
+      
+      .wtf-name {
+        font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        font-weight: 600;
+        font-style: normal;
+        font-size: 16px;
+        line-height: 16px;
+        letter-spacing: 0%;
+        color: #171717;
+        opacity: 1;
+        margin: 0;
+        padding: 0;
+      }
+      
+      .wtf-verified {
+        width: 16px;
+        height: 16px;
+        opacity: 1;
+        flex-shrink: 0;
+      }
+      
+      .wtf-description {
+        font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        font-weight: 400;
+        font-style: normal;
+        font-size: 12px;
+        line-height: 18px;
+        letter-spacing: 0%;
+        color: #4C4C4C;
+        opacity: 1;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        
+        .wtf-dot {
+          width: 0.25rem;
+          height: 0.25rem;
+          background: #4C4C4C;
+          border-radius: 50%;
+          opacity: 1;
+          flex-shrink: 0;
+        }
+      }
+      
+      .wtf-follow-btn {
+        margin-right: 2.688rem !important;
+        width: 106px;
+        height: 30px;
+        border-radius: 18px;
+        border: 1.5px solid #2196F3;
+        padding: 0;
+        opacity: 1;
+        margin: 0;
+        background: #FFFFFF;
+        color: #2196F3;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        font-weight: 400;
+        font-size: 14px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-sizing: border-box;
+        
+        &:hover {
+          background: #E3F2FD;
+          color: #1976D2;
+          border-color: #1976D2;
+        }
+      }
+    }
+  }
+  
+  .feed-who-to-follow {
+    position: fixed;
+    width: 312px;
+    height: 446px;
+    top: 95px;
+    left: 1048px;
+    border-radius: 8px;
+    background: #FFFFFF;
+    opacity: 1;
+    padding: 0;
+    z-index: 100;
+    transform: none;
+    
+    h3, h4 {
+      position: absolute;
+      width: 118px;
+      height: 21px;
+      top: 24px;
+      left: 24px;
+      font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-weight: 500;
+      font-style: normal;
+      font-size: 18px;
+      line-height: 100%;
+      letter-spacing: 0%;
+      color: #171717;
+      opacity: 1;
+      margin: 0;
+      padding: 0;
+    }
+    
+    .wtf-user {
+      position: relative;
+      margin-bottom: 0;
+      display: block;
+      height: auto;
+      min-height: 150px;
+      
+      &:nth-child(2) {
+        .wtf-avatar {
+          top: 65px;
+        }
+        .wtf-info {
+          top: 65px;
+        }
+        .wtf-follow-btn {
+          top: 107px;
+        }
+      }
+      
+      &:nth-child(3) {
+        .wtf-avatar {
+          top: 153px;
+        }
+        .wtf-info {
+          top: 153px;
+        }
+        .wtf-follow-btn {
+          top: 195px;
+        }
+      }
+      
+      &:nth-child(4) {
+        .wtf-avatar {
+          top: 211px;
+        }
+        .wtf-info {
+          top: 211px;
+        }
+        .wtf-follow-btn {
+          top: 253px;
+        }
+      }
+      
+      &:nth-child(5) {
+        .wtf-avatar {
+          top: 269px;
+        }
+        .wtf-info {
+          top: 269px;
+        }
+        .wtf-follow-btn {
+          top: 311px;
+        }
+      }
+      
+      &:nth-child(6) {
+        .wtf-avatar {
+          top: 327px;
+        }
+        .wtf-info {
+          top: 327px;
+        }
+        .wtf-follow-btn {
+          top: 369px;
+        }
+      }
+      
+      &:nth-child(7) {
+        .wtf-avatar {
+          top: 385px;
+        }
+        .wtf-info {
+          top: 385px;
+        }
+        .wtf-follow-btn {
+          top: 427px;
+        }
+      }
+      
+      .wtf-avatar {
+        position: absolute;
+        width: 48px;
+        height: 48px;
+        left: 24px;
+        border-radius: 100px;
+        opacity: 1;
+        margin: 0;
+        object-fit: cover;
+      }
+      
+      .wtf-info {
+        position: absolute;
+        left: 84px;
+        display: block;
+        width: auto;
+      }
+      
+      .wtf-name {
+        position: relative;
+        width: 103px;
+        height: 16px;
+        font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        font-weight: 400;
+        font-style: normal;
+        font-size: 16px;
+        line-height: 16px;
+        letter-spacing: 0%;
+        color: #171717;
+        opacity: 1;
+        margin: 0;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        white-space: nowrap;
+        overflow: visible;
+        
+        .wtf-verified {
+          position: absolute;
+          width: 16px;
+          height: 16px;
+          top: 0;
+          left: 108px;
+          opacity: 1;
+          margin: 0;
+          color: #2196F3;
+          font-size: 16px;
+        }
+      }
+      
+      .wtf-meta {
+        position: relative;
+        width: auto;
+        min-width: 16px;
+        height: 16px;
+        top: 8px;
+        left: 0;
+        opacity: 1;
+        margin: 0;
+        padding: 0;
+        font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        font-size: 14px;
+        color: #4C4C4C;
+        display: flex;
+        align-items: center;
+        white-space: nowrap;
+      }
+      
+      .wtf-follow-btn {
+        position: absolute;
+        width: 106px;
+        height: 30px;
+        left: 84px;
+        border-radius: 18px;
+        border: 1.5px solid #2196F3;
+        padding: 0;
+        opacity: 1;
+        margin: 0;
+        background: #FFFFFF;
+        color: #2196F3;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        font-weight: 400;
+        font-size: 14px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-sizing: border-box;
+        
+        &:hover {
+          background: #E3F2FD;
+          color: #1976D2;
+          border-color: #1976D2;
+        }
+      }
+    }
   }
 }
 // Feed card style

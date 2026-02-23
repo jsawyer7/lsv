@@ -1,71 +1,57 @@
+<% begin; current_user_local = local_assigns[:current_user] || current_user; rescue; current_user_local = nil; end %>
 <div class="comment-item" id="comment-<%= comment.id %>">
-  <div class="comment-wrapper">
-    <div class="comment-avatar-container">
-      <img src="<%= comment.user&.avatar_url.presence || asset_path('default-avatar.png') %>" class="comment-avatar" alt="<%= comment.user&.full_name.presence || comment.user&.email || 'Anonymous' %>" />
-    </div>
-    <div class="comment-content-wrapper">
-      <div class="comment-bubble">
-        <div class="comment-header">
-          <span class="comment-author"><strong><%= comment.user&.full_name.presence || comment.user&.email || 'Anonymous' %></strong></span>
-          <% if user_signed_in? && comment.user == current_user %>
-            <div class="comment-actions">
-              <%= link_to [comment.commentable, comment], method: :delete, remote: true, class: 'comment-delete', data: { confirm: 'Are you sure?' }, title: 'Delete comment' do %>
-                <i class="fas fa-times"></i>
+  <!-- Profile Picture -->
+  <div class="comment-avatar-container">
+    <img src="<%= comment.user&.avatar_url.presence || asset_path('default-avatar.png') %>" class="comment-avatar" alt="<%= comment.user&.full_name.presence || comment.user&.email || 'Anonymous' %>" />
+  </div>
+  
+  <!-- Name and Date -->
+  <div class="comment-author-date-block">
+    <span class="comment-author"><strong><%= comment.user&.full_name.presence || comment.user&.email || 'Anonymous' %></strong></span>
+    <span class="comment-date"><%= comment.created_at.strftime('%-d %b, %Y') %></span>
+  </div>
+  
+  <!-- Comment Text -->
+  <div class="comment-text-wrapper">
+    <span class="comment-text"><%= simple_format(comment.content) %></span>
+  </div>
+  
+  <!-- Like and Reply -->
+  <div class="comment-meta">
+    <div class="comment-meta-left">
+      <% if current_user_local %>
+        <% user_like = comment.likes.find_by(user: current_user_local) %>
+        <div class="comment-like-container">
+          <span class="comment-like-link">
+            <% if user_like %>
+              <% if comment.commentable.is_a?(Claim) %>
+                <%= link_to claim_comment_like_path(comment.commentable, comment, user_like), method: :delete, remote: true, class: 'comment-like liked', data: { comment_id: comment.id, claim_id: comment.commentable.id, likes_count: comment.likes.count } do %>
+                  <%= image_tag 'commentlike.svg', alt: 'Like', class: 'comment-like-icon' %>
+                  <span class="comment-like-count-number"><%= comment.likes.count %></span>
+                <% end %>
+              <% elsif comment.commentable.is_a?(Theory) %>
+                <%= link_to theory_comment_like_path(comment.commentable, comment, user_like), method: :delete, remote: true, class: 'comment-like liked', data: { comment_id: comment.id, theory_id: comment.commentable.id, likes_count: comment.likes.count } do %>
+                  <%= image_tag 'commentlike.svg', alt: 'Like', class: 'comment-like-icon' %>
+                  <span class="comment-like-count-number"><%= comment.likes.count %></span>
+                <% end %>
               <% end %>
-            </div>
-          <% end %>
-        </div>
-        <div class="comment-text-wrapper">
-          <span class="comment-text"><%= simple_format(comment.content) %></span>
-          <% if comment.likes.count > 0 %>
-            <span class="comment-likes-count-inline">
-              <i class="fas fa-thumbs-up"></i> <%= comment.likes.count %>
-            </span>
-          <% end %>
-        </div>
-        <div class="comment-meta">
-          <div class="comment-meta-left">
-            <span class="comment-date"><%= time_ago_in_words(comment.created_at) %></span>
-            <% if user_signed_in? %>
-              <% user_like = comment.likes.find_by(user: current_user) %>
-              <span class="comment-like-link">
-                <% if user_like %>
-                  <% if comment.commentable.is_a?(Claim) %>
-                    <%= link_to claim_comment_like_path(comment.commentable, comment, user_like), method: :delete, remote: true, class: 'comment-like liked', data: { comment_id: comment.id, claim_id: comment.commentable.id } do %>
-                      Like
-                    <% end %>
-                  <% elsif comment.commentable.is_a?(Theory) %>
-                    <%= link_to theory_comment_like_path(comment.commentable, comment, user_like), method: :delete, remote: true, class: 'comment-like liked', data: { comment_id: comment.id, theory_id: comment.commentable.id } do %>
-                      Like
-                    <% end %>
-                  <% end %>
-                <% else %>
-                  <% if comment.commentable.is_a?(Claim) %>
-                    <%= link_to claim_comment_likes_path(comment.commentable, comment), method: :post, remote: true, class: 'comment-like', data: { comment_id: comment.id, claim_id: comment.commentable.id } do %>
-                      Like
-                    <% end %>
-                  <% elsif comment.commentable.is_a?(Theory) %>
-                    <%= link_to theory_comment_likes_path(comment.commentable, comment), method: :post, remote: true, class: 'comment-like', data: { comment_id: comment.id, theory_id: comment.commentable.id } do %>
-                      Like
-                    <% end %>
-                  <% end %>
+            <% else %>
+              <% if comment.commentable.is_a?(Claim) %>
+                <%= link_to claim_comment_likes_path(comment.commentable, comment), method: :post, remote: true, class: 'comment-like', data: { comment_id: comment.id, claim_id: comment.commentable.id, likes_count: comment.likes.count } do %>
+                  <%= image_tag 'commentlike.svg', alt: 'Like', class: 'comment-like-icon' %>
                 <% end %>
-              </span>
-              <span class="comment-share-link">
-                <% if comment.commentable.is_a?(Claim) %>
-                  <button class="comment-share-btn" data-shareable-type="comment" data-shareable-id="<%= comment.id %>" data-claim-id="<%= comment.commentable.id %>" data-toggle="modal" data-target="#shareModal">
-                    Share
-                  </button>
-                <% elsif comment.commentable.is_a?(Theory) %>
-                  <button class="comment-share-btn" data-shareable-type="comment" data-shareable-id="<%= comment.id %>" data-theory-id="<%= comment.commentable.id %>" data-toggle="modal" data-target="#shareModal">
-                    Share
-                  </button>
+              <% elsif comment.commentable.is_a?(Theory) %>
+                <%= link_to theory_comment_likes_path(comment.commentable, comment), method: :post, remote: true, class: 'comment-like', data: { comment_id: comment.id, theory_id: comment.commentable.id, likes_count: comment.likes.count } do %>
+                  <%= image_tag 'commentlike.svg', alt: 'Like', class: 'comment-like-icon' %>
                 <% end %>
-              </span>
+              <% end %>
             <% end %>
-          </div>
+          </span>
         </div>
-      </div>
+        <span class="comment-reply-link">
+          <a href="#" class="comment-reply">Reply</a>
+        </span>
+      <% end %>
     </div>
   </div>
 </div>

@@ -1,0 +1,31 @@
+<% 
+
+  share = local_assigns[:share]
+  fact = local_assigns[:fact] || share&.shareable
+  resharer = share&.user
+%>
+<% if share.present? && fact.present? %>
+  <div class="feed-card-reshare-wrapper">
+    <!-- Resharer Header -->
+    <div class="feed-card-reshare-header">
+      <div class="feed-card-reshare-avatar">
+        <% if resharer&.avatar_url.present? %>
+          <%= image_tag resharer.avatar_url, alt: resharer.full_name || "Profile", class: "profile-img" %>
+        <% else %>
+          <%= image_tag 'default-avatar.png', alt: "Profile", class: "profile-img" %>
+        <% end %>
+      </div>
+      <div class="feed-card-reshare-details">
+        <span class="feed-card-reshare-name"><%= resharer&.full_name || resharer&.email || "User" %></span>
+        <span class="feed-card-reshare-label">reshared</span>
+        <span class="feed-card-reshare-time"><%= time_ago_in_words(share.created_at) %> ago</span>
+      </div>
+    </div>
+    
+    <!-- Original Feed Card (nested) -->
+    <div class="feed-card-reshare-content">
+      <%= render 'shared/feed_card', fact: fact %>
+    </div>
+  </div>
+<% end %>
+

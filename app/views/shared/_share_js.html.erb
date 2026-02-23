@@ -145,6 +145,25 @@
     });
   }
 
+
+  const shareModalClose = document.querySelector('.share-modal-close');
+  if (shareModalClose) {
+    shareModalClose.addEventListener('click', function(e) {
+      e.preventDefault();
+      const modal = document.getElementById('shareModal');
+      if (modal) {
+        const bsModal = bootstrap.Modal.getInstance(modal);
+        if (bsModal) {
+          bsModal.hide();
+        } else {
+         
+          const newModal = new bootstrap.Modal(modal);
+          newModal.hide();
+        }
+      }
+    });
+  }
+
   // Reset form when modal is closed
   const shareModal = document.getElementById('shareModal');
   if (shareModal) {

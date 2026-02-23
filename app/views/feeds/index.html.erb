@@ -1,19 +1,13 @@
 <div class="feed-main">
-  <div class="feed-center">
+  <div>
     <div id="feed-list" class="feed-list">
       <!-- Feed items will be loaded here by JS -->
     </div>
     <div id="feed-loader" class="feed-loader">Loading...</div>
   </div>
   <aside class="feed-rightbar">
-    <div class="feed-top-picks">
-      <h3>Top Picks</h3>
-      <!-- Placeholder for now -->
-    </div>
-    <div class="feed-who-to-follow">
-      <h3>Who to Follow</h3>
-      <!-- Placeholder for now -->
-    </div>
+    <%= render 'theories/who_to_follow' %>
+    <%= render 'theories/top_picks' %>
   </aside>
 </div>
 <%= render 'shared/feeds_js' %>

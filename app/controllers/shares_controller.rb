@@ -59,7 +59,25 @@ class SharesController < ApplicationController
     if reshare.save
       respond_to do |format|
         format.html { redirect_to feeds_path, notice: 'Reshared to your feed!' }
-        format.json { render json: { status: 'success', message: 'Reshared to your feed!' } }
+        format.json do
+          shareable = reshare.shareable
+          html = case shareable
+          when Claim
+            render_to_string(partial: 'shared/feed_card_reshare', locals: { share: reshare, fact: shareable }, formats: [:html])
+          when Theory
+            ''
+          else
+            ''
+          end
+
+          render json: {
+            status: 'success',
+            message: 'Reshared to your feed!',
+            html: html,
+            id: shareable.id,
+            created_at: reshare.created_at
+          }
+        end
       end
     else
       respond_to do |format|

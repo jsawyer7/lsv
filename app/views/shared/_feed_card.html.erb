@@ -1,0 +1,161 @@
+<% 
+  fact = defined?(fact) && fact.present? ? fact : (Claim.published_facts.first if Claim.published_facts.any?)
+%>
+<% if fact.present? %>
+  <div class="feed-card-block">
+    <div class="feed-card-profile-pic">
+      <% user = fact.user %>
+      <% if user&.avatar_url.present? %>
+        <%= image_tag user.avatar_url, alt: user.full_name || "Profile", class: "profile-img" %>
+      <% else %>
+        <%= image_tag 'default-avatar.png', alt: "Profile", class: "profile-img" %>
+      <% end %>
+    </div>
+    
+    <div class="feed-card-username-container">
+      <div class="feed-card-username">
+        <%= user&.full_name || "User" %>
+      </div>
+      
+      <div class="feed-card-verified">
+        <%= image_tag 'blue-tick.svg', alt: 'Verified', class: 'verified-icon' %>
+      </div>
+      
+      <div class="feed-card-dot feed-card-dot-1"></div>
+      
+      <% is_following = user_signed_in? && current_user.following.include?(user) %>
+      <a href="#" class="feed-card-follow-status <%= 'following' if is_following %>">Following</a>
+    </div>
+    
+    <div class="feed-card-menu">
+      <%= image_tag 'three-dot.svg', alt: 'Menu', class: 'menu-icon' %>
+    </div>
+    
+    <div class="feed-card-info">
+      <%= "#{user&.claims&.published_facts&.count || 0} Facts | #{user&.claims&.count || 0} Sources" %>
+    </div>
+    
+    <div class="feed-card-time-container">
+      <div class="feed-card-time">
+        <%= time_ago_in_words(fact.created_at) %>
+      </div>
+      
+      <div class="feed-card-dot feed-card-dot-2"></div>
+    </div>
+    
+    <div class="feed-card-content">
+      <%= fact.content_for_user(current_user) %>
+    </div>
+    
+    <div class="feed-card-divider"></div>
+    
+    <div class="feed-card-verified-by">
+      <span class="verified-by-label">Verified by:</span>
+      <div class="verified-by-avatars">
+        <% 2.times do %>
+          <%= image_tag 'default-avatar.png', alt: 'Verifier', class: 'verified-by-avatar' %>
+        <% end %>
+      </div>
+    </div>
+    
+    <div class="feed-card-actions-wrapper">
+      <div class="feed-card-actions">
+        <div class="feed-action-like">
+          <% if user_signed_in? %>
+            <% user_like = fact.likes.find_by(user: current_user) %>
+            <% if user_like %>
+              <a href="/claims/<%= fact.id %>/likes/<%= user_like.id %>" class="feed-like liked" data-method="delete" data-remote="true" data-claim-id="<%= fact.id %>" data-like-id="<%= user_like.id %>">
+                <%= image_tag 'like.svg', alt: 'Like', class: 'like-icon' %>
+                <span class="like-count"><%= fact.likes.count %></span>
+              </a>
+            <% else %>
+              <a href="/claims/<%= fact.id %>/likes" class="feed-like" data-method="post" data-remote="true" data-claim-id="<%= fact.id %>">
+                <%= image_tag 'like.svg', alt: 'Like', class: 'like-icon' %>
+                <span class="like-count"><%= fact.likes.count %></span>
+              </a>
+            <% end %>
+          <% else %>
+            <div class="feed-like">
+              <%= image_tag 'like.svg', alt: 'Like', class: 'like-icon' %>
+              <span class="like-count"><%= fact.likes.count %></span>
+            </div>
+          <% end %>
+        </div>
+        
+        <div class="feed-action-comment" data-claim-id="<%= fact.id %>" style="cursor: pointer;">
+          <%= image_tag 'comment.svg', alt: 'Comment', class: 'comment-icon' %>
+          <% if user_signed_in? %>
+            <% comment_count = fact.comments.visible_to(current_user).count %>
+            <% if comment_count > 0 %>
+              <span class="comment-count"><%= comment_count %></span>
+            <% end %>
+          <% end %>
+          <span class="comment-text">Comment</span>
+        </div>
+        
+        <div class="feed-action-share">
+          <button class="feed-share-btn" data-shareable-type="claim" data-shareable-id="<%= fact.id %>" data-toggle="modal" data-target="#shareModal">
+            <%= image_tag 'share.svg', alt: 'Share', class: 'share-icon' %>
+            <span class="share-text">Share</span>
+          </button>
+        </div>
+        
+        <div class="feed-action-reshare">
+          <% if user_signed_in? %>
+            <button class="feed-reshare-btn" data-claim-id="<%= fact.id %>" type="button">
+              <%= image_tag 'reshare.svg', alt: 'Reshare', class: 'reshare-icon' %>
+              <span class="reshare-text">Reshare</span>
+            </button>
+          <% else %>
+            <div class="feed-reshare-btn">
+              <%= image_tag 'reshare.svg', alt: 'Reshare', class: 'reshare-icon' %>
+              <span class="reshare-text">Reshare</span>
+            </div>
+          <% end %>
+        </div>
+      </div>
+      
+    </div>
+    
+    <div class="feed-card-comments-section" data-claim-id="<%= fact.id %>" style="display: none;">
+      <% if user_signed_in? %>
+        <% has_comments = fact.comments.visible_to(current_user).count > 0 %>
+        <div class="feed-card-comment-form <%= 'no-comments' unless has_comments %>">
+          <div class="feed-card-comment-profile-pic">
+            <% if current_user.avatar_url.present? %>
+              <%= image_tag current_user.avatar_url, alt: current_user.full_name || "Profile", class: "profile-img" %>
+            <% else %>
+              <%= image_tag 'default-avatar.png', alt: "Profile", class: "profile-img" %>
+            <% end %>
+          </div>
+          <div class="feed-card-comment-field">
+            <input 
+              type="text" 
+              class="feed-card-comment-input" 
+              placeholder="Add a comment..."
+              data-claim-id="<%= fact.id %>"
+            />
+            <button type="button" class="feed-card-comment-emoji">
+              <%= image_tag 'smile.svg', alt: 'Emoji', class: 'emoji-icon' %>
+            </button>
+          </div>
+        </div>
+      <% end %>
+      
+      <% if user_signed_in? && fact.comments.visible_to(current_user).count >= 1 %>
+        <div class="feed-card-most-relevant">
+          <span class="most-relevant-text">Most Relevant</span>
+          <%= image_tag 'mearrow.svg', alt: 'Arrow', class: 'most-relevant-arrow' %>
+        </div>
+      <% end %>
+      
+      <div class="feed-card-comments-list">
+        <% if user_signed_in? %>
+          <% fact.comments.visible_to(current_user).recent.each do |comment| %>
+            <%= render 'comments/comment', comment: comment %>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+  </div>
+<% end %>

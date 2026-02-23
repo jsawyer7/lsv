@@ -49,8 +49,19 @@
           // Update button to show success state
           reshareBtn.innerHTML = '<i class="fas fa-check"></i> Reshared';
           reshareBtn.style.color = '#10b981';
-          // Optionally redirect to feeds after a delay
-          if (shareId) {
+          
+          if (data.html && window.location.pathname === '/feeds') {
+            const feedList = document.getElementById('feed-list');
+            if (feedList) {
+              const tempDiv = document.createElement('div');
+              tempDiv.innerHTML = data.html;
+              const resharedCard = tempDiv.firstElementChild;
+              
+              if (resharedCard) {
+                feedList.insertBefore(resharedCard, feedList.firstChild);
+              }
+            }
+          } else if (shareId) {
             setTimeout(() => {
               window.location.href = '/feeds';
             }, 1000);
