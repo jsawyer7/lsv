@@ -7,7 +7,7 @@ class FeedsController < ApplicationController
 
   def infinite
     page = params[:page].to_i > 0 ? params[:page].to_i : 1
-    per_page = 20
+    per_page = page == 1 ? 30 : 20
 
     # Get published facts
     claims = Claim.published_facts.includes(:user, :likes).order(created_at: :desc).offset((page - 1) * per_page).limit(per_page)
