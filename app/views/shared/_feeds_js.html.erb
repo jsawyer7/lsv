@@ -156,6 +156,64 @@ document.addEventListener('DOMContentLoaded', function() {
   });
   
   feedList.addEventListener('click', function(e) {
+    const menuIcon = e.target.closest('.feed-card-menu .menu-icon');
+    const menuDropdown = e.target.closest('.feed-card-menu-dropdown');
+    const menuItem = e.target.closest('.feed-menu-item');
+    
+    if (menuIcon) {
+      e.preventDefault();
+      e.stopPropagation();
+      const menuContainer = menuIcon.closest('.feed-card-menu');
+      const dropdown = menuContainer?.querySelector('.feed-card-menu-dropdown');
+      
+      if (dropdown) {
+        const isOpen = dropdown.classList.contains('show');
+        document.querySelectorAll('.feed-card-menu-dropdown.show').forEach(d => {
+          if (d !== dropdown) d.classList.remove('show');
+        });
+        dropdown.classList.toggle('show', !isOpen);
+      }
+      return;
+    }
+    
+    if (menuItem) {
+      e.preventDefault();
+      e.stopPropagation();
+      const menuText = menuItem.querySelector('.feed-menu-text')?.textContent;
+      const feedCard = menuItem.closest('.feed-card-block');
+      const claimId = feedCard?.querySelector('.feed-action-comment')?.getAttribute('data-claim-id');
+      
+      if (menuText && claimId) {
+        const currentUrl = window.location.origin + '/claims/' + claimId;
+        
+        if (menuText.includes('Copy link')) {
+          navigator.clipboard.writeText(currentUrl).then(() => {
+            const dropdown = menuItem.closest('.feed-card-menu-dropdown');
+            if (dropdown) dropdown.classList.remove('show');
+          }).catch(err => {
+            console.error('Failed to copy:', err);
+          });
+        } else if (menuText.includes('Share on X')) {
+          const shareUrl = `https://twitter.com/intent/tweet?url=${encodeURIComponent(currentUrl)}`;
+          window.open(shareUrl, '_blank', 'width=550,height=420');
+          const dropdown = menuItem.closest('.feed-card-menu-dropdown');
+          if (dropdown) dropdown.classList.remove('show');
+        } else if (menuText.includes('Share on Facebook')) {
+          const shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(currentUrl)}`;
+          window.open(shareUrl, '_blank', 'width=550,height=420');
+          const dropdown = menuItem.closest('.feed-card-menu-dropdown');
+          if (dropdown) dropdown.classList.remove('show');
+        }
+      }
+      return;
+    }
+    
+    if (!menuDropdown && !menuIcon) {
+      document.querySelectorAll('.feed-card-menu-dropdown.show').forEach(d => {
+        d.classList.remove('show');
+      });
+    }
+    
     const commentButton = e.target.closest('.feed-action-comment');
     if (!commentButton) return;
     
