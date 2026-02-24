@@ -188,10 +188,10 @@ document.addEventListener('DOMContentLoaded', function() {
     
     if (link.classList.contains('liked')) {
       link.classList.remove('liked');
-      const countNumber = link.querySelector('.comment-like-count-number');
       const likesCount = data.likes_count || 0;
       
       if (commentId) {
+        const countNumber = link.querySelector('.comment-like-count-number');
         if (countNumber) {
           if (likesCount > 0) {
             countNumber.textContent = likesCount;
@@ -222,16 +222,18 @@ document.addEventListener('DOMContentLoaded', function() {
       link.removeAttribute('data-like-id');
     } else {
       link.classList.add('liked');
-      const existingCount = link.querySelector('.comment-like-count-number');
       const likesCount = data.likes_count || 0;
       
-      if (!existingCount) {
-        const countSpan = document.createElement('span');
-        countSpan.className = 'comment-like-count-number';
-        countSpan.textContent = likesCount;
-        link.appendChild(countSpan);
-      } else {
-        existingCount.textContent = likesCount;
+      if (commentId) {
+        const existingCount = link.querySelector('.comment-like-count-number');
+        if (!existingCount) {
+          const countSpan = document.createElement('span');
+          countSpan.className = 'comment-like-count-number';
+          countSpan.textContent = likesCount;
+          link.appendChild(countSpan);
+        } else {
+          existingCount.textContent = likesCount;
+        }
       }
       
       if (data.like_id) {
