@@ -474,10 +474,17 @@
   }
 }
 .feed-loader {
+  position: absolute;
+  top: 12.9375rem;
+  left: 24.375rem;
+  width: 39.25rem;
   text-align: center;
   color: #64748b;
   font-size: 1.1rem;
-  margin: 18px 0;
+  padding: 2rem 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .feed-rightbar {
   position: relative;

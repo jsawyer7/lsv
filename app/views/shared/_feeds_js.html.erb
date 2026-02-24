@@ -51,16 +51,27 @@ document.addEventListener('DOMContentLoaded', function() {
   async function fetchClaims() {
     if (loading || !hasMore) return;
     loading = true;
-    feedLoader.style.display = 'block';
-    const res = await fetch(`/feeds/infinite?page=${page}`);
-    const data = await res.json();
-    data.claims.forEach(claim => {
-      feedList.insertAdjacentHTML('beforeend', renderClaim(claim));
-    });
-    hasMore = data.has_more;
-    loading = false;
-    feedLoader.style.display = hasMore ? 'block' : 'none';
-    page++;
+    if (page === 1) {
+      feedLoader.style.display = 'block';
+    }
+    try {
+      const res = await fetch(`/feeds/infinite?page=${page}`);
+      const data = await res.json();
+      if (data.claims && data.claims.length > 0) {
+        feedLoader.style.display = 'none';
+        data.claims.forEach(claim => {
+          feedList.insertAdjacentHTML('beforeend', renderClaim(claim));
+        });
+      }
+      hasMore = data.has_more;
+      loading = false;
+      feedLoader.style.display = hasMore ? 'block' : 'none';
+      page++;
+    } catch (error) {
+      console.error('Error fetching feeds:', error);
+      loading = false;
+      feedLoader.style.display = 'none';
+    }
   }
 
   function onFeedScroll() {
@@ -223,15 +234,67 @@ document.addEventListener('DOMContentLoaded', function() {
           
           const feedCard = input.closest('.feed-card-block');
           if (feedCard) {
+            const actualCommentCount = commentsList ? commentsList.querySelectorAll('.comment-item').length : 0;
             const commentCountSpan = feedCard.querySelector('.comment-count');
+            let newCount = actualCommentCount;
+            
             if (commentCountSpan) {
-              const currentCount = parseInt(commentCountSpan.textContent) || 0;
-              commentCountSpan.textContent = currentCount + 1;
+              commentCountSpan.textContent = newCount;
+            } else {
+              const commentAction = feedCard.querySelector('.feed-action-comment');
+              if (commentAction && newCount > 0) {
+                const countSpan = document.createElement('span');
+                countSpan.className = 'comment-count';
+                countSpan.textContent = newCount;
+                const commentIcon = commentAction.querySelector('.comment-icon');
+                if (commentIcon && commentIcon.nextSibling) {
+                  commentAction.insertBefore(countSpan, commentIcon.nextSibling);
+                } else {
+                  commentAction.appendChild(countSpan);
+                }
+              }
             }
             
             const commentTextSpan = feedCard.querySelector('.comment-text');
-            if (commentTextSpan && commentTextSpan.textContent.trim() === 'Comment') {
-              commentTextSpan.textContent = `${currentCount + 1} Comment${currentCount + 1 !== 1 ? 's' : ''}`;
+            if (commentTextSpan) {
+              commentTextSpan.textContent = `${newCount} Comment${newCount !== 1 ? 's' : ''}`;
+            }
+            
+            if (commentsSection) {
+              let mostRelevantDiv = commentsSection.querySelector('.feed-card-most-relevant');
+              if (newCount >= 1) {
+                if (!mostRelevantDiv) {
+                  mostRelevantDiv = document.createElement('div');
+                  mostRelevantDiv.className = 'feed-card-most-relevant';
+                  const span = document.createElement('span');
+                  span.className = 'most-relevant-text';
+                  span.textContent = 'Most Relevant';
+                  const img = document.createElement('img');
+                  img.src = '<%= asset_path("mearrow.svg") %>';
+                  img.alt = 'Arrow';
+                  img.className = 'most-relevant-arrow';
+                  mostRelevantDiv.appendChild(span);
+                  mostRelevantDiv.appendChild(img);
+                  
+                  const commentForm = commentsSection.querySelector('.feed-card-comment-form');
+                  const commentsListForInsert = commentsSection.querySelector('.feed-card-comments-list');
+                  
+                  if (commentForm && commentsListForInsert) {
+                    commentsSection.insertBefore(mostRelevantDiv, commentsListForInsert);
+                  } else if (commentForm) {
+                    commentsSection.appendChild(mostRelevantDiv);
+                  } else if (commentsListForInsert) {
+                    commentsSection.insertBefore(mostRelevantDiv, commentsListForInsert);
+                  } else {
+                    commentsSection.appendChild(mostRelevantDiv);
+                  }
+                }
+                mostRelevantDiv.style.display = 'block';
+              } else {
+                if (mostRelevantDiv) {
+                  mostRelevantDiv.style.display = 'none';
+                }
+              }
             }
           }
         } else if (data.status === 'error') {
