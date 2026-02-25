@@ -2,7 +2,7 @@
   fact = defined?(fact) && fact.present? ? fact : (Claim.published_facts.first if Claim.published_facts.any?)
 %>
 <% if fact.present? %>
-  <div class="feed-card-block">
+  <div class="feed-card-block js-card-clickable" data-detail-url="<%= claim_path(fact) %>">
     <div class="feed-card-profile-pic">
       <% user = fact.user %>
       <% if user&.avatar_url.present? %>
@@ -27,7 +27,7 @@
       <a href="#" class="feed-card-follow-status <%= 'following' if is_following %>">Following</a>
     </div>
     
-    <div class="feed-card-menu">
+    <div class="feed-card-menu" data-no-card-nav>
       <%= image_tag 'three-dot.svg', alt: 'Menu', class: 'menu-icon' %>
       <div class="feed-card-menu-dropdown">
         <div class="feed-menu-item">
@@ -72,7 +72,7 @@
       </div>
     </div>
     
-    <div class="feed-card-actions-wrapper">
+    <div class="feed-card-actions-wrapper" data-no-card-nav>
       <div class="feed-card-actions">
         <div class="feed-action-like">
           <% if user_signed_in? %>
@@ -131,7 +131,7 @@
       
     </div>
     
-    <div class="feed-card-comments-section" data-claim-id="<%= fact.id %>" style="display: none;">
+    <div class="feed-card-comments-section" data-claim-id="<%= fact.id %>" data-no-card-nav style="display: none;">
       <% if user_signed_in? %>
         <% has_comments = fact.comments.visible_to(current_user).count > 0 %>
         <div class="feed-card-comment-form <%= 'no-comments' unless has_comments %>">

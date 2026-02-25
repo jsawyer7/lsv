@@ -416,6 +416,10 @@ body {
     border: 1px solid #b3d7f6;
   }
 
+  .my-claim-card.js-card-clickable {
+    cursor: pointer;
+  }
+
   .my-claim-card-header {
     display: flex;
     align-items: center;

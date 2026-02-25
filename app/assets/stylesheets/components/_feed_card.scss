@@ -7,7 +7,11 @@
   overflow: visible;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   margin-bottom: 1rem;
-  
+
+  &.js-card-clickable {
+    cursor: pointer;
+  }
+
   .feed-card-reshare-header {
     display: flex;
     align-items: center;
@@ -109,6 +113,10 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   padding-bottom: 0;
   transition: padding-bottom 0.3s ease;
+
+  &.js-card-clickable {
+    cursor: pointer;
+  }
   
   .feed-card-profile-pic {
     position: absolute;
