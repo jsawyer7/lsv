@@ -1,0 +1,26 @@
+<% top_facts = local_assigns[:top_facts] || [] %>
+<div class="facts-top-facts">
+  <h4>Top Facts</h4>
+  <% if top_facts.any? %>
+    <% top_facts.each do |fact| %>
+      <%= link_to claim_path(fact), class: 'facts-tf-item' do %>
+        <div class="facts-tf-profile">
+          <% user = fact.user %>
+          <% if user&.avatar_url.present? %>
+            <%= image_tag user.avatar_url, alt: user.full_name || 'User', class: 'facts-tf-avatar' %>
+          <% else %>
+            <%= image_tag 'default-avatar.png', alt: 'User', class: 'facts-tf-avatar' %>
+          <% end %>
+          <div class="facts-tf-meta">
+            <span class="facts-tf-name"><%= user&.full_name.presence || user&.email || 'User' %></span>
+            <%= image_tag 'blue-tick.svg', alt: 'Verified', class: 'facts-tf-verified' %>
+          </div>
+        </div>
+        <div class="facts-tf-content"><%= truncate(fact.content_for_user(current_user), length: 72) %></div>
+        <div class="facts-tf-date"><%= fact.created_at.strftime('%d %b, %Y') %></div>
+      <% end %>
+    <% end %>
+  <% else %>
+    <p class="facts-tf-empty">No facts yet.</p>
+  <% end %>
+</div>

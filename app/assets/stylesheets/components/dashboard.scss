@@ -401,6 +401,12 @@ body.dashboard-nav-page .dashboard-nav {
   align-items: flex-start;
   background: #F4F2EE;
   min-height: 100vh;
+
+  > div:first-child {
+    flex: 1;
+    min-width: 0;
+    position: relative;
+  }
 }
 
 .feed-header {
@@ -446,7 +452,7 @@ body.dashboard-nav-page .dashboard-nav {
 }
 .feed-list {
   position: absolute;
-  top: 12.9375rem;
+  top: 8.9375rem;
   left: 24.375rem;
   width: 39.25rem;
   overflow-y: auto;
@@ -494,6 +500,125 @@ body.dashboard-nav-page .dashboard-nav {
   align-items: center;
   justify-content: center;
 }
+
+.facts-page-main {
+  .facts-page-content {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .facts-page-header {
+    position: absolute;
+    top: 8px;
+    padding: 1.5rem 0 1.25rem 24.375rem;
+  }
+
+  .facts-page-title {
+    width: 49px;
+    height: 23px;
+    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-weight: 600;
+    font-style: normal;
+    font-size: 20px;
+    line-height: 100%;
+    letter-spacing: 0%;
+    color: #171717;
+    opacity: 1;
+    margin: 0 0 20px 0;
+    padding: 0;
+  }
+
+  .facts-page-filters {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .facts-filter-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 32px;
+    padding: 6px 24px;
+    border-radius: 100px;
+    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 16px;
+    line-height: 20px;
+    letter-spacing: 0.5%;
+    text-decoration: none;
+    background: #FFFFFF;
+    color: #475865;
+    font-weight: 400;
+    transition: background 0.2s, color 0.2s;
+    box-sizing: border-box;
+
+    &.active {
+      background: #2196F333;
+      color: #2196F3;
+      font-weight: 500;
+    }
+
+    &:hover:not(.active) {
+      background: #f5f5f5;
+    }
+  }
+
+  .feed-list {
+    top: 8rem;
+    max-height: calc(100vh - 11rem - 2rem);
+
+    &.facts-empty {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+  }
+
+  .facts-empty-state {
+    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-weight: 400;
+    font-size: 1rem;
+    line-height: 1.5;
+    color: #64748b;
+    text-align: center;
+  }
+
+  .feed-loader {
+    top: 11rem;
+  }
+
+  .feed-card-block {
+    min-height: 13rem;
+
+    .feed-card-fact-badge {
+      display: flex;
+    }
+
+    .feed-card-content {
+      top: 7.25rem;
+    }
+
+    .feed-card-divider {
+      top: 10.125rem;
+    }
+
+    .feed-card-verified-by {
+      top: 10.5rem;
+    }
+
+    .feed-card-actions-wrapper {
+      top: 10.875rem;
+    }
+
+    .feed-card-comments-section {
+      margin-top: 13rem;
+    }
+  }
+}
+
 .feed-rightbar {
   position: relative;
   width: 320px;
@@ -1113,6 +1238,146 @@ body.dashboard-nav-page .dashboard-nav {
     }
   }
 }
+
+.feed-rightbar.facts-page-rightbar {
+  position: fixed;
+  width: 312px;
+  height: 785px;
+  top: 94px;
+  left: 1048px;
+  opacity: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+
+  .facts-following-rightbar {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    width: 100%;
+    height: 100%;
+  }
+
+  .facts-top-facts {
+    width: 100%;
+    max-width: 312px;
+    border-radius: 0.5rem;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    padding: 1.5rem;
+    flex-shrink: 0;
+
+    h4 {
+      font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-weight: 500;
+      font-size: 1.125rem;
+      color: #171717;
+      margin: 0 0 1rem 0;
+    }
+  }
+
+  .facts-tf-item {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    padding: 0.75rem 0;
+    transition: background 0.15s;
+
+    &:hover {
+      background: #f8f9fa;
+      border-radius: 0.25rem;
+    }
+  }
+
+  .facts-tf-profile {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .facts-tf-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 100px;
+    object-fit: cover;
+    flex-shrink: 0;
+  }
+
+  .facts-tf-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .facts-tf-name {
+    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-weight: 400;
+    font-style: normal;
+    font-size: 16px;
+    line-height: 100%;
+    letter-spacing: 0%;
+    color: #171717;
+    margin: 0;
+    padding: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .facts-tf-verified {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+  }
+
+  .facts-tf-content {
+    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-weight: 500;
+    font-style: normal;
+    font-size: 15px;
+    line-height: 100%;
+    letter-spacing: 0%;
+    color: #171717;
+    margin: 0 0 20px 0;
+    padding: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .facts-tf-date {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-weight: 400;
+    font-style: normal;
+    font-size: 13px;
+    line-height: 16px;
+    letter-spacing: 0%;
+    color: #4C4C4C;
+    margin: 0;
+    padding: 0;
+  }
+
+  .facts-tf-empty {
+    margin: 0;
+    font-size: 0.875rem;
+    color: #64748b;
+  }
+
+  .theories-who-to-follow {
+    position: relative;
+    top: auto;
+    left: auto;
+    width: 312px;
+    height: 446px;
+    opacity: 1;
+    border-radius: 8px;
+    margin-bottom: 0;
+    flex-shrink: 0;
+  }
+}
+
 // Feed card style
 .feed-card {
   background: none;
