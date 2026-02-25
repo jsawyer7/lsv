@@ -101,5 +101,16 @@
     
     // Initialize the dropdown manager
     new DropdownManager();
+
+    document.body.addEventListener('click', function(e) {
+      const card = e.target.closest('.js-card-clickable');
+      if (!card) return;
+      if (e.target.closest('a, button, input, textarea, [data-no-card-nav]')) return;
+      const url = card.dataset.detailUrl;
+      if (url) {
+        e.preventDefault();
+        window.location = url;
+      }
+    });
   });
 </script> 

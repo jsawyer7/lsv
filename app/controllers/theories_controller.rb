@@ -3,14 +3,15 @@ class TheoriesController < ApplicationController
   layout 'dashboard'
 
   def index
-    status = params[:status] || 'public'
+    status = params[:status] || 'all'
     search = params[:search]
-    @filters = %w[public in_review draft]
+    @filters = %w[all public in_review draft]
     @current_status = status
-    @theories = current_user.theories.where(status: status).includes(:likes)
+    @theories = current_user.theories
+    @theories = @theories.where(status: status) unless status == 'all'
+    @theories = @theories.includes(:likes)
     @theories = @theories.where('title ILIKE ? OR description ILIKE ?', "%#{search}%", "%#{search}%") if search.present?
     @theories = @theories.order(created_at: :desc).limit(10)
-    # Note: Comments will be filtered in the view using visible_to scope
   end
 
   def new
@@ -35,10 +36,12 @@ class TheoriesController < ApplicationController
   end
 
   def infinite
-    status = params[:status] || 'public'
+    status = params[:status] || 'all'
     search = params[:search]
     page = params[:page].to_i
-    theories = current_user.theories.where(status: status).includes(:likes)
+    theories = current_user.theories
+    theories = theories.where(status: status) unless status == 'all'
+    theories = theories.includes(:likes)
     theories = theories.where('title ILIKE ? OR description ILIKE ?', "%#{search}%", "%#{search}%") if search.present?
     theories = theories.order(created_at: :desc).offset(10 * page).limit(10)
     # Note: Comments will be filtered in the view using visible_to scope

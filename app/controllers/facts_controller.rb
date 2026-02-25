@@ -1,26 +1,33 @@
 class FactsController < ApplicationController
+  before_action :authenticate_user!
   layout 'dashboard'
 
   def index
-    @filters = %w[all my_facts]
-    @current_filter = params[:filter] || 'all'
-    @search = params[:search]
-    @facts = Claim.published_facts.includes(:user, :likes)
-    @facts = @facts.where('content ILIKE ?', "%#{@search}%") if @search.present?
-    @facts = @facts.order(created_at: :desc).limit(10)
-    # Note: Comments will be filtered in the view using visible_to scope
+    @top_facts = Claim.published_facts
+                      .left_joins(:likes)
+                      .group('claims.id')
+                      .order(Arel.sql('COUNT(likes.id) DESC'))
+                      .limit(2)
+                      .includes(:user)
   end
 
   def infinite
-    page = params[:page].to_i
-    search = params[:search]
-    facts = Claim.where.not(state: 'draft').includes(:user, :likes)
-    facts = facts.where('content ILIKE ?', "%#{search}%") if search.present?
-    facts = facts.order(created_at: :desc).offset(10 * page).limit(10)
-    # Note: Comments will be filtered in the view using visible_to scope
+    page = params[:page].to_i > 0 ? params[:page].to_i : 1
+    per_page = page == 1 ? 30 : 20
+    offset = (page - 1) * per_page
+    facts = Claim.published_facts.includes(:user, :likes)
+    facts = facts.where(user_id: current_user.id) if params[:filter] == 'my_facts'
+    facts = facts.where('content ILIKE ?', "%#{params[:search]}%") if params[:search].present?
+    facts = facts.order(created_at: :desc).offset(offset).limit(per_page)
     render json: {
-      facts: facts.map { |fact| render_to_string(partial: 'fact_card', formats: [:html], locals: { fact: fact }) },
-      has_more: facts.size == 10
+      claims: facts.map { |fact|
+        {
+          html: render_to_string(partial: 'shared/feed_card', locals: { fact: fact }, formats: [:html]),
+          id: fact.id,
+          created_at: fact.created_at
+        }
+      },
+      has_more: facts.size == per_page
     }
   end
 end

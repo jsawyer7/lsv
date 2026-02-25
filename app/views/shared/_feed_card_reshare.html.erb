@@ -5,7 +5,8 @@
   resharer = share&.user
 %>
 <% if share.present? && fact.present? %>
-  <div class="feed-card-reshare-wrapper">
+  <% detail_url = fact.is_a?(Claim) ? claim_path(fact) : nil %>
+  <div class="feed-card-reshare-wrapper<%= ' js-card-clickable' if detail_url %>"<% if detail_url %> data-detail-url="<%= detail_url %>"<% end %>>
     <!-- Resharer Header -->
     <div class="feed-card-reshare-header">
       <div class="feed-card-reshare-avatar">

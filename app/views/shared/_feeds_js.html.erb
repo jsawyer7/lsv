@@ -55,13 +55,21 @@ document.addEventListener('DOMContentLoaded', function() {
       feedLoader.style.display = 'block';
     }
     try {
-      const res = await fetch(`/feeds/infinite?page=${page}`);
+      const apiUrl = (typeof window.FEED_API_URL !== 'undefined' && window.FEED_API_URL) ? window.FEED_API_URL : '/feeds/infinite';
+      const filter = (typeof window.FEED_FILTER !== 'undefined' && window.FEED_FILTER) ? window.FEED_FILTER : '';
+      const query = new URLSearchParams({ page });
+      if (filter) query.set('filter', filter);
+      const res = await fetch(`${apiUrl}?${query.toString()}`);
       const data = await res.json();
       if (data.claims && data.claims.length > 0) {
         feedLoader.style.display = 'none';
         data.claims.forEach(claim => {
           feedList.insertAdjacentHTML('beforeend', renderClaim(claim));
         });
+      } else if (page === 1 && typeof window.FEED_API_URL !== 'undefined' && window.FEED_API_URL.indexOf('/facts/infinite') !== -1 && window.FEED_FILTER === 'my_facts') {
+        feedLoader.style.display = 'none';
+        feedList.classList.add('facts-empty');
+        feedList.innerHTML = '<div class="facts-empty-state">You haven\'t created any fact</div>';
       }
       hasMore = data.has_more;
       loading = false;
@@ -81,6 +89,18 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   feedList.addEventListener('scroll', onFeedScroll);
+
+  feedList.addEventListener('click', function(e) {
+    if (e.target.closest('a, button, input, textarea, [data-no-card-nav]')) return;
+    const card = e.target.closest('.js-card-clickable');
+    if (!card) return;
+    const url = card.dataset.detailUrl;
+    if (url) {
+      e.preventDefault();
+      e.stopPropagation();
+      window.location = url;
+    }
+  });
   
   const feedArea = document.querySelector('.feed-center') || feedList.parentElement;
   if (feedArea) {
@@ -315,7 +335,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const commentTextSpan = feedCard.querySelector('.comment-text');
             if (commentTextSpan) {
-              commentTextSpan.textContent = `${newCount} Comment${newCount !== 1 ? 's' : ''}`;
+              commentTextSpan.textContent = newCount === 1 ? 'Comment' : 'Comments';
             }
             
             if (commentsSection) {

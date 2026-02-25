@@ -23,7 +23,7 @@
   </div>
   <div class="my-claims-list">
     <% @claims.each do |claim| %>
-      <div class="my-claim-card">
+      <div class="my-claim-card js-card-clickable" data-detail-url="<%= claim_path(claim) %>">
         <div class="my-claim-card-header">
           <div class="my-claim-user">
             <%= image_tag claim.user.avatar_url.presence || 'default-avatar.png', class: 'my-claim-avatar' %>

@@ -1,39 +1,25 @@
-<div class="facts-main">
-  <div class="facts-center">
-    <div class="facts-header">
-      <h2>Facts</h2>
-      <div class="facts-search-bar">
-        <%= form_with url: facts_path, method: :get, local: true, class: 'facts-search-form' do |f| %>
-          <%= f.text_field :search, value: params[:search], placeholder: 'Search' %>
-          <button class="facts-search-btn"><i class="fas fa-search"></i></button>
-        <% end %>
-      </div>
-      <%= link_to new_claim_path, class: 'facts-new-btn' do %>
-        <%= image_tag 'newclaim.png', class: 'btn-icon' %>
-        <span class="new-fact-label">New Claim</span>
-      <% end %>
+<script>
+  window.FEED_API_URL = '/facts/infinite';
+  window.FEED_FILTER = '<%= j params[:filter].to_s %>';
+</script>
+<div class="feed-main facts-page-main">
+  <div class="facts-page-content">
+    <header class="facts-page-header">
+      <h1 class="facts-page-title">Facts</h1>
+      <nav class="facts-page-filters">
+        <%= link_to 'Facts', facts_path, class: "facts-filter-pill #{'active' if params[:filter].blank? || params[:filter] == 'all'}" %>
+        <%= link_to 'My Facts', facts_path(filter: 'my_facts'), class: "facts-filter-pill #{'active' if params[:filter] == 'my_facts'}" %>
+        <%= link_to 'Tags', '#', class: 'facts-filter-pill' %>
+        <%= link_to 'Sources', '#', class: 'facts-filter-pill' %>
+        <%= link_to 'Status', '#', class: 'facts-filter-pill' %>
+      </nav>
+    </header>
+    <div id="feed-list" class="feed-list">
     </div>
-    <div class="facts-filters">
-      <% @filters.each do |filter| %>
-        <%= link_to filter.titleize, facts_path(filter: filter, search: params[:search]), class: "facts-filter#{' active' if @current_filter == filter}", style: 'cursor:pointer;' %>
-      <% end %>
-    </div>
-    <div id="fact-list" class="facts-content-list">
-      <% if @facts.any? %>
-        <% @facts.each do |fact| %>
-          <%= render 'fact_card', fact: fact %>
-        <% end %>
-      <% else %>
-        <div class="empty-state">
-          <p>No facts data yet.</p>
-        </div>
-      <% end %>
-    </div>
-    <div id="fact-loader" class="feed-loader" style="display:none;">Loading...</div>
+    <div id="feed-loader" class="feed-loader">Loading...</div>
   </div>
-  <aside class="facts-rightbar">
-    <%= render 'theories/top_picks' %>
-    <%= render 'theories/who_to_follow' %>
+  <aside class="feed-rightbar facts-page-rightbar">
+    <%= render 'facts/rightbar' %>
   </aside>
 </div>
-<%= render 'shared/facts_js' %> 
+<%= render 'shared/feeds_js' %>

@@ -18,7 +18,7 @@
   <div class="feed-card-footer">
     <% if theory.status == 'draft' %>
       <span class="feed-card-date"><%= theory.created_at.strftime('%d %b, %Y') %></span>
-      <div class="feed-card-actions" style="margin-left:auto;">
+      <div class="feed-card-actions" style="margin-left:auto;" data-no-card-nav>
         <%= link_to edit_theory_path(theory), class: 'my-claim-edit-link' do %>
           <i class="fas fa-edit"></i> Edit
         <% end %>
@@ -29,7 +29,7 @@
     <% else %>
       <% if user_signed_in? %>
         <% user_like = theory.likes.find_by(user: current_user) %>
-        <div class="feed-card-actions">
+        <div class="feed-card-actions" data-no-card-nav>
           <% if user_like %>
             <%= link_to theory_like_path(theory, user_like), method: :delete, remote: true, class: 'feed-like liked', data: { theory_id: theory.id } do %>
               <i class="fas fa-thumbs-up"></i> <span class="like-count"><%= theory.likes.count %></span>
@@ -50,7 +50,7 @@
           </button>
         </div>
       <% else %>
-        <div class="feed-card-actions">
+        <div class="feed-card-actions" data-no-card-nav>
           <span class="feed-like"><i class="fas fa-thumbs-up"></i> <span class="like-count"><%= theory.likes.count %></span></span>
           <span class="feed-comment-count">
             <i class="fas fa-comment"></i> <span class="comment-count"><%= theory.comments.visible_to(current_user).count %></span>
@@ -58,12 +58,12 @@
         </div>
       <% end %>
       <span class="feed-card-date"><%= theory.created_at.strftime('%d %b, %Y') %></span>
-      <a class="feed-card-link" href="#">View Details</a>
+      <span class="feed-card-link">View Details</span>
     <% end %>
   </div>
   
   <% unless theory.status == 'draft' %>
-    <div class="feed-card-comments" data-theory-id="<%= theory.id %>">
+    <div class="feed-card-comments" data-theory-id="<%= theory.id %>" data-no-card-nav>
       <div class="comments-list-mini">
         <% theory.comments.visible_to(current_user).recent.each do |comment| %>
           <%= render 'comments/comment', comment: comment %>
