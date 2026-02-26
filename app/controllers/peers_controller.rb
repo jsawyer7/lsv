@@ -21,9 +21,16 @@ class PeersController < ApplicationController
       # Paginate the recommendations
       @suggested_users = Kaminari.paginate_array(recommended_users).page(params[:page]).per(8)
     end
-    @my_peers = current_user.peers.limit(5)
+    @my_peers = current_user.peers.includes(:followers).limit(5)
     @my_peers_count = current_user.peers.count
-    # Top facts can be static for now
+    need_static = [3 - @my_peers.size, 0].max
+    @my_peers_display = @my_peers.to_a + StaticPeer.take(need_static)
+    @top_facts = Claim.published_facts
+                      .left_joins(:likes)
+                      .group('claims.id')
+                      .order(Arel.sql('COUNT(likes.id) DESC'))
+                      .limit(2)
+                      .includes(:user)
   end
 
   def add

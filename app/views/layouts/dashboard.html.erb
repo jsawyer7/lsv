@@ -55,6 +55,9 @@
     <% end %>
     <div class="dashboard-container">
       <%= render 'shared/navbar' %>
+      <% unless request.path.start_with?('/facts') %>
+        <%= render 'shared/dashboard_sources' %>
+      <% end %>
 
       <div class="dashboard-main">
         <%= render 'shared/flash_messages' %>
