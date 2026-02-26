@@ -5,6 +5,7 @@ module ApplicationHelper
       path == '/all-claims' ||
       path.start_with?('/claims') ||
       path.start_with?('/theories') ||
+      path.start_with?('/peers') ||
       path.start_with?('/veritalk')
   end
 end
