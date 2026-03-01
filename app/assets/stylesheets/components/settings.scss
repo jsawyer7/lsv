@@ -1,9 +1,14 @@
+body.settings-page,
+body.settings-page .dashboard-main {
+  background: #F4F2EE;
+}
+
 .settings-main {
-  padding: 32px 7vw 0 7vw;
-  position: relative;
-  background: transparent;
+  padding: 460px 7vw 0 7vw;
+  background: #F4F2EE;
   border: none;
   overflow: visible;
+  min-height: 100vh;
 }
 
 @media (max-width: 600px) {
@@ -13,20 +18,92 @@
 }
 
 .settings-title {
-  font-size: 1.5rem;
-  font-weight: 700;
-  margin-bottom: 18px;
+  position: absolute;
+  top: 94px;
+  left: 390px;
+  width: 75px;
+  height: 23px;
+  font-family: Roboto, sans-serif;
+  font-weight: 600;
+  font-size: 20px;
+  line-height: 100%;
+  letter-spacing: 0;
+  color: #171717;
+  opacity: 1;
+  margin: 0;
 }
+
+.settings-tabs {
+  position: absolute;
+  top: 137px;
+  left: 390px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 2;
+}
+
+.settings-tab-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  padding: 0 20px;
+  border-radius: 100px;
+  font-family: Roboto, sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  text-decoration: none;
+  color: #475865;
+  background: #ffffff;
+  opacity: 1;
+  box-sizing: border-box;
+  transition: background 0.2s, color 0.2s;
+
+  &.active {
+    background: #2196F333;
+    color: #2196F3;
+    font-weight: 500;
+  }
+
+  &:hover:not(.active) {
+    background: #f5f5f5;
+  }
+}
+
+.settings-tab-pill:first-child {
+  width: 128px;
+  min-width: 128px;
+}
+
+.settings-tab-pill:nth-child(2),
+.settings-tab-pill:nth-child(3) {
+  width: 118px;
+  min-width: 118px;
+}
+
+.settings-header-section {
+  position: absolute;
+  top: 189px;
+  left: 390px;
+  width: 975px;
+  height: 315px;
+  border-radius: 8px;
+  opacity: 1;
+  overflow: hidden;
+  background: #FFFFFF;
+}
+
 .settings-profile-banner-wrapper {
   position: relative;
   width: 100%;
 }
 
 .settings-profile-banner {
-  width: 100%;
-  height: 350px;
+  width: 982px;
+  height: 180px;
+  opacity: 1;
   background: url(asset-path('settings-banner.png')) center/cover no-repeat;
-  border-radius: 10px;
   margin-bottom: 0;
   position: relative;
   cursor: pointer;
@@ -120,16 +197,19 @@
 }
 
 .settings-profile-avatar-wrapper {
-  position: relative;
+  position: absolute;
+  left: 16px;
   display: inline-block;
 }
 
 .settings-profile-avatar {
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
+  top:20px;
+  width: 100px;
+  height: 100px;
+  border-radius: 100px;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+  border: 1px solid #ffffff;
+  opacity: 1;
   position: relative;
   z-index: 3;
   background: #fff;
@@ -144,6 +224,7 @@
 
 // Camera button overlapping the header avatar (bottom-right, always visible)
 .settings-profile-avatar-camera-btn {
+  top:92px;
   position: absolute;
   bottom: 0;
   right: 0;
@@ -173,10 +254,52 @@
   }
 }
 .settings-profile-info {
+  position: absolute;
+  top: 65px;
+  left: 16px;
+  width: 279px;
+  min-height: 48px;
+  opacity: 1;
   display: flex;
   flex-direction: column;
-  gap: 2px;
 }
+
+.settings-header-actions {
+  position: absolute;
+  left: 820px;
+  top: 60px;
+  z-index: 2;
+}
+
+.settings-delete-profile-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 138.4375px;
+  height: 45px;
+  padding: 11px 14.44px 11.59px 15px;
+  border-radius: 100px;
+  border: 1px solid #E53F3C;
+  background: transparent;
+  color: #E53F3C;
+  opacity: 1;
+  font-family: Inter, Roboto, sans-serif;
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 15px;
+  letter-spacing: 0;
+  text-align: center;
+  text-decoration: none;
+  box-sizing: border-box;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+
+  &:hover {
+    background: #E53F3C;
+    color: #fff;
+  }
+}
+
 .settings-profile-name {
   font-size: 1.3rem;
   font-weight: 700;
@@ -1620,14 +1743,34 @@
   filter: none;
 }
 .settings-form-section {
-  flex: 1 1 0;
-  background: #fff;
-  border-radius: 12px;
+  position: absolute;
+  top: 530px;
+  left: 390px;
+  width: 975px;
+  border-radius: 8px;
+  background: #ffffff;
+  opacity: 1;
   box-shadow: 0 2px 8px rgba(0,0,0,0.04);
   padding: 32px 38px 32px 38px;
-  border: none;
-  position: relative;
   z-index: 1;
+}
+
+.settings-main.settings-no-header-tab .settings-form-section {
+  top: 189px;
+}
+
+.settings-main.settings-no-header-tab .subscription-page {
+  position: absolute;
+  top: 189px;
+  left: 390px;
+  width: 975px;
+  max-width: calc(100vw - 390px - 7vw);
+  border-radius: 8px;
+  background: #FFFFFF;
+  opacity: 1;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  padding: 32px 38px 32px 38px;
+  box-sizing: border-box;
 }
 .settings-section-title {
   font-size: 1.18rem;
@@ -1953,10 +2096,26 @@
 }
 .settings-form-group {
   margin-bottom: 18px;
+
+  label {
+    font-family: Roboto, sans-serif;
+    font-weight: 500;
+    font-size: 14px;
+    line-height: 20px;
+    letter-spacing: 0;
+    color: #000000;
+    display: block;
+    margin-bottom: 4px;
+  }
 }
 .settings-form-row {
   display: flex;
   gap: 18px;
+
+  .settings-form-group {
+    flex: 1 1 50%;
+    min-width: 0;
+  }
 }
 .settings-input {
   width: 100%;
@@ -1964,7 +2123,7 @@
   border-radius: 8px;
   padding: 12px 18px;
   font-size: 1.08rem;
-  background: #fafbfc;
+  background: #F4F2EE;
   color: #23263b;
   margin-top: 6px;
   transition: border 0.2s;
@@ -1979,7 +2138,7 @@
   border-radius: 8px;
   padding: 12px 18px;
   font-size: 1.08rem;
-  background: #fafbfc;
+  background: #F4F2EE;
   color: #23263b;
   margin-top: 6px;
   transition: border 0.2s;
@@ -1995,7 +2154,7 @@
   border-radius: 8px;
   padding: 12px 18px;
   font-size: 1.08rem;
-  background: #fafbfc;
+  background: #F4F2EE;
   color: #23263b;
   margin-top: 6px;
   min-height: 80px;
@@ -2006,19 +2165,31 @@
   outline: none;
 }
 .settings-update-btn {
-  background: #2196f3;
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  padding: 0.7rem 2.2rem;
-  font-size: 1.08rem;
-  font-weight: 500;
+  width: 144.53125px;
+  height: 45px;
+  border-radius: 100px;
+  border: 1px solid #2196F3;
+  background: #2196F3;
+  color: #FFFFFF;
+  opacity: 1;
+  font-family: Roboto, sans-serif;
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 0px;
+  letter-spacing: 0;
+  text-align: center;
   cursor: pointer;
   margin-top: 12px;
-  transition: background 0.2s;
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  transition: background 0.2s, border-color 0.2s;
 }
 .settings-update-btn:hover {
-  background: #1769aa;
+  background: #1976D2;
+  border-color: #1976D2;
 }
 .settings-avatar-section-row {
   display: flex;
