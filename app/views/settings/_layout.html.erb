@@ -1,6 +1,12 @@
-<div class="settings-main">
+<div class="settings-main <%= 'settings-no-header-tab' if local_assigns[:active] == 'notifications' || local_assigns[:active] == 'subscription' %>">
+  <h2 class="settings-title">Settings</h2>
+  <nav class="settings-tabs">
+    <%= link_to 'Edit Profile', edit_settings_path, data: { turbo: false }, class: "settings-tab-pill #{'active' if local_assigns[:active] == 'edit'}" %>
+    <%= link_to 'Notifications', notifications_settings_path, data: { turbo: false }, class: "settings-tab-pill #{'active' if local_assigns[:active] == 'notifications'}" %>
+    <%= link_to 'Subscription', subscription_settings_path, data: { turbo: false }, class: "settings-tab-pill #{'active' if local_assigns[:active] == 'subscription'}" %>
+  </nav>
+  <% if local_assigns[:active] == 'edit' %>
   <div class="settings-header-section">
-    <h2 class="settings-title">Settings</h2>
     <div class="settings-profile-banner-wrapper">
       <div class="settings-profile-banner" style="<%= 'background-image: url(' + @user.background_image_url + ');' if @user.background_image_url.present? %>">
         <input type="hidden" id="banner-remove-background-field" name="remove_background_image" value="false" />
@@ -29,7 +35,11 @@
         <div class="settings-profile-name"><%= @user.full_name || @user.email %></div>
         <div class="settings-profile-username">@<%= @user.email.split('@').first %></div>
       </div>
+      <div class="settings-header-actions">
+        <%= link_to 'Delete Profile', '#', class: 'settings-delete-profile-btn', data: { turbo: false } %>
+      </div>
     </div>
   </div>
+  <% end %>
     <%= yield %>
 </div> 

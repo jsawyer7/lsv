@@ -6,6 +6,7 @@ module ApplicationHelper
       path.start_with?('/claims') ||
       path.start_with?('/theories') ||
       path.start_with?('/peers') ||
-      path.start_with?('/veritalk')
+      path.start_with?('/veritalk') ||
+      path.start_with?('/settings')
   end
 end

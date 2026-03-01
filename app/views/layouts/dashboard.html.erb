@@ -44,7 +44,7 @@
     <%= render 'shared/dashboard_js' %>
   </head>
 
-  <body class="<%= 'dashboard-nav-page' if dashboard_nav_page? %>">
+  <body class="<%= 'dashboard-nav-page' if dashboard_nav_page? %><%= ' settings-page' if controller_name == 'settings' %>">
     <%= render 'shared/top_navbar' %>
     <% unless dashboard_nav_page? %>
       <%= render 'shared/user_info_block' %>
