@@ -1,16 +1,15 @@
 <div class="challenge-card" id="<%= dom_id(challenge) %>">
-  <div class="challenge-header">
-    <div class="user-info">
-      <span class="user-name"><%= challenge.user.full_name || challenge.user.email %></span>
-      <span class="challenge-date"><%= time_ago_in_words(challenge.created_at) %> ago</span>
+  <div class="challenge-entry">
+    <div class="challenge-user-avatar">
+      <%= image_tag (challenge.user.avatar_url.presence || 'default-avatar.png'), alt: challenge.user.full_name || 'User', class: 'challenge-avatar-img' %>
     </div>
-    <span class="status-badge <%= challenge.status %>">
-      <%= challenge.status.capitalize %>
-    </span>
-  </div>
-
-  <div class="challenge-text">
-    <%= simple_format(challenge.text) %>
+    <div class="challenge-entry-body">
+      <span class="challenge-user-name"><%= challenge.user.full_name || challenge.user.email %></span>
+      <span class="challenge-date"><%= challenge.created_at.strftime('%d %b, %Y') %></span>
+      <div class="challenge-text">
+        <%= simple_format(challenge.text) %>
+      </div>
+    </div>
   </div>
 
   <% sorted_reasonings = challenge.reasonings.sort_by do |r|
@@ -22,19 +21,23 @@
     end
   end %>
 
-  <% sorted_reasonings.each do |reasoning| %>
-    <% color = case reasoning.result
-      when '✅ True' then '#d1fae5' # green
-      when '❌ False' then '#fee2e2' # red
-      when '⚠️ Unverifiable' then '#fef9c3' # yellow
-      else '#f3f4f6' # gray
-    end %>
-    <div class="reasoning-section" style="background: <%= color %>; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
-      <h4><%= reasoning.source %> Analysis</h4>
-      <div><strong>Result:</strong> <%= reasoning.result %></div>
-      <div><strong>AI Reasoning:</strong> <%= simple_format(reasoning.response) %></div>
+  <% if sorted_reasonings.any? %>
+    <div class="challenge-reasonings">
+      <% sorted_reasonings.each do |reasoning| %>
+        <% color = case reasoning.result
+          when '✅ True' then '#d1fae5'
+          when '❌ False' then '#fee2e2'
+          when '⚠️ Unverifiable' then '#fef9c3'
+          else '#f3f4f6'
+        end %>
+        <div class="reasoning-section" style="background: <%= color %>; padding: 1rem; border-radius: 8px; margin-bottom: 0.5rem;">
+          <h4><%= reasoning.source %> Analysis</h4>
+          <div><strong>Result:</strong> <%= reasoning.result %></div>
+          <div><strong>AI Reasoning:</strong> <%= simple_format(reasoning.response) %></div>
+        </div>
+      <% end %>
     </div>
   <% end %>
 </div>
-<div class="claim-section-divider"></div>
+<div class="challenge-divider"></div>
  

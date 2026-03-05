@@ -2,74 +2,94 @@
   <div class="claim-center">
     <div class="claim-header">
       <h2><%= @claim.fact? ? 'Fact Details' : 'Claim Details' %></h2>
-      
-      <!-- Naming Preference Display -->
-      <div class="naming-preference-display">
-        <label>Displaying names in:</label>
-        <span class="preference-badge">
-          <% if current_user&.naming_preference.present? %>
-            <% case current_user.naming_preference %>
-            <% when 'hebrew_aramaic' %>
-              Hebrew/Aramaic
-            <% when 'greco_latin_english' %>
-              English
-            <% when 'arabic' %>
-              Arabic
-            <% end %>
-          <% else %>
-            Default
-          <% end %>
-        </span>
-        <small class="preference-note">
-          <% if current_user&.naming_preference.present? %>
-            Change your naming preference in 
-            <%= link_to "Settings", edit_settings_path, class: "settings-link" %>
-          <% else %>
-            <%= link_to "Set your naming preference", edit_settings_path, class: "settings-link" %>
-          <% end %>
-        </small>
-      </div>
+
     </div>
-    <div class="claim-details-list">
-      <div class="claim-details-card">
-        <div class="claim-details-title">
-          <div class="claim-section-heading">
-            <%= image_tag 'claim-icon.png', alt: 'Claim Icon', class: 'claim-section-icon' %>
-            <span class="claim-details-label">Claim</span>
-            <span class="claim-details-date"><%= @claim.created_at.strftime('%d %b, %Y') %></span>
-            <% if user_signed_in? %>
-              <% user_like = @claim.likes.find_by(user: current_user) %>
-              <div class="claim-like-action" style="margin-left: auto;">
+
+    <div class="claim-details-title-block">
+      <div class="claim-details-title claim-detail-card-style">
+        <div class="claim-detail-card-icon">
+          <%= image_tag 'claimicon.svg', alt: 'Claim', class: 'claim-detail-icon-img' %>
+        </div>
+        <div class="claim-detail-card-header">
+          <span class="claim-details-label">Claim</span>
+          <span class="claim-details-date"><%= @claim.created_at.strftime('%d %b, %Y') %></span>
+          <% if @claim.fact? %>
+            <span class="claim-detail-fact-badge">Fact</span>
+          <% end %>
+        </div>
+        <div class="claim-details-content" id="claim-content">
+          <%= @claim.content_for_tradition(@tradition) %>
+        </div>
+        <div class="feed-card-divider"></div>
+        <div class="feed-card-verified-by">
+          <span class="verified-by-label">Verified by:</span>
+          <div class="verified-by-avatars">
+            <%= image_tag 'default-avatar.png', alt: 'Verifier', class: 'verified-by-avatar' %>
+            <%= image_tag 'default-avatar.png', alt: 'Verifier', class: 'verified-by-avatar' %>
+          </div>
+        </div>
+        <div class="feed-card-actions-wrapper" data-no-card-nav>
+          <div class="feed-card-actions">
+            <div class="feed-action-like">
+              <% if user_signed_in? %>
+                <% user_like = @claim.likes.find_by(user: current_user) %>
                 <% if user_like %>
                   <%= link_to claim_like_path(@claim, user_like), method: :delete, remote: true, class: 'feed-like liked', data: { claim_id: @claim.id } do %>
-                    <i class="fas fa-thumbs-up"></i> <span class="like-count"><%= @claim.likes.count %></span>
+                    <%= image_tag 'like.svg', alt: 'Like', class: 'like-icon' %>
+                    <span class="like-count"><%= @claim.likes.count %></span>
                   <% end %>
                 <% else %>
                   <%= link_to claim_likes_path(@claim), method: :post, remote: true, class: 'feed-like', data: { claim_id: @claim.id } do %>
-                    <i class="fas fa-thumbs-up"></i> <span class="like-count"><%= @claim.likes.count %></span>
+                    <%= image_tag 'like.svg', alt: 'Like', class: 'like-icon' %>
+                    <span class="like-count"><%= @claim.likes.count %></span>
                   <% end %>
                 <% end %>
-              </div>
-            <% else %>
-              <div class="claim-like-action" style="margin-left: auto;">
-                <span class="feed-like"><i class="fas fa-thumbs-up"></i> <span class="like-count"><%= @claim.likes.count %></span></span>
-              </div>
-            <% end %>
-          </div>
-          <div class="claim-details-content" id="claim-content">
-            <%= @claim.content_for_tradition(@tradition) %>
+              <% else %>
+                <div class="feed-like">
+                  <%= image_tag 'like.svg', alt: 'Like', class: 'like-icon' %>
+                  <span class="like-count"><%= @claim.likes.count %></span>
+                </div>
+              <% end %>
+            </div>
+            <a href="#challenges" class="feed-action-comment" style="cursor: pointer;">
+              <%= image_tag 'comment.svg', alt: 'Comment', class: 'comment-icon' %>
+              <% comment_count = user_signed_in? ? @claim.comments.visible_to(current_user).count : @claim.comments.count %>
+              <% if comment_count > 0 %>
+                <span class="comment-count"><%= comment_count %></span>
+              <% end %>
+              <span class="comment-text">Comment</span>
+            </a>
+            <div class="feed-action-share">
+              <button type="button" class="feed-share-btn" data-shareable-type="claim" data-shareable-id="<%= @claim.id %>" data-toggle="modal" data-target="#shareModal">
+                <%= image_tag 'share.svg', alt: 'Share', class: 'share-icon' %>
+                <span class="share-text">Share</span>
+              </button>
+            </div>
           </div>
         </div>
-        <div class="claim-section-divider"></div>
-        <div class="claim-details-section">
-          <div class="claim-section-heading">
-            <%= image_tag 'evidence-icon.png', alt: 'Evidence Icon', class: 'claim-section-icon' %>
+      </div>
+    </div>
+
+    <div class="claim-details-list">
+      <div class="claim-details-evidence-card">
+        <div class="evidence-card-header">
+          <div class="evidence-header-left">
+            <%= image_tag 'evidenceicon.svg', alt: 'Evidence Icon', class: 'claim-section-icon' %>
             <span class="claim-details-label">Evidence</span>
           </div>
+          <div class="evidence-header-actions">
+            <% if user_signed_in? %>
+              <% @claim.evidences.each do |evidence| %>
+                <button type="button" class="btn btn-challenge-evidence" data-evidence-id="<%= evidence.id %>">Challenge Evidence</button>
+              <% end %>
+            <% end %>
+          </div>
+        </div>
+        <div class="claim-details-section">
           <div class="claim-details-evidence" id="evidence-content">
             <% @claim.evidences.each do |evidence| %>
               <div class="claim-evidence-block" id="evidence-<%= evidence.id %>">
-                <div><strong>Sources:</strong> 
+                <div class="evidence-sources-row">
                   <% evidence.source_names.each do |source_name| %>
                     <span class="source-badge"><%= source_name.humanize %></span>
                   <% end %>
@@ -77,26 +97,19 @@
                 <div class="evidence-content">
                   <% evidence.evidence_sections.each do |section_type, section_data| %>
                     <div class="evidence-section">
-                      <h4><%= section_type.humanize %></h4>
                       <% if section_data.is_a?(Array) %>
                         <% section_data.each_with_index do |item, index| %>
                           <div class="evidence-item">
-                            <h5><%= "#{section_type.humanize} #{index + 1}" %></h5>
                             <% case section_type %>
                             <% when 'verse' %>
                               <% if item['content'].present? %>
                                 <div class="evidence-detail">
-                                  <strong>Content:</strong> <%= @tradition ? evidence.class.name_normalization_service.denormalize_text(item['content'], @tradition) : item['content'] %>
+                                  <strong>LSV Note:</strong> <%= @tradition ? evidence.class.name_normalization_service.denormalize_text(item['content'], @tradition) : item['content'] %>
                                 </div>
                               <% end %>
                               <% if item['verse_reference'].present? %>
                                 <div class="evidence-detail">
                                   <strong>Reference:</strong> <%= @tradition ? evidence.class.name_normalization_service.denormalize_text(item['verse_reference'], @tradition) : item['verse_reference'] %>
-                                </div>
-                              <% end %>
-                              <% if item['sources'].present? %>
-                                <div class="evidence-detail">
-                                  <strong>Source:</strong> <%= item['sources'].map(&:humanize).join(', ') %>
                                 </div>
                               <% end %>
                               <% if item['original_text'].present? %>
@@ -117,17 +130,12 @@
                             <% when 'historical' %>
                               <% if item['content'].present? %>
                                 <div class="evidence-detail">
-                                  <strong>Content:</strong> <%= @tradition ? evidence.class.name_normalization_service.denormalize_text(item['content'], @tradition) : item['content'] %>
+                                  <strong>LSV Note:</strong> <%= @tradition ? evidence.class.name_normalization_service.denormalize_text(item['content'], @tradition) : item['content'] %>
                                 </div>
                               <% end %>
                               <% if item['historical_event'].present? %>
                                 <div class="evidence-detail">
                                   <strong>Historical Event:</strong> <%= @tradition ? evidence.class.name_normalization_service.denormalize_text(item['historical_event'], @tradition) : item['historical_event'] %>
-                                </div>
-                              <% end %>
-                              <% if item['sources'].present? %>
-                                <div class="evidence-detail">
-                                  <strong>Source:</strong> <%= item['sources'].map(&:humanize).join(', ') %>
                                 </div>
                               <% end %>
                               <% if item['description'].present? %>
@@ -143,17 +151,12 @@
                             <% when 'definition' %>
                               <% if item['content'].present? %>
                                 <div class="evidence-detail">
-                                  <strong>Content:</strong> <%= @tradition ? evidence.class.name_normalization_service.denormalize_text(item['content'], @tradition) : item['content'] %>
+                                  <strong>LSV Note:</strong> <%= @tradition ? evidence.class.name_normalization_service.denormalize_text(item['content'], @tradition) : item['content'] %>
                                 </div>
                               <% end %>
                               <% if item['term'].present? %>
                                 <div class="evidence-detail">
                                   <strong>Term:</strong> <%= @tradition ? evidence.class.name_normalization_service.denormalize_text(item['term'], @tradition) : item['term'] %>
-                                </div>
-                              <% end %>
-                              <% if item['sources'].present? %>
-                                <div class="evidence-detail">
-                                  <strong>Source:</strong> <%= item['sources'].map(&:humanize).join(', ') %>
                                 </div>
                               <% end %>
                               <% if item['definition'].present? %>
@@ -174,17 +177,12 @@
                             <% when 'logic' %>
                               <% if item['content'].present? %>
                                 <div class="evidence-detail">
-                                  <strong>Content:</strong> <%= @tradition ? evidence.class.name_normalization_service.denormalize_text(item['content'], @tradition) : item['content'] %>
+                                  <strong>LSV Note:</strong> <%= @tradition ? evidence.class.name_normalization_service.denormalize_text(item['content'], @tradition) : item['content'] %>
                                 </div>
                               <% end %>
                               <% if item['premise'].present? %>
                                 <div class="evidence-detail">
                                   <strong>Premise:</strong> <%= @tradition ? evidence.class.name_normalization_service.denormalize_text(item['premise'], @tradition) : item['premise'] %>
-                                </div>
-                              <% end %>
-                              <% if item['sources'].present? %>
-                                <div class="evidence-detail">
-                                  <strong>Source:</strong> <%= item['sources'].map(&:humanize).join(', ') %>
                                 </div>
                               <% end %>
                               <% if item['reasoning'].present? %>
@@ -201,22 +199,16 @@
                           </div>
                         <% end %>
                       <% else %>
-                        <%# Backward compatibility for single items %>
                         <% case section_type %>
                         <% when 'verse' %>
                           <% if section_data['content'].present? %>
                             <div class="evidence-detail">
-                              <strong>Content:</strong> <%= @tradition ? evidence.class.name_normalization_service.denormalize_text(section_data['content'], @tradition) : section_data['content'] %>
+                              <strong>LSV Note:</strong> <%= @tradition ? evidence.class.name_normalization_service.denormalize_text(section_data['content'], @tradition) : section_data['content'] %>
                             </div>
                           <% end %>
                           <% if section_data['verse_reference'].present? %>
                             <div class="evidence-detail">
                               <strong>Reference:</strong> <%= @tradition ? evidence.class.name_normalization_service.denormalize_text(section_data['verse_reference'], @tradition) : section_data['verse_reference'] %>
-                            </div>
-                          <% end %>
-                          <% if section_data['sources'].present? %>
-                            <div class="evidence-detail">
-                              <strong>Source:</strong> <%= section_data['sources'].map(&:humanize).join(', ') %>
                             </div>
                           <% end %>
                           <% if section_data['original_text'].present? %>
@@ -237,17 +229,12 @@
                         <% when 'historical' %>
                           <% if section_data['content'].present? %>
                             <div class="evidence-detail">
-                              <strong>Content:</strong> <%= @tradition ? evidence.class.name_normalization_service.denormalize_text(section_data['content'], @tradition) : section_data['content'] %>
+                              <strong>LSV Note:</strong> <%= @tradition ? evidence.class.name_normalization_service.denormalize_text(section_data['content'], @tradition) : section_data['content'] %>
                             </div>
                           <% end %>
                           <% if section_data['historical_event'].present? %>
                             <div class="evidence-detail">
                               <strong>Historical Event:</strong> <%= @tradition ? evidence.class.name_normalization_service.denormalize_text(section_data['historical_event'], @tradition) : section_data['historical_event'] %>
-                            </div>
-                          <% end %>
-                          <% if section_data['sources'].present? %>
-                            <div class="evidence-detail">
-                              <strong>Source:</strong> <%= section_data['sources'].map(&:humanize).join(', ') %>
                             </div>
                           <% end %>
                           <% if section_data['description'].present? %>
@@ -263,17 +250,12 @@
                         <% when 'definition' %>
                           <% if section_data['content'].present? %>
                             <div class="evidence-detail">
-                              <strong>Content:</strong> <%= @tradition ? evidence.class.name_normalization_service.denormalize_text(section_data['content'], @tradition) : section_data['content'] %>
+                              <strong>LSV Note:</strong> <%= @tradition ? evidence.class.name_normalization_service.denormalize_text(section_data['content'], @tradition) : section_data['content'] %>
                             </div>
                           <% end %>
                           <% if section_data['term'].present? %>
                             <div class="evidence-detail">
                               <strong>Term:</strong> <%= @tradition ? evidence.class.name_normalization_service.denormalize_text(section_data['term'], @tradition) : section_data['term'] %>
-                            </div>
-                          <% end %>
-                          <% if section_data['sources'].present? %>
-                            <div class="evidence-detail">
-                              <strong>Source:</strong> <%= section_data['sources'].map(&:humanize).join(', ') %>
                             </div>
                           <% end %>
                           <% if section_data['definition'].present? %>
@@ -294,17 +276,12 @@
                         <% when 'logic' %>
                           <% if section_data['content'].present? %>
                             <div class="evidence-detail">
-                              <strong>Content:</strong> <%= @tradition ? evidence.class.name_normalization_service.denormalize_text(section_data['content'], @tradition) : section_data['content'] %>
+                              <strong>LSV Note:</strong> <%= @tradition ? evidence.class.name_normalization_service.denormalize_text(section_data['content'], @tradition) : section_data['content'] %>
                             </div>
                           <% end %>
                           <% if section_data['premise'].present? %>
                             <div class="evidence-detail">
                               <strong>Premise:</strong> <%= @tradition ? evidence.class.name_normalization_service.denormalize_text(section_data['premise'], @tradition) : section_data['premise'] %>
-                            </div>
-                          <% end %>
-                          <% if section_data['sources'].present? %>
-                            <div class="evidence-detail">
-                              <strong>Source:</strong> <%= section_data['sources'].map(&:humanize).join(', ') %>
                             </div>
                           <% end %>
                           <% if section_data['reasoning'].present? %>
@@ -322,9 +299,6 @@
                     </div>
                   <% end %>
                 </div>
-                <% if user_signed_in? %>
-                  <button class="btn btn-challenge-evidence" data-evidence-id="<%= evidence.id %>">Challenge Evidence</button>
-                <% end %>
                 <div class="evidence-challenges-list" id="evidence-challenges-<%= evidence.id %>">
                   <%= render partial: 'challenges/challenge', collection: evidence.challenges.order(created_at: :desc) %>
                 </div>
@@ -332,56 +306,94 @@
             <% end %>
           </div>
         </div>
-        <div class="claim-section-divider"></div>
+      </div>
+
+      <% primary_reasonings = @claim.reasonings.where(primary_source: true) %>
+      <% any_validated = primary_reasonings.any? { |r| r.result == '✅ True' } %>
+      <% claim_result = @claim.result %>
+      <div class="claim-details-card claim-details-ai-validator-card">
         <div class="claim-details-section">
           <div class="claim-section-heading">
-            <%= image_tag 'ai-icon.png', alt: 'AI Icon', class: 'claim-section-icon' %>
+            <%= image_tag 'airesponse.svg', alt: 'AI Validator', class: 'claim-section-icon' %>
             <span class="claim-details-label">AI Validator Response</span>
           </div>
-          <div id="reasoning-content">
-            <% @claim.reasonings.where(primary_source: true).each do |reasoning| %>
-              <div class="claim-details-reasoning">
-                <div class="claim-details-reasoning-header">
-                  <span class="claim-details-source"><%= reasoning.source %></span>
-                  <span class="claim-details-result"><%= reasoning.result %></span>
-                </div>
-                <div class="claim-details-reasoning-body">
-                  <%= simple_format(reasoning.response_for_tradition(@tradition)) %>
-                </div>
+          <div id="reasoning-content" class="ai-validator-response-body">
+            <% if any_validated %>
+              <div class="ai-validator-status">
+                <span class="ai-validator-status-icon" aria-hidden="true"></span>
+                <span class="ai-validator-status-text">Claim Validated.</span>
               </div>
+              <p class="ai-validator-consistent-with">This claim is consistent with:</p>
+              <ul class="ai-validator-sources">
+                <% primary_reasonings.each do |reasoning| %>
+                  <li class="ai-validator-source-line">
+                    <strong><%= ai_validator_source_label(reasoning.source) %>:</strong>
+                    <span class="ai-validator-verse"><%= ai_validator_verse_display(reasoning.source, reasoning.response_for_tradition(@tradition)) %></span>
+                  </li>
+                <% end %>
+              </ul>
             <% end %>
-          </div>
-        </div>
-        <div class="claim-section-divider"></div>
-        
-        <% if @claim.fact? && user_signed_in? && @claim.user == current_user %>
-          <div class="claim-section-divider"></div>
-          <div class="claim-publish-section">
-            <div class="claim-section-heading">
-              <%= image_tag 'fact-icon.png', alt: 'Fact Icon', class: 'claim-section-icon' %>
-              <h3>Publish Fact</h3>
-            </div>
-            <div class="publish-fact-actions">
-              <% if @claim.published? %>
-                <button class="btn btn-unpublish-fact" data-claim-id="<%= @claim.id %>">
-                  <i class="fa fa-eye-slash"></i> Unpublish Fact
-                </button>
-              <% else %>
-                <button class="btn btn-publish-fact" data-claim-id="<%= @claim.id %>">
-                  <i class="fa fa-globe"></i> Publish Fact
-                </button>
+            <div class="ai-validator-verdict">
+              <span class="ai-validator-verdict-label">Verdict:</span>
+              <div class="ai-validator-verdict-row">
+                <% verdict_word = claim_result == '✅ True' ? 'TRUE' : (claim_result == '❌ False' ? 'False' : (claim_result == '⚠️ Unverifiable' ? 'Unverifiable' : nil)) %>
+                <% if verdict_word %>
+                  <span class="ai-validator-verdict-word"><%= verdict_word %></span>
+                <% end %>
+                <% if claim_result == '✅ True' %>
+                  <span class="ai-validator-verdict-icon" aria-hidden="true"></span>
+                <% end %>
+                <span class="ai-validator-verdict-lsv-line"><%= ai_validator_lsv_line(@claim, primary_reasonings) %></span>
+              </div>
+              <% other_verdict = ai_validator_verdict_real_text(primary_reasonings, @tradition) %>
+              <% if other_verdict.present? %>
+                <div class="ai-validator-verdict-text"><%= format_ai_response(other_verdict) %></div>
               <% end %>
             </div>
           </div>
-        <% end %>
+        </div>
       </div>
-      <div class="claim-details-card claim-challenges">
-        <span class="claim-details-label">Challenge</span>
-        <div id="challenges">
+
+      <div class="claim-details-card claim-details-peer-insight-card">
+        <%= image_tag 'peerinsight.svg', alt: 'Peer Insight', class: 'peer-insight-icon' %>
+        <div class="peer-insight-header">
+          <span class="peer-insight-title">Peer Insight</span>
+        </div>
+        <div class="peer-insight-body">
+          <p class="peer-insight-quote">This claim aligns with over 12 passages across canonical scripture and early historical sects. A critical distinction between Jesus as a prophet/messenger/avatar vs. God Himself is consistently supported.</p>
+          <p class="peer-insight-attribution">- @FaithLogicVerified</p>
+        </div>
+      </div>
+
+      <% if @claim.fact? && user_signed_in? && @claim.user == current_user %>
+      <div class="claim-details-card claim-details-publish-fact-card">
+        <div class="claim-publish-section">
+          <div class="claim-section-heading">
+            <%= image_tag 'fact-icon.png', alt: 'Fact', class: 'claim-section-icon' %>
+            <span class="claim-details-label">Publish Fact</span>
+          </div>
+          <div class="publish-fact-actions">
+            <% if @claim.published? %>
+              <button class="btn btn-unpublish-fact" data-claim-id="<%= @claim.id %>">
+                <i class="fa fa-eye-slash"></i> Unpublish Fact
+              </button>
+            <% else %>
+              <button class="btn btn-publish-fact" data-claim-id="<%= @claim.id %>">
+                <i class="fa fa-globe"></i> Publish Fact
+              </button>
+            <% end %>
+          </div>
+        </div>
+      </div>
+      <% end %>
+
+      <div class="claim-details-card claim-details-challenge-card claim-challenges">
+        <h3 class="challenge-block-title">Challenge</h3>
+        <div id="challenges" class="challenge-list">
           <%= render partial: 'challenges/challenge', collection: @claim.challenges %>
         </div>
         <% if user_signed_in? %>
-          <div id="challenge_form">
+          <div id="challenge_form" class="challenge-form-wrapper">
             <%= render 'challenges/form', claim: @claim, challenge: @claim.challenges.new %>
           </div>
         <% end %>
@@ -389,40 +401,52 @@
     </div>
   </div>
   <aside class="claim-rightbar">
-    <div class="claim-verified-by">
-      <h3>Verified by</h3>
-      <!-- Leave blank for now -->
-    </div>
-    <div class="claim-posted-by">
+    <div class="claim-sidebar-card claim-posted-by">
       <h3>Posted by</h3>
-      <div class="claim-posted-by-user">
-        <%= @claim.user.full_name.presence || @claim.user.email %>
+      <div class="claim-sidebar-profile-row">
+        <%= image_tag (@claim.user.avatar_url.presence || 'default-avatar.png'), alt: @claim.user.full_name || 'User', class: 'claim-sidebar-avatar' %>
+        <div class="claim-sidebar-profile-info">
+          <span class="claim-sidebar-name"><%= @claim.user.full_name.presence || @claim.user.email %></span>
+          <span class="claim-sidebar-rating">4.7</span>
+        </div>
       </div>
     </div>
-    <div class="claim-primary-source">
+
+    <div class="claim-sidebar-card claim-verified-by">
+      <h3>Verified by</h3>
+      <% 2.times do %>
+        <div class="claim-sidebar-verifier-entry">
+          <%= image_tag 'default-avatar.png', alt: 'Verifier', class: 'claim-sidebar-avatar' %>
+          <div class="claim-sidebar-verifier-info">
+            <div class="claim-sidebar-name-row">
+              <span class="claim-sidebar-name">Mitchaly Carry</span>
+              <%= image_tag 'blue-tick.svg', alt: 'Verified', class: 'claim-sidebar-verified-icon' %>
+            </div>
+            <p class="claim-sidebar-description">Islamic Scholar • Top Religion Person</p>
+            <button type="button" class="claim-sidebar-follow-btn" disabled>+ Follow</button>
+          </div>
+        </div>
+      <% end %>
+    </div>
+
+    <div class="claim-sidebar-card claim-primary-source">
       <h3>Primary Source</h3>
-      <% @claim.reasonings.where(primary_source: true).each do |reasoning| %>
-        <% badge_class = case reasoning.result
-          when '✅ True' then 'badge-true'
-          when '❌ False' then 'badge-false'
-          when '⚠️ Unverifiable' then 'badge-unverifiable'
-          else 'badge-default'
-        end %>
-        <span class="claim-details-source-badge <%= badge_class %> clickable-source-badge" data-source="<%= reasoning.source %>"><%= reasoning.source %></span>
-      <% end %>
+      <div class="claim-sidebar-source-list">
+        <% @claim.reasonings.where(primary_source: true).each do |reasoning| %>
+          <span class="claim-sidebar-source-pill claim-sidebar-source-pill--primary clickable-source-badge" data-source="<%= reasoning.source %>"><%= image_tag 'sourcefind.svg', alt: '', class: 'claim-sidebar-source-pill-icon' %><%= reasoning.source %></span>
+        <% end %>
+      </div>
     </div>
-    <div class="claim-secondary-source">
+
+    <div class="claim-sidebar-card claim-secondary-source">
       <h3>Secondary Source</h3>
-      <% @claim.reasonings.where(primary_source: false).each do |reasoning| %>
-        <% badge_class = case reasoning.result
-          when '✅ True' then 'badge-true'
-          when '❌ False' then 'badge-false'
-          when '⚠️ Unverifiable' then 'badge-unverifiable'
-          else 'badge-default'
-        end %>
-        <span class="claim-details-source-badge secondary <%= badge_class %> clickable-source-badge" data-source="<%= reasoning.source %>"><%= reasoning.source %></span>
-      <% end %>
+      <div class="claim-sidebar-source-list">
+        <% @claim.reasonings.where(primary_source: false).each do |reasoning| %>
+          <span class="claim-sidebar-source-pill claim-sidebar-source-pill--secondary clickable-source-badge" data-source="<%= reasoning.source %>"><%= image_tag 'secsource.svg', alt: '', class: 'claim-sidebar-source-pill-icon' %><%= reasoning.source %></span>
+        <% end %>
+      </div>
     </div>
+
     <div id="dynamic-ai-response-section"></div>
   </aside>
 </div>
@@ -441,7 +465,6 @@
   </div>
 </div>
 
-<%# Modal for evidence challenge %>
 <div id="evidence-challenge-modal" class="modal" style="display:none;">
   <div class="modal-content">
     <span class="close" id="close-evidence-challenge-modal">&times;</span>
