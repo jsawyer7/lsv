@@ -55,7 +55,7 @@
     <% end %>
     <div class="dashboard-container">
       <%= render 'shared/navbar' %>
-      <% unless request.path.start_with?('/facts') %>
+      <% unless request.path.start_with?('/facts') || (controller_name == 'claims' && action_name == 'show') %>
         <%= render 'shared/dashboard_sources' %>
       <% end %>
 
