@@ -36,15 +36,27 @@ module ClaimsHelper
         text.split(/\n+/).first.to_s.strip
       end
     when 'Tanakh', 'Catholic', 'Ethiopian', 'Protestant'
-      text.split(/\n+/).first.to_s.strip
+      refs = text.scan(/(?:1\s|2\s|3\s)?[A-Za-z]+\s+\d+:\d+/i).map(&:strip).uniq
+      refs.reject! { |r| r =~ /\A(?:and|or|the|as|to|in|no|by|is|it|we|an)\s+/i }
+      if refs.any?
+        refs.join(', ')
+      else
+        # No verse ref found: show a short placeholder so bullet stays reference-only
+        '—'
+      end
     when 'Historical'
-      # One liner only: first sentence or first line
-      first_sentence = text.split(/\.\s+/).first
-      first_sentence = first_sentence.to_s.strip
-      first_sentence += '.' unless first_sentence.end_with?('.')
-      first_sentence
+      if text =~ /(New\s+Testament)/i
+        $1.strip
+      elsif text =~ /([A-Za-z]+(?:\s+[A-Za-z]+)*,\s*\d+[\d.:\s]+)/
+        $1.strip
+      else
+        first_phrase = text.split(/\.\s+/).first.to_s.strip
+        first_phrase = first_phrase[0, 60] + '…' if first_phrase.length > 60
+        first_phrase.presence || '—'
+      end
     else
-      text.split(/\n+/).first.to_s.strip
+      refs = text.scan(/(?:1\s|2\s|3\s)?[A-Za-z]+\s+\d+:\d+/i).map(&:strip).uniq
+      refs.any? ? refs.join(', ') : text.split(/\n+/).first.to_s.strip
     end
   end
 

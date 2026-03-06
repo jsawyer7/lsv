@@ -1,7 +1,8 @@
 class ChallengesController < ApplicationController
   before_action :authenticate_user!
-  before_action :set_claim, only: [:create]
-  before_action :set_challenge, only: [:show]
+  before_action :set_claim, only: [:create, :destroy]
+  before_action :set_challenge, only: [:show, :destroy]
+  before_action :authorize_challenge_owner!, only: [:destroy]
 
   def create
     @challenge = @claim.challenges.build(challenge_params.merge(user: current_user))
@@ -13,7 +14,7 @@ class ChallengesController < ApplicationController
           render json: {
             status: :success,
             challenge: @challenge.as_json,
-            html: render_to_string(partial: 'challenges/challenge', collection: @claim.challenges, formats: [:html])
+            html: render_to_string(partial: 'challenges/challenge', collection: @claim.challenges.order(created_at: :desc), formats: [:html])
           }, status: :created
         }
       end
@@ -46,10 +47,12 @@ class ChallengesController < ApplicationController
       respond_to do |format|
         format.html { redirect_to claim_path(evidence.claim), notice: 'Evidence challenge submitted successfully.' }
         format.json {
+          claim = evidence.claim
+          all_challenges = claim.challenges.where.not(evidence_id: nil).order(created_at: :desc)
           render json: {
             status: :success,
             challenge: @challenge.as_json,
-            html: render_to_string(partial: 'challenges/challenge', collection: evidence.challenges.order(created_at: :desc), formats: [:html])
+            html: render_to_string(partial: 'challenges/challenge', collection: all_challenges, formats: [:html])
           }, status: :created
         }
       end
@@ -76,6 +79,20 @@ class ChallengesController < ApplicationController
     end
   end
 
+  def destroy
+    @challenge.destroy
+    respond_to do |format|
+      format.html { redirect_to claim_path(@claim), notice: 'Challenge was deleted.' }
+      format.json {
+        all_challenges = @claim.challenges.where.not(evidence_id: nil).order(created_at: :desc)
+        render json: {
+          status: :success,
+          html: render_to_string(partial: 'challenges/challenge', collection: all_challenges, formats: [:html])
+        }
+      }
+    end
+  end
+
   private
 
   def set_claim
@@ -84,6 +101,14 @@ class ChallengesController < ApplicationController
 
   def set_challenge
     @challenge = @claim.challenges.find(params[:id])
+  end
+
+  def authorize_challenge_owner!
+    return if @challenge.user_id == current_user.id
+    respond_to do |format|
+      format.html { redirect_to claim_path(@claim), alert: 'You can only delete your own challenge.' }
+      format.json { render json: { status: :error, errors: ['You can only delete your own challenge.'] }, status: :forbidden }
+    end
   end
 
   def challenge_params

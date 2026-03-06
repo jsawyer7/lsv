@@ -27,7 +27,7 @@ Rails.application.routes.draw do
   resources :claims, only: [:new, :create, :show, :index, :edit, :update, :destroy]
 
   resources :claims do
-    resources :challenges, only: [:create, :show]
+    resources :challenges, only: [:create, :show, :destroy]
     resources :likes, only: [:create, :destroy]
     resources :shares, only: [:create]
     resources :comments, only: [:create, :destroy] do
@@ -132,6 +132,7 @@ Rails.application.routes.draw do
       get :infinite
     end
   end
+  get 'facts/:id', to: 'claims#show', as: :fact
 
   # API routes for Text Content creation
   namespace :api do

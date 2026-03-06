@@ -5,22 +5,28 @@ document.addEventListener('DOMContentLoaded', function() {
   let processingTimeout;
 
   function showLoader() {
-    overlay.classList.add('active');
-    document.body.style.overflow = 'hidden';
+    if (overlay) {
+      overlay.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
   }
 
   function hideLoader() {
-    overlay.classList.remove('active');
-    document.body.style.overflow = '';
+    if (overlay) {
+      overlay.classList.remove('active');
+      document.body.style.overflow = '';
+    }
   }
 
   function startProcessingTimeout() {
     processingTimeout = setTimeout(() => {
       hideLoader();
-      const errorDiv = document.createElement('div');
-      errorDiv.className = 'error-messages';
-      errorDiv.innerHTML = '<p class="error">The request is taking longer than expected. Please check back in a few moments.</p>';
-      form.prepend(errorDiv);
+      if (form) {
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'error-messages';
+        errorDiv.innerHTML = '<p class="error">The request is taking longer than expected. Please check back in a few moments.</p>';
+        form.prepend(errorDiv);
+      }
     }, 80000);
   }
 
@@ -30,49 +36,42 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  form.addEventListener('submit', function(event) {
-    event.preventDefault();
-    showLoader();
-    startProcessingTimeout();
-
-    const formData = new FormData(form);
-    const url = form.getAttribute('action');
-
+  document.addEventListener('click', function(e) {
+    var link = e.target.closest('.challenge-delete-link');
+    if (!link) return;
+    e.preventDefault();
+    var url = link.getAttribute('data-challenge-delete-url');
+    var msg = link.getAttribute('data-confirm') || 'Are you sure you want to delete this challenge?';
+    if (!url) return;
+    if (!confirm(msg)) return;
+    var csrfToken = document.querySelector('meta[name="csrf-token"]');
+    csrfToken = csrfToken ? csrfToken.getAttribute('content') : '';
     fetch(url, {
-      method: 'POST',
-      body: formData,
+      method: 'DELETE',
       headers: {
         'Accept': 'application/json',
-        'X-CSRF-Token': document.querySelector("[name='csrf-token']").content
+        'X-CSRF-Token': csrfToken
       },
       credentials: 'same-origin'
     })
-    .then(response => {
-      if (!response.ok) {
-        return response.json().then(data => Promise.reject(data));
-      }
-      return response.json();
-    })
-    .then(data => {
-      clearProcessingTimeout();
-      hideLoader();
-      
-      const challengesList = document.querySelector('#challenges');
-      if (challengesList && data.html) {
-        challengesList.innerHTML = data.html;
-        form.reset();
+    .then(function(res) { return res.json().then(function(data) { return { ok: res.ok, data: data }; }); })
+    .then(function(result) {
+      if (result.ok && result.data.status === 'success' && result.data.html !== undefined) {
+        var list = document.getElementById('challenges');
+        if (list) list.innerHTML = result.data.html;
+      } else if (!result.ok && result.data && result.data.errors) {
+        alert(result.data.errors.join(', ') || 'Failed to delete challenge.');
       } else {
         window.location.reload();
       }
     })
-    .catch(error => {
-      clearProcessingTimeout();
-      hideLoader();
-      const errorDiv = document.createElement('div');
-      errorDiv.className = 'error-messages';
-      errorDiv.innerHTML = `<p class="error">${error.errors ? error.errors.join(', ') : 'Failed to submit challenge. Please try again.'}</p>`;
-      form.prepend(errorDiv);
+    .catch(function() {
+      alert('An error occurred. Please try again.');
     });
+  });
+
+  if (form) form.addEventListener('submit', function(event) {
+    event.preventDefault();
   });
 
   document.addEventListener('keydown', function(event) {

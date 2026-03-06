@@ -74,25 +74,31 @@ function setupEvidenceChallengeModal() {
         document.body.style.overflow = '';
       }
       if (data.status === 'success') {
-        // Update the evidence's challenge list
-        var list = document.getElementById('evidence-challenges-' + evidenceId);
-        if (list) list.innerHTML = data.html;
+        var challengesList = document.getElementById('challenges');
+        if (challengesList && data.html) {
+          challengesList.innerHTML = data.html;
+        }
         var modal = document.getElementById('evidence-challenge-modal');
-        modal.style.display = 'none';
-        document.body.classList.remove('modal-open');
+        if (modal) {
+          modal.style.display = 'none';
+          document.body.classList.remove('modal-open');
+        }
       } else {
         errorDiv.textContent = (data.errors && data.errors.join(', ')) || 'Failed to submit challenge.';
         errorDiv.style.display = 'block';
+        var modal = document.getElementById('evidence-challenge-modal');
+        if (modal) modal.style.display = 'flex';
       }
     })
     .catch(function() {
-      // Hide loader
       if (evidenceLoader) {
         evidenceLoader.style.display = 'none';
         document.body.style.overflow = '';
       }
       errorDiv.textContent = 'An error occurred. Please try again.';
       errorDiv.style.display = 'block';
+      var modal = document.getElementById('evidence-challenge-modal');
+      if (modal) modal.style.display = 'flex';
     });
   });
 

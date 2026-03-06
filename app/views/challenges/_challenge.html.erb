@@ -1,4 +1,10 @@
 <div class="challenge-card" id="<%= dom_id(challenge) %>">
+  <div class="challenge-card-header-row">
+    <h3 class="challenge-page-heading">Challenge</h3>
+    <% if user_signed_in? && challenge.user_id == current_user.id && challenge.claim.present? %>
+      <a href="#" class="challenge-delete-link" data-challenge-delete-url="<%= claim_challenge_path(challenge.claim, challenge) %>" data-confirm="Are you sure you want to delete this challenge?" title="Delete challenge"><i class="fa fa-trash" aria-hidden="true"></i></a>
+    <% end %>
+  </div>
   <div class="challenge-entry">
     <div class="challenge-user-avatar">
       <%= image_tag (challenge.user.avatar_url.presence || 'default-avatar.png'), alt: challenge.user.full_name || 'User', class: 'challenge-avatar-img' %>
@@ -24,16 +30,34 @@
   <% if sorted_reasonings.any? %>
     <div class="challenge-reasonings">
       <% sorted_reasonings.each do |reasoning| %>
-        <% color = case reasoning.result
-          when '✅ True' then '#d1fae5'
-          when '❌ False' then '#fee2e2'
-          when '⚠️ Unverifiable' then '#fef9c3'
-          else '#f3f4f6'
+        <% result_type = case reasoning.result.to_s
+          when /true/i then 'true'
+          when /false/i then 'false'
+          when /unverifiable/i then 'unverifiable'
+          else 'other'
         end %>
-        <div class="reasoning-section" style="background: <%= color %>; padding: 1rem; border-radius: 8px; margin-bottom: 0.5rem;">
-          <h4><%= reasoning.source %> Analysis</h4>
-          <div><strong>Result:</strong> <%= reasoning.result %></div>
-          <div><strong>AI Reasoning:</strong> <%= simple_format(reasoning.response) %></div>
+        <% result_label = reasoning.result.to_s.gsub(/\p{Emoji}\s*/, '').strip.presence || reasoning.result.to_s %>
+        <div class="challenge-analysis-card reasoning-section reasoning-result-<%= result_type %>">
+          <h4 class="challenge-analysis-title"><%= reasoning.source %> Analysis</h4>
+          <div class="challenge-analysis-result">
+            <span class="result-label">Result:</span>
+            <span class="result-value result-value-<%= result_type %>">
+              <% if result_type == 'false' %>
+                <i class="fa fa-times result-icon result-icon-false" aria-hidden="true"></i>
+              <% elsif result_type == 'true' %>
+                <i class="fa fa-check result-icon result-icon-true" aria-hidden="true"></i>
+              <% elsif result_type == 'unverifiable' %>
+                <i class="fa fa-exclamation-triangle result-icon result-icon-unverifiable" aria-hidden="true"></i>
+              <% else %>
+                <span class="result-icon result-icon-other"><%= reasoning.result.to_s[0] %></span>
+              <% end %>
+              <span class="result-text"><%= result_label %></span>
+            </span>
+          </div>
+          <div class="challenge-analysis-reasoning">
+            <strong class="challenge-ai-reasoning-heading">AI Reasoning</strong>
+            <div class="challenge-ai-reasoning-body"><%= simple_format(reasoning.response) %></div>
+          </div>
         </div>
       <% end %>
     </div>

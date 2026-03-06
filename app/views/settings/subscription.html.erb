@@ -12,6 +12,8 @@
         </div>
       </div>
 
+      <hr class="subscription-section-divider">
+
       <!-- Plan Cards -->
       <div class="plan-cards">
         <% @plans.each do |plan| %>
@@ -159,6 +161,58 @@
         <% end %>
       </div>
     </div>
+  </div>
+
+  <div class="subscription-settings-content">
+  <div class="subscription-page-block payment-methods-block">
+    <div class="payment-methods-block-inner">
+      <div class="section-header">
+        <div class="header-content">
+          <h2 class="section-title">Payment Methods</h2>
+          <p class="section-subtitle">Clear and fair pricing for everyone. 10,000+ peoples are using it.</p>
+        </div>
+      </div>
+
+      <div class="payment-method-cards">
+        <% if @payment_methods.present? %>
+          <% @payment_methods.each do |pm| %>
+            <div class="payment-method-card payment-method-card-<%= (pm[:brand] || 'card').to_s.downcase %>">
+              <div class="payment-method-card-header">
+                <% brand = (pm[:brand] || 'card').to_s.downcase %>
+                <% if brand.include?('visa') %>
+                  <%= image_tag 'Visa.svg', alt: 'Visa', class: 'payment-method-brand payment-method-brand-visa' %>
+                <% elsif brand.include?('master') %>
+                  <%= image_tag 'Mastercard.svg', alt: 'Mastercard', class: 'payment-method-brand payment-method-brand-mastercard' %>
+                <% else %>
+                  <span class="payment-method-brand payment-method-brand-generic"><i class="fas fa-credit-card"></i></span>
+                <% end %>
+              </div>
+              <div class="payment-method-card-body">
+                <div class="payment-method-name"><%= current_user.full_name.presence || current_user.email %></div>
+                <div class="payment-method-number-expiry">
+                  <span class="payment-method-number">**** **** **** <%= pm[:last4] %></span>
+                  <span class="payment-method-expiry">Expires at <%= "%02d" % pm[:expiry_month] %>/<%= pm[:expiry_year].to_s[-2..-1] %></span>
+                </div>
+              </div>
+            </div>
+          <% end %>
+        <% end %>
+      </div>
+
+      <div class="payment-methods-actions">
+        <% if @plans.any? %>
+          <% first_plan = @plans.first %>
+          <button type="button" class="btn btn-add-card" id="add-new-card-btn" data-plan-id="<%= first_plan.chargebee_item_price_id %>" data-plan-name="<%= first_plan.name %>" data-plan-price="<%= first_plan.price %>" data-plan-period="<%= first_plan.period_unit %>" onclick="openSubscriptionModal(this); return false;">
+            <i class="fas fa-plus"></i> Add New Card
+          </button>
+        <% else %>
+          <%= link_to billing_settings_path, class: "btn btn-add-card" do %>
+            <i class="fas fa-plus"></i> Add New Card
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+  </div>
   </div>
 <% end %>
 
@@ -338,18 +392,14 @@
     }
 
     // Show modal
-    const modal = new bootstrap.Modal(document.getElementById('subscriptionModal'));
+    const modalEl = document.getElementById('subscriptionModal');
+    const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
     modal.show();
 
-    // Populate features after modal is shown (with a small delay to ensure DOM is ready)
+    // Populate features after modal is shown
     setTimeout(() => {
       populateModalFeatures(planId);
     }, 100);
-
-    // Initialize Chargebee after modal is shown
-    setTimeout(() => {
-      initializeChargebee();
-    }, 300);
   }
 
   function closeSubscriptionModal() {
@@ -477,8 +527,17 @@
   
   function initializeHostedFields(cbInstance) {
     try {
+      var targetEl = document.getElementById('cb-card');
+      if (!targetEl || !targetEl.offsetParent) {
+        console.warn('Card target #cb-card not in DOM or not visible, retrying in 200ms...');
+        setTimeout(function() { initializeHostedFields(cbInstance); }, 200);
+        return;
+      }
+      if (card) {
+        try { card.unmount(); } catch (e) {}
+        card = null;
+      }
       console.log('Creating hosted fields...');
-      
       card = cbInstance.createComponent("card");
       card.mount("#cb-card");
       console.log('Card field mounted successfully ✅');
@@ -593,26 +652,21 @@
   document.addEventListener('DOMContentLoaded', function() {
     console.log('Plan card JavaScript loaded');
     
-    // Add modal hidden event listener for cleanup
-    const modal = document.getElementById('subscriptionModal');
-    if (modal) {
-      modal.addEventListener('hidden.bs.modal', function() {
-        // Clean up card component when modal is hidden
+    const modalEl = document.getElementById('subscriptionModal');
+    if (modalEl) {
+      modalEl.addEventListener('shown.bs.modal', function() {
+        setTimeout(function() {
+          initializeChargebee();
+        }, 150);
+      });
+      
+      modalEl.addEventListener('hidden.bs.modal', function() {
         if (card) {
-          try {
-            card.unmount();
-            console.log('Card component cleaned up on modal hidden');
-          } catch (e) {
-            console.log('Error cleaning up card component:', e);
-          }
+          try { card.unmount(); } catch (e) {}
           card = null;
         }
-        
-        // Clear the card container
-        const cardContainer = document.getElementById('cb-card');
-        if (cardContainer) {
-          cardContainer.innerHTML = '';
-        }
+        var cardContainer = document.getElementById('cb-card');
+        if (cardContainer) cardContainer.innerHTML = '';
       });
     }
 });

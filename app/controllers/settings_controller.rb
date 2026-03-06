@@ -103,6 +103,7 @@ class SettingsController < ApplicationController
       .where(status: %w[active in_trial non_renewing])
       .order(updated_at: :desc, created_at: :desc)
       .first
+    @payment_methods = fetch_payment_methods_for_current_user
     render :subscription
   end
 
@@ -578,7 +579,108 @@ class SettingsController < ApplicationController
     end
   end
 
+  def fetch_payment_methods_for_current_user
+    customer_id = get_chargebee_customer_id
+    return [] if customer_id.blank?
+
+    stored = []
+    begin
+      list = ChargeBee::PaymentSource.list({ customer_id: customer_id, "type[is]" => "card" })
+      list.each do |entry|
+        ps = entry.respond_to?(:payment_source) ? entry.payment_source : entry
+        next unless ps
+        status = safe_card_attr(ps, :status)
+        next unless status.to_s == 'valid'
+
+        payment_method_id = safe_card_attr(ps, :id)
+        card_info = ps.respond_to?(:card) ? ps.card : nil
+        next unless payment_method_id.present?
+
+        if card_info.nil?
+          begin
+            payment_details = ChargeBee::PaymentSource.retrieve(payment_method_id)
+            card_info = payment_details.card || payment_details.payment_source
+          rescue => e
+            Rails.logger.warn "Error retrieving payment source #{payment_method_id}: #{e.message}"
+            next
+          end
+        end
+
+        next unless card_info
+        last4 = safe_card_attr(card_info, :last4)
+        next if last4.blank?
+
+        stored << {
+          id: payment_method_id,
+          type: safe_card_attr(card_info, :type) || safe_card_attr(ps, :type),
+          last4: last4,
+          expiry_month: safe_card_attr(card_info, :expiry_month),
+          expiry_year: safe_card_attr(card_info, :expiry_year),
+          brand: safe_card_attr(card_info, :brand),
+          status: status
+        }
+      end
+
+      if stored.empty? && @current_subscription.present?
+        stored = fetch_primary_payment_source_from_subscription(stored)
+      end
+    rescue => e
+      Rails.logger.warn "Error listing payment methods: #{e.message}"
+      stored = fetch_primary_payment_source_from_subscription(stored) if stored.empty?
+    end
+    dedupe_payment_methods(stored)
+  end
+
+  def dedupe_payment_methods(list)
+    list.uniq { |pm| pm[:id] }.uniq { |pm| [pm[:last4], pm[:expiry_month], pm[:expiry_year]] }
+  end
+
   private
+
+  def fetch_primary_payment_source_from_subscription(stored)
+    return stored unless @current_subscription.present?
+    subscription_response = ChargeBee::Subscription.retrieve(@current_subscription.chargebee_id)
+    sub = subscription_response.subscription
+    payment_source_id = sub.payment_source_id
+    return stored if payment_source_id.blank?
+
+    payment_details = ChargeBee::PaymentSource.retrieve(payment_source_id)
+    ps = payment_details.payment_source
+    card_info = payment_details.card || ps
+    return stored unless ps && card_info
+
+    sub_customer_id = sub.respond_to?(:customer_id) ? sub.customer_id : nil
+    ps_customer_id = safe_card_attr(ps, :customer_id)
+    return stored if sub_customer_id.present? && ps_customer_id.present? && sub_customer_id != ps_customer_id
+
+    last4 = safe_card_attr(card_info, :last4)
+    return stored if last4.blank?
+
+    stored << {
+      id: payment_source_id,
+      type: safe_card_attr(card_info, :type) || safe_card_attr(ps, :type),
+      last4: last4,
+      expiry_month: safe_card_attr(card_info, :expiry_month),
+      expiry_year: safe_card_attr(card_info, :expiry_year),
+      brand: safe_card_attr(card_info, :brand),
+      status: safe_card_attr(ps, :status) || 'valid'
+    }
+    stored
+  rescue => e
+    Rails.logger.warn "Error fetching primary payment source: #{e.message}"
+    stored
+  end
+
+  private
+
+  def safe_card_attr(obj, key)
+    return nil if obj.nil?
+    if obj.respond_to?(:[])
+      obj[key] || obj[key.to_s]
+    elsif obj.respond_to?(key)
+      obj.public_send(key)
+    end
+  end
 
   def generate_invoice_pdf(invoice, subscription, plan_name)
     require 'prawn'
