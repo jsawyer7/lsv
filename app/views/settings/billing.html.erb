@@ -1,29 +1,17 @@
 <div class="billing-page">
-  <div class="billing-header">
-    <h2 class="billing-title">Billing History</h2>
-    <div class="billing-actions">
-      <div class="billing-search">
-        <div class="search-container">
-          <i class="fas fa-search search-icon"></i>
-          <input type="text" placeholder="Search billing history..." class="search-input">
-        </div>
-      </div>
-      <%= button_to "Refresh", refresh_billing_settings_path, method: :post, class: "btn btn-refresh", data: { disable_with: "Refreshing..." } %>
-    </div>
-  </div>
-
+  <h2 class="billing-title">Billing History</h2>
   <div class="billing-table-container">
     <% if @billing_history.any? %>
       <table class="billing-table">
         <thead>
           <tr>
-            <th>Plan Name</th>
-            <th>Purchase Date</th>
-            <th>Ending Date</th>
-            <th>Status</th>
-            <th>Amount</th>
-            <th>Invoice</th>
-            <th>Action</th>
+            <th class="th-plan-name">Plan Name</th>
+            <th class="th-purchase-date">Purchase Date</th>
+            <th class="th-ending-date">Ending Date</th>
+            <th class="th-status">Status</th>
+            <th class="th-amount">Amount</th>
+            <th class="th-invoice">Invoice</th>
+            <th class="th-action">Action</th>
           </tr>
         </thead>
         <tbody>
@@ -39,23 +27,31 @@
                 <%= invoice.ending_date&.strftime("%m/%d/%Y") %>
               </td>
               <td class="status">
-                <span class="status-badge status-<%= invoice.status&.downcase %>">
-                  <%= invoice.status&.titleize %>
+                <% raw_status = invoice.status&.downcase&.strip %>
+                <% status_class = invoice.status&.downcase&.gsub(/\s+/, '-')&.gsub('cancelled', 'canceled') || 'unknown' %>
+                <% status_label = (raw_status == 'paid' || raw_status == 'success') ? 'Success' : invoice.status&.titleize %>
+                <span class="status-badge status-<%= status_class %>">
+                  <%= status_label %>
                 </span>
               </td>
               <td class="amount">
                 $<%= "%.2f" % invoice.amount %>
               </td>
               <td class="invoice">
-                <%= link_to "Download PDF", download_invoice_settings_path(invoice.chargebee_id), class: "invoice-link" %>
+                <%= link_to "Plan Invoice.pdf", download_invoice_settings_path(invoice.chargebee_id), class: "invoice-link" %>
               </td>
               <td class="action">
                 <div class="action-menu">
                   <i class="fas fa-ellipsis-v action-icon"></i>
                   <div class="action-dropdown">
-                    <%= link_to "Download PDF", download_invoice_settings_path(invoice.chargebee_id), class: "action-item" %>
-                    <a href="#" class="action-item">View Details</a>
-                    <a href="#" class="action-item">Contact Support</a>
+                    <a href="#" class="action-item" data-action="cancel">
+                      <%= image_tag "cancel.svg", alt: "", class: "action-item-icon" %>
+                      <span>Cancel</span>
+                    </a>
+                    <a href="#" class="action-item" data-action="delete">
+                      <%= image_tag "Delete.svg", alt: "", class: "action-item-icon" %>
+                      <span>Delete</span>
+                    </a>
                   </div>
                 </div>
               </td>
