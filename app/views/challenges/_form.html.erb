@@ -15,7 +15,7 @@
         <%= image_tag (current_user.avatar_url.presence || 'default-avatar.png'), alt: current_user.full_name || 'You', class: 'challenge-form-avatar-img' %>
       </div>
       <div class="challenge-form-field-wrap">
-        <%= f.text_area :text, rows: 1, placeholder: "Write your evidence...", class: "form-control challenge-form-textarea" %>
+        <%= f.text_area :text, rows: 1, placeholder: "Write your challenge...", class: "form-control challenge-form-textarea" %>
         <div class="form-actions">
           <%= f.submit "Submit", class: "btn btn-primary challenge-submit-btn" %>
         </div>

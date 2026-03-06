@@ -39,7 +39,7 @@
       </div>
     <% end %>
     <span class="feed-card-date"><%= fact.created_at.strftime('%d %b, %Y') %></span>
-    <%= link_to 'View Details', claim_path(fact), class: 'feed-card-link' %>
+    <%= link_to 'View Details', fact_path(fact), class: 'feed-card-link' %>
   </div>
   
   <div class="feed-card-comments" data-claim-id="<%= fact.id %>">

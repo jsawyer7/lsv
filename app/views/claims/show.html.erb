@@ -1,7 +1,7 @@
 <div class="claim-main">
   <div class="claim-center">
     <div class="claim-header">
-      <h2><%= @claim.fact? ? 'Fact Details' : 'Claim Details' %></h2>
+      <h2><%= @show_as_fact ? 'Fact Details' : 'Claim Details' %></h2>
 
     </div>
 
@@ -13,7 +13,7 @@
         <div class="claim-detail-card-header">
           <span class="claim-details-label">Claim</span>
           <span class="claim-details-date"><%= @claim.created_at.strftime('%d %b, %Y') %></span>
-          <% if @claim.fact? %>
+          <% if @show_as_fact && @claim.fact? %>
             <span class="claim-detail-fact-badge">Fact</span>
           <% end %>
         </div>
@@ -72,23 +72,21 @@
 
     <div class="claim-details-list">
       <div class="claim-details-evidence-card">
-        <div class="evidence-card-header">
-          <div class="evidence-header-left">
-            <%= image_tag 'evidenceicon.svg', alt: 'Evidence Icon', class: 'claim-section-icon' %>
-            <span class="claim-details-label">Evidence</span>
-          </div>
-          <div class="evidence-header-actions">
-            <% if user_signed_in? %>
-              <% @claim.evidences.each do |evidence| %>
-                <button type="button" class="btn btn-challenge-evidence" data-evidence-id="<%= evidence.id %>">Challenge Evidence</button>
-              <% end %>
-            <% end %>
-          </div>
-        </div>
         <div class="claim-details-section">
           <div class="claim-details-evidence" id="evidence-content">
-            <% @claim.evidences.each do |evidence| %>
+            <% @claim.evidences.each_with_index do |evidence, idx| %>
               <div class="claim-evidence-block" id="evidence-<%= evidence.id %>">
+                <div class="evidence-card-header">
+                  <div class="evidence-header-left">
+                    <%= image_tag 'evidenceicon.svg', alt: 'Evidence Icon', class: 'claim-section-icon' %>
+                    <span class="claim-details-label"><%= @claim.evidences.size > 1 ? "Evidence #{idx + 1}" : "Evidence" %></span>
+                  </div>
+                  <div class="evidence-header-actions">
+                    <% if user_signed_in? %>
+                      <button type="button" class="btn btn-challenge-evidence" data-evidence-id="<%= evidence.id %>">Challenge Evidence</button>
+                    <% end %>
+                  </div>
+                </div>
                 <div class="evidence-sources-row">
                   <% evidence.source_names.each do |source_name| %>
                     <span class="source-badge"><%= source_name.humanize %></span>
@@ -299,9 +297,6 @@
                     </div>
                   <% end %>
                 </div>
-                <div class="evidence-challenges-list" id="evidence-challenges-<%= evidence.id %>">
-                  <%= render partial: 'challenges/challenge', collection: evidence.challenges.order(created_at: :desc) %>
-                </div>
               </div>
             <% end %>
           </div>
@@ -390,7 +385,7 @@
       <div class="claim-details-card claim-details-challenge-card claim-challenges">
         <h3 class="challenge-block-title">Challenge</h3>
         <div id="challenges" class="challenge-list">
-          <%= render partial: 'challenges/challenge', collection: @claim.challenges %>
+          <%= render partial: 'challenges/challenge', collection: @claim.challenges.where.not(evidence_id: nil).order(created_at: :desc) %>
         </div>
         <% if user_signed_in? %>
           <div id="challenge_form" class="challenge-form-wrapper">

@@ -3,7 +3,7 @@
   <h4>Top Facts</h4>
   <% if top_facts.any? %>
     <% top_facts.each do |fact| %>
-      <%= link_to claim_path(fact), class: 'facts-tf-item' do %>
+      <%= link_to fact_path(fact), class: 'facts-tf-item' do %>
         <div class="facts-tf-profile">
           <% user = fact.user %>
           <% if user&.avatar_url.present? %>

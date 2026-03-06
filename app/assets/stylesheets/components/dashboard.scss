@@ -2332,16 +2332,19 @@ body.dashboard-nav-page .dashboard-sources {
   display: flex;
   gap: 0;
   align-items: flex-start;
-  background: #f4f2ee;
+  background: #F4F2EE;
   min-height: 100vh;
+
+  > .claim-center {
+    min-width: 0;
+    position: relative;
+  }
 }
 .claim-center {
-  position: relative;
-  flex: 1 1 0;
-  max-width: none;
-  margin: 0;
   display: flex;
   flex-direction: column;
+  margin: 0;
+  max-width: none;
   min-height: 100vh;
   height: auto;
   background: #f4f2ee;
@@ -3512,18 +3515,24 @@ body.dashboard-nav-page .dashboard-sources {
 }
 
 .claim-rightbar {
-  right:65px;
-  width: 320px;
-  min-width: 260px;
-  max-width: 340px;
-  padding: 32px 0 0 0;
-  position: sticky;
-  top: 0;
+  position: relative;
+  left: 25px;
+  top: 32px;
+  width: 312px;
+  min-width: 312px;
+  max-width: 312px;
+  padding: 0;
   align-self: flex-start;
+  background: transparent;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   gap: 24px;
+}
+
+.claim-rightbar .claim-sidebar-card {
+  width: 312px;
+  box-sizing: border-box;
 }
 
 .claim-sidebar-card {
@@ -3554,7 +3563,6 @@ body.dashboard-nav-page .dashboard-sources {
 }
 
 .claim-posted-by.claim-sidebar-card {
-  width: 312px;
   height: 137px;
   min-height: 137px;
   border-radius: 8px;

@@ -60,12 +60,205 @@
   100% { transform: rotate(360deg); }
 }
 
+$challenge-analysis-bg: #ffebe6;
+$challenge-analysis-title: #8b0000;
+$challenge-result-false: #8b0000;
+$challenge-result-false-icon: #dc2626;
+$challenge-result-true: #166534;
+$challenge-result-true-icon: #16a34a;
+$challenge-body-text: #374151;
+$challenge-heading-text: #171717;
+
 .challenge-card {
-  background: #f8f9fa;
-  border-radius: 8px;
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
-  border: 1px solid #e9ecef;
+  background: transparent;
+  border-radius: 0;
+  padding: 0;
+  margin-bottom: 2rem;
+  border: none;
+
+  .challenge-card-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .challenge-page-heading {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: $challenge-heading-text;
+    margin: 0;
+    letter-spacing: 0;
+  }
+
+  .challenge-delete-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: #6b7280;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: color 0.2s, background 0.2s;
+    flex-shrink: 0;
+    &:hover {
+      color: #ef4444;
+      background: #fef2f2;
+    }
+    .fa-trash {
+      font-size: 0.9375rem;
+    }
+  }
+
+  .challenge-entry {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .challenge-user-avatar {
+    flex-shrink: 0;
+  }
+
+  .challenge-avatar-img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+
+  .challenge-entry-body {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .challenge-user-name,
+  .challenge-date {
+    display: block;
+    color: $challenge-body-text;
+    font-size: 0.9375rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .challenge-date {
+    color: #6b7280;
+    font-size: 0.875rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .challenge-text {
+    color: $challenge-heading-text;
+    line-height: 1.6;
+    font-size: 1rem;
+    margin: 0;
+  }
+
+  .challenge-reasonings {
+    margin-top: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .challenge-analysis-card.reasoning-section {
+    background: $challenge-analysis-bg;
+    padding: 1.25rem 1.5rem;
+    border-radius: 10px;
+    margin-bottom: 0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  }
+
+  .challenge-analysis-title {
+    font-size: 1.0625rem;
+    font-weight: 700;
+    color: $challenge-analysis-title;
+    margin: 0 0 0.75rem 0;
+    letter-spacing: 0;
+  }
+
+  .challenge-analysis-result {
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .challenge-analysis-result .result-label {
+    color: $challenge-body-text;
+    font-weight: 500;
+    font-size: 0.9375rem;
+  }
+
+  .challenge-analysis-result .result-value {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  .challenge-analysis-result .result-icon {
+    font-size: 1rem;
+  }
+
+  .challenge-analysis-result .result-icon-false {
+    color: $challenge-result-false-icon;
+  }
+
+  .challenge-analysis-result .result-text {
+    font-weight: 600;
+  }
+
+  .challenge-analysis-result .result-value-false .result-text {
+    color: $challenge-result-false;
+  }
+
+  .challenge-analysis-result .result-value-true .result-text {
+    color: $challenge-result-true;
+  }
+
+  .challenge-analysis-result .result-icon-true {
+    color: $challenge-result-true-icon;
+  }
+
+  .challenge-analysis-result .result-value-unverifiable .result-text {
+    color: #92400e;
+  }
+
+  .challenge-analysis-result .result-icon-unverifiable {
+    color: #d97706;
+  }
+
+  .challenge-analysis-reasoning {
+    margin-top: 0.75rem;
+  }
+
+  .challenge-ai-reasoning-heading {
+    display: block;
+    color: $challenge-heading-text;
+    font-size: 0.9375rem;
+    font-weight: 700;
+    margin: 0 0 0.5rem 0;
+  }
+
+  .challenge-ai-reasoning-body {
+    color: $challenge-body-text;
+    font-size: 0.9375rem;
+    line-height: 1.65;
+    margin: 0;
+
+    p {
+      margin: 0 0 0.5rem 0;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+  }
 
   .challenge-header {
     display: flex;
@@ -112,12 +305,6 @@
         color: #721c24;
       }
     }
-  }
-
-  .challenge-text {
-    color: #1d2430;
-    line-height: 1.6;
-    margin-bottom: 1.5rem;
   }
 
   .ai-response {

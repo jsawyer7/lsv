@@ -44,9 +44,10 @@
             <%= link_to edit_claim_path(claim), class: 'my-claim-edit-link' do %>
               <i class="fa fa-edit"></i> Edit
             <% end %>
-            <a href="#" class="my-claim-delete-link" data-claim-id="<%= claim.id %>"><i class="fa fa-trash"></i> Delete</a>
+            <a href="#" class="my-claim-delete-link" data-claim-id="<%= claim.id %>" data-no-card-nav><i class="fa fa-trash"></i> Delete</a>
           <% else %>
             <%= link_to "View Details", claim_path(claim), class: "my-claim-view-link" %>
+            <a href="#" class="my-claim-delete-link" data-claim-id="<%= claim.id %>" data-no-card-nav><i class="fa fa-trash"></i> Delete</a>
           <% end %>
         </div>
       </div>

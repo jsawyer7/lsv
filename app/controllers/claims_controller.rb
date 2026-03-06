@@ -198,6 +198,7 @@ class ClaimsController < ApplicationController
     else
       @tradition = params[:tradition] || 'actual'
     end
+    @show_as_fact = request.path.include?('/facts/')
   end
 
   def edit; end
