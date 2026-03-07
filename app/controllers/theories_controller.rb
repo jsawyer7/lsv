@@ -3,6 +3,12 @@ class TheoriesController < ApplicationController
   layout 'dashboard'
 
   def index
+    @top_facts = Claim.published_facts
+                      .left_joins(:likes)
+                      .group('claims.id')
+                      .order(Arel.sql('COUNT(likes.id) DESC'))
+                      .limit(2)
+                      .includes(:user)
     status = params[:status] || 'all'
     search = params[:search]
     @filters = %w[all public in_review draft]
@@ -36,25 +42,26 @@ class TheoriesController < ApplicationController
   end
 
   def infinite
-    status = params[:status] || 'all'
+    page = params[:page].to_i > 0 ? params[:page].to_i : 1
+    per_page = page == 1 ? 30 : 20
+    offset = (page - 1) * per_page
+    status = params[:status] || params[:filter] || 'public'
     search = params[:search]
-    page = params[:page].to_i
     theories = current_user.theories
-    theories = theories.where(status: status) unless status == 'all'
-    theories = theories.includes(:likes)
+    case status
+    when 'public'
+      theories = theories.where.not(status: 'draft')
+    when 'in_review', 'draft'
+      theories = theories.where(status: status)
+    end
+    theories = theories.includes(:user, :likes)
     theories = theories.where('title ILIKE ? OR description ILIKE ?', "%#{search}%", "%#{search}%") if search.present?
-    theories = theories.order(created_at: :desc).offset(10 * page).limit(10)
-    # Note: Comments will be filtered in the view using visible_to scope
+    theories = theories.order(created_at: :desc).offset(offset).limit(per_page)
     render json: {
       theories: theories.map { |theory|
-        user_like = current_user ? theory.likes.find_by(user: current_user) : nil
-        theory.as_json(only: [:id, :title, :description, :status, :created_at]).merge(
-          likes_count: theory.likes.count,
-          user_liked: user_like.present?,
-          like_id: user_like&.id
-        )
+        { html: render_to_string(partial: 'shared/feed_card_theory', locals: { theory: theory }, formats: [:html]) }
       },
-      has_more: theories.size == 10
+      has_more: theories.size == per_page
     }
   end
 
@@ -91,19 +98,23 @@ class TheoriesController < ApplicationController
   end
 
   def public_theories
-    @theories = Theory.where.not(status: 'draft').includes(:likes, comments: [:user, :likes]).order(created_at: :desc).limit(20)
+    @top_facts = Claim.published_facts
+                      .left_joins(:likes)
+                      .group('claims.id')
+                      .order(Arel.sql('COUNT(likes.id) DESC'))
+                      .limit(2)
+                      .includes(:user)
     render :public_theories
   end
 
   def public_infinite
     page = params[:page].to_i > 0 ? params[:page].to_i : 1
-    per_page = 20
+    per_page = page == 1 ? 30 : 20
     offset = (page - 1) * per_page
-    theories = Theory.where.not(status: 'draft').includes(:likes).order(created_at: :desc).offset(offset).limit(per_page)
-    # Note: Comments will be filtered in the view using visible_to scope
+    theories = Theory.where.not(status: 'draft').includes(:user, :likes).order(created_at: :desc).offset(offset).limit(per_page)
     render json: {
-      theories: theories.map { |theory| render_to_string(partial: 'theory_card', formats: [:html], locals: { theory: theory }) },
-      next_page: theories.size == per_page ? page + 1 : nil
+      theories: theories.map { |theory| { html: render_to_string(partial: 'shared/feed_card_theory', locals: { theory: theory }, formats: [:html]) } },
+      has_more: theories.size == per_page
     }
   end
 

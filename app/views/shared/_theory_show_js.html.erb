@@ -1,0 +1,127 @@
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  var theoryId = '<%= @theory.id %>';
+  var currentUrl = window.location.origin + '/theories/' + theoryId;
+  var card = document.querySelector('.theory-show-card-wrapper .feed-card-block');
+  if (!card) return;
+
+  document.addEventListener('click', function(e) {
+    var menuIcon = e.target.closest('.feed-card-menu .menu-icon');
+    var menuDropdown = e.target.closest('.feed-card-menu-dropdown');
+    var menuItem = e.target.closest('.feed-menu-item');
+
+    if (menuIcon) {
+      e.preventDefault();
+      e.stopPropagation();
+      var menuContainer = menuIcon.closest('.feed-card-menu');
+      var dropdown = menuContainer ? menuContainer.querySelector('.feed-card-menu-dropdown') : null;
+      if (dropdown) {
+        var isOpen = dropdown.classList.contains('show');
+        document.querySelectorAll('.feed-card-menu-dropdown.show').forEach(function(d) {
+          if (d !== dropdown) d.classList.remove('show');
+        });
+        dropdown.classList.toggle('show', !isOpen);
+      }
+      return;
+    }
+
+    if (menuItem) {
+      e.preventDefault();
+      e.stopPropagation();
+      var menuText = menuItem.querySelector('.feed-menu-text') ? menuItem.querySelector('.feed-menu-text').textContent : '';
+      if (menuText.indexOf('Copy link') !== -1) {
+        navigator.clipboard.writeText(currentUrl).then(function() {
+          document.querySelectorAll('.feed-card-menu-dropdown.show').forEach(function(d) { d.classList.remove('show'); });
+        }).catch(function(err) { console.error('Failed to copy:', err); });
+      } else if (menuText.indexOf('Share on X') !== -1) {
+        window.open('https://twitter.com/intent/tweet?url=' + encodeURIComponent(currentUrl), '_blank', 'width=550,height=420');
+        document.querySelectorAll('.feed-card-menu-dropdown.show').forEach(function(d) { d.classList.remove('show'); });
+      } else if (menuText.indexOf('Share on Facebook') !== -1) {
+        window.open('https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(currentUrl), '_blank', 'width=550,height=420');
+        document.querySelectorAll('.feed-card-menu-dropdown.show').forEach(function(d) { d.classList.remove('show'); });
+      }
+      return;
+    }
+
+    if (!menuDropdown && !menuIcon) {
+      document.querySelectorAll('.feed-card-menu-dropdown.show').forEach(function(d) { d.classList.remove('show'); });
+    }
+  });
+
+  var commentToggle = card.querySelector('.feed-action-comment');
+  var commentsSection = card.querySelector('.feed-card-comments-section[data-theory-id="' + theoryId + '"]');
+  if (commentToggle && commentsSection) {
+    commentToggle.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      var isVisible = commentsSection.classList.contains('visible');
+      if (isVisible) {
+        commentsSection.classList.remove('visible');
+        commentsSection.style.display = 'none';
+      } else {
+        commentsSection.style.display = 'block';
+        commentsSection.offsetHeight;
+        commentsSection.classList.add('visible');
+      }
+    });
+  }
+
+  document.addEventListener('keypress', function(e) {
+    if (e.target.classList.contains('feed-card-comment-input') && e.key === 'Enter') {
+      e.preventDefault();
+      var input = e.target;
+      var commentText = input.value.trim();
+      var inputTheoryId = input.getAttribute('data-theory-id');
+      if (!commentText || !inputTheoryId) return;
+      var csrfToken = document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').content : null;
+      fetch('/theories/' + inputTheoryId + '/comments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': csrfToken,
+          'Accept': 'application/json'
+        },
+        credentials: 'same-origin',
+        body: JSON.stringify({ comment: { content: commentText } })
+      })
+      .then(function(response) {
+        if (!response.ok) {
+          return response.json().then(function(data) { throw new Error(data.message || 'Failed to post comment'); }).catch(function() { throw new Error('Network response was not ok'); });
+        }
+        return response.json();
+      })
+      .then(function(data) {
+        if (data.status === 'success' && data.comment) {
+          input.value = '';
+          var commentsList = card.querySelector('.feed-card-comments-section .feed-card-comments-list');
+          if (commentsList && data.comment) {
+            var temp = document.createElement('div');
+            temp.innerHTML = data.comment;
+            if (temp.firstElementChild) commentsList.insertBefore(temp.firstElementChild, commentsList.firstChild);
+          }
+          var count = commentsList ? commentsList.querySelectorAll('.comment-item').length : 0;
+          var commentCountSpan = card.querySelector('.feed-action-comment .comment-count');
+          if (commentCountSpan) commentCountSpan.textContent = count;
+          else {
+            var toggle = card.querySelector('.feed-action-comment');
+            if (toggle && count > 0) {
+              var span = document.createElement('span');
+              span.className = 'comment-count';
+              span.textContent = count;
+              var commentIcon = toggle.querySelector('.comment-icon');
+              if (commentIcon && commentIcon.nextSibling) toggle.insertBefore(span, commentIcon.nextSibling);
+              else toggle.appendChild(span);
+            }
+          }
+        } else if (data.status === 'error') {
+          alert(data.message || 'Failed to post comment');
+        }
+      })
+      .catch(function(err) {
+        console.error('Error posting comment:', err);
+        alert('Failed to post comment. Please try again.');
+      });
+    }
+  });
+});
+</script>
