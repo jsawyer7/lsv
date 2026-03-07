@@ -359,7 +359,34 @@
     letter-spacing: 0%;
     color: #11AD24;
   }
-  
+
+  .feed-card-theory-badge {
+    display: none;
+    position: absolute;
+    width: 71px;
+    min-width: 71px;
+    height: 1.5rem;
+    top: 4.625rem;
+    left: 1rem;
+    border-radius: 1.75rem;
+    gap: 0.625rem;
+    padding: 3px 8px;
+    background: #FFEBE2;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+  }
+
+  .feed-card-theory-badge-text {
+    font-family: 'Jost', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-weight: 500;
+    font-style: normal;
+    font-size: 0.875rem;
+    line-height: 100%;
+    letter-spacing: 0%;
+    color: #FF7A3C;
+  }
+
   .feed-card-content {
     position: absolute;
     top: 5.5rem;
@@ -633,12 +660,10 @@
   
   .feed-card-comments-section {
     position: relative;
-    margin-top: 12.125rem;
     padding-top: 0.75rem;
     padding-left: 1rem;
     padding-right: 1rem;
     padding-bottom: 0.75rem;
-    border-top: 0.0625rem solid #E5E7EB;
     width: 100%;
     opacity: 1;
     display: none;

@@ -113,9 +113,16 @@
 
  
     <div class="new-claim-btn-wrapper">
-      <%= link_to new_claim_path, class: "new-claim-btn" do %>
-        <%= image_tag 'newclaim.png', alt: 'New Claim', class: 'new-claim-icon' %>
-        <span class="new-claim-text">New Claim</span>
+      <% if controller_name == 'theories' || request.path.start_with?('/theories') %>
+        <%= link_to new_theory_path, class: "new-claim-btn new-theory-btn" do %>
+          <%= image_tag 'newclaim.png', alt: 'New Theory', class: 'new-claim-icon' %>
+          <span class="new-claim-text">New Theory</span>
+        <% end %>
+      <% else %>
+        <%= link_to new_claim_path, class: "new-claim-btn" do %>
+          <%= image_tag 'newclaim.png', alt: 'New Claim', class: 'new-claim-icon' %>
+          <span class="new-claim-text">New Claim</span>
+        <% end %>
       <% end %>
     </div>
   </div>

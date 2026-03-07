@@ -1,0 +1,189 @@
+<%
+  show_page = local_assigns[:show_page]
+  card_classes = "feed-card-block"
+  card_classes += " js-card-clickable" unless show_page
+%>
+<% if theory.present? %>
+  <div class="<%= card_classes %>"<% unless show_page %> data-detail-url="<%= theory_path(theory) %>"<% end %>>
+    <div class="feed-card-profile-pic">
+      <% user = theory.user %>
+      <% if user&.avatar_url.present? %>
+        <%= image_tag user.avatar_url, alt: user.full_name || "Profile", class: "profile-img" %>
+      <% else %>
+        <%= image_tag 'default-avatar.png', alt: "Profile", class: "profile-img" %>
+      <% end %>
+    </div>
+
+    <div class="feed-card-username-container">
+      <div class="feed-card-username">
+        <%= user&.full_name || "User" %>
+      </div>
+
+      <div class="feed-card-verified">
+        <%= image_tag 'blue-tick.svg', alt: 'Verified', class: 'verified-icon' %>
+      </div>
+
+      <div class="feed-card-dot feed-card-dot-1"></div>
+
+      <% is_following = user_signed_in? && current_user.following.include?(user) %>
+      <a href="#" class="feed-card-follow-status <%= 'following' if is_following %>">Following</a>
+    </div>
+
+    <div class="feed-card-menu" data-no-card-nav>
+      <%= image_tag 'three-dot.svg', alt: 'Menu', class: 'menu-icon' %>
+      <div class="feed-card-menu-dropdown">
+        <div class="feed-menu-item">
+          <%= image_tag 'Link.svg', alt: 'Link', class: 'feed-menu-icon' %>
+          <span class="feed-menu-text">Copy link</span>
+        </div>
+        <div class="feed-menu-item">
+          <%= image_tag 'X.svg', alt: 'X', class: 'feed-menu-icon' %>
+          <span class="feed-menu-text">Share on X</span>
+        </div>
+        <div class="feed-menu-item">
+          <%= image_tag 'Facebook.svg', alt: 'Facebook', class: 'feed-menu-icon' %>
+          <span class="feed-menu-text">Share on Facebook</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="feed-card-info">
+      <%= "#{user&.theories&.count || 0} Theories | #{user&.claims&.count || 0} Sources" %>
+    </div>
+
+    <div class="feed-card-time-container">
+      <div class="feed-card-time">
+        <%= time_ago_in_words(theory.created_at) %>
+      </div>
+
+      <div class="feed-card-dot feed-card-dot-2"></div>
+    </div>
+
+    <div class="feed-card-theory-badge">
+      <span class="feed-card-theory-badge-text">Theory</span>
+    </div>
+
+    <div class="feed-card-content">
+      <% if show_page %><span class="feed-card-title"><% end %><%= theory.title %><% if show_page %></span><% end %>
+      <% if theory.description.present? %>
+        <% if show_page %>
+          <br><%= simple_format(theory.description) %>
+        <% else %>
+          <br><%= truncate(theory.description, length: 120) %>
+        <% end %>
+      <% end %>
+    </div>
+
+    <div class="feed-card-divider"></div>
+
+    <% if show_page %><div class="feed-card-bottom-bar"><% end %>
+    <div class="feed-card-actions-wrapper" data-no-card-nav>
+      <div class="feed-card-actions">
+        <div class="feed-action-like">
+          <% if user_signed_in? %>
+            <% user_like = theory.likes.find_by(user: current_user) %>
+            <% if user_like %>
+              <a href="/theories/<%= theory.id %>/likes/<%= user_like.id %>" class="feed-like liked" data-method="delete" data-remote="true" data-theory-id="<%= theory.id %>" data-like-id="<%= user_like.id %>">
+                <%= image_tag 'like.svg', alt: 'Like', class: 'like-icon' %>
+                <span class="like-count"><%= theory.likes.count %></span>
+              </a>
+            <% else %>
+              <a href="/theories/<%= theory.id %>/likes" class="feed-like" data-method="post" data-remote="true" data-theory-id="<%= theory.id %>">
+                <%= image_tag 'like.svg', alt: 'Like', class: 'like-icon' %>
+                <span class="like-count"><%= theory.likes.count %></span>
+              </a>
+            <% end %>
+          <% else %>
+            <div class="feed-like">
+              <%= image_tag 'like.svg', alt: 'Like', class: 'like-icon' %>
+              <span class="like-count"><%= theory.likes.count %></span>
+            </div>
+          <% end %>
+        </div>
+
+        <div class="feed-action-comment" data-theory-id="<%= theory.id %>" style="cursor: pointer;">
+          <%= image_tag 'comment.svg', alt: 'Comment', class: 'comment-icon' %>
+          <% if user_signed_in? %>
+            <% comment_count = theory.comments.visible_to(current_user).count %>
+            <% if comment_count > 0 %>
+              <span class="comment-count"><%= comment_count %></span>
+            <% end %>
+          <% end %>
+          <span class="comment-text">Comment</span>
+        </div>
+
+        <div class="feed-action-share">
+          <button class="feed-share-btn" data-shareable-type="theory" data-shareable-id="<%= theory.id %>" data-toggle="modal" data-target="#shareModal">
+            <%= image_tag 'share.svg', alt: 'Share', class: 'share-icon' %>
+            <span class="share-text">Share</span>
+          </button>
+        </div>
+
+        <div class="feed-action-reshare">
+          <% if user_signed_in? %>
+            <button class="feed-reshare-btn" data-theory-id="<%= theory.id %>" type="button">
+              <%= image_tag 'reshare.svg', alt: 'Reshare', class: 'reshare-icon' %>
+              <span class="reshare-text">Reshare</span>
+            </button>
+          <% else %>
+            <div class="feed-reshare-btn">
+              <%= image_tag 'reshare.svg', alt: 'Reshare', class: 'reshare-icon' %>
+              <span class="reshare-text">Reshare</span>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <div class="feed-card-verified-by">
+      <span class="verified-by-label">Verified by:</span>
+      <div class="verified-by-avatars">
+        <% 2.times do %>
+          <%= image_tag 'default-avatar.png', alt: 'Verifier', class: 'verified-by-avatar' %>
+        <% end %>
+      </div>
+    </div>
+    <% if show_page %></div><% end %>
+
+    <div class="feed-card-comments-section" data-theory-id="<%= theory.id %>" data-no-card-nav style="display: none;">
+      <% if user_signed_in? %>
+        <% has_comments = theory.comments.visible_to(current_user).count > 0 %>
+        <div class="feed-card-comment-form <%= 'no-comments' unless has_comments %>">
+          <div class="feed-card-comment-profile-pic">
+            <% if current_user.avatar_url.present? %>
+              <%= image_tag current_user.avatar_url, alt: current_user.full_name || "Profile", class: "profile-img" %>
+            <% else %>
+              <%= image_tag 'default-avatar.png', alt: "Profile", class: "profile-img" %>
+            <% end %>
+          </div>
+          <div class="feed-card-comment-field">
+            <input
+              type="text"
+              class="feed-card-comment-input"
+              placeholder="Add a comment..."
+              data-theory-id="<%= theory.id %>"
+            />
+            <button type="button" class="feed-card-comment-emoji">
+              <%= image_tag 'smile.svg', alt: 'Emoji', class: 'emoji-icon' %>
+            </button>
+          </div>
+        </div>
+      <% end %>
+
+      <% if user_signed_in? && theory.comments.visible_to(current_user).count >= 1 %>
+        <div class="feed-card-most-relevant">
+          <span class="most-relevant-text">Most Relevant</span>
+          <%= image_tag 'mearrow.svg', alt: 'Arrow', class: 'most-relevant-arrow' %>
+        </div>
+      <% end %>
+
+      <div class="feed-card-comments-list">
+        <% if user_signed_in? %>
+          <% theory.comments.visible_to(current_user).recent.each do |comment| %>
+            <%= render 'comments/comment', comment: comment %>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+  </div>
+<% end %>

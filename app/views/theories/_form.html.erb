@@ -1,6 +1,6 @@
 <div class="theory-new-main">
+  <h2 class="theory-new-title"><%= theory.persisted? ? 'Edit Theory' : 'Post New Theory' %></h2>
   <div class="theory-new-form-section">
-    <h2 class="theory-new-title"><%= theory.persisted? ? 'Edit Theory' : 'Post New Theory' %></h2>
     <%= form_with(model: theory, url: theory.persisted? ? theory_path(theory) : theories_path, local: true) do |f| %>
       <div class="form-group">
         <%= f.label :title, 'Title' %>
@@ -22,8 +22,5 @@
         </div>
       </div>
     <% end %>
-  </div>
-  <div class="theory-new-image-section">
-    <%= image_tag 'new-theory-image.png', alt: 'New Theory', class: 'theory-new-image' %>
   </div>
 </div> 
