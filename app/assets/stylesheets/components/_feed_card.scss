@@ -117,6 +117,11 @@
   &.js-card-clickable {
     cursor: pointer;
   }
+
+  .feed-card-header {
+    position: relative;
+    min-height: 5rem;
+  }
   
   .feed-card-profile-pic {
     position: absolute;
@@ -416,6 +421,30 @@
     opacity: 1;
   }
   
+  .feed-card-bottom-bar {
+    position: absolute;
+    top: 9.75rem;
+    left: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .feed-card-bottom-bar .feed-card-actions-wrapper {
+    position: relative;
+    top: auto;
+    left: auto;
+    right: auto;
+  }
+
+  .feed-card-bottom-bar .feed-card-verified-by {
+    position: relative;
+    top: auto;
+    right: auto;
+  }
+
   .feed-card-verified-by {
     position: absolute;
     width: 9.625rem;
