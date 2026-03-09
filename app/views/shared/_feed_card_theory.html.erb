@@ -5,62 +5,64 @@
 %>
 <% if theory.present? %>
   <div class="<%= card_classes %>"<% unless show_page %> data-detail-url="<%= theory_path(theory) %>"<% end %>>
-    <div class="feed-card-profile-pic">
-      <% user = theory.user %>
-      <% if user&.avatar_url.present? %>
-        <%= image_tag user.avatar_url, alt: user.full_name || "Profile", class: "profile-img" %>
-      <% else %>
-        <%= image_tag 'default-avatar.png', alt: "Profile", class: "profile-img" %>
-      <% end %>
-    </div>
-
-    <div class="feed-card-username-container">
-      <div class="feed-card-username">
-        <%= user&.full_name || "User" %>
+    <div class="feed-card-header">
+      <div class="feed-card-profile-pic">
+        <% user = theory.user %>
+        <% if user&.avatar_url.present? %>
+          <%= image_tag user.avatar_url, alt: user.full_name || "Profile", class: "profile-img" %>
+        <% else %>
+          <%= image_tag 'default-avatar.png', alt: "Profile", class: "profile-img" %>
+        <% end %>
       </div>
 
-      <div class="feed-card-verified">
-        <%= image_tag 'blue-tick.svg', alt: 'Verified', class: 'verified-icon' %>
-      </div>
-
-      <div class="feed-card-dot feed-card-dot-1"></div>
-
-      <% is_following = user_signed_in? && current_user.following.include?(user) %>
-      <a href="#" class="feed-card-follow-status <%= 'following' if is_following %>">Following</a>
-    </div>
-
-    <div class="feed-card-menu" data-no-card-nav>
-      <%= image_tag 'three-dot.svg', alt: 'Menu', class: 'menu-icon' %>
-      <div class="feed-card-menu-dropdown">
-        <div class="feed-menu-item">
-          <%= image_tag 'Link.svg', alt: 'Link', class: 'feed-menu-icon' %>
-          <span class="feed-menu-text">Copy link</span>
+      <div class="feed-card-username-container">
+        <div class="feed-card-username">
+          <%= user&.full_name || "User" %>
         </div>
-        <div class="feed-menu-item">
-          <%= image_tag 'X.svg', alt: 'X', class: 'feed-menu-icon' %>
-          <span class="feed-menu-text">Share on X</span>
-        </div>
-        <div class="feed-menu-item">
-          <%= image_tag 'Facebook.svg', alt: 'Facebook', class: 'feed-menu-icon' %>
-          <span class="feed-menu-text">Share on Facebook</span>
-        </div>
-      </div>
-    </div>
 
-    <div class="feed-card-info">
-      <%= "#{user&.theories&.count || 0} Theories | #{user&.claims&.count || 0} Sources" %>
-    </div>
+        <div class="feed-card-verified">
+          <%= image_tag 'blue-tick.svg', alt: 'Verified', class: 'verified-icon' %>
+        </div>
 
-    <div class="feed-card-time-container">
-      <div class="feed-card-time">
-        <%= time_ago_in_words(theory.created_at) %>
+        <div class="feed-card-dot feed-card-dot-1"></div>
+
+        <% is_following = user_signed_in? && current_user.following.include?(user) %>
+        <a href="#" class="feed-card-follow-status <%= 'following' if is_following %>">Following</a>
       </div>
 
-      <div class="feed-card-dot feed-card-dot-2"></div>
-    </div>
+      <div class="feed-card-menu" data-no-card-nav>
+        <%= image_tag 'three-dot.svg', alt: 'Menu', class: 'menu-icon' %>
+        <div class="feed-card-menu-dropdown">
+          <div class="feed-menu-item">
+            <%= image_tag 'Link.svg', alt: 'Link', class: 'feed-menu-icon' %>
+            <span class="feed-menu-text">Copy link</span>
+          </div>
+          <div class="feed-menu-item">
+            <%= image_tag 'X.svg', alt: 'X', class: 'feed-menu-icon' %>
+            <span class="feed-menu-text">Share on X</span>
+          </div>
+          <div class="feed-menu-item">
+            <%= image_tag 'Facebook.svg', alt: 'Facebook', class: 'feed-menu-icon' %>
+            <span class="feed-menu-text">Share on Facebook</span>
+          </div>
+        </div>
+      </div>
 
-    <div class="feed-card-theory-badge">
-      <span class="feed-card-theory-badge-text">Theory</span>
+      <div class="feed-card-info">
+        <%= "#{user&.theories&.count || 0} Theories | #{user&.claims&.count || 0} Sources" %>
+      </div>
+
+      <div class="feed-card-time-container">
+        <div class="feed-card-time">
+          <%= time_ago_in_words(theory.created_at) %>
+        </div>
+
+        <div class="feed-card-dot feed-card-dot-2"></div>
+      </div>
+
+      <div class="feed-card-theory-badge">
+        <span class="feed-card-theory-badge-text">Theory</span>
+      </div>
     </div>
 
     <div class="feed-card-content">
@@ -76,7 +78,7 @@
 
     <div class="feed-card-divider"></div>
 
-    <% if show_page %><div class="feed-card-bottom-bar"><% end %>
+    <div class="feed-card-bottom-bar">
     <div class="feed-card-actions-wrapper" data-no-card-nav>
       <div class="feed-card-actions">
         <div class="feed-action-like">
@@ -143,7 +145,7 @@
         <% end %>
       </div>
     </div>
-    <% if show_page %></div><% end %>
+    </div>
 
     <div class="feed-card-comments-section" data-theory-id="<%= theory.id %>" data-no-card-nav style="display: none;">
       <% if user_signed_in? %>

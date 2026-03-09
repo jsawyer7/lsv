@@ -66,18 +66,10 @@
     </div>
     
     <div class="feed-card-divider"></div>
-    
-    <div class="feed-card-verified-by">
-      <span class="verified-by-label">Verified by:</span>
-      <div class="verified-by-avatars">
-        <% 2.times do %>
-          <%= image_tag 'default-avatar.png', alt: 'Verifier', class: 'verified-by-avatar' %>
-        <% end %>
-      </div>
-    </div>
-    
-    <div class="feed-card-actions-wrapper" data-no-card-nav>
-      <div class="feed-card-actions">
+
+    <div class="feed-card-bottom-bar">
+      <div class="feed-card-actions-wrapper" data-no-card-nav>
+        <div class="feed-card-actions">
         <div class="feed-action-like">
           <% if user_signed_in? %>
             <% user_like = fact.likes.find_by(user: current_user) %>
@@ -131,10 +123,19 @@
             </div>
           <% end %>
         </div>
+        </div>
       </div>
-      
+
+      <div class="feed-card-verified-by">
+        <span class="verified-by-label">Verified by:</span>
+        <div class="verified-by-avatars">
+          <% 2.times do %>
+            <%= image_tag 'default-avatar.png', alt: 'Verifier', class: 'verified-by-avatar' %>
+          <% end %>
+        </div>
+      </div>
     </div>
-    
+
     <div class="feed-card-comments-section" data-claim-id="<%= fact.id %>" data-no-card-nav style="display: none;">
       <% if user_signed_in? %>
         <% has_comments = fact.comments.visible_to(current_user).count > 0 %>

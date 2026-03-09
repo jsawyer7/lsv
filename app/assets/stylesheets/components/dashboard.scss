@@ -697,7 +697,7 @@ body.dashboard-nav-page .dashboard-sources {
     }
 
     .feed-card-verified-by {
-      top: 10.5rem;
+      top: 10.8rem;
     }
 
     .feed-card-actions-wrapper {
@@ -822,7 +822,9 @@ body.dashboard-nav-page .dashboard-sources {
   }
 
   .feed-card-block {
-    min-height: 15rem;
+    min-height: 0;
+    height: auto;
+    padding-bottom: 1rem;
 
     .feed-card-fact-badge {
       display: none;
@@ -833,23 +835,42 @@ body.dashboard-nav-page .dashboard-sources {
     }
 
     .feed-card-content {
-      top: 7.25rem;
+      position: relative;
+      top: auto;
+      left: auto;
+      margin: 1.5rem 1rem 0 1rem;
+      max-width: none;
     }
 
     .feed-card-divider {
-      top: 12.125rem;
+      position: relative;
+      top: auto;
+      left: auto;
+      margin: 0.5rem 1rem;
+    }
+
+    .feed-card-bottom-bar {
+      position: relative;
+      top: auto;
+      width: 440px;
     }
 
     .feed-card-verified-by {
-      top: 12.5rem;
+      position: relative;
+      top: auto;
+      right: auto;
     }
 
     .feed-card-actions-wrapper {
-      top: 12.875rem;
+      position: relative;
+      top: auto;
+      bottom: auto;
+      left: auto;
+      right: auto;
     }
 
     .feed-card-comments-section {
-      margin-top: 15rem;
+      margin-top: 1rem;
     }
   }
 }
@@ -2860,9 +2881,8 @@ body.dashboard-nav-page .dashboard-sources {
     border-radius: 8px;
     opacity: 1;
     background: #ffffff;
-    min-height: 15rem;
+    min-height: 13rem;
     height: auto;
-    padding-top: 5.5rem;
     padding-bottom: 1rem;
     padding-left: 0;
     padding-right: 0;
