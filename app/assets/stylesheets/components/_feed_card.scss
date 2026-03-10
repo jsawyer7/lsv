@@ -89,6 +89,10 @@
         margin-left: 1rem;
         margin-right: 12rem;
       }
+
+      .feed-card-bottom-bar {
+        width: 415px;
+      }
       
       .feed-card-comment-form {
         width: 100%;
@@ -422,6 +426,7 @@
   }
   
   .feed-card-bottom-bar {
+    width: 440px;
     position: absolute;
     top: 9.75rem;
     left: 0;
@@ -430,6 +435,10 @@
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
+  }
+
+  &.fact-card .feed-card-bottom-bar {
+    top: 10.75rem;
   }
 
   .feed-card-bottom-bar .feed-card-actions-wrapper {
@@ -1075,4 +1084,10 @@
       }
     }
   }
+}
+
+// Feed card used standalone (outside feed list) – bottom bar layout
+.feed-card-standalone .feed-card-bottom-bar {
+  top: 10.75rem;
+  width: 440px;
 }

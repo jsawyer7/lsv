@@ -292,6 +292,9 @@ body {
   .my-claims-page {
     padding-left: 30px;
     padding-right: 30px;
+    position: relative;
+    background: #f4f2ee;
+    min-height: 100vh;
   }
   .my-claims-header-row {
     display: flex;
@@ -301,10 +304,20 @@ body {
   }
 
   .my-claims-title {
-    font-size: 1.6rem;
-    color: #222;
-    font-weight: 600;
+    position: absolute;
+    width: 62px;
+    height: 23px;
+    top: 94px;
+    left: 390px;
     margin: 0;
+    opacity: 1;
+    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-weight: 600;
+    font-style: normal;
+    font-size: 20px;
+    line-height: 100%;
+    letter-spacing: 0%;
+    color: #171717;
   }
 
   .my-claims-header-actions {
@@ -358,51 +371,65 @@ body {
   }
 
   .my-claims-filter-bar {
+    position: absolute;
+    top: 137px;
+    left: 390px;
     display: flex;
-    gap: 1.5rem;
-    margin-bottom: 2rem;
-    background: #fff;
-    border-radius: 12px;
-    padding: 0.7rem 1.2rem;
-    border: 2px solid #e5e7eb;
-    max-width: 35rem;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    opacity: 1;
   }
 
-  .my-claims-filter {
-    color: #888;
-    font-size: 1.08rem;
-    font-weight: 500;
+  .my-claims-filter-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 32px;
+    padding: 6px 24px;
+    border-radius: 100px;
+    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 16px;
+    line-height: 20px;
+    letter-spacing: 0.5%;
     text-decoration: none;
-    padding: 0.5rem 1.5rem;
-    border-radius: 10px;
+    background: #ffffff;
+    color: #475865;
+    font-weight: 400;
     transition: background 0.2s, color 0.2s;
-    background: transparent;
-    border: none;
-    margin: 0 0.1rem;
+    box-sizing: border-box;
+
+    &.active {
+      background: #2196f333;
+      color: #2196f3;
+      font-weight: 500;
+    }
+
+    &:hover:not(.active) {
+      background: #f5f5f5;
+    }
   }
-  .my-claims-filter.active {
-    background: #e3f0ff;
-    color: #2196f3;
-    font-weight: 600;
-  }
-  .my-claims-filter:hover {
-    background: #f5faff;
-    color: #2196f3;
+
+  .my-claims-page .empty-state {
+    margin-top: 120px;
+    margin-left: 390px;
   }
 
   .my-claims-list {
     display: flex;
-    flex-wrap: wrap;
+    flex-direction: column;
     gap: 2rem;
-    justify-content: flex-start;
+    margin-top: 189px;
+    margin-left: 360px;
   }
 
   .my-claim-card {
-    min-width: 420px;
-    max-width: 48%;
-    flex: 1 1 48%;
+    width: 975px;
+    min-height: 210px;
+    height: auto;
     background: #fff;
-    border-radius: 14px;
+    border-radius: 8px;
+    opacity: 1;
     box-shadow: 0 2px 8px rgba(0,0,0,0.06);
     padding: 1.5rem 1.3rem 1.1rem 1.3rem;
     display: flex;
@@ -410,6 +437,7 @@ body {
     justify-content: space-between;
     border: 1px solid #f0f0f0;
     transition: box-shadow 0.2s, border 0.2s;
+    box-sizing: border-box;
   }
   .my-claim-card:hover {
     box-shadow: 0 4px 16px rgba(33,150,243,0.08);
@@ -521,12 +549,11 @@ body {
 
   @media (max-width: 1100px) {
     .my-claim-card {
-      min-width: 320px;
-      max-width: 100%;
-      flex: 1 1 100%;
+      width: 100%;
+      max-width: 975px;
     }
     .my-claims-list {
-      flex-direction: column;
+      margin-left: 1rem;
       gap: 1.2rem;
     }
   }

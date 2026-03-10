@@ -2,25 +2,15 @@
 
 <div class="my-claims-page">
   <div class="my-claims-header-row">
-    <h2 class="my-claims-title">My Claims</h2>
-    <div class="my-claims-header-actions">
-      <form method="get" action="<%= claims_path %>" class="my-claims-search-form">
-        <input type="text" name="search" value="<%= params[:search] %>" placeholder="Search" class="my-claims-search-input" />
-        <button type="submit" class="my-claims-search-btn"><i class="fa fa-search"></i></button>
-      </form>
-      <%= link_to new_claim_path, class: "my-claims-new-btn" do %>
-        <%= image_tag "newclaim.png", class: "btn-icon" %>
-        <span class="new-claim-heading">New Claim</span>
-      <% end %>
-
-    </div>
+    <h2 class="my-claims-title">Claims</h2>
   </div>
-  <div class="my-claims-filter-bar">
-    <% filters = { 'all' => 'All', 'drafts' => 'Drafts', 'ai_validated' => 'AI Validated', 'verified' => 'Verified' } %>
+  <nav class="my-claims-filter-bar">
+    <% filters = { 'all' => 'New', 'drafts' => 'Drafts', 'ai_validated' => 'AI Validated', 'verified' => 'Verified' } %>
     <% filters.each do |key, label| %>
-      <%= link_to label, claims_path(filter: key), class: "my-claims-filter#{' active' if @filter == key}" %>
+      <%= link_to label, claims_path(filter: key), class: "my-claims-filter-pill #{'active' if @filter == key}" %>
     <% end %>
-  </div>
+    <%= link_to 'Facts', claims_path(filter: 'facts'), class: "my-claims-filter-pill #{'active' if @filter == 'facts'}" %>
+  </nav>
   <div class="my-claims-list">
     <% @claims.each do |claim| %>
       <div class="my-claim-card js-card-clickable" data-detail-url="<%= claim_path(claim) %>">
@@ -56,7 +46,7 @@
 
   <% if @claims.empty? %>
     <div class="empty-state">
-      <p>No claims have been submitted yet.</p>
+      <p><%= @filter == 'facts' ? 'No facts yet.' : 'No claims have been submitted yet.' %></p>
     </div>
   <% else %>
     <div class="pagination-container">
