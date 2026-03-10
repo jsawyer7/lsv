@@ -2,7 +2,7 @@
   fact = defined?(fact) && fact.present? ? fact : (Claim.published_facts.first if Claim.published_facts.any?)
 %>
 <% if fact.present? %>
-  <div class="feed-card-block js-card-clickable" data-detail-url="<%= fact_path(fact) %>">
+  <div class="feed-card-block <%= 'fact-card' if local_assigns[:fact_card] %> js-card-clickable" data-detail-url="<%= fact_path(fact) %>">
     <div class="feed-card-profile-pic">
       <% user = fact.user %>
       <% if user&.avatar_url.present? %>

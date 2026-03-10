@@ -24,6 +24,8 @@ class ClaimsController < ApplicationController
       current_user.claims.ai_validated
     when 'verified'
       current_user.claims.verified
+    when 'facts'
+      current_user.claims.facts
     else
       current_user.claims
     end.order(created_at: :desc)

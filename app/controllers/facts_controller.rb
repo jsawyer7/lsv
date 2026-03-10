@@ -22,7 +22,7 @@ class FactsController < ApplicationController
     render json: {
       claims: facts.map { |fact|
         {
-          html: render_to_string(partial: 'shared/feed_card', locals: { fact: fact }, formats: [:html]),
+          html: render_to_string(partial: 'shared/feed_card', locals: { fact: fact, fact_card: true }, formats: [:html]),
           id: fact.id,
           created_at: fact.created_at
         }
