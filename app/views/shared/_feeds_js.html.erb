@@ -238,6 +238,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!commentButton) return;
     
     e.preventDefault();
+    e.stopPropagation();
     const claimId = commentButton.getAttribute('data-claim-id');
     if (!claimId) return;
     
