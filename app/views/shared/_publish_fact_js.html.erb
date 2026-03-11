@@ -1,4 +1,22 @@
 <%= javascript_tag do %>
+  window.closePublishSuccessModal = function() {
+    var modal = document.getElementById('publish-success-modal');
+    if (modal) {
+      modal.style.display = 'none';
+      document.body.classList.remove('modal-open');
+      if (modal.dataset.fromClaimsIndex === 'true') {
+        window.location.reload();
+      }
+    }
+  };
+  function showPublishSuccessModal() {
+    var modal = document.getElementById('publish-success-modal');
+    if (modal) {
+      modal.dataset.fromClaimsIndex = 'true';
+      modal.style.display = 'flex';
+      document.body.classList.add('modal-open');
+    }
+  }
   document.addEventListener('DOMContentLoaded', function() {
     // Handle publish/unpublish fact button
     document.querySelectorAll('.btn-publish-fact, .btn-unpublish-fact').forEach(function(btn) {
@@ -24,6 +42,10 @@
         .then(response => response.json())
         .then(data => {
           if (data.status === 'success') {
+            if (isPublishing && button.closest('.my-claims-list')) {
+              showPublishSuccessModal();
+              return;
+            }
             // Update button to show opposite state
             if (isPublishing) {
               // Change to unpublish button

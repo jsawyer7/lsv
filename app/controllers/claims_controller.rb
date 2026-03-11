@@ -19,15 +19,15 @@ class ClaimsController < ApplicationController
     @filter = filter
     @claims = case filter
     when 'drafts'
-      current_user.claims.drafts
+      current_user.claims.drafts.where(fact: false)
     when 'ai_validated'
-      current_user.claims.ai_validated
+      current_user.claims.ai_validated.where(fact: false)
     when 'verified'
-      current_user.claims.verified
+      current_user.claims.unpublished_facts
     when 'facts'
       current_user.claims.facts
     else
-      current_user.claims
+      current_user.claims.where.not(state: 'draft').where(fact: false)
     end.order(created_at: :desc)
     @claims = @claims.where('content ILIKE ?', "%#{params[:search]}%") if params[:search].present?
     @claims = @claims.page(params[:page]).per(12)

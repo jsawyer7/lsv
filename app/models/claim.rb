@@ -23,6 +23,7 @@ class Claim < ApplicationRecord
   scope :drafts, -> { where(state: 'draft') }
   scope :ai_validated, -> { where(state: 'ai_validated') }
   scope :verified, -> { where(state: 'verified') }
+  scope :unpublished_facts, -> { where(fact: true, published: false) }
   scope :published_facts, -> { where(fact: true, published: true) }
   scope :facts, -> { where(fact: true) }
   scope :with_embeddings, -> { where.not(content_embedding: nil) }

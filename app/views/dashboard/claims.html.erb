@@ -1,4 +1,51 @@
-<div class="claims-empty-page">
-  
+<div class="feed-main all-claims-page-main theories-page-main">
+  <div class="theories-page-content all-claims-page-content">
+    <header class="theories-page-header all-claims-page-header">
+      <h1 class="theories-page-title">Claims</h1>
+      <nav class="theories-page-filters">
+        <%= link_to 'Claims', claims_page_path(filter: 'claims'), class: "theories-filter-pill #{'active' if @filter == 'claims'}" %>
+        <%= link_to 'Approval Request', claims_page_path(filter: 'approval_request'), class: "theories-filter-pill #{'active' if @filter == 'approval_request'}" %>
+      </nav>
+    </header>
+    <% if @claims.empty? %>
+      <div class="all-claims-empty empty-state">
+        <p><%= @filter == 'approval_request' ? 'No claims pending approval.' : 'No claims yet.' %></p>
+      </div>
+    <% else %>
+      <div class="all-claims-list my-claims-list">
+        <% @claims.each do |claim| %>
+          <div class="my-claim-card js-card-clickable" data-detail-url="<%= claim_path(claim) %>">
+            <div class="my-claim-card-header">
+              <div class="my-claim-user">
+                <%= image_tag claim.user.avatar_url.presence || 'default-avatar.png', class: 'my-claim-avatar' %>
+                <div class="my-claim-user-info">
+                  <div class="my-claim-user-name-row">
+                    <span class="my-claim-user-name"><%= claim.user.full_name.presence || claim.user.email %></span>
+                    <%= image_tag 'blue-tick.svg', alt: 'Verified', class: 'my-claim-verified-icon' %>
+                  </div>
+                  <div class="my-claim-user-rating"><span class="my-claim-stars">★★★★★</span><span class="my-claim-rating-value">4.7</span></div>
+                </div>
+              </div>
+              <% if claim.state == 'ai_validated' && !claim.fact? %>
+                <% if @filter == 'approval_request' %>
+                  <span class="my-claim-badge verification-pending">Verification Pending</span>
+                <% else %>
+                  <span class="my-claim-badge ai-validated">Review Pending</span>
+                <% end %>
+              <% elsif claim.state == 'verified' %>
+                <span class="my-claim-badge verified">Verified</span>
+              <% end %>
+            </div>
+            <div class="my-claim-content"><%= truncate(claim.content_for_user(current_user), length: 220) %></div>
+          </div>
+        <% end %>
+      </div>
+      <div class="pagination-container all-claims-pagination">
+        <%= paginate @claims %>
+      </div>
+    <% end %>
+  </div>
+  <aside class="feed-rightbar facts-page-rightbar">
+    <%= render 'facts/rightbar' %>
+  </aside>
 </div>
-
