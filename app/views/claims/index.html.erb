@@ -54,7 +54,7 @@
                   <%= image_tag 'edit.svg', alt: 'Edit', class: 'my-claim-draft-icon' %>
                 <% end %>
                 <a href="#" class="my-claim-delete-link my-claim-draft-action" data-claim-id="<%= claim.id %>" data-no-card-nav>
-                  <%= image_tag 'delete.svg', alt: 'Delete', class: 'my-claim-draft-icon' %>
+                  <%= image_tag 'Delete.svg', alt: 'Delete', class: 'my-claim-draft-icon' %>
                 </a>
               <% else %>
                 <%= link_to "View Details", claim_path(claim), class: "my-claim-view-link" %>
@@ -86,7 +86,7 @@
     </button>
     <div class="delete-claim-modal-content">
       <div class="delete-claim-modal-icon-wrap">
-        <%= image_tag 'delete.svg', alt: '', class: 'delete-claim-modal-icon' %>
+        <%= image_tag 'Delete.svg', alt: '', class: 'delete-claim-modal-icon' %>
       </div>
       <p class="delete-claim-modal-text">Are you sure you want to delete this claim?</p>
     </div>
