@@ -1,4 +1,13 @@
 <script>
+  // Show "How can I help you today?" only when chat is empty (no messages)
+  function updateVeritalkInputHeadingVisibility() {
+    const block = document.querySelector('.veritalk-input-block');
+    const messagesDiv = document.getElementById('veritalk-messages');
+    if (!block || !messagesDiv) return;
+    const hasMessages = messagesDiv.querySelectorAll('.veritalk-message').length > 0;
+    block.classList.toggle('veritalk-input-block--has-messages', !!hasMessages);
+  }
+
   // Use both DOMContentLoaded and window load to ensure everything is ready
   function initVeritalk() {
     const form = document.getElementById('veritalk-form');
@@ -96,6 +105,7 @@
               console.log('No messages found in conversation');
               // Keep welcome message if no messages
             }
+            updateVeritalkInputHeadingVisibility();
           } else {
             console.log('Conversation not found, clearing localStorage');
             // Conversation not found, clear localStorage
@@ -110,6 +120,7 @@
       } else {
         console.log('No conversation ID found, showing welcome message');
       }
+      updateVeritalkInputHeadingVisibility();
     }
 
     // Load history on page load - use a small delay to ensure DOM is ready
@@ -177,6 +188,7 @@
       
       messagesDiv.appendChild(messageDiv);
       messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      updateVeritalkInputHeadingVisibility();
     }
 
     async function startVeritalkStream(message) {
@@ -210,6 +222,7 @@
       
       messagesDiv.appendChild(thinkingDiv);
       messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      updateVeritalkInputHeadingVisibility();
 
       const payload = {
         message: message
@@ -443,6 +456,7 @@
                   messagesDiv.appendChild(messageDiv);
                 });
                 messagesDiv.scrollTop = messagesDiv.scrollHeight;
+                updateVeritalkInputHeadingVisibility();
                 
                 const conversationIdInput = document.getElementById('veritalk-conversation-id');
                 if (conversationIdInput) {
@@ -471,6 +485,26 @@
       return;
     }
 
+    document.addEventListener('click', function(e) {
+      if (!e.target.closest('.veritalk-conversation-actions')) {
+        document.querySelectorAll('.veritalk-conversation-dropdown').forEach(el => { el.hidden = true; });
+        document.querySelectorAll('.veritalk-conversation-item').forEach(el => el.classList.remove('veritalk-conversation-item--dropdown-open'));
+      }
+    });
+
+    const historySearchInput = document.getElementById('veritalk-history-search');
+    if (historySearchInput) {
+      historySearchInput.addEventListener('input', function() {
+        const q = (this.value || '').trim().toLowerCase();
+        const list = document.getElementById('veritalk-conversations-list');
+        if (!list) return;
+        list.querySelectorAll('.veritalk-conversation-item').forEach(function(item) {
+          const topic = (item.querySelector('.veritalk-conversation-topic')?.textContent || '').toLowerCase();
+          item.style.display = q === '' || topic.indexOf(q) !== -1 ? '' : 'none';
+        });
+      });
+    }
+
     // Open sidebar
     function openHistorySidebar() {
       // Close user profile dropdown if open
@@ -496,6 +530,24 @@
       document.body.style.overflow = '';
     }
 
+    async function deleteConversation(conversationId, itemEl) {
+      const currentConvId = conversationIdInput ? conversationIdInput.value : localStorage.getItem('veritalk_conversation_id');
+      try {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+        const response = await fetch(`/veritalk/conversation/${conversationId}`, {
+          method: 'DELETE',
+          headers: { 'X-CSRF-Token': csrfToken || '', 'Content-Type': 'application/json' }
+        });
+        if (!response.ok) return;
+      } catch (e) {
+        return;
+      }
+      if (itemEl && itemEl.parentNode) itemEl.remove();
+      if (currentConvId && currentConvId == conversationId) {
+        startNewChat();
+      }
+    }
+
     // Load conversations list
     async function loadConversationsList() {
       if (!conversationsList) return;
@@ -509,12 +561,13 @@
           
           if (data.conversations && data.conversations.length > 0) {
             conversationsList.innerHTML = '';
+            const threeDotSrc = document.getElementById('veritalk-three-dot-src')?.getAttribute('src') || '';
             
             data.conversations.forEach(conv => {
               const item = document.createElement('div');
               item.className = 'veritalk-conversation-item';
+              item.dataset.conversationId = conv.id;
               
-              // Check if this is the active conversation
               const currentConvId = conversationIdInput ? conversationIdInput.value : localStorage.getItem('veritalk_conversation_id');
               if (currentConvId && currentConvId == conv.id) {
                 item.classList.add('active');
@@ -522,19 +575,44 @@
               
               item.innerHTML = `
                 <div class="veritalk-conversation-topic">${escapeHtml(conv.topic)}</div>
-                <div class="veritalk-conversation-meta">
-                  <span class="veritalk-conversation-count">
-                    <i class="fas fa-comments"></i>
-                    ${conv.message_count} messages
-                  </span>
-                  <span>${formatDate(conv.updated_at)}</span>
+                <div class="veritalk-conversation-actions">
+                  <button type="button" class="veritalk-conversation-menu-btn" aria-label="Options">
+                    <img src="${escapeHtml(threeDotSrc)}" width="20" height="20" alt="">
+                  </button>
+                  <div class="veritalk-conversation-dropdown" role="menu" hidden>
+                    <button type="button" class="veritalk-conversation-delete" role="menuitem">Delete</button>
+                  </div>
                 </div>
               `;
               
-              item.addEventListener('click', function() {
+              item.addEventListener('click', function(e) {
+                if (e.target.closest('.veritalk-conversation-actions')) return;
                 loadConversation(conv.id);
                 closeHistorySidebar();
               });
+              
+              const menuBtn = item.querySelector('.veritalk-conversation-menu-btn');
+              const dropdown = item.querySelector('.veritalk-conversation-dropdown');
+              const deleteBtn = item.querySelector('.veritalk-conversation-delete');
+              if (menuBtn && dropdown) {
+                menuBtn.addEventListener('click', function(e) {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  const isOpen = !dropdown.hidden;
+                  document.querySelectorAll('.veritalk-conversation-dropdown').forEach(el => { el.hidden = true; });
+                  document.querySelectorAll('.veritalk-conversation-item').forEach(el => el.classList.remove('veritalk-conversation-item--dropdown-open'));
+                  dropdown.hidden = isOpen;
+                  if (!dropdown.hidden) item.classList.add('veritalk-conversation-item--dropdown-open');
+                });
+              }
+              if (deleteBtn) {
+                deleteBtn.addEventListener('click', function(e) {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  dropdown.hidden = true;
+                  deleteConversation(conv.id, item);
+                });
+              }
               
               conversationsList.appendChild(item);
             });
@@ -598,6 +676,7 @@
               messagesDiv.scrollTop = messagesDiv.scrollHeight;
             }, 50);
           }
+          updateVeritalkInputHeadingVisibility();
           
           // Reload conversations list to update active state
           loadConversationsList();
@@ -616,15 +695,17 @@
       
       // Clear messages and show welcome
       if (messagesDiv) {
+        const container = document.querySelector('.veritalk-container[data-user-name]') || document.querySelector('#veritalk-messages')?.closest('.veritalk-container');
+        const userName = (container && container.dataset.userName) ? container.dataset.userName : 'there';
+        const welcomeText = `Whats in your mind, ${userName}?`;
         messagesDiv.innerHTML = `
           <div class="veritalk-welcome">
-            <div class="veritalk-welcome-icon">
-              <i class="fas fa-comments"></i>
-            </div>
-            <h3>How can I help you today?</h3>
-            <p>I can help you with questions about religious texts, historical context, original languages, and translations.</p>
+            <p class="veritalk-welcome-text">${welcomeText}</p>
           </div>
         `;
+        const inputEl = document.getElementById('veritalk-input');
+        if (inputEl) inputEl.placeholder = welcomeText;
+        updateVeritalkInputHeadingVisibility();
       }
       
       closeHistorySidebar();

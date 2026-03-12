@@ -80,6 +80,16 @@ class VeritalkController < ApplicationController
     render json: { conversations: conversations }
   end
 
+  def destroy_conversation
+    conversation = current_user.conversations.find_by(id: params[:id])
+    unless conversation
+      render json: { error: 'Conversation not found' }, status: :not_found
+      return
+    end
+    conversation.destroy!
+    render json: { ok: true }
+  end
+
   private
 
   def find_or_create_conversation

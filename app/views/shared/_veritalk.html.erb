@@ -1,46 +1,36 @@
-<div class="veritalk-container">
-  <div class="veritalk-header">
-    <div class="veritalk-header-content">
-      <h1 class="veritalk-title">VeriTalk</h1>
-      <p class="veritalk-subtitle">
-        Ask about scriptures, religious history, original languages, and translations
-      </p>
-    </div>
-    <button class="veritalk-history-button" id="veritalk-history-btn" title="History">
-      <i class="fas fa-history"></i>
-    </button>
-  </div>
+<% user_display_name = defined?(@veritalk_user_name) && @veritalk_user_name.present? ? @veritalk_user_name : (user_signed_in? && current_user.present? ? (current_user.full_name.to_s.strip.presence || current_user.email.to_s.strip.presence || current_user.first_name) : 'there') %>
+<div class="veritalk-container" data-user-name="<%= user_display_name %>">
+  <button type="button" class="veritalk-history-button" id="veritalk-history-btn" title="History" aria-label="Open chat history">
+    <i class="fas fa-history"></i>
+  </button>
 
   <input type="hidden" id="veritalk-conversation-id" value="">
 
   <div id="veritalk-messages" class="veritalk-messages">
     <div class="veritalk-welcome">
-      <div class="veritalk-welcome-icon">
-        <i class="fas fa-comments"></i>
-      </div>
-      <h3>How can I help you today?</h3>
-      <p>I can help you with questions about religious texts, historical context, original languages, and translations.</p>
+      <p class="veritalk-welcome-text">Whats in your mind, <%= user_display_name %>?</p>
     </div>
   </div>
 
   <div class="veritalk-input-container">
-    <form id="veritalk-form" class="veritalk-form">
-      <div class="veritalk-input-wrapper">
-        <textarea
-          id="veritalk-input"
-          class="veritalk-input"
-          rows="1"
-          placeholder="Message VeriTalk..."
-          autocomplete="off"
-          spellcheck="true"
-        ></textarea>
-        <button type="submit" class="veritalk-send-button" id="veritalk-send-btn" disabled>
-          <i class="fas fa-paper-plane"></i>
-        </button>
-      </div>
-    </form>
-    <div class="veritalk-footer">
-      <p class="veritalk-disclaimer">VeriTalk can make mistakes. Check important information.</p>
+    <div class="veritalk-input-block veritalk-input-block--has-messages">
+      <h2 class="veritalk-input-heading">How can I help you today?</h2>
+      <form id="veritalk-form" class="veritalk-form">
+        <div class="veritalk-input-wrapper">
+          <textarea
+            id="veritalk-input"
+            class="veritalk-input"
+            rows="1"
+            placeholder="Whats in your mind, <%= user_display_name %>?"
+            autocomplete="off"
+            spellcheck="true"
+          ></textarea>
+          <%= image_tag 'smile.svg', alt: '', class: 'veritalk-input-smile', width: 20, height: 20 %>
+          <button type="submit" class="veritalk-send-button" id="veritalk-send-btn" disabled aria-label="Send">
+            <%= image_tag 'Arrow.svg', alt: '', class: 'veritalk-send-arrow', width: 9, height: 10 %>
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -48,25 +38,27 @@
   <div class="veritalk-history-sidebar" id="veritalk-history-sidebar">
     <div class="veritalk-history-header">
       <h2 class="veritalk-history-title">History</h2>
-      <button class="veritalk-history-close" id="veritalk-history-close">
+      <button class="veritalk-history-close" id="veritalk-history-close" aria-label="Close">
         <i class="fas fa-times"></i>
       </button>
-    </div>
-    
-    <div class="veritalk-history-tabs">
-      <button class="veritalk-history-tab active" data-tab="chats">Chats</button>
     </div>
 
     <div class="veritalk-history-content">
       <div class="veritalk-history-tab-content active" data-content="chats">
-        <button class="veritalk-new-chat-btn" id="veritalk-new-chat-btn">
-          <i class="fas fa-plus"></i>
-          <span>New Chat</span>
+        <button type="button" class="veritalk-new-chat-btn" id="veritalk-new-chat-btn">
+          <%= image_tag 'Add_icone.svg', alt: '', class: 'veritalk-new-chat-icon', width: 24, height: 24 %>
+          <span class="veritalk-new-chat-text">New Chat</span>
         </button>
+        <h3 class="veritalk-your-chats-title">Your chats</h3>
+        <div class="veritalk-history-search-wrap">
+          <%= image_tag 'search.svg', alt: '', class: 'veritalk-history-search-icon', width: 20, height: 20 %>
+          <input type="text" class="veritalk-history-search-input" id="veritalk-history-search" placeholder="Search" autocomplete="off" aria-label="Search chats">
+        </div>
         <div class="veritalk-conversations-list" id="veritalk-conversations-list">
           <div class="veritalk-history-loading">Loading conversations...</div>
         </div>
       </div>
+      <img src="<%= asset_path('three-dot.svg') %>" alt="" id="veritalk-three-dot-src" hidden>
     </div>
   </div>
 
