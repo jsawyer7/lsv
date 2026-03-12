@@ -443,7 +443,15 @@ body {
   }
 
   .my-claims-page.claims-page-facts-tab .feed-card-block .feed-card-content {
-    top: 7rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-weight: 400;
+    font-style: normal;
+    font-size: 12px;
+    line-height: 20px;
+    letter-spacing: 0%;
+    color: #4C4C4C;
   }
 
   .my-claims-page.claims-page-facts-tab .feed-card-block .feed-card-bottom-bar {
@@ -639,10 +647,18 @@ body {
   }
 
   .my-claim-content {
-    color: #222;
-    font-size: 1.08rem;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-weight: 400;
+    font-style: normal;
+    font-size: 12px;
+    line-height: 20px;
+    letter-spacing: 0%;
+    color: #4C4C4C;
     margin-bottom: 0.5rem;
     min-height: 40px;
+    flex: 1;
+    display: flex;
+    align-items: center;
   }
 
   .my-claim-card-footer {
@@ -772,20 +788,21 @@ body {
   }
 
   .new-claim-save-draft {
-    color: #2563eb;
-    font-weight: 600;
+    color: #2196F3;
+    font-weight: 500;
+    font-family: 'Inter', sans-serif;
     text-decoration: none;
-    background: #f5faff;
-    border: 1.5px solid #2563eb;
+    background: rgba(33, 150, 243, 0.08);
+    border: 1px solid #2196F3;
     border-radius: 8px;
-    padding: 10px 28px;
-    font-size: 1.08rem;
+    padding: 0.5rem 1.25rem;
+    font-size: 0.875rem;
     transition: background 0.2s, color 0.2s, border 0.2s;
     cursor: pointer;
     display: inline-block;
   }
   .new-claim-save-draft:hover {
-    background: #2563eb;
+    background: #2196F3;
     color: #fff;
   }
 
@@ -1142,17 +1159,18 @@ body {
     align-items: center;
     gap: 0.5rem;
     padding: 0.5rem 1rem;
+    font-family: 'Inter', sans-serif;
     font-size: 0.875rem;
     font-weight: 500;
     color: #fff;
-    background-color: #3b82f6;
-    border-radius: 0.375rem;
+    background-color: #2196F3;
+    border-radius: 8px;
     border: none;
     cursor: pointer;
     transition: all 0.2s;
 
     &:hover {
-      background-color: #2563eb;
+      background-color: #1976D2;
     }
 
     i {
@@ -1285,13 +1303,14 @@ body {
 }
 
 .add-evidence-btn {
-  background: #3b82f6;
+  background: #2196F3;
   color: white;
   border: none;
   border-radius: 8px;
-  padding: 0.75rem 1.5rem;
-  font-size: 1rem;
-  font-weight: 600;
+  padding: 0.5rem 1rem;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
   display: flex;
@@ -1299,7 +1318,7 @@ body {
   gap: 0.5rem;
 
   &:hover {
-    background: #2563eb;
+    background: #1976D2;
   }
 
   i {
@@ -1323,13 +1342,14 @@ body {
 }
 
 .evidence-type-option {
-  background: #f8fafc;
-  color: #374151;
-  border: 2px solid #e5e7eb;
+  background: #FFFFFF;
+  color: #171717;
+  border: 1px solid #E2E2E2;
   border-radius: 8px;
   padding: 0.75rem 1rem;
+  font-family: 'Inter', sans-serif;
   font-size: 0.875rem;
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
   display: flex;
@@ -1337,7 +1357,8 @@ body {
   gap: 0.5rem;
 
   &:hover {
-    background: #e0e7ff;
+    background: rgba(33, 150, 243, 0.08);
+    border-color: #2196F3;
     border-color: #3b82f6;
     color: #3b82f6;
   }
@@ -1582,19 +1603,20 @@ body {
 
 .add-evidence-btn {
   display: inline-block;
-  background: #2563eb;
+  background: #2196F3;
   color: #fff;
   border: none;
   border-radius: 8px;
-  padding: 10px 22px;
-  font-size: 1.08rem;
-  font-weight: 600;
+  padding: 0.5rem 1rem;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
   cursor: pointer;
-  margin-top: 10px;
+  margin-top: 0.5rem;
   transition: background 0.2s, color 0.2s;
 }
 .add-evidence-btn:hover {
-  background: #1746b0;
+  background: #1976D2;
   color: #fff;
 }
 
@@ -1603,76 +1625,87 @@ body {
   flex-direction: column;
   justify-content: flex-end;
   align-items: stretch;
-  background: #f8fafc;
-  border-radius: 16px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.07);
-  padding: 24px 18px 12px 18px;
-  min-height: 600px;
-  margin-left: 1rem;
-  margin-right: 2rem;
-  width: 80%;
+  background: #FFFFFF;
+  padding: 1rem 1.25rem 1rem;
+  min-height: 400px;
+  border-top: 1px solid #f0f0f0;
 }
 .ai-chatbot-header {
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: #23263b;
-  margin-bottom: 12px;
+  font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #171717;
+  margin-bottom: 0.75rem;
   text-align: center;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #f0f0f0;
 }
 .ai-chatbot-messages {
   flex: 1 1 0;
   overflow-y: auto;
-  margin-bottom: 12px;
-  max-height: 480px;
+  margin-bottom: 0.75rem;
+  max-height: 320px;
   padding-right: 4px;
 }
 .ai-chatbot-message {
-  margin-bottom: 10px;
-  padding: 10px 14px;
-  border-radius: 10px;
-  font-size: 1.05rem;
+  margin-bottom: 0.5rem;
+  padding: 0.625rem 0.875rem;
+  border-radius: 8px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.875rem;
   line-height: 1.5;
   max-width: 90%;
   word-break: break-word;
 }
 .ai-chatbot-message.user {
-  background: #2563eb;
+  background: #2196F3;
   color: #fff;
   align-self: flex-end;
   margin-left: auto;
 }
 .ai-chatbot-message.ai {
-  background: #e0e7ff;
-  color: #23263b;
+  background: rgba(33, 150, 243, 0.08);
+  color: #171717;
+  border: 1px solid rgba(33, 150, 243, 0.2);
   align-self: flex-start;
   margin-right: auto;
 }
 .ai-chatbot-input-row {
   display: flex;
-  gap: 8px;
+  gap: 0.5rem;
   align-items: center;
 }
 .ai-chatbot-input {
   flex: 1 1 0;
-  border: 1px solid #cbd5e1;
+  border: 1px solid #E2E2E2;
   border-radius: 8px;
-  padding: 8px 12px;
-  font-size: 1rem;
+  padding: 0.5rem 0.75rem;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.875rem;
+  color: #171717;
   outline: none;
+  transition: border 0.2s;
+}
+.ai-chatbot-input:focus {
+  border-color: #2196F3;
+}
+.ai-chatbot-input::placeholder {
+  color: #939393;
 }
 .ai-chatbot-send {
-  background: #2563eb;
+  background: #2196F3;
   color: #fff;
   border: none;
   border-radius: 8px;
-  padding: 8px 18px;
-  font-size: 1rem;
-  font-weight: 600;
+  padding: 0.5rem 1rem;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
   cursor: pointer;
   transition: background 0.2s;
 }
 .ai-chatbot-send:hover {
-  background: #1746b0;
+  background: #1976D2;
 }
 
 .ai-evidence-chatbot-container {
@@ -1680,13 +1713,10 @@ body {
   flex-direction: column;
   justify-content: flex-end;
   align-items: stretch;
-  background: #f8fafc;
-  border-radius: 16px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.07);
-  padding: 24px 18px 12px 18px;
-  min-height: 600px;
-  margin-left: 1rem;
-  margin-right: 2rem;
+  background: #FFFFFF;
+  padding: 1rem 1.25rem 1rem;
+  min-height: 400px;
+  border-top: 1px solid #f0f0f0;
 }
 
 .claim-evidence-block {

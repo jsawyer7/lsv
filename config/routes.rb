@@ -54,6 +54,7 @@ Rails.application.routes.draw do
   get '/veritalk/conversation/:id/messages', to: 'veritalk#messages', as: :veritalk_messages
   get '/veritalk/latest', to: 'veritalk#latest_conversation', as: :veritalk_latest
   get '/veritalk/conversations', to: 'veritalk#conversations_list', as: :veritalk_conversations
+  delete '/veritalk/conversation/:id', to: 'veritalk#destroy_conversation', as: :veritalk_conversation
 
   post '/ai/claim_suggestion', to: 'ai#claim_suggestion'
   post '/ai/evidence_suggestion', to: 'ai#evidence_suggestion'

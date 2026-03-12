@@ -1,23 +1,24 @@
 // VeriTalk ChatGPT-like UI Styles
 
 .veritalk-container {
+  position: fixed;
+  width: 1238px;
+  top: 83px;
+  left: 169px;
+  bottom: 0;
+  border-radius: 8px;
+  opacity: 1;
+  background: #FFFFFF;
   display: flex;
   flex-direction: column;
-  height: 100%;
-  max-height: 100vh;
-  background: #ffffff;
-  position: relative;
   overflow: hidden;
+  box-sizing: border-box;
 }
 
 .veritalk-page {
   height: calc(100vh - 80px);
   display: flex;
   flex-direction: column;
-  
-  .veritalk-container {
-    height: 100%;
-  }
 }
 
 .veritalk-header {
@@ -40,15 +41,12 @@
   text-align: center;
 }
 
-.veritalk-header {
-  position: relative;
-  
-  .veritalk-history-button {
-    position: absolute;
-    right: 24px;
-    top: 50%;
-    transform: translateY(-50%);
-  }
+// History button (no header): top-right of container
+.veritalk-container > .veritalk-history-button {
+  position: absolute;
+  right: 16px;
+  top: 16px;
+  z-index: 10;
 }
 
 .veritalk-history-button {
@@ -91,8 +89,9 @@
 
 .veritalk-messages {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
-  padding: 24px 0;
+  padding: 70px 0;
   background: #ffffff;
   scroll-behavior: smooth;
   
@@ -115,37 +114,24 @@
 }
 
 .veritalk-welcome {
-  max-width: 768px;
-  margin: 0 auto;
-  padding: 48px 24px;
-  text-align: center;
-  
-  .veritalk-welcome-icon {
-    width: 64px;
-    height: 64px;
-    margin: 0 auto 24px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: 28px;
-  }
-  
-  h3 {
-    font-size: 24px;
-    font-weight: 600;
-    color: #111827;
-    margin: 0 0 12px 0;
-  }
-  
-  p {
-    font-size: 15px;
-    color: #6b7280;
-    margin: 0;
-    line-height: 1.6;
-  }
+  position: relative;
+  min-height: 200px;
+}
+
+.veritalk-welcome-text {
+  position: absolute;
+  height: 20px;
+  top: 161px;
+  left: 490px;
+  opacity: 1;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-weight: 400;
+  font-style: normal;
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: 0%;
+  color: #939393;
+  margin: 0;
 }
 
 .veritalk-message {
@@ -157,7 +143,7 @@
   animation: fadeIn 0.3s ease-in;
   
   &.user {
-    background: #f9fafb;
+    
     
     .veritalk-message-content {
       margin-left: auto;
@@ -240,31 +226,62 @@
 }
 
 .veritalk-input-container {
-  border-top: 1px solid #e5e7eb;
+  flex-shrink: 0;
   background: #ffffff;
   padding: 12px 0;
-  position: sticky;
-  bottom: 0;
   z-index: 10;
 }
 
+.veritalk-input-block {
+  width: 628px;
+  position: absolute;
+  top: 80vh;
+  left: 268px;
+  opacity: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.veritalk-input-heading {
+  font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-weight: 600;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 100%;
+  letter-spacing: 0%;
+  text-align: center;
+  color: #171717;
+  margin: 0;
+  min-height: 24px;
+}
+
+// Hide "How can I help you today?" when chat has messages (only show in empty/new chats).
+// Use visibility + reserved height so the input form stays in the same position and doesn't move up.
+.veritalk-input-block--has-messages .veritalk-input-heading {
+  visibility: hidden;
+  height: 24px;
+  overflow: hidden;
+}
+
 .veritalk-form {
-  max-width: 768px;
-  margin: 0 auto;
-  padding: 0 24px;
+  margin: 0;
+  padding: 0;
 }
 
 .veritalk-input-wrapper {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+  width: 628px;
+  height: 48px;
   background: #ffffff;
-  border: 1px solid #d1d5db;
-  border-radius: 24px;
-  padding: 8px 12px;
-  transition: all 0.2s ease;
-  min-height: 48px;
-  
+  border: 1px solid #E2E2E2;
+  border-radius: 100px;
+  padding: 0 16px;
+  box-sizing: border-box;
+  opacity: 1;
+
   &:focus-within {
     border-color: #346FCF;
     box-shadow: 0 0 0 3px rgba(52, 111, 207, 0.1);
@@ -276,69 +293,84 @@
   border: none;
   outline: none;
   resize: none;
-  font-size: 15px;
-  line-height: 32px;
-  color: #111827;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-weight: 400;
+  font-style: normal;
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: 0%;
+  color: #171717;
   background: transparent;
-  max-height: 200px;
+  max-height: 120px;
   overflow-y: auto;
-  font-family: inherit;
-  padding: 0;
+  padding: 14px 0;
   margin: 0;
-  min-height: 32px;
+  min-height: 20px;
   vertical-align: middle;
-  
+
   &::placeholder {
-    color: #9ca3af;
-    line-height: 32px;
+    color: #939393;
     opacity: 1;
   }
-  
+
   &::-webkit-scrollbar {
     width: 6px;
   }
-  
+
   &::-webkit-scrollbar-track {
     background: transparent;
   }
-  
+
   &::-webkit-scrollbar-thumb {
     background: #d1d5db;
     border-radius: 3px;
   }
 }
 
+.veritalk-input-smile {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  opacity: 1;
+}
+
 .veritalk-send-button {
-  width: 36px;
-  height: 36px;
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
   border: none;
-  border-radius: 50%;
-  background: #346FCF;
-  color: white;
+  border-radius: 10px;
+  padding: 5px 10px;
+  gap: 10px;
+  background: #699FFB26;
+  opacity: 1;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: all 0.2s ease;
   flex-shrink: 0;
-  
+  box-sizing: content-box;
+
+  .veritalk-send-arrow {
+    width: 9px;
+    height: 10px;
+    object-fit: contain;
+  }
+
   &:hover:not(:disabled) {
-    background: #2d5fb8;
+    background: rgba(105, 159, 251, 0.25);
     transform: scale(1.05);
   }
-  
+
   &:active:not(:disabled) {
     transform: scale(0.95);
   }
-  
+
   &:disabled {
-    background: #d1d5db;
+    background: #e5e7eb;
     cursor: not-allowed;
-    opacity: 0.6;
-  }
-  
-  i {
-    font-size: 14px;
+    opacity: 0.7;
   }
 }
 
@@ -451,15 +483,18 @@
 .veritalk-history-sidebar {
   position: fixed;
   top: 0;
-  right: -400px;
-  width: 400px;
+  right: -312px;
+  width: 312px;
   height: 100vh;
+  max-height: 100vh;
   background: #ffffff;
   z-index: 2005;
   display: flex;
   flex-direction: column;
   transition: right 0.3s ease;
   box-shadow: -4px 0 12px rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+  overflow: hidden;
   
   &.active {
     right: 0;
@@ -470,20 +505,22 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px 24px;
+  padding: 16px 24px;
   border-bottom: 1px solid #e5e7eb;
   background: #ffffff;
   gap: 16px;
-  min-width: 0; // Allow flex items to shrink
+  min-width: 0;
+  flex-shrink: 0;
 }
 
 .veritalk-history-title {
+  font-family: Roboto, sans-serif;
   font-size: 20px;
   font-weight: 600;
-  color: #0B0146;
+  color: #171717;
   margin: 0;
   flex: 1;
-  min-width: 0; // Allow text truncation
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -503,7 +540,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0; // Prevent button from shrinking
+  flex-shrink: 0;
   
   &:hover {
     background: #f3f4f6;
@@ -511,40 +548,12 @@
   }
 }
 
-.veritalk-history-tabs {
-  display: flex;
-  padding: 0 24px;
-  border-bottom: 1px solid #e5e7eb;
-  gap: 24px;
-  background: #ffffff;
-}
-
-.veritalk-history-tab {
-  background: transparent;
-  border: none;
-  color: #6b7280;
-  font-size: 15px;
-  font-weight: 500;
-  padding: 16px 0;
-  cursor: pointer;
-  border-bottom: 2px solid transparent;
-  transition: all 0.2s ease;
-  
-  &:hover {
-    color: #111827;
-  }
-  
-  &.active {
-    color: #346FCF;
-    border-bottom-color: #346FCF;
-  }
-}
-
 .veritalk-history-content {
   flex: 1;
   overflow-y: auto;
-  padding: 16px 0;
-  background: #f8f9fe;
+  padding: 24px;
+  padding-top: 0;
+  background: #ffffff;
   
   &::-webkit-scrollbar {
     width: 8px;
@@ -573,91 +582,227 @@
 }
 
 .veritalk-new-chat-btn {
-  width: calc(100% - 48px);
-  margin: 0 24px 16px;
-  padding: 12px 16px;
-  background: #346FCF;
-  color: #ffffff;
-  border: none;
-  border-radius: 8px;
-  font-size: 15px;
+  width: 264px;
+  height: 45px;
+  margin: 24px 0 20px 0;
+  padding: 12px 30px;
+  background: transparent;
+  color: #2196F3;
+  border: 1px solid #2196F3;
+  border-radius: 100px;
+  font-family: Roboto, sans-serif;
   font-weight: 600;
+  font-size: 16px;
+  line-height: 100%;
+  letter-spacing: 0;
   cursor: pointer;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  transition: all 0.2s ease;
+  gap: 10px;
+  transition: background 0.2s ease, color 0.2s ease;
   
   &:hover {
-    background: #2d5fb8;
-    transform: translateY(-1px);
+    background: rgba(33, 150, 243, 0.08);
   }
   
-  &:active {
-    transform: translateY(0);
+  .veritalk-new-chat-icon {
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
   }
   
-  i {
-    font-size: 14px;
+  .veritalk-new-chat-text {
+    font-family: Roboto, sans-serif;
+    font-weight: 600;
+    font-size: 16px;
+    line-height: 100%;
+    letter-spacing: 0;
+    color: #2196F3;
+  }
+}
+
+.veritalk-your-chats-title {
+  margin: 0 0 16px 0;
+  font-family: Roboto, sans-serif;
+  font-weight: 500;
+  font-size: 18px;
+  line-height: 100%;
+  letter-spacing: 0;
+  color: #171717;
+}
+
+.veritalk-history-search-wrap {
+  position: relative;
+  width: 264px;
+  height: 40px;
+  margin-bottom: 20px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 100px;
+  display: flex;
+  align-items: center;
+  background: #fff;
+}
+
+.veritalk-history-search-icon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  pointer-events: none;
+}
+
+.veritalk-history-search-input {
+  width: 100%;
+  height: 100%;
+  padding: 0 16px 0 44px;
+  border: none;
+  border-radius: 100px;
+  font-family: Inter, sans-serif;
+  font-weight: 400;
+  font-size: 12px;
+  line-height: 20px;
+  letter-spacing: 0;
+  color: #171717;
+  background: transparent;
+  
+  &::placeholder {
+    color: #939393;
+  }
+  
+  &:focus {
+    outline: none;
   }
 }
 
 .veritalk-conversations-list {
-  padding: 0 24px;
+  width: 264px;
+  padding: 0;
 }
 
 .veritalk-history-loading {
-  color: #6b7280;
+  color: #939393;
   text-align: center;
-  padding: 24px;
+  padding: 24px 0;
   font-size: 14px;
+  font-family: Inter, sans-serif;
 }
 
 .veritalk-conversation-item {
-  padding: 12px 16px;
+  position: relative;
+  width: 100%;
+  min-height: 40px;
+  padding: 12px 40px 12px 12px;
   margin-bottom: 8px;
-  border-radius: 8px;
+  border-radius: 12px;
   cursor: pointer;
-  transition: all 0.2s ease;
-  border: 1px solid transparent;
-  background: #ffffff;
+  transition: background 0.2s ease;
+  border: none;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  z-index: 1;
   
   &:hover {
-    background: #f3f4f6;
-    border-color: #e5e7eb;
+    background: rgba(0, 0, 0, 0.04);
   }
   
   &.active {
-    background: #e3f2fd;
-    border-color: #346FCF;
+    background: #2196F31C;
+  }
+  
+  &.veritalk-conversation-item--dropdown-open {
+    z-index: 200;
   }
 }
 
 .veritalk-conversation-topic {
-  color: #0B0146;
-  font-size: 15px;
-  font-weight: 500;
-  margin: 0 0 4px 0;
+  flex: 1;
+  min-width: 0;
+  font-family: Roboto, sans-serif;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 16px;
+  letter-spacing: 0;
+  color: #171717;
+  margin: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .veritalk-conversation-meta {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  color: #6b7280;
-  font-size: 12px;
-  margin-top: 4px;
+  display: none;
 }
 
-.veritalk-conversation-count {
+.veritalk-conversation-actions {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
   display: flex;
   align-items: center;
-  gap: 4px;
-  color: #6b7280;
+  justify-content: center;
+  flex-shrink: 0;
+  z-index: 20;
+  
+  .veritalk-conversation-menu-btn {
+    padding: 0;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    
+    &:hover {
+      opacity: 0.8;
+    }
+  }
+  
+  img {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+.veritalk-conversation-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 100;
+  min-width: 100px;
+}
+
+.veritalk-conversation-delete {
+  display: block;
+  width: 100%;
+  text-align: left;
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  color: #d32f2f;
+  padding: 8px 12px;
+  white-space: nowrap;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 8px;
+  
+  &:hover {
+    background: rgba(211, 47, 47, 0.08);
+  }
 }
 
 .veritalk-empty-history {
@@ -700,7 +845,9 @@
   
   .veritalk-history-sidebar {
     width: 100%;
+    max-width: 312px;
     right: -100%;
+    border-radius: 0;
   }
 }
 

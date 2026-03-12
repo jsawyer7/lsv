@@ -9,6 +9,7 @@ class DashboardController < ApplicationController
 
   def veritalk
     @conversations = current_user.conversations.order(updated_at: :desc).limit(50)
+    @veritalk_user_name = current_user.full_name.to_s.strip.presence || current_user.email.to_s.strip.presence || current_user.first_name
   end
 
   def claims

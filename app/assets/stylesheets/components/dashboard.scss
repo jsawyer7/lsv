@@ -79,7 +79,7 @@
   margin-top: 2rem;
 }
 
-// Sidebar/Navigation
+// Sidebar/Navigation — full by default; collapsed (icons only) + hover expand only on VeriTalk page
 .dashboard-nav {
   position: fixed;
   width: 17.5rem;
@@ -114,6 +114,46 @@ body.dashboard-nav-page .dashboard-nav {
   }
 }
 
+// VeriTalk page only: collapsed nav (icons only), expand on hover
+body.collapsed-dashboard-nav .dashboard-nav {
+  width: 69px;
+  height: 312px;
+  top: 85px;
+  left: 80px;
+  border-radius: 8px;
+  transition: width 0.25s ease, height 0.25s ease, top 0.2s ease;
+
+  &:hover {
+    width: 17.5rem;
+    height: 19.5rem;
+    background: transparent;
+
+    .nav-item {
+      left: 1.5rem;
+      transform: translateX(0);
+      justify-content: flex-start;
+    }
+    .nav-text {
+      max-width: 12rem;
+      opacity: 1;
+    }
+  }
+
+  &.has-admin:hover {
+    height: 22.5rem;
+  }
+
+  @media (max-width: 48rem) {
+    width: 69px;
+    left: 1rem;
+    top: 5rem;
+    &:hover {
+      width: 15rem;
+    }
+  }
+}
+
+// Dashboard sources — full by default; collapsed only on VeriTalk page
 .dashboard-sources {
   position: fixed;
   width: 17.5rem;
@@ -138,6 +178,41 @@ body.dashboard-nav-page .dashboard-sources {
   top: 30rem;
 }
 
+// VeriTalk page only: collapsed sources (icons only), expand on hover
+body.collapsed-dashboard-nav .dashboard-sources {
+  width: 69px;
+  height: 216px;
+  top: 417px;
+  left: 80px;
+  transition: width 0.25s ease, height 0.25s ease, top 0.2s ease;
+
+  &:hover {
+    width: 17.5rem;
+    height: 13.5rem;
+    background: transparent;
+
+
+    .dashboard-sources-item {
+      left: 1.5rem;
+      transform: translateX(0);
+      justify-content: flex-start;
+    }
+    .dashboard-sources-text {
+      max-width: 12rem;
+      opacity: 1;
+    }
+  }
+
+  @media (max-width: 48rem) {
+    width: 69px;
+    left: 1rem;
+    top: 22rem;
+    &:hover {
+      width: 15rem;
+    }
+  }
+}
+
 .dashboard-sources-items {
   position: relative;
   padding: 1rem 0;
@@ -155,40 +230,76 @@ body.dashboard-nav-page .dashboard-sources {
   color: #1F1F1F;
   text-decoration: none;
   transition: background 0.2s ease, color 0.2s ease;
+
+  &:nth-child(2) {
+    position: absolute;
+    top: 4.5rem;
+    left: 2.5rem;
+    min-width: 5rem;
+    height: 1.5rem;
+    gap: 0.75rem;
+    padding: 0;
+  }
+  &:nth-child(3) {
+    position: absolute;
+    top: 7.5rem;
+    left: 2.5rem;
+    min-width: 5rem;
+    height: 1.5rem;
+    gap: 0.75rem;
+    padding: 0;
+  }
+  &:nth-child(4) {
+    position: absolute;
+    top: 10.5rem;
+    left: 2.5rem;
+    min-width: 5rem;
+    height: 1.5rem;
+    gap: 0.75rem;
+    padding: 0;
+  }
+
+  &:hover {
+    background: transparent;
+  }
 }
 
-.dashboard-sources-item:nth-child(2) {
-  position: absolute;
-  top: 4.5rem;
-  left: 2.5rem;
-  min-width: 5rem;
-  height: 1.5rem;
-  gap: 0.75rem;
+// VeriTalk page only: sources items collapsed (icons centered)
+body.collapsed-dashboard-nav .dashboard-sources-items {
   padding: 0;
 }
 
-.dashboard-sources-item:nth-child(3) {
+body.collapsed-dashboard-nav .dashboard-sources-item {
   position: absolute;
-  top: 7.5rem;
-  left: 2.5rem;
-  min-width: 5rem;
   height: 1.5rem;
-  gap: 0.75rem;
   padding: 0;
+  left: 60%;
+  transform: translateX(-50%);
+  justify-content: center;
+  transition: left 0.25s ease, transform 0.25s ease, background 0.2s ease, color 0.2s ease;
+
+  &:nth-child(1) {
+    top: 1.5rem;
+  }
+  &:nth-child(2) {
+    top: 4.5rem;
+    left: 60%;
+    transform: translateX(-50%);
+  }
+  &:nth-child(3) {
+    top: 7.5rem;
+    left: 60%;
+    transform: translateX(-50%);
+  }
+  &:nth-child(4) {
+    top: 10.5rem;
+    left: 60%;
+    transform: translateX(-50%);
+  }
 }
 
-.dashboard-sources-item:nth-child(4) {
-  position: absolute;
-  top: 10.5rem;
-  left: 2.5rem;
-  min-width: 5rem;
-  height: 1.5rem;
-  gap: 0.75rem;
-  padding: 0;
-}
-
-.dashboard-sources-item:hover {
-  background: transparent;
+body.collapsed-dashboard-nav .dashboard-sources:hover .dashboard-sources-item:nth-child(1) {
+  padding: 0 1.5rem;
 }
 
 .dashboard-sources-icon {
@@ -203,6 +314,15 @@ body.dashboard-nav-page .dashboard-sources {
   font-size: 1.125rem;
   font-weight: 400;
   color: #111827;
+}
+
+// VeriTalk page only: hide source labels until hover
+body.collapsed-dashboard-nav .dashboard-sources-text {
+  max-width: 0;
+  overflow: hidden;
+  opacity: 0;
+  white-space: nowrap;
+  transition: max-width 0.25s ease, opacity 0.2s ease;
 }
 
 .nav-text {
@@ -225,54 +345,49 @@ body.dashboard-nav-page .dashboard-sources {
     text-decoration: none;
     transition: all 0.2s ease;
     opacity: 1;
+    left: 1.5rem;
+    justify-content: flex-start;
 
     // Facts
     &.nav-item-facts {
       width: 5.1875rem;
       top: 1.5rem;
-      left: 1.5rem;
     }
 
     // Claims
     &.nav-item-claims {
       width: 6rem;
       top: 4.5rem;
-      left: 1.5rem;
     }
 
     // My Claims
     &.nav-item-myclaims {
       width: 7.8125rem;
       top: 7.5rem;
-      left: 1.5rem;
     }
 
     // Theories
     &.nav-item-theories {
       width: 6.875rem;
       top: 10.5rem;
-      left: 1.5rem;
     }
 
     // My Theories
     &.nav-item-mytheories {
       width: 8.6875rem;
       top: 13.5rem;
-      left: 1.5rem;
     }
 
     // VeriTalk
     &.nav-item-veritalk {
       width: 6.5625rem;
       top: 16.5rem;
-      left: 1.5rem;
     }
 
     // Admin Dashboard
     &.nav-item-admin {
       width: 10.5rem;
       top: 19.5rem;
-      left: 1.5rem;
     }
 
     &:hover {
@@ -310,6 +425,22 @@ body.dashboard-nav-page .dashboard-sources {
       color: #1F1F1F;
     }
   }
+}
+
+// VeriTalk page only: collapsed nav (icons only), expand on hover
+body.collapsed-dashboard-nav .nav-text {
+  max-width: 0;
+  overflow: hidden;
+  opacity: 0;
+  white-space: nowrap;
+  transition: max-width 0.25s ease, opacity 0.2s ease;
+}
+
+body.collapsed-dashboard-nav .nav-items .nav-item {
+  left: 60%;
+  transform: translateX(-50%);
+  justify-content: center;
+  transition: left 0.25s ease, transform 0.25s ease, opacity 0.2s ease;
 }
 
 // Main Content Area
@@ -1662,7 +1793,7 @@ body.dashboard-nav-page .dashboard-sources {
       
       .wtf-name {
         font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-        font-weight: 600;
+        font-weight: 400;
         font-style: normal;
         font-size: 16px;
         line-height: 16px;
@@ -4641,83 +4772,95 @@ body.dashboard-nav-page .dashboard-sources {
   gap: 8px;
 }
 
+// New Claim page — theme match: #F4F2EE background, white cards, #2196F3, Inter/Roboto
+#claim-form-wrapper {
+  position: relative;
+  background: #F4F2EE;
+  min-height: calc(100vh - 4rem);
+  padding: 1.5rem;
+}
+
 .new-claim-main {
+  position: absolute;
+  left: 180px;
   display: flex;
-  gap: 0;
+  gap: 1.5rem;
   align-items: flex-start;
-  background: #fff;
-  min-height: 100vh;
+  right: 1.5rem;
 }
 .new-claim-center {
-  flex: 0 1 900px;
-  max-width: 900px;
-  margin: 0;
+  flex: 2 2 560px;
+  max-width: 692px;
+  min-height: 550px;
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  background: #fff;
-  padding-top: 1rem;
+  background: #FFFFFF;
+  border-radius: 8px;
+  border: 1px solid #f0f0f0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
 }
 .new-claim-header {
-  padding: 24px 32px 12px 32px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 18px;
+  padding: 1.5rem 1.5rem 0.75rem;
+  border-bottom: 1px solid #f0f0f0;
   h2 {
     margin: 0;
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: #23263b;
+    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #171717;
   }
 }
 .new-claim-content {
   flex: 1 1 0;
   overflow-y: auto;
-  max-height: calc(100vh - 120px);
   display: flex;
   flex-direction: column;
-  gap: 0;
-  padding: 0 32px 80px 32px;
-  background: #fff;
+  padding: 1.5rem 1.5rem 2rem;
 }
 .new-claim-title {
-  font-size: 1.6rem;
-  font-weight: 700;
-  margin-bottom: 24px;
-  color: #23263b;
+  font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0 0 1rem 0;
+  color: #171717;
 }
 .new-claim-field {
-  margin-bottom: 28px;
+  margin-bottom: 1.25rem;
 }
 .new-claim-field label {
-  font-size: 1.13rem;
-  font-weight: 600;
-  color: #23263b;
-  margin-bottom: 8px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #171717;
+  margin-bottom: 0.5rem;
   display: block;
 }
 .new-claim-input {
   width: 100%;
-  border: 1.5px solid #e5e7eb;
+  border: 1px solid #E2E2E2;
   border-radius: 8px;
-  padding: 16px 18px;
-  font-size: 1.08rem;
-  background: #fafbfc;
-  color: #23263b;
-  margin-top: 6px;
+  padding: 12px 16px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  background: #FFFFFF;
+  color: #171717;
+  margin-top: 0.25rem;
   resize: none;
   transition: border 0.2s;
+  box-sizing: border-box;
 }
 .new-claim-input:focus {
-  border-color: #2563eb;
+  border-color: #2196F3;
   outline: none;
 }
 .new-claim-char-count {
   text-align: right;
-  font-size: 0.97rem;
-  color: #64748b;
-  margin-top: 4px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.75rem;
+  color: #939393;
+  margin-top: 0.25rem;
 }
 .new-claim-sources-section {
   margin-bottom: 32px;
@@ -4765,20 +4908,21 @@ body.dashboard-nav-page .dashboard-sources {
 }
 .add-source-btn {
   background: #fff;
-  color: #2563eb;
-  border: 1.5px solid #2563eb;
+  color: #2196F3;
+  border: 1px solid #2196F3;
   border-radius: 8px;
-  padding: 7px 18px;
-  font-size: 1.08rem;
-  font-weight: 600;
+  padding: 0.5rem 1rem;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
   cursor: pointer;
   transition: background 0.2s, color 0.2s, border 0.2s;
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 0.5rem;
 }
 .add-source-btn:hover {
-  background: #2563eb;
+  background: #2196F3;
   color: #fff;
 }
 .add-source-dropdown {
@@ -4811,51 +4955,72 @@ body.dashboard-nav-page .dashboard-sources {
 .new-claim-actions {
   display: flex;
   align-items: center;
-  gap: 18px;
-  margin-top: 32px;
-  margin-bottom: 32px;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  margin-bottom: 0;
 }
 .new-claim-cancel {
   background: #f3f4f6;
-  color: #64748b;
+  color: #4C4C4C;
   border: none;
   border-radius: 8px;
-  padding: 10px 28px;
-  font-size: 1.08rem;
-  font-weight: 600;
+  padding: 0.5rem 1.25rem;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
   cursor: pointer;
   transition: background 0.2s, color 0.2s;
 }
 .new-claim-cancel:hover {
   background: #e5e7eb;
-  color: #23263b;
+  color: #171717;
 }
 .new-claim-submit {
-  background: #2563eb;
+  background: #2196F3;
   color: #fff;
   border: none;
   border-radius: 8px;
-  padding: 10px 28px;
-  font-size: 1.08rem;
-  font-weight: 600;
+  padding: 0.5rem 1.25rem;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
   cursor: pointer;
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 0.5rem;
   transition: background 0.2s;
 }
 .new-claim-submit:hover {
-  background: #1746a2;
+  background: #1976D2;
 }
 .new-claim-rightbar {
-  max-width: 600px;
-  padding: 32px 0 0 0;
+  height: 550px;
+  flex: 1 1 1px;
+  min-width: 0;
   position: sticky;
-  top: 0;
+  top: 1.5rem;
   align-self: flex-start;
-  background: #fff;
-  border-left: 1.5px solid #e5e7eb;
-  min-height: 100vh;
+  background: #FFFFFF;
+  border-radius: 8px;
+  border: 1px solid #f0f0f0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+
+  .ai-chatbot-container,
+  .ai-evidence-chatbot-container {
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .ai-chatbot-messages {
+    flex: 1 1 0;
+    min-height: 0;
+    max-height: none;
+  }
 }
 .new-claim-illustration {
   flex: 0 0 420px;
@@ -4874,23 +5039,19 @@ body.dashboard-nav-page .dashboard-sources {
 @media (max-width: 1100px) {
   .new-claim-main {
     flex-direction: column;
-    gap: 0;
-    padding: 0;
+    gap: 1rem;
   }
   .new-claim-center {
-    height: auto;
-    min-height: 60vh;
+    max-width: 100%;
   }
   .new-claim-content {
-    max-height: none;
-    padding: 0 24px 40px 24px;
+    padding: 1.25rem 1.5rem 1.5rem;
   }
   .new-claim-rightbar {
     width: 100%;
-    max-width: none;
-    min-height: auto;
-    border-left: none;
-    border-top: 1.5px solid #e5e7eb;
+    max-width: 100%;
+    position: relative;
+    top: 0;
   }
   .new-claim-illustration {
     margin-top: 0;
@@ -4900,25 +5061,24 @@ body.dashboard-nav-page .dashboard-sources {
   }
 }
 @media (max-width: 700px) {
+  #claim-form-wrapper {
+    padding: 1rem;
+  }
   .new-claim-main {
     flex-direction: column;
-    gap: 0;
-    padding: 0;
+    gap: 1rem;
   }
   .new-claim-center {
-    height: auto;
-    min-height: 50vh;
+    max-width: 100%;
   }
   .new-claim-content {
-    max-height: none;
-    padding: 0 16px 32px 16px;
+    padding: 1rem 1rem 1.25rem;
   }
   .new-claim-rightbar {
     width: 100%;
-    max-width: none;
-    min-height: auto;
-    border-left: none;
-    border-top: 1.5px solid #e5e7eb;
+    max-width: 100%;
+    position: relative;
+    top: 0;
   }
   .new-claim-illustration {
     margin-top: 0;
