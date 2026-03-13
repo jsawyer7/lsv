@@ -1,0 +1,14 @@
+(function() {
+  var wrapId = '<%= @follow_context %>-follow-wrap-<%= @followed_user.id %>';
+  var wrap = document.getElementById(wrapId);
+  if (wrap) {
+    wrap.innerHTML = '<%= j render("follows/followed_button", user: @followed_user, from: @follow_context) %>';
+    var row = wrap.closest('.my-peer-row');
+    if (row) {
+      var countEl = row.querySelector('.my-peer-followers-count');
+      if (countEl) countEl.textContent = '<%= @followed_user.followers.count %> followers';
+      var avatarsEl = row.querySelector('.my-peer-followers-avatars');
+      if (avatarsEl) avatarsEl.innerHTML = '<%= j render("follows/follower_avatars", user: @followed_user) %>';
+    }
+  }
+})();

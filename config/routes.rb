@@ -90,6 +90,7 @@ Rails.application.routes.draw do
 
   get '/users/:id/profile', to: 'users#profile', as: :user_profile
   get '/users/:id/profile/infinite', to: 'users#profile_infinite', as: :user_profile_infinite
+  get '/users/:id/profile/theories_infinite', to: 'users#profile_theories_infinite', as: :user_profile_theories_infinite
 
   # Specific theory routes must come before resources to avoid route conflicts
   get 'theories/public', to: 'theories#public_theories', as: :public_theories

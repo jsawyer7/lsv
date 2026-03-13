@@ -1,0 +1,54 @@
+<script>
+(function() {
+  function handleFollowFormSubmit(e) {
+    var form = e.target;
+    if (form.tagName !== 'FORM') return;
+    if (!form.action || form.action.indexOf('/follows') === -1) return;
+    if (!form.classList.contains('js-follow-remote-form')) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    var url = form.action;
+    var body = new FormData(form);
+    var method = (form.method || 'get').toUpperCase();
+    if (method === 'GET') method = 'POST';
+
+    var headers = {
+      'Accept': 'text/javascript',
+      'X-Requested-With': 'XMLHttpRequest'
+    };
+
+    var options = {
+      method: method,
+      body: body,
+      headers: headers,
+      credentials: 'same-origin'
+    };
+
+    fetch(url, options)
+      .then(function(response) {
+        if (!response.ok) throw new Error('Network response was not ok');
+        return response.text();
+      })
+      .then(function(text) {
+        if (text && text.length > 0) {
+          try {
+            (function() { eval(text); })();
+          } catch (err) {
+            console.error('Follow AJAX script error:', err);
+          }
+        }
+      })
+      .catch(function(err) {
+        console.error('Follow AJAX request failed:', err);
+        form.removeAttribute('data-remote');
+        form.submit();
+      });
+
+    return false;
+  }
+
+  document.addEventListener('submit', handleFollowFormSubmit, true);
+})();
+</script>

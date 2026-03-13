@@ -1,341 +1,581 @@
-// Profile Page Styles
-.profile-main {
+.profile-page-main {
   display: flex;
   gap: 0;
   align-items: flex-start;
-  background: #fff;
+  background: #F4F2EE;
   min-height: 100vh;
-}
-.profile-center {
-  flex: 1 1 0;
-  max-width: none;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  background: #fff;
-  padding-top: 1rem;
-}
-.profile-header {
-  padding: 24px 32px 12px 32px;
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  margin-bottom: 18px;
-  h2 {
-    margin: 0;
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: #23263b;
+
+  .profile-page-content {
+    position: relative;
+    flex: 1;
+    min-width: 0;
   }
-}
-.profile-tabs {
-  display: flex;
-  gap: 1.5rem;
-  margin-bottom: 2rem;
-  background: #fff;
-  border-radius: 12px;
-  padding: 0.7rem 1.2rem;
-  border: 2px solid #e5e7eb;
-  max-width: 19rem;
-  margin-left: 2rem;
-}
-.profile-tab {
-  color: #888;
-  font-size: 1.08rem;
-  font-weight: 500;
-  text-decoration: none;
-  padding: 0.5rem 1.5rem;
-  border-radius: 10px;
-  transition: background 0.2s, color 0.2s;
-  background: transparent;
-  border: none;
-  margin: 0 0.1rem;
-}
-.profile-tab.active {
-  background: #e3f0ff;
-  color: #2196f3;
-  font-weight: 600;
-}
-.profile-tab:hover {
-  background: #f5faff;
-  color: #2196f3;
-}
-.profile-content-list {
-  flex: 1 1 0;
-  overflow-y: auto;
-  max-height: calc(100vh - 120px);
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  padding-bottom: 80px;
-  background: #fff;
-}
-.feed-card {
-  background: none;
-  border-radius: 0;
-  box-shadow: none;
-  padding: 24px 32px 12px 32px;
-  border-bottom: 1px solid #e5e7eb;
-  margin: 0;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.feed-card-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 2px;
-}
-.feed-card-badge-user {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
-}
-.feed-card-badge.fact {
-  background: #dcfce7;
-  color: #16a34a;
-  font-size: 0.85rem;
-  font-weight: 600;
-  border-radius: 8px;
-  padding: 2px 10px;
-}
-.feed-card-user {
-  padding-top: 6px;
-  font-size: 0.97rem;
-  font-weight: 600;
-  color: #23263b;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-.feed-card-title {
-  font-size: 1.13rem;
-  font-weight: 700;
-  color: #23263b;
-  margin-bottom: 2px;
-}
-.feed-card-content {
-  font-size: 1.01rem;
-  color: #23263b;
-  margin-bottom: 2px;
-}
-.feed-card-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 8px;
-}
-.feed-card-actions {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-}
-.feed-like {
-  color: #2563eb;
-  font-size: 1.1rem;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  cursor: pointer;
-}
-.feed-card-date {
-  color: #64748b;
-  font-size: 0.97rem;
-}
-.feed-card-link {
-  color: #2563eb;
-  font-size: 0.97rem;
-  text-decoration: underline;
-  margin-left: 12px;
-  cursor: pointer;
-}
-.empty-state {
-  color: #888;
-  font-size: 1.05rem;
-  text-align: center;
-  margin: 18px 0 10px 0;
-}
-.pagination-container {
-  text-align: center;
-  margin: 18px 0;
-}
-.profile-sidebar {
-  width: 420px;
-  min-width: 260px;
-  max-width: 480px;
-  padding: 32px 0 0 0;
-  position: sticky;
-  top: 0;
-  align-self: flex-start;
-  background: #fff;
-  border-left: 1.5px solid #e5e7eb;
-  min-height: 100vh;
-}
-.profile-user-card {
-  background: #fff;
-  border-radius: 14px;
-  box-shadow: 0 2px 8px rgba(30,41,59,0.04);
-  padding: 18px 18px 18px 18px;
-  margin-bottom: 22px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-.profile-avatar-wrap {
-  margin-bottom: 10px;
-}
-.profile-avatar {
-  width: 68px;
-  height: 68px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 2.5px solid #e3f0ff;
-}
-.profile-user-name {
-  font-weight: 600;
-  color: #23263b;
-  font-size: 1.13rem;
-  margin-bottom: 4px;
-}
-.profile-user-rating {
-  color: #fbbf24;
-  font-size: 1.08rem;
-  margin-bottom: 12px;
-}
-.profile-user-about {
-  width: 100%;
-  margin-bottom: 18px;
-  h4 {
+
+  .profile-page-header {
+    position: absolute;
+    top: 2.1rem;
+    left: 24.375rem;
+    padding: 0;
+  }
+
+  .profile-page-title {
+    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-weight: 500;
+    font-style: normal;
+    font-size: 18px;
+    line-height: 100%;
+    letter-spacing: 0%;
+    color: #171717;
+    opacity: 1;
+    margin: 0 0 1rem 0;
+    padding: 0;
+  }
+
+  .profile-page-tabs {
+    position: absolute;
+    top: 4.5rem;
+    left: 24.375rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .profile-tab-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 32px;
+    padding: 6px 24px;
+    border-radius: 100px;
+    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 16px;
+    line-height: 20px;
+    letter-spacing: 0.5%;
+    text-decoration: none;
+    background: #FFFFFF;
+    color: #475865;
+    font-weight: 400;
+    transition: background 0.2s, color 0.2s;
+    box-sizing: border-box;
+
+    &.active {
+      background: #2196F333;
+      color: #2196F3;
+      font-weight: 500;
+    }
+
+    &:hover:not(.active) {
+      background: #f5f5f5;
+    }
+  }
+
+  .profile-content-wrap {
+    position: absolute;
+    top: 8rem;
+    left: 24.375rem;
+    width: 39.25rem;
+    max-height: calc(100vh - 12rem - 2rem);
+    display: flex;
+    flex-direction: column;
+    background: transparent;
+    overflow: hidden;
+  }
+
+  .profile-content-wrap .feed-list {
+    position: relative !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    max-height: none !important;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: visible;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding-bottom: 2rem;
+    background: transparent;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .profile-content-wrap .feed-loader {
+    position: relative !important;
+    top: auto !important;
+    left: 0 !important;
+    width: 100% !important;
+    text-align: center;
+    color: #64748b;
     font-size: 1.1rem;
-    font-weight: 700;
-    color: #23263b;
-    margin-bottom: 8px;
+    padding: 1rem 0;
+    flex-shrink: 0;
   }
-  p {
-    color: #888;
-    font-size: 1.01rem;
+
+  .profile-empty-state,
+  .facts-empty-state,
+  .theories-empty-state {
+    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-weight: 400;
+    font-size: 1rem;
+    line-height: 1.5;
+    color: #64748b;
+    text-align: center;
+    padding: 2rem;
+  }
+}
+
+.feed-rightbar.profile-page-rightbar {
+  position: fixed;
+  width: 312px;
+  top: 94px;
+  left: 1048px;
+  opacity: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+
+  .profile-about-block {
+    width: 312px;
+    height: 277px;
+    border-radius: 8px;
+    opacity: 1;
+    background: #FFFFFF;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    padding: 1.5rem 1.5rem 1.5rem 24px;
+    flex-shrink: 0;
+    box-sizing: border-box;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .profile-about-title {
+    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-weight: 500;
+    font-style: normal;
+    font-size: 18px;
+    line-height: 100%;
+    letter-spacing: 0%;
+    color: #171717;
+    margin: 0.75rem 0 0.5rem 0;
+    padding: 0;
+  }
+
+  .profile-about-text {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-weight: 400;
+    font-style: normal;
+    font-size: 12px;
+    line-height: 20px;
+    letter-spacing: 0%;
+    color: #4C4C4C;
+    margin: 0;
+    padding: 0;
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  .profile-following-block {
+    width: 312px;
+    height: 345px;
+    border-radius: 8px;
+    opacity: 1;
+    background: #FFFFFF;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    padding: 24px;
+    flex-shrink: 0;
+    box-sizing: border-box;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .profile-following-block .profile-following-title {
+    width: 78px;
+    height: 21px;
+    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-weight: 500;
+    font-style: normal;
+    font-size: 18px;
+    line-height: 100%;
+    letter-spacing: 0%;
+    color: #171717;
+    margin: 0 0 20px 0;
+    padding: 0;
+  }
+
+  .profile-following-block .my-peer-row {
+    display: grid;
+    grid-template-columns: 48px 1fr;
+    gap: 12px;
+    align-items: start;
+    margin-bottom: 1.25rem;
+  }
+
+  .profile-following-block .my-peer-row:last-of-type {
+    margin-bottom: 0;
+  }
+
+  .profile-following-block .my-peer-avatar-wrap {
+    min-width: 0;
+  }
+
+  .profile-following-block .my-peer-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 100px;
+    object-fit: cover;
+    display: block;
+  }
+
+  .profile-following-block .my-peer-right-col {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .profile-following-block .my-peer-name {
+    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-weight: 400;
+    font-size: 16px;
+    line-height: 16px;
+    letter-spacing: 0%;
+    color: #171717;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .profile-following-block .my-peer-meta {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    min-height: 16px;
+  }
+
+  .profile-following-block .my-peer-followers-avatars {
+    display: flex;
+    align-items: center;
+    margin-right: 2px;
+  }
+
+  .profile-following-block .my-peer-follower-avatar {
+    width: 20px;
+    height: 20px;
+    border-radius: 100px;
+    object-fit: cover;
+    border: 1.5px solid #fff;
+    margin-left: -6px;
+    flex-shrink: 0;
+  }
+
+  .profile-following-block .my-peer-follower-avatar:first-child {
+    margin-left: 0;
+  }
+
+  .profile-following-block .my-peer-followers-count {
+    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-weight: 400;
+    font-size: 12px;
+    line-height: 100%;
+    letter-spacing: 0%;
+    color: #171717;
+    text-align: center;
+  }
+
+  .profile-following-block .my-peer-rating {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 11px;
+    line-height: 1;
+    color: #fbbf24;
+  }
+
+  .profile-following-block .my-peer-rating-num {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-weight: 400;
+    font-size: 10px;
+    line-height: 16px;
+    letter-spacing: 0%;
+    color: #919191;
+  }
+
+  .profile-following-block .my-peer-follow-btn,
+  .profile-following-block .profile-follow-form {
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    background: transparent !important;
+    flex-shrink: 0;
+    display: block;
+  }
+
+  .profile-following-block .profile-follow-form input[type="submit"],
+  .profile-following-block .profile-follow-form button[type="submit"],
+  .profile-following-block .my-peer-follow-btn input[type="submit"],
+  .profile-following-block .my-peer-follow-btn button[type="submit"] {
+    width: 106px !important;
+    min-width: 106px !important;
+    height: 30px !important;
+    padding: 0 24px !important;
+    border-radius: 18px !important;
+    border-width: 1.5px !important;
+    border-style: solid !important;
+    border-color: #2196F3 !important;
+    background: #fff !important;
+    color: #2196F3 !important;
+    opacity: 1 !important;
+    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+    font-weight: 400 !important;
+    font-style: normal !important;
+    font-size: 14px !important;
+    line-height: 30px !important;
+    letter-spacing: 0% !important;
+    text-align: center !important;
+    vertical-align: middle !important;
+    cursor: pointer !important;
+    box-sizing: border-box !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    -webkit-appearance: none !important;
+    appearance: none !important;
+  }
+
+  .profile-following-block .profile-follow-form input[type="submit"]:hover,
+  .profile-following-block .profile-follow-form button[type="submit"]:hover,
+  .profile-following-block .my-peer-follow-btn input[type="submit"]:hover,
+  .profile-following-block .my-peer-follow-btn button[type="submit"]:hover {
+    background: #f5f9ff !important;
+    border-color: #1976d2 !important;
+    color: #1976d2 !important;
+  }
+
+  .profile-following-block .my-peer-followed-static {
+    min-width: 106px;
+    height: 30px;
+    padding: 0 24px;
+    border-radius: 18px;
+    border: 1.5px solid #2196F3;
+    background: #fff;
+    color: #2196F3;
+    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 30px;
+    text-align: center;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+  }
+
+  .profile-following-block .peer-unfollow-btn .peer-followed-text,
+  .profile-following-block .peer-unfollow-btn .peer-unfollow-text {
+    color: #2196F3;
+  }
+  .profile-following-block .peer-unfollow-btn .peer-followed-text {
+    display: inline;
+  }
+  .profile-following-block .peer-unfollow-btn .peer-unfollow-text {
+    display: none;
+  }
+  .profile-following-block .peer-unfollow-btn:hover .peer-followed-text {
+    display: none;
+  }
+  .profile-following-block .peer-unfollow-btn:hover .peer-unfollow-text {
+    display: inline;
+  }
+  .profile-following-block .peer-unfollow-btn .peer-unfollow-btn-submit {
+    width: 106px !important;
+    min-width: 106px !important;
+    height: 30px !important;
+    padding: 0 24px !important;
+    border-radius: 18px !important;
+    border: 1.5px solid #2196F3 !important;
+    background: #fff !important;
+    color: #2196F3 !important;
+    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+    font-weight: 400 !important;
+    font-size: 14px !important;
+    line-height: 30px !important;
+    cursor: pointer !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+  .profile-following-block .peer-unfollow-btn:hover .peer-unfollow-btn-submit {
+    background: #f5f9ff !important;
+    border-color: #1976d2 !important;
+    color: #1976d2 !important;
+  }
+
+  .profile-follow-none {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-weight: 400;
+    font-size: 12px;
+    line-height: 20px;
+    color: #4C4C4C;
+    font-style: italic;
     margin: 0;
   }
-}
-.profile-user-following {
-  width: 100%;
-  h4 {
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: #23263b;
-    margin-bottom: 8px;
+
+  .my-peer-row {
+    display: grid;
+    grid-template-columns: 40px 1fr;
+    gap: 20px;
+    align-items: start;
+    margin-bottom: 1rem;
+  }
+
+  .my-peer-row:last-of-type {
+    margin-bottom: 0;
+  }
+
+  .my-peer-avatar-wrap {
+    min-width: 0;
+  }
+
+  .my-peer-avatar-link {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .my-peer-right-col {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    min-width: 0;
+  }
+
+  .my-peer-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 100px;
+    object-fit: cover;
+    display: block;
+  }
+
+  .my-peer-details-link {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    min-width: 0;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .my-peer-name-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .my-peer-name {
+    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-weight: 600;
+    font-size: 1rem;
+    color: #171717;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .my-peer-verified-icon {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+  }
+
+  .my-peer-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8125rem;
+    color: #4C4C4C;
+  }
+
+  .my-peer-followers-avatars {
+    display: flex;
+    align-items: center;
+    margin-right: 4px;
+  }
+
+  .my-peer-follower-avatar {
+    width: 20px;
+    height: 20px;
+    border-radius: 100px;
+    object-fit: cover;
+    border: 1.5px solid #fff;
+    margin-left: -6px;
+    flex-shrink: 0;
+  }
+
+  .my-peer-follower-avatar:first-child {
+    margin-left: 0;
+  }
+
+  .my-peer-followers-count {
+    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-weight: 400;
+    color: #4C4C4C;
+  }
+
+  .my-peer-rating {
+    color: #fbbf24;
+  }
+
+  .my-peer-follow-btn {
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: transparent;
+    flex-shrink: 0;
+  }
+
+  .my-peer-followed-static {
+    flex-shrink: 0;
+    padding: 8px 20px;
+    border-radius: 100px;
+    border: 1.5px solid #2196F3;
+    background: #fff;
+    color: #2196F3;
+    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-weight: 500;
+    font-size: 14px;
+    white-space: nowrap;
   }
 }
-.profile-follow-row {
-  display: flex;
-  align-items: center;
-  width: 100%;
-  margin-bottom: 10px;
-  gap: 14px;
-}
-.profile-follow-info {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
-  flex: 1;
-}
-.profile-follow-avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 2px solid #e3f0ff;
-}
-.profile-follow-name {
-  font-weight: 600;
-  color: #23263b;
-  font-size: 1.01rem;
-  max-width: 7.5ch; /* fits about 9 characters including some buffer */
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  display: inline-block;
-  flex-shrink: 0;
-}
-.profile-follow-verified {
-  color: #2196f3;
-  font-size: 1.1rem;
-  flex-shrink: 0;
-}
-.profile-follow-rating {
-  color: #fbbf24;
-  font-size: 1.01rem;
-  margin-left: 2px;
-  flex-shrink: 0;
-}
-.profile-follow-btn {
-  margin-left: auto;
-  color: #2196f3;
-  font-size: 0.97rem;
-  text-decoration: none;
-  font-weight: 500;
-  border: 2px solid #2196f3;
-  border-radius: 32px;
-  padding: 4px 18px;
-  background: #fff;
-  transition: background 0.2s, color 0.2s, border 0.2s;
-  display: inline-block;
-  cursor: pointer;
-}
-.profile-follow-btn:hover {
-  background: #e3f0ff;
-  color: #1769aa;
-  border-color: #1769aa;
-}
-.profile-follow-show-more {
-  color: #2563eb;
-  font-size: 0.97rem;
-  text-align: right;
-  cursor: pointer;
-  margin-top: 6px;
-}
-.profile-following-label {
-  margin-left: 0;
-  color: #888;
-  font-size: 0.97rem;
-  font-weight: 500;
-  border-radius: 32px;
-  padding: 4px 18px;
-  background: none;
-  border: none;
-  display: inline-block;
-  cursor: default;
-}
-.profile-main {
-  height: 100vh;
-  overflow: hidden;
-  display: flex;
-}
-.profile-center {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  overflow: hidden;
-}
-.profile-content-list {
-  flex: 1;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
-#profile-claims-list.profile-content-list {
-  flex: 1;
-  overflow-y: auto;
-  min-height: 0;
-  max-height: 100%;
-}
-.profile-follow-none {
-  color: #888;
-  font-style: italic;
+
+.feed-rightbar.profile-page-rightbar .profile-following-block form [type="submit"] {
+  width: 106px !important;
+  min-width: 106px !important;
+  height: 30px !important;
+  padding: 12px 24px !important;
+  border-radius: 18px !important;
+  border: 1.5px solid #2196F3 !important;
+  background: #fff !important;
+  color: #2196F3 !important;
+  font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+  font-weight: 400 !important;
+  font-style: normal !important;
+  font-size: 14px !important;
+  line-height: 26px !important;
+  letter-spacing: 0% !important;
+  text-align: center !important;
+  vertical-align: middle !important;
+  -webkit-appearance: none !important;
+  appearance: none !important;
 }

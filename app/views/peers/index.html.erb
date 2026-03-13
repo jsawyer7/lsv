@@ -91,7 +91,7 @@
                 <% end %>
                 <div class="peer-row-actions">
                   <%= form_with url: follow_path(user.id), method: :delete, class: 'peer-unfollow-btn' do %>
-                    <%= button_tag type: 'submit', class: 'peer-unfollow-btn-submit', data: { confirm: 'Are you sure you want to unfollow?' } do %>
+                    <%= button_tag type: 'submit', class: 'peer-unfollow-btn-submit' do %>
                       <span class="peer-followed-text">Followed</span>
                       <span class="peer-unfollow-text">Unfollow</span>
                     <% end %>
@@ -186,7 +186,7 @@
                         <% end %>
                       </div>
                       <span class="my-peer-followers-count"><%= peer.followers.count %> followers</span>
-                      <span class="my-peer-rating">★ 4.7</span>
+                      <span class="my-peer-rating">★ <span class="my-peer-rating-num">4.7</span></span>
                     </div>
                   </span>
                   <span class="my-peer-followed-static">Followed</span>
@@ -210,18 +210,27 @@
                         <% end %>
                       </div>
                       <span class="my-peer-followers-count"><%= peer.followers.count %> followers</span>
-                      <span class="my-peer-rating">★ 4.7</span>
+                      <span class="my-peer-rating">★ <span class="my-peer-rating-num">4.7</span></span>
                     </div>
                   <% end %>
                   <% if current_user.following.include?(peer) %>
-                    <%= form_with url: follow_path(peer.id), method: :delete, class: 'peer-unfollow-btn my-peer-follow-btn' do %>
-                      <%= button_tag type: 'submit', class: 'peer-unfollow-btn-submit', data: { confirm: 'Are you sure you want to unfollow?' } do %>
-                        <span class="peer-followed-text">Followed</span>
-                        <span class="peer-unfollow-text">Unfollow</span>
+                    <div id="peers-follow-wrap-<%= peer.id %>">
+                      <%= form_with url: follow_path(peer.id), method: :delete, class: 'peer-unfollow-btn my-peer-follow-btn js-follow-remote-form', local: false, data: { remote: true, turbo: false } do %>
+                        <%= hidden_field_tag :from, 'peers' %>
+                        <%= button_tag type: 'submit', class: 'peer-unfollow-btn-submit' do %>
+                          <span class="peer-followed-text">Followed</span>
+                          <span class="peer-unfollow-text">Unfollow</span>
+                        <% end %>
                       <% end %>
-                    <% end %>
+                    </div>
                   <% else %>
-                    <%= button_to 'Follow', follows_path(followed_user_id: peer.id), method: :post, class: 'my-peer-follow-btn' %>
+                    <div id="peers-follow-wrap-<%= peer.id %>">
+                      <%= form_with url: follows_path, method: :post, class: 'peers-follow-form my-peer-follow-btn js-follow-remote-form', local: false, data: { remote: true, turbo: false } do %>
+                        <%= hidden_field_tag :followed_user_id, peer.id %>
+                        <%= hidden_field_tag :from, 'peers' %>
+                        <%= submit_tag 'Follow', class: 'peers-follow-btn-submit' %>
+                      <% end %>
+                    </div>
                   <% end %>
                 </div>
               <% end %>

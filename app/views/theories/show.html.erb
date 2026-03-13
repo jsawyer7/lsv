@@ -12,18 +12,28 @@
   <aside class="claim-rightbar">
     <div class="claim-sidebar-card claim-posted-by">
       <h3>Posted by</h3>
-      <div class="claim-sidebar-profile-row">
-        <% poster = @theory.user %>
-        <% if poster&.avatar_url.present? %>
-          <%= image_tag poster.avatar_url, alt: poster.full_name.presence || poster.email || 'User', class: 'claim-sidebar-avatar' %>
-        <% else %>
-          <%= image_tag 'default-avatar.png', alt: poster&.full_name.presence || poster&.email || 'User', class: 'claim-sidebar-avatar' %>
+      <% poster = @theory.user %>
+      <% if poster.present? %>
+        <%= link_to user_profile_path(poster), class: 'claim-sidebar-profile-row' do %>
+          <% if poster.avatar_url.present? %>
+            <%= image_tag poster.avatar_url, alt: poster.full_name.presence || poster.email || 'User', class: 'claim-sidebar-avatar' %>
+          <% else %>
+            <%= image_tag 'default-avatar.png', alt: poster.full_name.presence || poster.email || 'User', class: 'claim-sidebar-avatar' %>
+          <% end %>
+          <div class="claim-sidebar-profile-info">
+            <span class="claim-sidebar-name"><%= poster.full_name.presence || poster.email || 'Anonymous' %></span>
+            <span class="claim-sidebar-rating">4.7</span>
+          </div>
         <% end %>
-        <div class="claim-sidebar-profile-info">
-          <span class="claim-sidebar-name"><%= poster&.full_name.presence || poster&.email || 'Anonymous' %></span>
-          <span class="claim-sidebar-rating">4.7</span>
+      <% else %>
+        <div class="claim-sidebar-profile-row">
+          <%= image_tag 'default-avatar.png', alt: 'User', class: 'claim-sidebar-avatar' %>
+          <div class="claim-sidebar-profile-info">
+            <span class="claim-sidebar-name">Anonymous</span>
+            <span class="claim-sidebar-rating">4.7</span>
+          </div>
         </div>
-      </div>
+      <% end %>
     </div>
 
     <div class="claim-sidebar-card claim-verified-by">

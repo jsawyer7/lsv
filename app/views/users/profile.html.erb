@@ -1,63 +1,112 @@
-<div class="profile-main">
-  <div class="profile-center">
-    <div class="profile-header">
-      <h2><%= (@user.full_name.presence&.titleize || @user.email) %> Profile</h2>
-    </div>
-    <div class="profile-tabs">
-      <%= link_to 'Facts', user_profile_path(@user, tab: 'facts'), class: "profile-tab#{params[:tab] != 'theories' ? ' active' : ''}" %>
-      <%= link_to 'Theories', user_profile_path(@user, tab: 'theories'), class: "profile-tab#{params[:tab] == 'theories' ? ' active' : ''}" %>
-    </div>
-    <div class="profile-content-list">
-      <% if params[:tab] == 'theories' %>
-        <div class="empty-state">
-          <p>No theories data yet.</p>
-        </div>
-      <% else %>
-        <div id="profile-claims-list" class="profile-content-list"></div>
-      <% end %>
+<div class="feed-main profile-page-main <%= params[:tab] == 'theories' ? 'profile-theories-tab' : 'profile-facts-tab facts-page-main' %>">
+  <div class="profile-page-content <%= 'facts-page-content' if params[:tab] != 'theories' %>">
+    <header class="profile-page-header">
+      <h1 class="profile-page-title"><%= (@user.full_name.presence&.titleize || @user.email) %> profile</h1>
+    </header>
+    <nav class="profile-page-tabs">
+      <%= link_to 'Facts', user_profile_path(@user, tab: 'facts'), class: "profile-tab-pill #{params[:tab] != 'theories' ? ' active' : ''}" %>
+      <%= link_to 'Theories', user_profile_path(@user, tab: 'theories'), class: "profile-tab-pill #{params[:tab] == 'theories' ? ' active' : ''}" %>
+    </nav>
+    <div class="profile-content-wrap">
+      <div id="feed-list" class="feed-list"></div>
+      <div id="feed-loader" class="feed-loader" style="display: none;">Loading...</div>
     </div>
   </div>
-  <aside class="profile-sidebar">
-    <div class="profile-user-card">
-      <div class="profile-avatar-wrap">
-        <%= image_tag @user.avatar_url.presence || 'default-avatar.png', class: 'profile-avatar' %>
-      </div>
-      <div class="profile-user-name"><%= (@user.full_name.presence&.titleize || @user.email) %></div>
-      <div class="profile-user-rating">★ 4.7</div>
-      <div class="profile-user-about">
-        <h4>About</h4>
-        <p>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting.</p>
-      </div>
-      <div class="profile-user-following">
-        <h4>Following</h4>
-        <% if @following.any? %>
-          <% @following.each do |followed| %>
-            <div class="profile-follow-row">
-              <%= image_tag followed.avatar_url.presence || 'default-avatar.png', class: 'profile-follow-avatar' %>
-              <div class="profile-follow-info">
-                <span class="profile-follow-name"><%= (followed.full_name.presence&.titleize || followed.email) %></span>
-                <span class="profile-follow-verified"><i class="fa fa-check-circle"></i></span>
-                <span class="profile-follow-rating">★ 4.7</span>
+  <aside class="feed-rightbar profile-page-rightbar">
+    <div class="profile-about-block">
+      <div class="my-peer-row">
+        <div class="my-peer-avatar-wrap">
+          <%= link_to user_profile_path(@user), class: 'my-peer-avatar-link' do %>
+            <%= image_tag @user.avatar_url.presence || 'default-avatar.png', class: 'my-peer-avatar' %>
+          <% end %>
+        </div>
+        <div class="my-peer-right-col">
+          <%= link_to user_profile_path(@user), class: 'my-peer-details-link' do %>
+            <div class="my-peer-name-row">
+              <span class="my-peer-name"><%= (@user.full_name.presence&.titleize || @user.email) %></span>
+              <%= image_tag 'blue-tick.svg', alt: 'Verified', class: 'my-peer-verified-icon' %>
+            </div>
+            <div class="my-peer-meta">
+              <div class="my-peer-followers-avatars">
+                <% @user.followers.to_a.first(3).each do |follower| %>
+                  <%= image_tag follower.avatar_url.presence || 'default-avatar.png', class: 'my-peer-follower-avatar' %>
+                <% end %>
               </div>
-              <% if followed == current_user %>
-                <!-- Don't show follow button for self -->
-              <% elsif current_user.following.exists?(followed.id) %>
-                <span class="profile-following-label">Following</span>
-              <% else %>
-                <%= button_to 'Follow', follows_path(followed_user_id: followed.id), method: :post, class: 'profile-follow-btn' %>
-              <% end %>
+              <span class="my-peer-followers-count"><%= @user.followers.count %> followers</span>
+              <span class="my-peer-rating">★ 4.7</span>
             </div>
           <% end %>
-          <% if @following.size == 5 %>
-            <div class="profile-follow-show-more">Show more</div>
-          <% end %>
-        <% else %>
-          <div class="profile-follow-none">
-            <%= (@user.full_name.presence&.titleize || @user.email) %> has not followed anyone yet.
+        </div>
+      </div>
+      <h4 class="profile-about-title">About</h4>
+      <p class="profile-about-text"><%= @user.about.presence || 'No bio yet.' %></p>
+    </div>
+    <div class="profile-following-block">
+      <h4 class="profile-following-title">Following</h4>
+      <% if @following.any? %>
+        <% @following.each do |followed| %>
+          <div class="my-peer-row">
+            <div class="my-peer-avatar-wrap">
+              <%= link_to user_profile_path(followed), class: 'my-peer-avatar-link' do %>
+                <%= image_tag followed.avatar_url.presence || 'default-avatar.png', class: 'my-peer-avatar' %>
+              <% end %>
+            </div>
+            <div class="my-peer-right-col">
+              <%= link_to user_profile_path(followed), class: 'my-peer-details-link' do %>
+                <div class="my-peer-name-row">
+                  <span class="my-peer-name"><%= (followed.full_name.presence&.titleize || followed.email) %></span>
+                  <%= image_tag 'blue-tick.svg', alt: 'Verified', class: 'my-peer-verified-icon' %>
+                </div>
+                <div class="my-peer-meta">
+                  <div class="my-peer-followers-avatars">
+                    <% followed.followers.to_a.first(3).each do |follower| %>
+                      <%= image_tag follower.avatar_url.presence || 'default-avatar.png', class: 'my-peer-follower-avatar' %>
+                    <% end %>
+                  </div>
+                  <span class="my-peer-followers-count"><%= followed.followers.count %> followers</span>
+                  <span class="my-peer-rating">★ <span class="my-peer-rating-num">4.7</span></span>
+                </div>
+              <% end %>
+              <% if followed == current_user %>
+              <% elsif current_user.following.exists?(followed.id) %>
+                <div id="profile-follow-wrap-<%= followed.id %>">
+                  <%= form_with url: follow_path(followed.id), method: :delete, class: 'peer-unfollow-btn my-peer-follow-btn profile-unfollow-form js-follow-remote-form', local: false, data: { remote: true, turbo: false } do %>
+                    <%= hidden_field_tag :from, 'profile' %>
+                    <%= button_tag type: 'submit', class: 'peer-unfollow-btn-submit' do %>
+                      <span class="peer-followed-text">Followed</span>
+                      <span class="peer-unfollow-text">Unfollow</span>
+                    <% end %>
+                  <% end %>
+                </div>
+              <% else %>
+                <div id="profile-follow-wrap-<%= followed.id %>">
+                  <%= form_with url: follows_path, method: :post, class: 'profile-follow-form my-peer-follow-btn js-follow-remote-form', local: false, data: { remote: true, turbo: false }, id: "profile-follow-form-#{followed.id}" do %>
+                    <%= hidden_field_tag :followed_user_id, followed.id %>
+                    <%= hidden_field_tag :from, 'profile' %>
+                    <%= submit_tag 'Follow', class: 'profile-follow-btn-submit' %>
+                  <% end %>
+                </div>
+              <% end %>
+            </div>
           </div>
         <% end %>
-      </div>
+      <% else %>
+        <div class="profile-follow-none"><%= (@user.full_name.presence&.titleize || @user.email) %> has not followed anyone yet.</div>
+      <% end %>
     </div>
   </aside>
 </div>
-<%= render 'shared/profile_infinite_js' %>
+<% if params[:tab] == 'theories' %>
+  <script>
+    window.FEED_API_URL = '<%= user_profile_theories_infinite_path(@user) %>';
+    window.FEED_FILTER = '';
+    window.FEED_TYPE = 'theories';
+  </script>
+  <%= render 'shared/theories_feeds_js' %>
+<% else %>
+  <script>
+    window.FEED_API_URL = '<%= user_profile_infinite_path(@user) %>';
+    window.FEED_FILTER = '';
+  </script>
+  <%= render 'shared/feeds_js' %>
+<% end %>

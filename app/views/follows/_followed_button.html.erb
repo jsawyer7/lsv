@@ -1,0 +1,7 @@
+<%= form_with url: follow_path(user.id), method: :delete, class: "peer-unfollow-btn my-peer-follow-btn js-follow-remote-form #{from == 'profile' ? 'profile-unfollow-form' : ''}", local: false, data: { remote: true, turbo: false } do %>
+  <%= hidden_field_tag :from, from.presence || 'profile' %>
+  <%= button_tag type: 'submit', class: 'peer-unfollow-btn-submit' do %>
+    <span class="peer-followed-text">Followed</span>
+    <span class="peer-unfollow-text">Unfollow</span>
+  <% end %>
+<% end %>

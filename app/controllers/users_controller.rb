@@ -6,30 +6,36 @@ class UsersController < ApplicationController
     @user = User.find(params[:id])
     @claims = @user.claims.order(created_at: :desc).page(params[:page]).per(10)
     @followers = @user.followers.limit(5)
-    @following = @user.following.limit(5)
+    @following = @user.following.limit(3)
   end
 
   def profile_infinite
     user = User.find(params[:id])
     page = params[:page].to_i > 0 ? params[:page].to_i : 1
     per_page = 10
-    claims = user.claims.includes(:likes).order(created_at: :desc).offset((page - 1) * per_page).limit(per_page)
-    # Note: Comments will be filtered in the view using visible_to scope
+    claims = user.claims.includes(:user, :likes).order(created_at: :desc).offset((page - 1) * per_page).limit(per_page)
     render json: {
       claims: claims.map { |claim|
-        user_like = current_user ? claim.likes.find_by(user: current_user) : nil
-        claim.as_json(only: [:id, :created_at, :user_id]).merge(
-          content: claim.content_for_user(current_user),
-          likes_count: claim.likes.count,
-          user_liked: user_like.present?,
-          like_id: user_like&.id,
-          user: {
-            full_name: claim.user&.full_name,
-            email: claim.user&.email
-          }
-        )
+        {
+          html: render_to_string(partial: 'shared/feed_card', locals: { fact: claim, fact_card: true }, formats: [:html]),
+          id: claim.id,
+          created_at: claim.created_at
+        }
       },
       has_more: claims.size == per_page
+    }
+  end
+
+  def profile_theories_infinite
+    user = User.find(params[:id])
+    page = params[:page].to_i > 0 ? params[:page].to_i : 1
+    per_page = 10
+    theories = user.theories.includes(:user, :likes).order(created_at: :desc).offset((page - 1) * per_page).limit(per_page)
+    render json: {
+      theories: theories.map { |theory|
+        { html: render_to_string(partial: 'shared/feed_card_theory', locals: { theory: theory }, formats: [:html]) }
+      },
+      has_more: theories.size == per_page
     }
   end
 

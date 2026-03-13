@@ -81,6 +81,7 @@
         Rails.start();
       }
     </script>
+    <%= render 'shared/follow_ajax_js' %>
     <%= render 'shared/terms_consent_modal' %>
     <% if @show_onboarding_modal %>
       <%= render 'onboarding/modal' %>

@@ -1,6 +1,36 @@
 @import "components/search";
 @import "components/header_actions";
 
+@mixin fact-card-block-styles {
+  min-height: 13rem;
+  padding-bottom: 1.5rem; // room for bottom bar (actions + verified by)
+  overflow: visible;
+
+  .feed-card-fact-badge {
+    display: flex;
+  }
+
+  .feed-card-content {
+    top: 7.25rem;
+  }
+
+  .feed-card-divider {
+    top: 10.125rem;
+  }
+
+  .feed-card-verified-by {
+    top: 10.8rem;
+  }
+
+  .feed-card-actions-wrapper {
+    top: 10.875rem;
+  }
+
+  .feed-card-comments-section {
+    margin-top: 13rem;
+  }
+}
+
 .dashboard-container {
   display: flex;
   min-height: 100vh;
@@ -818,30 +848,83 @@ body.collapsed-dashboard-nav .nav-items .nav-item {
   }
 
   .feed-card-block {
-    min-height: 13rem;
+    @include fact-card-block-styles;
+  }
+}
+
+// Profile Facts tab uses .facts-page-main (added to DOM when tab=facts) so fact cards get the same SCSS as Facts page.
+
+// Profile page: feed-list positioning + theory cards
+.profile-page-main {
+  .profile-content-wrap .feed-list {
+    top: 8rem;
+    max-height: calc(100vh - 11rem - 2rem);
+
+    &.facts-empty {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+
+    &.theories-empty {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+  }
+
+  &.profile-theories-tab .feed-list .feed-card-block {
+    min-height: 0;
+    height: auto;
+    padding-bottom: 1rem;
 
     .feed-card-fact-badge {
+      display: none;
+    }
+
+    .feed-card-theory-badge {
       display: flex;
     }
 
     .feed-card-content {
-      top: 7.25rem;
+      position: relative;
+      top: auto;
+      left: auto;
+      margin: 1.5rem 1rem 0 1rem;
+      max-width: none;
     }
 
     .feed-card-divider {
-      top: 10.125rem;
+      position: relative;
+      top: auto;
+      left: auto;
+      margin: 0.5rem 1rem;
+    }
+
+    .feed-card-bottom-bar {
+      position: relative;
+      top: auto;
+      width: 440px;
     }
 
     .feed-card-verified-by {
-      top: 10.8rem;
+      position: relative;
+      top: auto;
+      right: auto;
     }
 
     .feed-card-actions-wrapper {
-      top: 10.875rem;
+      position: relative;
+      top: auto;
+      bottom: auto;
+      left: auto;
+      right: auto;
     }
 
     .feed-card-comments-section {
-      margin-top: 13rem;
+      margin-top: 1rem;
     }
   }
 }
@@ -1327,15 +1410,17 @@ body.collapsed-dashboard-nav .nav-items .nav-item {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 5.875rem;
-    height: 32px;
-    padding: 12px 24px;
-    border-radius: 100px;
+    width: 106px;
+    min-width: 106px;
+    height: 30px;
+    padding: 0 24px;
+    line-height: 30px;
+    border-radius: 18px;
     border: 1.5px solid #2196F3;
     background: #fff !important;
     color: #2196F3;
     font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    font-weight: 500;
+    font-weight: 400;
     font-size: 14px;
     box-sizing: border-box;
     cursor: pointer;
@@ -2112,10 +2197,10 @@ body.collapsed-dashboard-nav .nav-items .nav-item {
 
   .my-peer-row {
     display: grid;
-    grid-template-columns: 40px 1fr;
-    gap: 20px;
+    grid-template-columns: 48px 1fr;
+    gap: 12px;
     align-items: start;
-    margin-bottom: 1rem;
+    margin-bottom: 1.25rem;
   }
 
   .my-peer-row:last-of-type {
@@ -2136,13 +2221,13 @@ body.collapsed-dashboard-nav .nav-items .nav-item {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: 6px;
+    gap: 8px;
     min-width: 0;
   }
 
   .my-peer-avatar {
-    width: 40px;
-    height: 40px;
+    width: 48px;
+    height: 48px;
     border-radius: 100px;
     object-fit: cover;
     display: block;
@@ -2172,8 +2257,10 @@ body.collapsed-dashboard-nav .nav-items .nav-item {
 
   .my-peer-name {
     font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    font-weight: 600;
-    font-size: 1rem;
+    font-weight: 400;
+    font-size: 16px;
+    line-height: 16px;
+    letter-spacing: 0%;
     color: #171717;
     white-space: nowrap;
     overflow: hidden;
@@ -2189,15 +2276,14 @@ body.collapsed-dashboard-nav .nav-items .nav-item {
   .my-peer-meta {
     display: flex;
     align-items: center;
-    gap: 6px;
-    font-size: 0.8125rem;
-    color: #4C4C4C;
+    gap: 3px;
+    min-height: 16px;
   }
 
   .my-peer-followers-avatars {
     display: flex;
     align-items: center;
-    margin-right: 4px;
+    margin-right: 2px;
   }
 
   .my-peer-follower-avatar {
@@ -2217,39 +2303,101 @@ body.collapsed-dashboard-nav .nav-items .nav-item {
   .my-peer-followers-count {
     font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     font-weight: 400;
-    color: #4C4C4C;
+    font-size: 12px;
+    line-height: 100%;
+    letter-spacing: 0%;
+    color: #171717;
   }
 
   .my-peer-rating {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 11px;
+    line-height: 1;
     color: #fbbf24;
   }
 
-  .my-peer-follow-btn {
-    margin: 0;
-    padding: 0;
-    border: none;
-    background: transparent;
+  .my-peer-rating-num {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-weight: 400;
+    font-size: 10px;
+    line-height: 16px;
+    letter-spacing: 0%;
+    color: #919191;
+  }
+
+  .my-peers-section .peers-follow-form,
+  .my-peers-section .my-peer-follow-btn {
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    background: transparent !important;
     flex-shrink: 0;
+    display: block;
   }
 
-  .my-peer-follow-btn input[type="submit"] {
-    padding: 8px 20px;
-    border-radius: 100px;
-    border: 1.5px solid #2196F3;
-    background: #fff;
-    color: #2196F3;
-    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    font-weight: 500;
-    font-size: 14px;
-    cursor: pointer;
-    white-space: nowrap;
+  .my-peers-section .peers-follow-form input[type="submit"],
+  .my-peers-section .peers-follow-form button[type="submit"],
+  .my-peers-section .my-peer-follow-btn input[type="submit"],
+  .my-peers-section .my-peer-follow-btn button[type="submit"] {
+    width: 106px !important;
+    min-width: 106px !important;
+    height: 30px !important;
+    padding: 0 24px !important;
+    border-radius: 18px !important;
+    border-width: 1.5px !important;
+    border-style: solid !important;
+    border-color: #2196F3 !important;
+    background: #fff !important;
+    color: #2196F3 !important;
+    opacity: 1 !important;
+    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+    font-weight: 400 !important;
+    font-size: 14px !important;
+    line-height: 30px !important;
+    letter-spacing: 0% !important;
+    text-align: center !important;
+    vertical-align: middle !important;
+    cursor: pointer !important;
+    box-sizing: border-box !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    -webkit-appearance: none !important;
+    appearance: none !important;
   }
 
-  .my-peers-section .peer-unfollow-btn-submit {
-    width: auto;
-    padding: 8px 20px;
-    min-height: auto;
-    height: auto;
+  .my-peers-section .peers-follow-form input[type="submit"]:hover,
+  .my-peers-section .peers-follow-form button[type="submit"]:hover,
+  .my-peers-section .my-peer-follow-btn input[type="submit"]:hover,
+  .my-peers-section .my-peer-follow-btn button[type="submit"]:hover {
+    background: #f5f9ff !important;
+    border-color: #1976d2 !important;
+    color: #1976d2 !important;
+  }
+
+  .my-peers-section .peer-unfollow-btn .peer-unfollow-btn-submit {
+    width: 106px !important;
+    min-width: 106px !important;
+    height: 30px !important;
+    padding: 0 24px !important;
+    line-height: 30px !important;
+    border-radius: 18px !important;
+    border: 1.5px solid #2196F3 !important;
+    background: #fff !important;
+    color: #2196F3 !important;
+    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+    font-weight: 400 !important;
+    font-size: 14px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+  .my-peers-section .peer-unfollow-btn:hover .peer-unfollow-btn-submit {
+    background: #f5f9ff !important;
+    border-color: #1976d2 !important;
+    color: #1976d2 !important;
   }
 
   .my-peer-row-link-static {
@@ -2262,15 +2410,21 @@ body.collapsed-dashboard-nav .nav-items .nav-item {
 
   .my-peer-followed-static {
     flex-shrink: 0;
-    padding: 8px 20px;
-    border-radius: 100px;
+    min-width: 106px;
+    height: 30px;
+    padding: 0 24px;
+    line-height: 30px;
+    border-radius: 18px;
     border: 1.5px solid #2196F3;
     background: #fff;
     color: #2196F3;
     font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    font-weight: 500;
+    font-weight: 400;
     font-size: 14px;
-    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
   }
 }
 
@@ -4565,6 +4719,16 @@ body.collapsed-dashboard-nav .nav-items .nav-item {
   display: flex;
   align-items: center;
   gap: 10px;
+}
+a.claim-sidebar-profile-row {
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+
+  &:hover {
+    color: inherit;
+    text-decoration: none;
+  }
 }
 .claim-sidebar-avatar {
   width: 32px;

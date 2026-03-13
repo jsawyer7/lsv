@@ -1,0 +1,3 @@
+<% user.followers.to_a.first(3).each do |follower| %>
+  <%= image_tag follower.avatar_url.presence || 'default-avatar.png', class: 'my-peer-follower-avatar' %>
+<% end %>
