@@ -8,6 +8,7 @@ class LikesController < ApplicationController
     authorize @like
 
     if @like.save
+      notify_owner_if_liked
       respond_to do |format|
         format.html { redirect_back(fallback_location: root_path, notice: 'Liked successfully!') }
         format.json { render json: { status: 'success', likes_count: @likeable.likes.count, like_id: @like.id } }
@@ -40,6 +41,18 @@ class LikesController < ApplicationController
   end
 
   private
+
+  def notify_owner_if_liked
+    return unless @likeable.respond_to?(:user_id)
+    return if @likeable.user_id == current_user.id
+
+    key = @likeable.is_a?(Claim) ? 'fact_liked' : 'theory_liked'
+    @likeable.user.notifications.create!(
+      actor: current_user,
+      key: key,
+      notifiable: @likeable
+    )
+  end
 
   def set_likeable
     if params[:comment_id]

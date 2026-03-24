@@ -42,10 +42,13 @@
       </a>
 
       <!-- Notifications -->
-      <%= link_to notifications_settings_path, class: "nav-tab vertical-tab notifications-tab #{'active' if current_page?(notifications_settings_path)}" do %>
+      <% unread_count = unread_notifications_count %>
+      <%= link_to notifications_path, class: "nav-tab vertical-tab notifications-tab #{'active' if current_page?(notifications_path)}" do %>
         <div class="notification-icon-wrapper">
           <%= image_tag 'notification.svg', alt: 'Notifications', class: 'nav-tab-icon' %>
-          <span class="notification-badge">1</span>
+          <% if unread_count > 0 %>
+            <span class="notification-badge"><%= unread_count > 9 ? '9+' : unread_count %></span>
+          <% end %>
         </div>
         <span class="nav-tab-text">Notifications</span>
       <% end %>

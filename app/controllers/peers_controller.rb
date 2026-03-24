@@ -36,7 +36,8 @@ class PeersController < ApplicationController
   def add
     peer = User.find(params[:peer_id])
     unless Peer.exists?(user_id: current_user.id, peer_id: peer.id)
-      Peer.create(user: current_user, peer: peer, status: 'pending')
+      peer_record = Peer.create(user: current_user, peer: peer, status: 'pending')
+      peer.notifications.create!(actor: current_user, key: 'peer_request', notifiable: peer_record)
     end
     unless current_user.following.exists?(peer.id)
       Follow.create(user_id: current_user.id, followed_user: peer)
