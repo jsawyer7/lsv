@@ -17,16 +17,16 @@ module NotificationsHelper
 
   def notification_message_html(notification)
     actor_name = notification.actor&.full_name.presence || notification.actor&.email || 'Someone'
-    name_span = content_tag(:span, ERB::Util.html_escape(actor_name), class: 'notification-text-emphasis')
+    name_span = content_tag(:span, ERB::Util.html_escape(actor_name), class: 'notification-profile-name')
 
     case notification.key
     when 'fact_liked'
       content = notification.notifiable.respond_to?(:content) ? notification.notifiable.content.to_s.truncate(80) : ''
-      content_span = content_tag(:span, "\"#{ERB::Util.html_escape(content)}\"", class: 'notification-text-emphasis')
+      content_span = content_tag(:span, "\"#{ERB::Util.html_escape(content)}\"", class: 'notification-content-text')
       "#{name_span} liked your fact #{content_span}".html_safe
     when 'theory_liked'
       content = notification.notifiable.respond_to?(:title) ? notification.notifiable.title.to_s : ''
-      content_span = content_tag(:span, "\"#{ERB::Util.html_escape(content)}\"", class: 'notification-text-emphasis')
+      content_span = content_tag(:span, "\"#{ERB::Util.html_escape(content)}\"", class: 'notification-content-text')
       "#{name_span} liked your theory #{content_span}".html_safe
     when 'peer_request'
       "#{name_span} sent you a peer request.".html_safe

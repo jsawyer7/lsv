@@ -17,4 +17,9 @@ class NotificationsController < ApplicationController
 
     @notifications = @notifications.includes(:actor).limit(100)
   end
+
+  def mark_all_read
+    current_user.notifications.unread.update_all(read_at: Time.current)
+    redirect_back(fallback_location: notifications_path)
+  end
 end

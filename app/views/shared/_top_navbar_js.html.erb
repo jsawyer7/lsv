@@ -5,7 +5,10 @@
       constructor() {
         this.meTab = document.getElementById('me-tab');
         this.dropdownMenu = this.meTab?.querySelector('.dropdown-menu');
+        this.notificationsTab = document.getElementById('notifications-tab');
+        this.notificationsMenu = document.getElementById('notifications-dropdown-menu');
         this.isDropdownOpen = false;
+        this.isNotificationsOpen = false;
         
         this.init();
       }
@@ -19,14 +22,29 @@
         if (this.meTab && this.dropdownMenu) {
           this.meTab.addEventListener('click', (e) => {
             e.stopPropagation();
+            if (this.dropdownMenu?.contains(e.target)) return;
             this.toggleDropdown();
           });
         }
-        
-        
+
+        if (this.notificationsTab && this.notificationsMenu) {
+          this.notificationsTab.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (this.notificationsMenu?.contains(e.target)) return;
+            this.toggleNotificationsDropdown();
+          });
+        }
+
         document.addEventListener('click', (e) => {
-          if (!this.meTab?.contains(e.target)) {
+          const clickInMe = this.meTab?.contains(e.target);
+          const clickInNotifications = this.notificationsTab?.contains(e.target);
+
+          if (!clickInMe) {
             this.closeDropdown();
+          }
+
+          if (!clickInNotifications) {
+            this.closeNotificationsDropdown();
           }
         });
         
@@ -47,6 +65,7 @@
       }
       
       showDropdown() {
+        this.closeNotificationsDropdown();
         this.dropdownMenu?.classList.add('show');
         this.meTab?.classList.add('active');
         this.isDropdownOpen = true;
@@ -57,11 +76,100 @@
         this.meTab?.classList.remove('active');
         this.isDropdownOpen = false;
       }
+
+      toggleNotificationsDropdown() {
+        if (this.isNotificationsOpen) {
+          this.closeNotificationsDropdown();
+        } else {
+          this.showNotificationsDropdown();
+        }
+      }
+
+      showNotificationsDropdown() {
+        this.closeDropdown();
+        this.notificationsTab?.classList.add('open');
+        this.notificationsTab?.classList.add('active');
+        this.isNotificationsOpen = true;
+      }
+
+      closeNotificationsDropdown() {
+        this.notificationsTab?.classList.remove('open');
+        this.notificationsTab?.classList.remove('active');
+        this.isNotificationsOpen = false;
+      }
     }
     
     
     new TopNavbarDropdown();
   });
+
+  function applyNotificationsPeerDropdownResult(data) {
+    if (!data || !data.message) return;
+    var id = data.notification_id;
+    if (id != null && String(id) !== '') {
+      var row = document.getElementById('notification-dropdown-' + id);
+      if (row) {
+        var actions = row.querySelector('.notifications-dropdown-peer-actions');
+        if (actions) {
+          var status = document.createElement('p');
+          status.className = 'notifications-dropdown-peer-status';
+          status.setAttribute('role', 'status');
+          status.textContent = data.message;
+          actions.parentNode.replaceChild(status, actions);
+        }
+      }
+    }
+    var container = document.querySelector('.flash-container');
+    if (container) {
+      var flash = document.createElement('div');
+      flash.className = 'flash-message notice';
+      flash.setAttribute('role', 'status');
+      flash.textContent = data.message;
+      container.appendChild(flash);
+      window.setTimeout(function () {
+        flash.style.opacity = '0';
+        flash.style.transition = 'opacity 0.5s ease';
+        window.setTimeout(function () {
+          flash.remove();
+        }, 500);
+      }, 4000);
+    }
+  }
+
+  document.addEventListener('submit', function (e) {
+    var form = e.target;
+    if (!form || form.tagName !== 'FORM') return;
+    if (!form.classList.contains('js-notifications-dropdown-peer-form')) return;
+    if (!document.getElementById('notifications-dropdown-menu')?.contains(form)) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    var url = form.action;
+    var body = new FormData(form);
+    var method = (form.getAttribute('method') || 'post').toUpperCase();
+
+    fetch(url, {
+      method: method,
+      body: body,
+      headers: {
+        Accept: 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
+      },
+      credentials: 'same-origin',
+    })
+      .then(function (response) {
+        if (!response.ok) throw new Error('Request failed');
+        return response.json();
+      })
+      .then(function (data) {
+        applyNotificationsPeerDropdownResult(data);
+      })
+      .catch(function (err) {
+        console.error('Notifications dropdown peer request failed:', err);
+        form.submit();
+      });
+  }, true);
 </script>
 
 

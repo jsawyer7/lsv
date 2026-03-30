@@ -69,6 +69,7 @@ Rails.application.routes.draw do
   get 'feeds', to: 'feeds#index'
   get 'feeds/infinite', to: 'feeds#infinite'
   get 'notifications', to: 'notifications#index', as: :notifications
+  post 'notifications/mark_all_read', to: 'notifications#mark_all_read', as: :notifications_mark_all_read
   get 'shared', to: 'shares#index', as: :shared_feed
   get 'shared/infinite', to: 'shares#infinite', as: :shared_feed_infinite
   post 'shares/:id/reshare', to: 'shares#reshare', as: :reshare_share

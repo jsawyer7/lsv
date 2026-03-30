@@ -4,6 +4,11 @@ module ApplicationHelper
     current_user.notifications.unread.count
   end
 
+  def navbar_notifications(limit = 4)
+    return Notification.none unless user_signed_in?
+    current_user.notifications.recent_first.includes(:actor, :notifiable).limit(limit)
+  end
+
   def dashboard_nav_page?
     path = request.path
     path.start_with?('/facts') ||
@@ -13,7 +18,6 @@ module ApplicationHelper
       path.start_with?('/peers') ||
       path.match?(%r{/users/\d+/profile}) ||
       path.start_with?('/veritalk') ||
-      path.start_with?('/settings') ||
-      path.start_with?('/notifications')
+      path.start_with?('/settings')
   end
 end

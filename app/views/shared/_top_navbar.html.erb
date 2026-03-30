@@ -43,15 +43,60 @@
 
       <!-- Notifications -->
       <% unread_count = unread_notifications_count %>
-      <%= link_to notifications_path, class: "nav-tab vertical-tab notifications-tab #{'active' if current_page?(notifications_path)}" do %>
+      <div class="nav-tab vertical-tab notifications-tab <%= 'active' if current_page?(notifications_path) %>" id="notifications-tab">
         <div class="notification-icon-wrapper">
-          <%= image_tag 'notification.svg', alt: 'Notifications', class: 'nav-tab-icon' %>
+          <%= image_tag (unread_count > 0 ? 'notification.svg' : 'notification-full.svg'), alt: 'Notifications', class: 'nav-tab-icon' %>
           <% if unread_count > 0 %>
             <span class="notification-badge"><%= unread_count > 9 ? '9+' : unread_count %></span>
           <% end %>
         </div>
         <span class="nav-tab-text">Notifications</span>
-      <% end %>
+
+        <div class="notifications-dropdown-menu" id="notifications-dropdown-menu">
+          <div class="notifications-dropdown-header">
+            <h3 class="notifications-dropdown-title">Notifications</h3>
+            <%= button_to 'Mark all as read', notifications_mark_all_read_path, method: :post, class: 'notifications-mark-read-btn', form: { class: 'notifications-mark-read-form' } %>
+          </div>
+          <div class="notifications-dropdown-tabs" role="tablist">
+            <div class="notifications-dropdown-tab notifications-dropdown-tab--all active" role="presentation">
+              <span class="notifications-dropdown-tab-label">All</span>
+              <% if unread_count.positive? %>
+                <span class="notifications-dropdown-tab-badge"><%= unread_count > 9 ? '9+' : unread_count %></span>
+              <% end %>
+            </div>
+            <span class="notifications-dropdown-tab notifications-dropdown-tab--following" role="tab">Following</span>
+            <span class="notifications-dropdown-tab notifications-dropdown-tab--archive" role="tab">Archive</span>
+          </div>
+          <div class="notifications-dropdown-list">
+            <% navbar_items = navbar_notifications %>
+            <% if navbar_items.any? %>
+              <% navbar_items.each do |notification| %>
+                <div class="notifications-dropdown-item" id="notification-dropdown-<%= notification.id %>">
+                  <%= link_to notification_row_link(notification), class: 'notifications-dropdown-item-link' do %>
+                    <% avatar_src = notification.actor&.avatar_url.presence || 'default-avatar.png' %>
+                    <%= image_tag avatar_src, class: 'notifications-dropdown-avatar', alt: '' %>
+                    <div class="notifications-dropdown-content">
+                      <p class="notifications-dropdown-message"><%= sanitize(notification_message_html(notification), tags: %w[span], attributes: %w[class]) %></p>
+                      <span class="notifications-dropdown-time"><%= time_ago_in_words(notification.created_at) %> ago</span>
+                    </div>
+                  <% end %>
+                  <% if peer_request_notification?(notification) && notification.notifiable.respond_to?(:pending?) && notification.notifiable.pending? %>
+                    <div class="notifications-dropdown-peer-actions">
+                      <%= button_to 'Accept', accept_peers_path(user_id: notification.actor_id, format: :json), method: :post, class: 'notifications-dropdown-accept-btn', params: { notification_dropdown_anchor: notification.id }, form: { class: 'js-notifications-dropdown-peer-form', data: { turbo: false } } %>
+                      <%= button_to 'Cancel', remove_peers_path(peer_id: notification.actor_id, format: :json), method: :delete, class: 'notifications-dropdown-cancel-btn', params: { notification_dropdown_anchor: notification.id }, form: { class: 'js-notifications-dropdown-peer-form', data: { turbo: false } } %>
+                    </div>
+                  <% end %>
+                </div>
+              <% end %>
+            <% else %>
+              <div class="notifications-dropdown-empty">No notifications yet.</div>
+            <% end %>
+          </div>
+          <div class="notifications-dropdown-footer">
+            <%= link_to 'View All', notifications_path, class: 'notifications-dropdown-view-all' %>
+          </div>
+        </div>
+      </div>
 
       <!-- Me (Profile) -->
       <div class="nav-tab me-tab" id="me-tab" data-action="click->dropdown#toggle">
