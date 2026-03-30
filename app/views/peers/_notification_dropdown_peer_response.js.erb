@@ -1,0 +1,32 @@
+<% if @notification_dropdown_anchor.present? && @notification_dropdown_notice.present? %>
+(function () {
+  var id = <%= @notification_dropdown_anchor.to_json %>;
+  var notice = <%= @notification_dropdown_notice.to_json %>;
+  var row = document.getElementById('notification-dropdown-' + id);
+  if (row) {
+    var actions = row.querySelector('.notifications-dropdown-peer-actions');
+    if (actions) {
+      var status = document.createElement('p');
+      status.className = 'notifications-dropdown-peer-status';
+      status.setAttribute('role', 'status');
+      status.textContent = notice;
+      actions.parentNode.replaceChild(status, actions);
+    }
+  }
+  var container = document.querySelector('.flash-container');
+  if (container) {
+    var flash = document.createElement('div');
+    flash.className = 'flash-message notice';
+    flash.setAttribute('role', 'status');
+    flash.textContent = notice;
+    container.appendChild(flash);
+    window.setTimeout(function () {
+      flash.style.opacity = '0';
+      flash.style.transition = 'opacity 0.5s ease';
+      window.setTimeout(function () {
+        flash.remove();
+      }, 500);
+    }, 4000);
+  }
+})();
+<% end %>

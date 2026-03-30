@@ -1,0 +1,61 @@
+<div class="feed-main notifications-page-main">
+  <div class="notifications-page-content">
+    <header class="notifications-page-header">
+      <h1 class="notifications-page-title">Notifications</h1>
+      <nav class="notifications-page-filters">
+        <%= link_to notifications_path(filter: 'all'), class: "notifications-filter-pill #{'active' if @filter == 'all'}" do %>
+          All
+        <% end %>
+        <%= link_to notifications_path(filter: 'new'), class: "notifications-filter-pill #{'active' if @filter == 'new'}" do %>
+          New
+        <% end %>
+        <%= link_to notifications_path(filter: 'unread'), class: "notifications-filter-pill #{'active' if @filter == 'unread'}" do %>
+          Unread
+        <% end %>
+      </nav>
+    </header>
+    <div class="notifications-main">
+      <div class="notifications-block">
+        <div class="notifications-block-header">
+          <h2 class="notifications-block-title">All Notifications</h2>
+          <%= link_to 'Show All', notifications_path(filter: 'all'), class: 'notifications-show-all' %>
+        </div>
+        <div class="notifications-block-divider"></div>
+        <div class="notifications-list <%= 'notifications-list-empty' if @notifications.empty? %>">
+          <% if @notifications.any? %>
+            <% @notifications.each do |notification| %>
+              <div class="notification-row <%= 'notification-row-unread' unless notification.read? %>">
+                <%= link_to notification_row_link(notification), class: 'notification-row-link' do %>
+                  <% avatar_src = notification.actor&.avatar_url.presence || 'default-avatar.png' %>
+                  <%= image_tag avatar_src, class: 'notification-row-avatar', alt: '' %>
+                  <div class="notification-row-body">
+                    <p class="notification-row-message"><%= sanitize(notification_message_html(notification), tags: %w[span], attributes: %w[class]) %></p>
+                  </div>
+                <% end %>
+                <div class="notification-row-actions">
+                  <span class="notification-row-time"><%= time_ago_in_words(notification.created_at) %> ago</span>
+                  <% if peer_request_notification?(notification) && notification.notifiable.respond_to?(:pending?) && notification.notifiable.pending? %>
+                    <div class="notification-peer-actions-row">
+                      <%= button_to 'Accept', accept_peers_path(user_id: notification.actor_id), method: :post, class: 'notification-peer-accept-btn' %>
+                      <%= button_to 'Cancel', remove_peers_path(peer_id: notification.actor_id), method: :delete, class: 'notification-peer-cancel-btn', form: { data: { turbo_confirm: 'Decline this peer request?' } } %>
+                    </div>
+                  <% else %>
+                    <button type="button" class="notification-row-menu-btn" aria-label="Notification options">
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                        <circle cx="3" cy="8" r="1.5"/>
+                        <circle cx="8" cy="8" r="1.5"/>
+                        <circle cx="13" cy="8" r="1.5"/>
+                      </svg>
+                    </button>
+                  <% end %>
+                </div>
+              </div>
+            <% end %>
+          <% else %>
+            <p class="notifications-empty">No notifications yet.</p>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

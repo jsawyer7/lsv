@@ -36,7 +36,8 @@ class PeersController < ApplicationController
   def add
     peer = User.find(params[:peer_id])
     unless Peer.exists?(user_id: current_user.id, peer_id: peer.id)
-      Peer.create(user: current_user, peer: peer, status: 'pending')
+      peer_record = Peer.create(user: current_user, peer: peer, status: 'pending')
+      peer.notifications.create!(actor: current_user, key: 'peer_request', notifiable: peer_record)
     end
     unless current_user.following.exists?(peer.id)
       Follow.create(user_id: current_user.id, followed_user: peer)
@@ -49,24 +50,46 @@ class PeersController < ApplicationController
 
   def accept
     peer_request = Peer.find_by(user_id: params[:user_id], peer_id: current_user.id, status: 'pending')
+    accepted = false
     if peer_request
       peer_request.update(status: 'accepted')
       unless Peer.exists?(user_id: current_user.id, peer_id: params[:user_id], status: 'accepted')
         Peer.create(user_id: current_user.id, peer_id: params[:user_id], status: 'accepted')
       end
+      accepted = true
     end
+    @notification_dropdown_anchor = params[:notification_dropdown_anchor].presence
+    @notification_dropdown_notice = if @notification_dropdown_anchor
+                                      accepted ? 'Peer request accepted.' : 'Could not accept this request.'
+                                    end
     respond_to do |format|
       format.html { redirect_to peers_path(tab: 'requests'), notice: 'Peer request accepted.' }
       format.js
+      format.json do
+        render json: {
+          ok: accepted,
+          message: @notification_dropdown_notice,
+          notification_id: @notification_dropdown_anchor
+        }
+      end
     end
   end
 
   def remove
     peer = User.find(params[:peer_id])
     Peer.where(user_id: current_user.id, peer_id: peer.id).or(Peer.where(user_id: peer.id, peer_id: current_user.id)).destroy_all
+    @notification_dropdown_anchor = params[:notification_dropdown_anchor].presence
+    @notification_dropdown_notice = @notification_dropdown_anchor ? 'Peer request declined.' : nil
     respond_to do |format|
       format.html { redirect_to peers_path(tab: 'following'), notice: 'Peer removed.' }
       format.js
+      format.json do
+        render json: {
+          ok: true,
+          message: @notification_dropdown_notice,
+          notification_id: @notification_dropdown_anchor
+        }
+      end
     end
   end
 end
