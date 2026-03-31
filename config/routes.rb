@@ -70,6 +70,8 @@ Rails.application.routes.draw do
   get 'feeds/infinite', to: 'feeds#infinite'
   get 'notifications', to: 'notifications#index', as: :notifications
   post 'notifications/mark_all_read', to: 'notifications#mark_all_read', as: :notifications_mark_all_read
+  post 'notifications/:id/accept_group_invite', to: 'notifications#accept_group_invite', as: :accept_group_invite_notification
+  delete 'notifications/:id/reject_group_invite', to: 'notifications#reject_group_invite', as: :reject_group_invite_notification
   get 'shared', to: 'shares#index', as: :shared_feed
   get 'shared/infinite', to: 'shares#infinite', as: :shared_feed_infinite
   post 'shares/:id/reshare', to: 'shares#reshare', as: :reshare_share
@@ -85,6 +87,16 @@ Rails.application.routes.draw do
       post :add
       post :accept
       delete :remove
+    end
+  end
+
+  resources :groups, only: [:index, :new, :create, :show] do
+    collection do
+      get :invite_candidates
+    end
+    member do
+      post :join
+      delete :leave
     end
   end
 

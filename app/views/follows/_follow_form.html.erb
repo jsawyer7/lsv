@@ -1,7 +1,8 @@
 <% context = local_assigns[:context].presence || 'profile' %>
-<% form_class = context == 'peers' ? 'peers-follow-form my-peer-follow-btn' : 'profile-follow-form my-peer-follow-btn' %>
+<% peers_style = %w[peers groups].include?(context) %>
+<% form_class = peers_style ? 'peers-follow-form my-peer-follow-btn' : 'profile-follow-form my-peer-follow-btn' %>
 <%= form_with url: follows_path, method: :post, class: "#{form_class} js-follow-remote-form", local: false, data: { remote: true, turbo: false } do %>
   <%= hidden_field_tag :followed_user_id, user.id %>
   <%= hidden_field_tag :from, context %>
-  <%= submit_tag 'Follow', class: (context == 'peers' ? 'peers-follow-btn-submit' : 'profile-follow-btn-submit') %>
+  <%= submit_tag 'Follow', class: (peers_style ? 'peers-follow-btn-submit' : 'profile-follow-btn-submit') %>
 <% end %>

@@ -1,0 +1,29 @@
+<div class="feed-main peers-page-main">
+  <div class="peers-page-content groups-show-content">
+    <header class="peers-page-header">
+      <%= link_to '← Back to Groups', groups_path, class: 'groups-show-back' %>
+      <h1 class="peers-page-title"><%= @group.name %></h1>
+      <p class="groups-show-meta">
+        Led by <%= link_to (@group.leader.full_name.presence || @group.leader.email), user_profile_path(@group.leader), class: 'groups-show-leader-link' %>
+      </p>
+    </header>
+    <div class="peers-main">
+      <div class="peers-know-block groups-show-block">
+        <% if @group.description.present? %>
+          <div class="groups-show-description"><%= simple_format(@group.description) %></div>
+        <% else %>
+          <p class="groups-show-empty-desc">No description.</p>
+        <% end %>
+        <div class="groups-show-actions">
+          <% if @is_member %>
+            <% unless @is_leader %>
+              <%= button_to 'Leave group', leave_group_path(@group), method: :delete, class: 'add-peer-btn peers-add-btn', form: { data: { turbo: false } } %>
+            <% end %>
+          <% else %>
+            <%= button_to 'Join group', join_group_path(@group), method: :post, class: 'add-peer-btn peers-add-btn', form: { data: { turbo: false } } %>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

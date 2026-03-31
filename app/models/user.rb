@@ -34,6 +34,9 @@ class User < ApplicationRecord
   has_many :follows, dependent: :destroy
   has_many :theories, dependent: :destroy
   has_many :notifications, dependent: :destroy
+  has_many :led_groups, class_name: 'Group', foreign_key: :leader_id, inverse_of: :leader, dependent: :destroy
+  has_many :group_memberships, dependent: :destroy
+  has_many :joined_groups, through: :group_memberships, source: :group
   has_many :following, through: :follows, source: :followed_user
   has_many :reverse_follows, class_name: 'Follow', foreign_key: 'followed_user', dependent: :destroy
   has_many :followers, through: :reverse_follows, source: :user

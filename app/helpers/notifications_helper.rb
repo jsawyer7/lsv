@@ -1,6 +1,7 @@
 module NotificationsHelper
   def notification_row_link(notification)
     return peers_path(tab: 'requests') if notification.key == 'peer_request'
+    return group_path(notification.notifiable) if notification.key == 'group_invite' && notification.notifiable.is_a?(Group)
     return notifications_path unless notification.notifiable.present?
 
     case notification.notifiable
@@ -30,6 +31,10 @@ module NotificationsHelper
       "#{name_span} liked your theory #{content_span}".html_safe
     when 'peer_request'
       "#{name_span} sent you a peer request.".html_safe
+    when 'group_invite'
+      group_name = notification.notifiable.is_a?(Group) ? notification.notifiable.name.to_s : 'your group'
+      group_span = content_tag(:span, ERB::Util.html_escape(group_name), class: 'notification-content-text')
+      "#{name_span} invited you to join #{group_span}.".html_safe
     else
       ERB::Util.html_escape(notification.display_message)
     end
@@ -37,5 +42,15 @@ module NotificationsHelper
 
   def peer_request_notification?(notification)
     notification.key == 'peer_request'
+  end
+
+  def group_invite_notification?(notification)
+    notification.key == 'group_invite' && notification.notifiable.is_a?(Group)
+  end
+
+  def pending_group_invite_notification?(notification)
+    group_invite_notification?(notification) &&
+      notification.read_at.nil? &&
+      !notification.notifiable.member?(current_user)
   end
 end
