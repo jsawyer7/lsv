@@ -274,7 +274,7 @@ Devise.setup do |config|
     ENV['GOOGLE_OAUTH_CLIENT_ID'],
     ENV['GOOGLE_OAUTH_CLIENT_SECRET'],
     {
-      scope: 'email,profile,https://www.googleapis.com/auth/contacts.readonly',
+      scope: 'email,profile',
       prompt: 'select_account',
       image_aspect_ratio: 'square',
       image_size: 50,
