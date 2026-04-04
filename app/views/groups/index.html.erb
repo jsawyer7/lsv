@@ -183,7 +183,14 @@
                       <span class="groups-suggested-name"><%= group.name %></span>
                       <%= image_tag 'blue-tick.svg', alt: 'Verified', class: 'groups-suggested-verified' %>
                     </div>
-                    <span class="groups-suggested-members"><%= format_group_members_count(group.group_memberships.size) %> Members</span>
+                    <div class="groups-suggested-members-row">
+                      <div class="groups-suggested-member-avatars">
+                        <% group_member_preview_users(group, limit: 3).each do |member| %>
+                          <%= image_tag member.avatar_url.presence || 'default-avatar.png', class: 'groups-suggested-member-avatar', alt: '' %>
+                        <% end %>
+                      </div>
+                      <span class="groups-suggested-members"><%= format_group_members_count(group.group_memberships.size) %> Members</span>
+                    </div>
                   </div>
                 <% end %>
                 <%= button_to 'Join Group', join_group_path(group), method: :post, class: 'groups-suggested-join-btn', form: { class: 'groups-suggested-join-form', data: { turbo: false } } %>

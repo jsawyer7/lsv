@@ -1,7 +1,7 @@
 class GroupsController < ApplicationController
   before_action :authenticate_user!
   layout 'dashboard'
-  before_action :set_group, only: [:show, :join, :leave]
+  before_action :set_group, only: [:show, :join, :leave, :infinite_feed]
 
   def index
     @tab = params[:tab].presence_in(%w[leaders groups]) || 'leaders'
@@ -78,6 +78,43 @@ class GroupsController < ApplicationController
   def show
     @is_member = @group.member?(current_user)
     @is_leader = @group.leader_id == current_user.id
+    @group_members = group_members_for_show
+    @top_facts = Claim.published_facts
+                      .left_joins(:likes)
+                      .group('claims.id')
+                      .order(Arel.sql('COUNT(likes.id) DESC'))
+                      .limit(2)
+                      .includes(:user)
+  end
+
+  def infinite_feed
+    member_ids = @group.group_memberships.pluck(:user_id)
+    member_ids = (member_ids + [@group.leader_id]).uniq
+    page = params[:page].to_i.positive? ? params[:page].to_i : 1
+    per_page = page == 1 ? 30 : 20
+    offset = (page - 1) * per_page
+
+    facts = Claim.published_facts
+                 .where(user_id: member_ids)
+                 .includes(:user, :likes)
+                 .order(created_at: :desc)
+                 .offset(offset)
+                 .limit(per_page)
+
+    render json: {
+      claims: facts.map { |fact|
+        {
+          html: render_to_string(
+            partial: 'shared/feed_card',
+            locals: { fact: fact, fact_card: true, group_feed: true },
+            formats: [:html]
+          ),
+          id: fact.id,
+          created_at: fact.created_at
+        }
+      },
+      has_more: facts.size == per_page
+    }
   end
 
   def join
@@ -137,5 +174,21 @@ class GroupsController < ApplicationController
     joined_ids = current_user.joined_groups.pluck(:id)
     scope = joined_ids.any? ? Group.where.not(id: joined_ids) : Group.all
     scope.includes(:leader, :group_memberships).limit(40).to_a.sort_by { |g| -g.group_memberships.size }.first(5)
+  end
+
+  # Sidebar list: top engaged non-leader members (by published fact count), max 3.
+  def group_members_for_show
+    leader_id = @group.leader_id
+    ids = @group.group_memberships.pluck(:user_id).uniq.reject { |id| id == leader_id }
+    return [] if ids.empty?
+
+    fact_counts = Claim.published_facts
+                       .where(user_id: ids)
+                       .group(:user_id)
+                       .count
+
+    User.where(id: ids).includes(:avatar_attachment).to_a.sort_by do |u|
+      [-fact_counts.fetch(u.id, 0), u.full_name.to_s.downcase, u.email.to_s.downcase]
+    end.first(3)
   end
 end

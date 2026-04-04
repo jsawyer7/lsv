@@ -97,6 +97,7 @@ Rails.application.routes.draw do
     member do
       post :join
       delete :leave
+      get :infinite_feed
     end
   end
 
