@@ -156,7 +156,9 @@ body.collapsed-dashboard-nav .dashboard-nav {
   &:hover {
     width: 17.5rem;
     height: 19.5rem;
-    background: transparent;
+    background: rgba(255, 255, 255, 0.78);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
 
     .nav-item {
       left: 1.5rem;
@@ -229,8 +231,9 @@ body.collapsed-dashboard-nav .dashboard-sources {
   &:hover {
     width: 17.5rem;
     height: 13.5rem;
-    background: transparent;
-
+    background: rgba(255, 255, 255, 0.78);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
 
     .dashboard-sources-item {
       left: 1.5rem;
