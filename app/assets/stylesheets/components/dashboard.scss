@@ -210,6 +210,10 @@ body.dashboard-nav-page .dashboard-sources {
   top: 27rem;
 }
 
+body.dashboard-nav-page .dashboard-nav.has-admin ~ .dashboard-sources {
+  top: 30rem;
+}
+
 @media (min-width: 48.0625rem) {
   body:not(.dashboard-nav-page):not(.collapsed-dashboard-nav) .dashboard-sources {
     top: 43.125rem; 
