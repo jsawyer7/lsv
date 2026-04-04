@@ -1,0 +1,168 @@
+<div class="groups-new-page">
+  <div class="groups-new-card">
+    <h1 class="groups-new-title">New group</h1>
+    <p class="groups-new-subtitle">Create a group others can join.</p>
+
+    <% if @group.errors.any? %>
+      <ul class="groups-new-errors">
+        <% @group.errors.full_messages.each do |msg| %>
+          <li><%= msg %></li>
+        <% end %>
+      </ul>
+    <% end %>
+
+    <%= form_with model: @group, url: groups_path, local: true, class: 'groups-new-form' do |f| %>
+      <div class="groups-new-field">
+        <%= f.label :name, 'Group name', class: 'groups-new-label' %>
+        <%= f.text_field :name, class: 'groups-new-input', required: true, maxlength: 120, placeholder: 'Name your group' %>
+      </div>
+      <div class="groups-new-field">
+        <%= f.label :description, 'Description', class: 'groups-new-label' %>
+        <%= f.text_area :description, class: 'groups-new-textarea', rows: 4, placeholder: 'What is this group about?' %>
+      </div>
+      <div class="groups-new-field">
+        <span class="groups-new-label">Invite peers</span>
+        <p class="groups-new-help">Search peers by name or email (min 2 characters), then add them.</p>
+        <div class="groups-invite-picker" data-invite-candidates-url="<%= invite_candidates_groups_path %>">
+          <input type="text" class="groups-new-input groups-invite-search" placeholder="Search peers to invite">
+          <div class="groups-invite-results" hidden></div>
+          <div class="groups-invite-selected" data-empty-text="No peers selected yet.">
+            <% if @selected_invitees.any? %>
+              <% @selected_invitees.each do |peer| %>
+                <div class="groups-invite-chip" data-user-id="<%= peer.id %>">
+                  <span class="groups-invite-chip-name"><%= peer.full_name.presence || peer.email %></span>
+                  <button type="button" class="groups-invite-chip-remove" aria-label="Remove invite">x</button>
+                  <%= hidden_field_tag 'invitee_ids[]', peer.id %>
+                </div>
+              <% end %>
+            <% else %>
+              <div class="groups-invite-empty">No peers selected yet.</div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+      <div class="groups-new-actions">
+        <%= link_to 'Cancel', groups_path, class: 'groups-new-cancel' %>
+        <%= f.submit 'Create group', class: 'groups-new-submit' %>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<script>
+  (function() {
+    var picker = document.querySelector('.groups-invite-picker');
+    if (!picker) return;
+
+    var input = picker.querySelector('.groups-invite-search');
+    var results = picker.querySelector('.groups-invite-results');
+    var selectedWrap = picker.querySelector('.groups-invite-selected');
+    var endpoint = picker.getAttribute('data-invite-candidates-url');
+    var debounceTimer = null;
+
+    function selectedIds() {
+      return Array.prototype.slice.call(selectedWrap.querySelectorAll('.groups-invite-chip'))
+        .map(function(node) { return node.getAttribute('data-user-id'); });
+    }
+
+    function renderEmptyState() {
+      var existingEmpty = selectedWrap.querySelector('.groups-invite-empty');
+      var hasChips = selectedWrap.querySelector('.groups-invite-chip');
+      if (!hasChips && !existingEmpty) {
+        var empty = document.createElement('div');
+        empty.className = 'groups-invite-empty';
+        empty.textContent = selectedWrap.getAttribute('data-empty-text');
+        selectedWrap.appendChild(empty);
+      } else if (hasChips && existingEmpty) {
+        existingEmpty.remove();
+      }
+    }
+
+    function hideResults() {
+      results.hidden = true;
+      results.innerHTML = '';
+    }
+
+    function addInviteChip(user) {
+      if (selectedIds().indexOf(String(user.id)) !== -1) return;
+
+      var chip = document.createElement('div');
+      chip.className = 'groups-invite-chip';
+      chip.setAttribute('data-user-id', user.id);
+      chip.innerHTML = '' +
+        '<span class="groups-invite-chip-name"></span>' +
+        '<button type="button" class="groups-invite-chip-remove" aria-label="Remove invite">x</button>' +
+        '<input type="hidden" name="invitee_ids[]" />';
+      chip.querySelector('.groups-invite-chip-name').textContent = user.label;
+      chip.querySelector('input[type="hidden"]').value = user.id;
+      selectedWrap.appendChild(chip);
+      renderEmptyState();
+    }
+
+    function renderResults(items) {
+      var alreadySelected = selectedIds();
+      var filtered = items.filter(function(item) {
+        return alreadySelected.indexOf(String(item.id)) === -1;
+      });
+
+      if (!filtered.length) {
+        results.innerHTML = '<div class="groups-invite-result-item groups-invite-result-empty">No matching peers found.</div>';
+      } else {
+        results.innerHTML = filtered.map(function(item) {
+          var subtitle = item.subtitle ? '<div class="groups-invite-result-subtitle">' + item.subtitle + '</div>' : '';
+          return '<button type="button" class="groups-invite-result-item" data-user-id="' + item.id + '" data-user-label="' + item.label.replace(/"/g, '&quot;') + '">' +
+            '<div class="groups-invite-result-title">' + item.label + '</div>' +
+            subtitle +
+          '</button>';
+        }).join('');
+      }
+      results.hidden = false;
+    }
+
+    function fetchCandidates(term) {
+      fetch(endpoint + '?q=' + encodeURIComponent(term), {
+        headers: { 'Accept': 'application/json' },
+        credentials: 'same-origin'
+      }).then(function(response) {
+        return response.ok ? response.json() : [];
+      }).then(function(data) {
+        renderResults(Array.isArray(data) ? data : []);
+      }).catch(function() {
+        hideResults();
+      });
+    }
+
+    input.addEventListener('input', function() {
+      var term = input.value.trim();
+      clearTimeout(debounceTimer);
+      if (term.length < 2) {
+        hideResults();
+        return;
+      }
+      debounceTimer = setTimeout(function() { fetchCandidates(term); }, 200);
+    });
+
+    results.addEventListener('click', function(event) {
+      var btn = event.target.closest('.groups-invite-result-item');
+      if (!btn || btn.classList.contains('groups-invite-result-empty')) return;
+      addInviteChip({ id: btn.dataset.userId, label: btn.dataset.userLabel });
+      input.value = '';
+      input.focus();
+      hideResults();
+    });
+
+    selectedWrap.addEventListener('click', function(event) {
+      var removeBtn = event.target.closest('.groups-invite-chip-remove');
+      if (!removeBtn) return;
+      var chip = removeBtn.closest('.groups-invite-chip');
+      if (chip) chip.remove();
+      renderEmptyState();
+    });
+
+    document.addEventListener('click', function(event) {
+      if (!picker.contains(event.target)) hideResults();
+    });
+
+    renderEmptyState();
+  })();
+</script>

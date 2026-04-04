@@ -70,6 +70,10 @@ document.addEventListener('DOMContentLoaded', function() {
         feedLoader.style.display = 'none';
         feedList.classList.add('facts-empty');
         feedList.innerHTML = '<div class="facts-empty-state">You haven\'t created any fact</div>';
+      } else if (page === 1 && typeof window.GROUP_FEED_EMPTY_MESSAGE === 'string' && window.GROUP_FEED_EMPTY_MESSAGE.length) {
+        feedLoader.style.display = 'none';
+        feedList.classList.add('facts-empty');
+        feedList.innerHTML = '<div class="facts-empty-state">' + escapeHtml(window.GROUP_FEED_EMPTY_MESSAGE) + '</div>';
       }
       hasMore = data.has_more;
       loading = false;

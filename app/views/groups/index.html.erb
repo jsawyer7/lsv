@@ -1,0 +1,206 @@
+<div class="feed-main peers-page-main groups-page-main">
+  <div class="peers-page-content">
+    <header class="peers-page-header">
+      <h1 class="peers-page-title">Groups</h1>
+      <nav class="peers-page-filters groups-page-tabs">
+        <%= link_to 'My Leaders', groups_path(tab: 'leaders'), class: "peers-filter-pill #{'active' if @tab == 'leaders'}" %>
+        <%= link_to 'My Groups', groups_path(tab: 'groups'), class: "peers-filter-pill #{'active' if @tab == 'groups'}" %>
+      </nav>
+    </header>
+    <div class="peers-main">
+      <% if @tab == 'leaders' %>
+        <div class="peers-know-block groups-center-block">
+          <div class="peers-know-header">
+            <h3 class="peers-know-title">My Leader</h3>
+            <% if @my_leaders.any? %>
+              <%= link_to 'Show all', peers_path, class: 'peers-know-show-all' %>
+            <% end %>
+          </div>
+          <div class="peers-know-divider"></div>
+          <div class="peers-suggestions-list peers-know-list <%= 'peers-know-empty' unless @my_leaders.any? %>">
+            <% if @my_leaders.any? %>
+              <% @my_leaders.each do |user| %>
+                <div class="groups-leader-row">
+                  <%= image_tag user.avatar_url.presence || 'default-avatar.png', class: 'groups-leader-row-avatar', alt: '' %>
+                  <div class="groups-leader-row-body">
+                    <div class="groups-leader-row-name-row">
+                      <span class="groups-leader-row-name"><%= user.full_name.presence || user.email %></span>
+                      <%= image_tag 'blue-tick.svg', alt: 'Verified', class: 'groups-leader-row-verified' %>
+                    </div>
+                    <div class="groups-leader-row-meta">
+                      <span class="groups-leader-row-peer-label">Verified Peer</span>
+                      <span class="groups-leader-row-rating" aria-hidden="true">★</span>
+                      <span class="groups-leader-row-rating-num">4.7</span>
+                    </div>
+                  </div>
+                  <%= link_to 'View Profile', user_profile_path(user), class: 'groups-leader-view-profile-btn' %>
+                </div>
+              <% end %>
+            <% else %>
+              <div class="no-requests-message">Join groups to see their leaders here.</div>
+            <% end %>
+          </div>
+          <% if @my_leaders.any? && @my_leaders.total_pages > 1 %>
+            <div class="peers-pagination-wrap"><%= paginate @my_leaders, params: { tab: 'leaders' } %></div>
+          <% end %>
+        </div>
+      <% else %>
+        <div class="peers-know-block groups-center-block groups-my-groups-block">
+          <div class="peers-know-header">
+            <h3 class="peers-know-title">My groups</h3>
+          </div>
+          <div class="peers-know-divider"></div>
+          <div class="peers-suggestions-list peers-know-list groups-my-groups-list <%= 'peers-know-empty' unless @my_groups.any? %>">
+            <% if @my_groups.any? %>
+              <% @my_groups.each do |group| %>
+                <div class="groups-my-group-row">
+                  <%= link_to group_path(group), class: 'groups-my-group-thumb' do %>
+                    <%= image_tag group.leader.avatar_url.presence || 'default-avatar.png', class: 'groups-my-group-thumb-img', alt: '' %>
+                  <% end %>
+                  <div class="groups-my-group-main">
+                    <%= link_to group_path(group), class: 'groups-my-group-text-link' do %>
+                      <div class="groups-my-group-name-row">
+                        <span class="groups-my-group-name"><%= group.name %></span>
+                        <%= image_tag 'blue-tick.svg', alt: 'Verified', class: 'groups-my-group-verified' %>
+                      </div>
+                      <div class="groups-my-group-members">
+                        <div class="groups-my-group-member-avatars">
+                          <% group_member_preview_users(group, limit: 3).each do |member| %>
+                            <%= image_tag member.avatar_url.presence || 'default-avatar.png', class: 'groups-my-group-member-avatar', alt: '' %>
+                          <% end %>
+                        </div>
+                        <span class="groups-my-group-members-count"><%= format_group_members_count(group.group_memberships.size) %> members</span>
+                      </div>
+                    <% end %>
+                  </div>
+                  <div class="dropdown groups-my-group-menu">
+                    <button type="button" class="groups-my-group-menu-btn" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Group options">
+                      <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                        <circle cx="10" cy="4" r="1.5"/>
+                        <circle cx="10" cy="10" r="1.5"/>
+                        <circle cx="10" cy="16" r="1.5"/>
+                      </svg>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end groups-my-group-dropdown">
+                      <li><%= link_to 'View group', group_path(group), class: 'dropdown-item' %></li>
+                      <% if group.leader_id != current_user.id %>
+                        <li>
+                          <%= link_to 'Leave group', leave_group_path(group), class: 'dropdown-item text-danger', data: { turbo_method: :delete } %>
+                        </li>
+                      <% else %>
+                        <li><span class="dropdown-item-text text-muted small">You lead this group</span></li>
+                      <% end %>
+                    </ul>
+                  </div>
+                </div>
+              <% end %>
+            <% else %>
+              <div class="no-requests-message">You have not joined any groups yet. <%= link_to 'Create one', new_group_path, class: 'peers-know-show-all' %> or open a group and join.</div>
+            <% end %>
+            <% if @my_groups.any? %>
+              <div class="groups-search-communities-wrap">
+                <p class="groups-search-communities-text">
+                  <%= link_to 'Search', groups_path(tab: 'groups'), class: 'groups-search-communities-search-link' %> other trusted communities that share and support your goals.
+                </p>
+              </div>
+            <% end %>
+          </div>
+          <% if @my_groups.any? && @my_groups.total_pages > 1 %>
+            <div class="peers-pagination-wrap"><%= paginate @my_groups, params: { tab: 'groups' } %></div>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+  <aside class="feed-rightbar peers-page-rightbar">
+    <div class="peers-rightbar-inner">
+      <% if @tab == 'leaders' %>
+        <div class="my-peers-section">
+          <h4>Top leaders</h4>
+          <% if @top_leaders.any? %>
+            <% @top_leaders.each do |leader| %>
+              <div class="my-peer-row">
+                <div class="my-peer-avatar-wrap">
+                  <%= link_to user_profile_path(leader), class: 'my-peer-avatar-link' do %>
+                    <%= image_tag leader.avatar_url.presence || 'default-avatar.png', class: 'my-peer-avatar' %>
+                  <% end %>
+                </div>
+                <div class="my-peer-right-col">
+                  <%= link_to user_profile_path(leader), class: 'my-peer-details-link' do %>
+                    <div class="my-peer-name-row">
+                      <span class="my-peer-name"><%= leader.full_name.presence || leader.email %></span>
+                      <%= image_tag 'blue-tick.svg', alt: 'Verified', class: 'my-peer-verified-icon' %>
+                    </div>
+                    <div class="my-peer-meta">
+                      <div class="my-peer-followers-avatars">
+                        <% leader.followers.to_a.first(3).each do |follower| %>
+                          <%= image_tag follower.avatar_url.presence || 'default-avatar.png', class: 'my-peer-follower-avatar' %>
+                        <% end %>
+                      </div>
+                      <span class="my-peer-followers-count"><%= leader.followers.count %> followers</span>
+                      <span class="my-peer-rating">★ <span class="my-peer-rating-num">4.7</span></span>
+                    </div>
+                  <% end %>
+                  <% if leader != current_user %>
+                    <% if current_user.following.include?(leader) %>
+                      <div id="groups-follow-wrap-<%= leader.id %>">
+                        <%= form_with url: follow_path(leader.id), method: :delete, class: 'peer-unfollow-btn my-peer-follow-btn js-follow-remote-form', local: false, data: { remote: true, turbo: false } do %>
+                          <%= hidden_field_tag :from, 'groups' %>
+                          <%= button_tag type: 'submit', class: 'peer-unfollow-btn-submit' do %>
+                            <span class="peer-followed-text">Followed</span>
+                            <span class="peer-unfollow-text">Unfollow</span>
+                          <% end %>
+                        <% end %>
+                      </div>
+                    <% else %>
+                      <div id="groups-follow-wrap-<%= leader.id %>">
+                        <%= form_with url: follows_path, method: :post, class: 'peers-follow-form my-peer-follow-btn js-follow-remote-form', local: false, data: { remote: true, turbo: false } do %>
+                          <%= hidden_field_tag :followed_user_id, leader.id %>
+                          <%= hidden_field_tag :from, 'groups' %>
+                          <%= submit_tag 'Follow', class: 'peers-follow-btn-submit' %>
+                        <% end %>
+                      </div>
+                    <% end %>
+                  <% end %>
+                </div>
+              </div>
+            <% end %>
+          <% else %>
+            <div class="no-peers-message">No group leaders yet.</div>
+          <% end %>
+        </div>
+        <%= render 'facts/top_facts', top_facts: @top_facts || [] %>
+      <% else %>
+        <div class="groups-suggested-section">
+          <h4>Groups you might be interested in</h4>
+          <% if @suggested_groups.present? %>
+            <% @suggested_groups.each do |group| %>
+              <div class="groups-suggested-card">
+                <%= link_to group_path(group), class: 'groups-suggested-card-main' do %>
+                  <%= image_tag group.leader.avatar_url.presence || 'default-avatar.png', class: 'groups-suggested-avatar', alt: '' %>
+                  <div class="groups-suggested-text">
+                    <div class="groups-suggested-name-row">
+                      <span class="groups-suggested-name"><%= group.name %></span>
+                      <%= image_tag 'blue-tick.svg', alt: 'Verified', class: 'groups-suggested-verified' %>
+                    </div>
+                    <div class="groups-suggested-members-row">
+                      <div class="groups-suggested-member-avatars">
+                        <% group_member_preview_users(group, limit: 3).each do |member| %>
+                          <%= image_tag member.avatar_url.presence || 'default-avatar.png', class: 'groups-suggested-member-avatar', alt: '' %>
+                        <% end %>
+                      </div>
+                      <span class="groups-suggested-members"><%= format_group_members_count(group.group_memberships.size) %> Members</span>
+                    </div>
+                  </div>
+                <% end %>
+                <%= button_to 'Join Group', join_group_path(group), method: :post, class: 'groups-suggested-join-btn', form: { class: 'groups-suggested-join-form', data: { turbo: false } } %>
+              </div>
+            <% end %>
+          <% else %>
+            <p class="groups-suggested-empty">No suggested groups right now.</p>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  </aside>
+</div>

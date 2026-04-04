@@ -1,13 +1,11 @@
 <nav class="top-navbar">
   <div class="top-navbar-container">
-    <!-- Logo -->
     <div class="top-navbar-logo">
       <%= link_to root_path do %>
         <%= image_tag "verifaith-logo.png", alt: "VeriFaith Logo", class: "logo-img" %>
       <% end %>
     </div>
 
-    <!-- Search Bar -->
     <div class="top-navbar-search">
       <%= form_with url: dashboard_path, method: :get, local: true, class: "search-form", data: { controller: "search" } do |f| %>
         <%= image_tag "search.svg", alt: "Search", class: "search-icon-img" %>
@@ -29,19 +27,16 @@
     
     <div class="top-navbar-nav">
 
-      <!-- My Peers -->
       <%= link_to peers_path, class: "nav-tab vertical-tab #{'active' if current_page?(peers_path) || request.path =~ %r{^/users/\d+/profile/?$}}" do %>
         <%= image_tag 'mypeers.svg', alt: 'My Peers', class: 'nav-tab-icon' %>
         <span class="nav-tab-text">My Peers</span>
       <% end %>
 
-      <!-- Groups -->
-      <a href="#" class="nav-tab vertical-tab upcoming">
+      <%= link_to groups_path, class: "nav-tab vertical-tab #{'active' if controller_name == 'groups'}" do %>
         <%= image_tag 'groups.svg', alt: 'Groups', class: 'nav-tab-icon' %>
         <span class="nav-tab-text">Groups</span>
-      </a>
+      <% end %>
 
-      <!-- Notifications -->
       <% unread_count = unread_notifications_count %>
       <div class="nav-tab vertical-tab notifications-tab <%= 'active' if current_page?(notifications_path) %>" id="notifications-tab">
         <div class="notification-icon-wrapper">
@@ -85,6 +80,11 @@
                       <%= button_to 'Accept', accept_peers_path(user_id: notification.actor_id, format: :json), method: :post, class: 'notifications-dropdown-accept-btn', params: { notification_dropdown_anchor: notification.id }, form: { class: 'js-notifications-dropdown-peer-form', data: { turbo: false } } %>
                       <%= button_to 'Cancel', remove_peers_path(peer_id: notification.actor_id, format: :json), method: :delete, class: 'notifications-dropdown-cancel-btn', params: { notification_dropdown_anchor: notification.id }, form: { class: 'js-notifications-dropdown-peer-form', data: { turbo: false } } %>
                     </div>
+                  <% elsif pending_group_invite_notification?(notification) %>
+                    <div class="notifications-dropdown-peer-actions">
+                      <%= button_to 'Accept', accept_group_invite_notification_path(notification, format: :json), method: :post, class: 'notifications-dropdown-accept-btn', params: { notification_dropdown_anchor: notification.id }, form: { class: 'js-notifications-dropdown-peer-form', data: { turbo: false } } %>
+                      <%= button_to 'Reject', reject_group_invite_notification_path(notification, format: :json), method: :delete, class: 'notifications-dropdown-cancel-btn', params: { notification_dropdown_anchor: notification.id }, form: { class: 'js-notifications-dropdown-peer-form', data: { turbo: false } } %>
+                    </div>
                   <% end %>
                 </div>
               <% end %>
@@ -98,7 +98,6 @@
         </div>
       </div>
 
-      <!-- Me (Profile) -->
       <div class="nav-tab me-tab" id="me-tab" data-action="click->dropdown#toggle">
         <% if user_signed_in? %>
           <%= image_tag current_user.avatar_url.presence || 'default-avatar.png', alt: 'Profile', class: 'me-profile-pic' %>
@@ -109,8 +108,7 @@
           <span class="nav-tab-text">Me</span>
           <%= image_tag 'mearrow.svg', alt: 'Arrow', class: 'me-arrow' %>
         </div>
-        
-        <!-- Dropdown Menu -->
+
         <div class="dropdown-menu">
           <div class="dropdown-content main-content">
             <div class="settings-menu-container">
@@ -161,7 +159,12 @@
 
  
     <div class="new-claim-btn-wrapper">
-      <% if controller_name == 'theories' || request.path.start_with?('/theories') %>
+      <% if controller_name == 'groups' || request.path.start_with?('/groups') %>
+        <%= link_to new_group_path, class: "new-claim-btn" do %>
+          <%= image_tag 'newclaim.png', alt: 'New Group', class: 'new-claim-icon' %>
+          <span class="new-claim-text">New Group</span>
+        <% end %>
+      <% elsif controller_name == 'theories' || request.path.start_with?('/theories') %>
         <%= link_to new_theory_path, class: "new-claim-btn new-theory-btn" do %>
           <%= image_tag 'newclaim.png', alt: 'New Theory', class: 'new-claim-icon' %>
           <span class="new-claim-text">New Theory</span>

@@ -39,6 +39,11 @@
                       <%= button_to 'Accept', accept_peers_path(user_id: notification.actor_id), method: :post, class: 'notification-peer-accept-btn' %>
                       <%= button_to 'Cancel', remove_peers_path(peer_id: notification.actor_id), method: :delete, class: 'notification-peer-cancel-btn', form: { data: { turbo_confirm: 'Decline this peer request?' } } %>
                     </div>
+                  <% elsif pending_group_invite_notification?(notification) %>
+                    <div class="notification-peer-actions-row">
+                      <%= button_to 'Accept', accept_group_invite_notification_path(notification), method: :post, class: 'notification-peer-accept-btn' %>
+                      <%= button_to 'Reject', reject_group_invite_notification_path(notification), method: :delete, class: 'notification-peer-cancel-btn', form: { data: { turbo_confirm: 'Decline this group invite?' } } %>
+                    </div>
                   <% else %>
                     <button type="button" class="notification-row-menu-btn" aria-label="Notification options">
                       <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">

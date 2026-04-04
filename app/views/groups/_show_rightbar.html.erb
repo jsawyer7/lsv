@@ -1,0 +1,58 @@
+<div class="groups-feed-sidebar">
+  <div class="groups-feed-sidebar-card groups-feed-sidebar-leader">
+    <h4 class="groups-feed-sidebar-title">Group Leader</h4>
+    <% leader = @group.leader %>
+    <div class="groups-feed-leader-profile">
+      <%= link_to user_profile_path(leader), class: 'groups-feed-leader-avatar-link' do %>
+        <%= image_tag leader.avatar_url.presence || 'default-avatar.png', class: 'groups-feed-leader-avatar', alt: '' %>
+      <% end %>
+      <div class="groups-feed-leader-text">
+        <div class="groups-feed-leader-name-row">
+          <%= link_to user_profile_path(leader), class: 'groups-feed-profile-name groups-feed-leader-name' do %>
+            <%= leader.full_name.presence || leader.email %>
+          <% end %>
+          <%= image_tag 'blue-tick.svg', alt: 'Verified', class: 'groups-feed-leader-verified' %>
+        </div>
+        <div class="groups-feed-leader-meta">
+          <span><%= leader.followers.count %> followers</span>
+          <span class="groups-feed-leader-rating">★ 4.7</span>
+        </div>
+      </div>
+    </div>
+    <div class="groups-feed-leader-about-block">
+      <h5 class="groups-feed-about-heading">About</h5>
+      <div class="groups-feed-about-body">
+        <% if leader.about.present? %>
+          <%= simple_format(leader.about) %>
+        <% else %>
+          <p class="groups-feed-about-body-empty">No bio yet.</p>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <div class="groups-feed-sidebar-card">
+    <h4 class="groups-feed-sidebar-title">Group Members</h4>
+    <% if @group_members.any? %>
+      <ul class="groups-feed-sidebar-member-list">
+        <% @group_members.each do |user| %>
+          <li class="groups-feed-sidebar-member-row">
+            <%= image_tag user.avatar_url.presence || 'default-avatar.png', class: 'groups-feed-sidebar-member-avatar', alt: '' %>
+            <div class="groups-feed-sidebar-member-main">
+              <div class="groups-feed-sidebar-member-name-row">
+                <span class="groups-feed-profile-name groups-feed-sidebar-member-name"><%= user.full_name.presence || user.email %></span>
+                <%= image_tag 'blue-tick.svg', alt: '', class: 'groups-feed-sidebar-member-verified' %>
+              </div>
+              <span class="groups-feed-sidebar-member-rating">★ 4.7</span>
+              <%= link_to 'View Profile', user_profile_path(user), class: 'groups-feed-sidebar-view-btn' %>
+            </div>
+          </li>
+        <% end %>
+      </ul>
+    <% else %>
+      <p class="groups-feed-sidebar-empty">No members yet.</p>
+    <% end %>
+  </div>
+
+  <%= render 'facts/top_facts', top_facts: @top_facts || [] %>
+</div>

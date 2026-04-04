@@ -1,0 +1,73 @@
+<script>
+  window.FEED_API_URL = '<%= j infinite_feed_group_path(@group) %>';
+  window.GROUP_FEED_EMPTY_MESSAGE = '<%= j "No facts from group members yet." %>';
+</script>
+
+<div class="feed-main facts-page-main groups-feed-page">
+  <div class="facts-page-content">
+    <header class="facts-page-header groups-feed-header">
+      <div class="groups-feed-header-row">
+        <h1 class="facts-page-title groups-feed-page-title"><%= @group.name %></h1>
+        <div class="dropdown groups-feed-page-menu">
+          <button type="button" class="groups-feed-page-menu-btn" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Group menu">
+            <span class="groups-feed-page-menu-dots" aria-hidden="true">
+              <span class="groups-feed-page-menu-dot"></span>
+              <span class="groups-feed-page-menu-dot"></span>
+              <span class="groups-feed-page-menu-dot"></span>
+            </span>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end groups-feed-page-dropdown">
+            <li>
+              <button type="button" class="dropdown-item groups-feed-dropdown-item js-copy-group-link" data-url="<%= "#{request.base_url}#{group_path(@group)}" %>" data-share-label="Share link">
+                <%= image_tag 'share-link.svg', alt: '', class: 'groups-feed-dropdown-icon' %>
+                <span class="groups-feed-dropdown-label">Share link</span>
+              </button>
+            </li>
+            <% if @is_member && !@is_leader %>
+              <li>
+                <%= link_to leave_group_path(@group), class: 'dropdown-item groups-feed-dropdown-item', data: { turbo_method: :delete } do %>
+                  <%= image_tag 'leave.svg', alt: '', class: 'groups-feed-dropdown-icon' %>
+                  <span class="groups-feed-dropdown-label">Leave group</span>
+                <% end %>
+              </li>
+            <% elsif !@is_member %>
+              <li>
+                <%= link_to join_group_path(@group), class: 'dropdown-item groups-feed-dropdown-item', data: { turbo_method: :post } do %>
+                  <%= image_tag 'groups.svg', alt: '', class: 'groups-feed-dropdown-icon' %>
+                  <span class="groups-feed-dropdown-label">Join group</span>
+                <% end %>
+              </li>
+            <% end %>
+          </ul>
+        </div>
+      </div>
+    </header>
+    <div id="feed-list" class="feed-list"></div>
+    <div id="feed-loader" class="feed-loader">Loading...</div>
+  </div>
+  <aside class="feed-rightbar facts-page-rightbar groups-feed-rightbar">
+    <%= render 'show_rightbar' %>
+  </aside>
+</div>
+<%= render 'shared/feeds_js' %>
+
+<script>
+  (function () {
+    document.addEventListener('click', function (e) {
+      var btn = e.target.closest('.js-copy-group-link');
+      if (!btn) return;
+      var url = btn.getAttribute('data-url');
+      if (!url || !navigator.clipboard || !navigator.clipboard.writeText) return;
+      e.preventDefault();
+      var label = btn.querySelector('.groups-feed-dropdown-label');
+      var restore = label ? label.textContent : '';
+      var defaultLabel = btn.getAttribute('data-share-label') || restore;
+      navigator.clipboard.writeText(url).then(function () {
+        if (label) label.textContent = 'Link copied!';
+        window.setTimeout(function () {
+          if (label) label.textContent = defaultLabel;
+        }, 2000);
+      });
+    });
+  })();
+</script>
