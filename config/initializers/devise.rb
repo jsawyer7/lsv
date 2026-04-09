@@ -298,7 +298,7 @@ Devise.setup do |config|
     ENV['FACEBOOK_APP_ID'],
     ENV['FACEBOOK_APP_SECRET'],
     {
-      scope: 'email,public_profile,user_friends',
+      scope: 'email,public_profile',
       info_fields: 'name,email',
       image_size: 'large',
       provider_ignores_state: true,
