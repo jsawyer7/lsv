@@ -61,35 +61,27 @@ class EntitlementsController < ApplicationController
 
   def get_default_plan_entitlements(plan_name)
     case plan_name&.downcase
+    when /free/
+      [
+        "View facts and theories",
+        "Like, comment, and save favorites",
+        "VeriTalk with monthly token limit"
+      ]
     when /basic/
       [
-        "Basic Claims Creation",
-        "Community Access",
-        "Limited AI Evidence (5/month)",
-        "Basic Support",
-        "Standard Response Time"
+        "Everything in Free",
+        "Higher VeriTalk monthly token limit"
       ]
-    when /plus/
+    when /contributor/
       [
         "Everything in Basic",
-        "Unlimited Claims",
-        "Enhanced AI Evidence (25/month)",
-        "Priority Support",
-        "Faster Response Time",
-        "Advanced Analytics"
-      ]
-    when /premium/
-      [
-        "Everything in Plus",
-        "Unlimited AI Evidence",
-        "Premium Support",
-        "24/7 Response Time",
-        "Custom Integrations",
-        "Dedicated Account Manager"
+        "Create claims",
+        "Challenge facts",
+        "Write theories"
       ]
     else
       [
-        "Basic Features",
+        "Community features",
         "Standard Support"
       ]
     end

@@ -29,13 +29,14 @@
   }
 
   function initializeFlashMessages() {
-    setTimeout(() => {
-      document.querySelectorAll('.flash-message').forEach(el => {
+    document.querySelectorAll('.flash-message').forEach(el => {
+      const timeoutMs = parseInt(el.dataset.timeoutMs || '4000', 10);
+      setTimeout(() => {
         el.style.opacity = '0';
         el.style.transition = 'opacity 0.5s ease';
         setTimeout(() => el.remove(), 500);
-      });
-    }, 4000);
+      }, Number.isNaN(timeoutMs) ? 4000 : timeoutMs);
+    });
   }
 
   document.addEventListener('turbo:load', () => {

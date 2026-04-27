@@ -7,6 +7,7 @@ class ApplicationController < ActionController::Base
   before_action :set_languages, if: :user_signed_in?, unless: :admin_controller?
   before_action :set_naming_preferences, if: :user_signed_in?, unless: :admin_controller?
   before_action :update_user_location, if: :user_signed_in?
+  before_action :ensure_free_plan_assignment, if: :user_signed_in?
 
   # Skip location update for terms acceptance action
   skip_before_action :update_user_location, if: -> { controller_name == 'users' && action_name == 'accept_terms' }
@@ -109,5 +110,9 @@ class ApplicationController < ActionController::Base
     end
 
     ip
+  end
+
+  def ensure_free_plan_assignment
+    current_user.enqueue_free_plan_assignment_if_missing!
   end
 end

@@ -3,6 +3,7 @@
 class ClaimsController < ApplicationController
   before_action :set_claim, only: %i[show edit update destroy publish_fact unpublish_fact]
   before_action :authenticate_user!
+  before_action :ensure_claim_creation_access!, only: [:new, :create]
   layout 'dashboard'
 
   SOURCE_ENUM_MAP = {
@@ -340,6 +341,20 @@ class ClaimsController < ApplicationController
   end
 
   private
+
+  def ensure_claim_creation_access!
+    return if current_user.can_create_claims?
+
+    respond_to do |format|
+      format.html do
+        redirect_to subscription_settings_path,
+                    alert: 'Claim creation is available on Contributor plan. Please upgrade your plan.'
+      end
+      format.json do
+        render json: { error: 'Claim creation is available on Contributor plan.' }, status: :forbidden
+      end
+    end
+  end
 
   def set_claim
     @claim = Claim.includes(:likes).find(params[:id])

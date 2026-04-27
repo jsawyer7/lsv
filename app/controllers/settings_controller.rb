@@ -2,6 +2,7 @@ require 'ostruct'
 require 'set'
 
 class SettingsController < ApplicationController
+  PLANS_CACHE_KEY = "chargebee_plans:v2".freeze
   before_action :authenticate_user!
   before_action :set_user
   layout 'dashboard'
@@ -40,10 +41,14 @@ class SettingsController < ApplicationController
 
     def subscription
     @plans = []
+    if params[:challenge_upgrade].present?
+      flash.now[:timeout_ms] = 12000
+      flash.now[:alert] = "Ability to submit challenges is available on the Contributor plan only. Your current plan can read and discuss evidence, but to submit a challenge please upgrade your plan."
+    end
 
     begin
       # Try to get plans from cache first
-      cached_plans = Rails.cache.read('chargebee_plans')
+      cached_plans = Rails.cache.read(PLANS_CACHE_KEY)
 
       if cached_plans && cache_fresh?
         Rails.logger.info "✅ Using cached plans"
@@ -58,10 +63,12 @@ class SettingsController < ApplicationController
           Rails.logger.info "✅ Using #{local_plans.count} plans from local database with features"
 
           local_plans.each do |local_plan|
+            tier = plan_tier_for(local_plan.name, local_plan.chargebee_item_price_id)
             # Build plan object from local database
             plan = OpenStruct.new(
               id: local_plan.chargebee_id,
-              name: clean_plan_name(local_plan.name),
+              name: display_plan_name(local_plan.name, local_plan.chargebee_item_price_id),
+              tier: tier,
               description: local_plan.description,
               price: local_plan.price,
               billing_cycle: local_plan.billing_cycle,
@@ -69,15 +76,15 @@ class SettingsController < ApplicationController
               period_unit: local_plan.billing_cycle&.split(' ')&.last,
               status: local_plan.status,
               chargebee_item_price_id: local_plan.chargebee_item_price_id,
-              features: local_plan.feature_descriptions,
-              feature_descriptions: local_plan.feature_descriptions
+              features: tier_feature_descriptions(tier),
+              feature_descriptions: tier_feature_descriptions(tier)
             )
 
             @plans << plan
           end
 
           # Cache the plans for 1 hour
-          Rails.cache.write('chargebee_plans', @plans, expires_in: 1.hour)
+          Rails.cache.write(PLANS_CACHE_KEY, @plans, expires_in: 1.hour)
           Rails.logger.info "✅ Plans cached for 1 hour"
         else
           Rails.logger.info "⚠️ No local plans found, triggering sync job"
@@ -217,11 +224,13 @@ class SettingsController < ApplicationController
 
       if local_plan
         Rails.logger.info "✅ Using plan from local database: #{local_plan.name}"
+        tier = plan_tier_for(local_plan.name, local_plan.chargebee_item_price_id)
 
                   # Build plan object from local database
           @plan = OpenStruct.new(
             id: local_plan.chargebee_id,
-            name: clean_plan_name(local_plan.name),
+            name: display_plan_name(local_plan.name, local_plan.chargebee_item_price_id),
+            tier: tier,
             description: local_plan.description || "Clear and fair pricing for everyone. 10,000+ peoples are using it.",
             price: local_plan.price,
             billing_cycle: local_plan.billing_cycle,
@@ -229,8 +238,8 @@ class SettingsController < ApplicationController
             period_unit: local_plan.billing_cycle&.split(' ')&.last,
             status: local_plan.status,
             chargebee_item_price_id: local_plan.chargebee_item_price_id,
-            features: local_plan.feature_descriptions,
-            feature_descriptions: local_plan.feature_descriptions
+            features: tier_feature_descriptions(tier),
+            feature_descriptions: tier_feature_descriptions(tier)
           )
       else
         Rails.logger.info "⚠️ Plan not found in local database, fetching from Chargebee API"
@@ -246,12 +255,14 @@ class SettingsController < ApplicationController
         end
 
         # Get feature descriptions from Chargebee entitlements
-        feature_descriptions = get_plan_feature_descriptions(item_name)
+        tier = plan_tier_for(item_name, plan_id)
+        feature_descriptions = tier_feature_descriptions(tier)
 
         # Build plan object for the view
         @plan = OpenStruct.new(
           id: item_price.item_price.item_id,
-          name: item_name,
+          name: display_plan_name(item_name, plan_id),
+          tier: tier,
           description: "Clear and fair pricing for everyone. 10,000+ peoples are using it.",
           price: item_price.item_price.price.to_f / 100,
           billing_cycle: "#{item_price.item_price.period} #{item_price.item_price.period_unit}",
@@ -270,6 +281,7 @@ class SettingsController < ApplicationController
         .where(status: %w[active in_trial non_renewing])
         .order(updated_at: :desc, created_at: :desc)
         .first
+      @payment_methods = fetch_payment_methods_for_current_user
 
       @is_current_plan = @current_subscription&.chargebee_plan&.chargebee_item_price_id == @plan.chargebee_item_price_id
 
@@ -400,36 +412,29 @@ class SettingsController < ApplicationController
   # Default features for unknown plans
   def get_default_plan_features(plan_name)
     case plan_name&.downcase
+    when /free/
+      [
+        "View facts and theories",
+        "Like, comment, and save favorites",
+        "VeriTalk with monthly token limit"
+      ]
     when /basic/
       [
-        "Basic Claims Creation",
-        "Community Access",
-        "Limited AI Evidence (5/month)",
-        "Basic Support"
+        "Everything in Free",
+        "Higher VeriTalk monthly token limit"
       ]
-    when /plus/
+    when /contributor/
       [
         "Everything in Basic",
-        "Unlimited Claims",
-        "Enhanced AI Evidence (25/month)",
-        "Priority Support",
-        "Advanced Analytics"
-      ]
-    when /premium/
-      [
-        "Everything in Plus",
-        "Unlimited AI Evidence",
-        "Premium Support",
-        "24/7 Response Time",
-        "Custom Integrations",
-        "Dedicated Account Manager"
+        "Create claims",
+        "Challenge facts",
+        "Write theories",
+        "Highest VeriTalk monthly token limit"
       ]
     else
       [
-        "Basic Claims Creation",
-        "Community Access",
-        "Limited AI Evidence (5/month)",
-        "Basic Support"
+        "View facts and theories",
+        "Like, comment, and save favorites"
       ]
     end
   end
@@ -512,12 +517,12 @@ class SettingsController < ApplicationController
   # Get item_price_id for a given plan name
   def get_item_price_id_for_plan(plan_name)
     case plan_name&.downcase
-    when /premium/
-      'premium-USD-Monthly'
-    when /plus/
-      'plus-USD-Monthly'
-    when /basic|free/
+    when /contributor/
+      'contributor-USD-Monthly'
+    when /basic/
       'test-basic-plan-USD-Monthly'
+    when /free/
+      'free-USD-Monthly'
     else
       nil
     end
@@ -526,12 +531,12 @@ class SettingsController < ApplicationController
   # Fallback mapping if dynamic entitlement fetching fails
   def get_fallback_plan_feature_mapping(plan_name)
     case plan_name&.downcase
-    when /premium/
-      ['premiumwala', 'premium-he', 'lalala']
-    when /plus/
-      ['plus', 'plus-he']
-    when /basic|free/
-      ['bbbb', 'han', 'free-wla', 'freee-he']
+    when /contributor/
+      ['veritalk_enabled', 'veritalk_monthly_tokens', 'can_create_claims', 'can_submit_challenges', 'can_create_theories']
+    when /basic/
+      ['veritalk_enabled', 'veritalk_monthly_tokens']
+    when /free/
+      ['veritalk_enabled', 'veritalk_monthly_tokens', 'can_like_comment_save_favorites']
     else
       []
     end
@@ -551,6 +556,61 @@ class SettingsController < ApplicationController
     plan_name.gsub(/\s*(USD|USD-)?\s*(Monthly|Yearly|Annually)/i, '').strip
   end
 
+  def display_plan_name(plan_name, item_price_id = nil)
+    case plan_tier_for(plan_name, item_price_id)
+    when :free
+      ENV.fetch("UI_PLAN_NAME_FREE", "Free")
+    when :basic
+      ENV.fetch("UI_PLAN_NAME_BASIC", "Basic")
+    when :contributor
+      ENV.fetch("UI_PLAN_NAME_CONTRIBUTOR", "Contributor")
+    else
+      clean_plan_name(plan_name.to_s)
+    end
+  end
+
+  def tier_feature_descriptions(tier)
+    case tier
+    when :free
+      [
+        "Ability to view facts and theories",
+        "Ability to like, comment, and save favorites",
+        "Ability to use VeriTalk with a monthly token limit"
+      ]
+    when :basic
+      [
+        "Ability to view facts and theories",
+        "Ability to like, comment, and save favorites",
+        "Ability to use VeriTalk with a higher monthly token limit"
+      ]
+    when :contributor
+      [
+        "Ability to view facts and theories",
+        "Ability to like, comment, and save favorites",
+        "Ability to use VeriTalk with a higher monthly token limit",
+        "Ability to create claims",
+        "Ability to challenge facts",
+        "Ability to write theories"
+      ]
+    else
+      []
+    end
+  end
+
+  def plan_tier_for(plan_name, item_price_id = nil)
+    normalized_name = plan_name.to_s.downcase
+    normalized_id = item_price_id.to_s.downcase
+
+    return :contributor if normalized_name.include?("contributor") || normalized_id.include?("contributor") ||
+                           normalized_name.include?("premium") || normalized_id.include?("premium")
+    return :basic if normalized_name.include?("basic") || normalized_id.include?("basic") ||
+                     normalized_name.include?("plus") || normalized_id.include?("plus") ||
+                     normalized_name.include?("pro") || normalized_id.include?("pro")
+    return :free if normalized_name.include?("free") || normalized_id.include?("free")
+
+    nil
+  end
+
   def cache_fresh?
     last_synced = Rails.cache.read('chargebee_plans_last_synced')
     last_synced && last_synced > 1.hour.ago
@@ -566,9 +626,30 @@ class SettingsController < ApplicationController
         .first
 
       if current_subscription
+        # Free plans should not expose payment methods UI.
+        if current_subscription.chargebee_plan&.price.to_f.zero?
+          Rails.logger.info "Skipping Chargebee customer lookup for free-plan user #{current_user.id}"
+          return nil
+        end
+
         # Get customer details from Chargebee using subscription ID
         subscription_response = ChargeBee::Subscription.retrieve(current_subscription.chargebee_id)
-        subscription_response.subscription.customer_id
+        subscription = subscription_response.subscription
+        customer_id = subscription.customer_id
+        return nil if customer_id.blank?
+
+        begin
+          customer = ChargeBee::Customer.retrieve(customer_id).customer
+          if customer&.email.to_s.downcase != current_user.email.to_s.downcase
+            Rails.logger.warn "Customer mismatch for user #{current_user.id}: subscription customer #{customer_id} belongs to #{customer&.email}"
+            return nil
+          end
+        rescue => e
+          Rails.logger.warn "Could not verify customer #{customer_id} for user #{current_user.id}: #{e.message}"
+          return nil
+        end
+
+        customer_id
       else
         Rails.logger.warn "No active subscription found for user #{current_user.id}"
         nil
@@ -580,6 +661,13 @@ class SettingsController < ApplicationController
   end
 
   def fetch_payment_methods_for_current_user
+    current_subscription = current_user
+      .chargebee_subscriptions
+      .where(status: %w[active in_trial non_renewing])
+      .order(updated_at: :desc, created_at: :desc)
+      .first
+    return [] if current_subscription&.chargebee_plan&.price.to_f.zero?
+
     customer_id = get_chargebee_customer_id
     return [] if customer_id.blank?
 

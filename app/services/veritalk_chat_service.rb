@@ -1,8 +1,11 @@
 require 'openai'
 
 class VeritalkChatService
+  class TokenLimitExceededError < StandardError; end
+
   # Token budget constants
   RAW_WINDOW_TOKEN_BUDGET = 2000 # ~55-65% of input context budget
+  ROLLING_SUMMARY_TOKEN_BUDGET = 600 # Prevent unbounded summary growth over time
   MIN_TURNS_TO_INCLUDE = 2 # Always include at least 2 complete turns
 
   def initialize(user:, conversation:, user_message_text:)
@@ -18,6 +21,8 @@ class VeritalkChatService
 
   # Streams the assistant response into the given response.stream
   def stream(response)
+    ensure_veritalk_token_budget!
+
     # Persist the new user message
     @conversation.conversation_messages.create!(
       role: 'user',
@@ -29,6 +34,10 @@ class VeritalkChatService
 
     # Build messages payload following exact spec order
     messages_payload = build_messages_payload
+    estimated_input_tokens = estimate_payload_tokens(messages_payload)
+    if estimated_input_tokens >= @user.veritalk_tokens_remaining
+      raise TokenLimitExceededError, "This message exceeds your remaining VeriTalk tokens for this month. Please wait for renewal or upgrade your plan."
+    end
 
     assistant_text = +""
 
@@ -52,6 +61,7 @@ class VeritalkChatService
 
 
     cleaned_text = extract_assistant_response(assistant_text)
+    output_tokens = estimate_tokens(cleaned_text)
 
     # Persist the cleaned assistant message
     @conversation.conversation_messages.create!(
@@ -64,6 +74,12 @@ class VeritalkChatService
 
     # Increment message count since last summary
     @conversation.increment!(:message_count_since_summary)
+
+    @user.record_veritalk_usage!(
+      conversation: @conversation,
+      input_tokens: estimated_input_tokens,
+      output_tokens: output_tokens
+    )
   rescue => e
     Rails.logger.error "VeriTalk stream error: #{e.message}"
     raise
@@ -93,9 +109,10 @@ class VeritalkChatService
     # 3. system: ROLLING_CONVERSATION_SUMMARY (latest only)
     rolling_summary = @conversation.rolling_summary
     if rolling_summary.present?
+      capped_rolling_summary = cap_text_to_token_budget(rolling_summary, ROLLING_SUMMARY_TOKEN_BUDGET)
       messages << {
         role: "system",
-        content: "ROLLING_CONVERSATION_SUMMARY:\n#{rolling_summary}"
+        content: "ROLLING_CONVERSATION_SUMMARY:\n#{capped_rolling_summary}"
       }
     end
 
@@ -108,16 +125,7 @@ class VeritalkChatService
       }
     end
 
-    # 5. assistant/user: RECENT_RAW_MESSAGES_WINDOW (verbatim recent messages, token-budgeted)
-    recent_messages = select_recent_messages_window
-    recent_messages.each do |msg|
-      messages << {
-        role: msg.role,
-        content: msg.content
-      }
-    end
-
-    # 6. user: CURRENT_USER_MESSAGE
+    # 5. user: CURRENT_USER_MESSAGE
     messages << {
       role: "user",
       content: @user_message_text
@@ -262,66 +270,37 @@ class VeritalkChatService
     end
   end
 
-  # Select recent messages within token budget (token-budgeted, not hard-count)
-  def select_recent_messages_window
-    all_messages = @conversation.conversation_messages.order(position: :asc)
-    return [] if all_messages.empty?
-
-    # Start with most recent and work backward
-    selected = []
-    token_count = 0
-    messages_to_check = all_messages.last(20).reverse # Check last 20 messages max
-
-    messages_to_check.each do |msg|
-      msg_tokens = estimate_tokens(msg.content)
-
-      # Always include at least MIN_TURNS_TO_INCLUDE complete turns
-      if selected.length < MIN_TURNS_TO_INCLUDE * 2
-        selected.unshift(msg)
-        token_count += msg_tokens
-      elsif token_count + msg_tokens <= RAW_WINDOW_TOKEN_BUDGET
-        selected.unshift(msg)
-        token_count += msg_tokens
-      else
-        # If a single message is huge, truncate it or exclude it
-        if msg_tokens > RAW_WINDOW_TOKEN_BUDGET * 0.5 # Message is >50% of budget
-          # Exclude huge messages and rely on rolling summary
-          Rails.logger.warn "VeriTalk: Excluding large message (#{msg_tokens} tokens) from window, relying on rolling summary"
-          break
-        else
-          # Token budget exceeded, stop adding messages
-          break
-        end
-      end
-    end
-
-    # Ensure we have complete turns (user+assistant pairs) when possible
-    # If we have an odd number and more than minimum, try to balance
-    if selected.length.odd? && selected.length > MIN_TURNS_TO_INCLUDE * 2
-      # Remove the oldest message to make it even (complete turns)
-      selected.shift
-    end
-
-    selected
-  end
-
   def estimate_tokens(text)
     # Rough estimation: ~4 characters per token
     (text.to_s.length / 4.0).ceil
   end
 
+  def estimate_payload_tokens(messages)
+    messages.sum do |message|
+      estimate_tokens(message[:content]) + 4
+    end
+  end
+
+  def cap_text_to_token_budget(text, token_budget)
+    return "" if text.blank?
+
+    normalized = text.to_s.strip
+    return normalized if estimate_tokens(normalized) <= token_budget
+
+    # Keep the leading section to preserve summary field structure.
+    max_chars = token_budget * 4
+    "#{normalized[0, max_chars]}..."
+  end
+
+  def ensure_veritalk_token_budget!
+    remaining = @user.veritalk_tokens_remaining
+    return if remaining > 0
+
+    raise TokenLimitExceededError, "You have used 100% of your monthly VeriTalk tokens. Please wait for renewal or upgrade your plan."
+  end
+
   # Update rolling summary when needed
   def update_rolling_summary_if_needed!
-    should_update =
-      @conversation.message_count_since_summary >= 10 || # Every 10 messages (8-12 range)
-      @conversation.rolling_summary.blank? || # First summary
-      goal_or_constraint_changed? || # User changed goals or constraints
-      decision_made? || # A decision was made
-      major_constraint_introduced? || # Major constraint introduced
-      ux_friction_detected? # Notable UX issue discovered
-
-    return unless should_update
-
     generate_rolling_summary
   rescue => e
     Rails.logger.error "VeriTalk rolling summary update error: #{e.message}"
@@ -390,8 +369,9 @@ class VeritalkChatService
 
       new_summary = response.dig("choices", 0, "message", "content")&.strip
       if new_summary.present?
+        capped_summary = cap_text_to_token_budget(new_summary, ROLLING_SUMMARY_TOKEN_BUDGET)
         @conversation.update!(
-          rolling_summary: new_summary,
+          rolling_summary: capped_summary,
           last_summary_update_at: Time.current,
           message_count_since_summary: 0
         )
