@@ -1,6 +1,9 @@
 <div class="flash-container">
+  <% timeout_ms = flash[:timeout_ms].to_i %>
+  <% timeout_ms = 4000 if timeout_ms <= 0 %>
   <% flash.each do |key, message| %>
-    <div class="flash-message <%= key %>">
+    <% next if key.to_s == 'timeout_ms' %>
+    <div class="flash-message <%= key %>" data-timeout-ms="<%= timeout_ms %>">
       <%= message %>
     </div>
   <% end %>

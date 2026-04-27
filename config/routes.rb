@@ -138,6 +138,9 @@ Rails.application.routes.draw do
 
   # Entitlements routes
   resources :entitlements, only: [:index, :show]
+  namespace :admin do
+    get "free_plan_health", to: "free_plan_health#show"
+  end
 
   post '/webhooks/chargebee', to: 'webhooks#chargebee'
   get '/webhooks/health', to: 'webhooks#health_check'

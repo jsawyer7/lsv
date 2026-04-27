@@ -662,4 +662,17 @@ namespace :chargebee do
       puts "❌ Error: #{e.message}"
     end
   end
+
+  desc "Backfill free plans for users missing active subscriptions"
+  task :backfill_free_plans, [:limit] => :environment do |_, args|
+    limit = args[:limit]
+    if limit.present?
+      puts "🔄 Queueing free-plan backfill jobs (limit=#{limit})..."
+    else
+      puts "🔄 Queueing free-plan backfill jobs for all missing users..."
+    end
+
+    BackfillFreePlanJob.perform_later(limit: limit)
+    puts "✅ Backfill job queued."
+  end
 end

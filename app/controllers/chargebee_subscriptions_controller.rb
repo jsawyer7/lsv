@@ -52,25 +52,74 @@ class ChargebeeSubscriptionsController < ApplicationController
 
         # Find a valid payment method for this customer
         valid_payment_method = find_valid_payment_method_for_customer(customer_id)
+        if valid_payment_method.blank? && params[:payment_source_id].present?
+          begin
+            payment_source_result = ChargeBee::PaymentSource.create_using_temp_token(
+              customer_id: customer_id,
+              type: "card",
+              tmp_token: params[:payment_source_id],
+              replace_primary_payment_source: true
+            )
+            valid_payment_method = payment_source_result.payment_source.id
+          rescue => e
+            Rails.logger.error "Failed to add payment method during upgrade for user #{current_user.id}: #{e.message}"
+            redirect_to subscription_settings_path, alert: "We could not save your card details. Please try again."
+            return
+          end
+        end
 
         if valid_payment_method
-          update_result = ChargeBee::Subscription.update_for_items(
-            existing_subscription.id,
-            {
-              replace_items_list: true,
-              subscription_items: [{ item_price_id: item_price_id, quantity: 1 }],
-              proration_option: 'prorate',
-              payment_source_id: valid_payment_method
-            }
-          )
+          update_params = {
+            replace_items_list: true,
+            subscription_items: [{ item_price_id: item_price_id, quantity: 1 }],
+            proration_option: 'prorate',
+            payment_source_id: valid_payment_method
+          }
+          update_result = ChargeBee::Subscription.update_for_items(existing_subscription.id, update_params)
 
           sync_plan_and_subscription(update_result.subscription, item_price_id)
           redirect_to subscription_settings_path, notice: "Your subscription has been successfully updated!"
         else
           redirect_to subscription_settings_path, alert: "No valid payment method found. Please update your payment information."
         end
+      rescue ChargeBee::InvalidRequestError => e
+        if e.message.to_s.include?("payment_source_id") && e.message.to_s.include?("not present")
+          Rails.logger.warn "Retrying subscription update with refreshed payment source for user #{current_user.id}: #{e.message}"
+          refreshed_payment_method = find_valid_payment_method_for_customer(customer_id)
+
+          if refreshed_payment_method.blank? && params[:payment_source_id].present?
+            payment_source_result = ChargeBee::PaymentSource.create_using_temp_token(
+              customer_id: customer_id,
+              type: "card",
+              tmp_token: params[:payment_source_id],
+              replace_primary_payment_source: true
+            )
+            refreshed_payment_method = payment_source_result.payment_source.id
+          end
+
+          if refreshed_payment_method.blank?
+            redirect_to subscription_settings_path, alert: "No valid payment method found. Please add a card to upgrade your plan."
+            return
+          end
+
+          update_result = ChargeBee::Subscription.update_for_items(
+            existing_subscription.id,
+            {
+              replace_items_list: true,
+              subscription_items: [{ item_price_id: item_price_id, quantity: 1 }],
+              proration_option: 'prorate',
+              payment_source_id: refreshed_payment_method
+            }
+          )
+          sync_plan_and_subscription(update_result.subscription, item_price_id)
+          redirect_to subscription_settings_path, notice: "Your subscription has been successfully updated!"
+          return
+        end
+
+        raise
       rescue => e
-        redirect_to subscription_settings_path, alert: "We couldn't update your subscription at this time. Please try again or contact our support team."
+        Rails.logger.error "Subscription update failed for user #{current_user.id}: #{e.class} - #{e.message}"
+        redirect_to subscription_settings_path, alert: "We couldn't update your subscription: #{e.message}"
       end
         else
         # 3. Get tmp_token (only required for new subscriptions)
@@ -104,12 +153,51 @@ class ChargebeeSubscriptionsController < ApplicationController
         end
 
         # 4. Create new subscription
-        result = ChargeBee::Subscription.create_with_items(
-          customer_id, {
-            subscription_items: [{ item_price_id: item_price_id }],
-            payment_source_id: payment_source_id
-          }
-        )
+        begin
+          result = ChargeBee::Subscription.create_with_items(
+            customer_id, {
+              subscription_items: [{ item_price_id: item_price_id }],
+              payment_source_id: payment_source_id
+            }
+          )
+        rescue ChargeBee::InvalidRequestError => e
+          if e.message.to_s.include?("payment_source_id") && e.message.to_s.include?("not present")
+            Rails.logger.warn "Retrying new subscription with refreshed payment source for user #{current_user.id}: #{e.message}"
+
+            refreshed_payment_source_id = nil
+            if params[:payment_source_id].present?
+              begin
+                refreshed = ChargeBee::PaymentSource.create_using_temp_token(
+                  customer_id: customer_id,
+                  type: "card",
+                  tmp_token: params[:payment_source_id],
+                  replace_primary_payment_source: true
+                )
+                refreshed_payment_source_id = refreshed.payment_source.id
+              rescue => refresh_error
+                Rails.logger.warn "Failed to refresh payment source from temp token for user #{current_user.id}: #{refresh_error.message}"
+              end
+            end
+
+            if refreshed_payment_source_id.present?
+              result = ChargeBee::Subscription.create_with_items(
+                customer_id, {
+                  subscription_items: [{ item_price_id: item_price_id }],
+                  payment_source_id: refreshed_payment_source_id
+                }
+              )
+            else
+              Rails.logger.warn "Retrying new subscription creation without explicit payment_source_id for user #{current_user.id}"
+              result = ChargeBee::Subscription.create_with_items(
+                customer_id, {
+                  subscription_items: [{ item_price_id: item_price_id }]
+                }
+              )
+            end
+          else
+            raise
+          end
+        end
 
         subscription = result.subscription
         customer = result.customer
@@ -455,13 +543,14 @@ class ChargebeeSubscriptionsController < ApplicationController
     Rails.logger.info "🔍 Looking for active subscription for customer: #{customer_id}"
 
     begin
-      active_subs = ChargeBee::Subscription.list({
-        customer_id: customer_id,
-        status: { in: ['active', 'in_trial', 'non_renewing'] }
-      })
+      active_subs = ChargeBee::Subscription.list(customer_id: customer_id)
+      active = active_subs.find do |entry|
+        sub = entry.subscription
+        sub&.customer_id.to_s == customer_id.to_s && %w[active in_trial non_renewing].include?(sub.status.to_s)
+      end
 
-      if active_subs.count > 0
-        subscription = active_subs.first.subscription
+      if active
+        subscription = active.subscription
         Rails.logger.info "✅ Found active subscription: #{subscription.id} (Status: #{subscription.status})"
         Rails.logger.info "🔍 Subscription customer ID: #{subscription.customer_id}"
         Rails.logger.info "🔍 Expected customer ID: #{customer_id}"
@@ -488,15 +577,27 @@ class ChargebeeSubscriptionsController < ApplicationController
 
     begin
       # First, check if the customer has any active subscriptions with payment methods
-      active_subs = ChargeBee::Subscription.list({
-        customer_id: customer_id,
-        status: { in: ['active', 'in_trial', 'non_renewing'] }
-      })
+      active_subs = ChargeBee::Subscription.list(customer_id: customer_id)
+      active = active_subs.find do |entry|
+        sub = entry.subscription
+        sub&.customer_id.to_s == customer_id.to_s && %w[active in_trial non_renewing].include?(sub.status.to_s)
+      end
 
-      if active_subs.count > 0
-        subscription = active_subs.first.subscription
+      if active
+        subscription = active.subscription
         if subscription.payment_source_id
-          return subscription.payment_source_id
+          begin
+            payment_details = ChargeBee::PaymentSource.retrieve(subscription.payment_source_id)
+            ps = payment_details.payment_source || payment_details.card
+            status = ps&.respond_to?(:status) ? ps.status : nil
+            ps_customer_id = ps&.respond_to?(:customer_id) ? ps.customer_id : nil
+
+            if status.to_s == 'valid' && (ps_customer_id.blank? || ps_customer_id.to_s == customer_id.to_s)
+              return subscription.payment_source_id
+            end
+          rescue => e
+            Rails.logger.warn "Subscription payment_source_id #{subscription.payment_source_id} is stale/invalid: #{e.message}"
+          end
         end
       end
 
@@ -505,11 +606,21 @@ class ChargebeeSubscriptionsController < ApplicationController
 
       payment_sources.each_with_index do |ps, index|
         payment_method_id = ps.card&.id || ps.payment_source&.id
-        status = ps.card&.status || ps.payment_source&.status
+        next if payment_method_id.blank?
 
-        if status == 'valid'
+        begin
+          payment_details = ChargeBee::PaymentSource.retrieve(payment_method_id)
+          source = payment_details.payment_source || payment_details.card
+          status = source&.respond_to?(:status) ? source.status : nil
+          ps_customer_id = source&.respond_to?(:customer_id) ? source.customer_id : nil
+
+          next unless status.to_s == 'valid'
+          next if ps_customer_id.present? && ps_customer_id.to_s != customer_id.to_s
+
           Rails.logger.info "✅ Found valid payment method: #{payment_method_id}"
           return payment_method_id
+        rescue => e
+          Rails.logger.warn "Skipping stale/invalid payment method #{payment_method_id}: #{e.message}"
         end
       end
 

@@ -1,5 +1,6 @@
 class ChallengesController < ApplicationController
   before_action :authenticate_user!
+  before_action :ensure_challenge_access!, only: [:create, :create_for_evidence]
   before_action :set_claim, only: [:create, :destroy]
   before_action :set_challenge, only: [:show, :destroy]
   before_action :authorize_challenge_owner!, only: [:destroy]
@@ -94,6 +95,21 @@ class ChallengesController < ApplicationController
   end
 
   private
+
+  def ensure_challenge_access!
+    return if current_user.can_submit_challenges?
+
+    respond_to do |format|
+      format.html do
+        flash[:timeout_ms] = 12000
+        redirect_to subscription_settings_path,
+                    alert: 'Ability to submit challenges is available on the Contributor plan only. Your current plan can read and discuss evidence, but to submit a challenge please upgrade your plan.'
+      end
+      format.json do
+        render json: { error: 'Challenges are available on Contributor plan.' }, status: :forbidden
+      end
+    end
+  end
 
   def set_claim
     @claim = Claim.find(params[:claim_id])

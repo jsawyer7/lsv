@@ -83,7 +83,13 @@
                   </div>
                   <div class="evidence-header-actions">
                     <% if user_signed_in? %>
-                      <button type="button" class="btn btn-challenge-evidence" data-evidence-id="<%= evidence.id %>">Challenge Evidence</button>
+                      <% if current_user.can_submit_challenges? %>
+                        <button type="button" class="btn btn-challenge-evidence" data-evidence-id="<%= evidence.id %>">Challenge Evidence</button>
+                      <% else %>
+                        <%= link_to "Challenge Evidence",
+                                    subscription_settings_path(challenge_upgrade: 1),
+                                    class: "btn btn-challenge-evidence" %>
+                      <% end %>
                     <% end %>
                   </div>
                 </div>
