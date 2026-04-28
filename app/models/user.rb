@@ -262,10 +262,14 @@ class User < ApplicationRecord
 
   # Entitlement-based access control methods
   def has_entitlement?(feature_id)
+    return true if admin?
+
     current_entitlements.any? { |entitlement| entitlement[:feature_id] == feature_id }
   end
 
   def get_entitlement_value(feature_id)
+    return admin_entitlement_value(feature_id) if admin?
+
     entitlement = current_entitlements.find { |entitlement| entitlement[:feature_id] == feature_id }
     entitlement&.dig(:value)
   end
@@ -303,6 +307,7 @@ class User < ApplicationRecord
   end
 
   def can_use_veritalk?
+    return true if admin?
     return false unless current_active_subscription.present?
 
     enabled = get_entitlement_value('veritalk_enabled')
@@ -327,6 +332,8 @@ class User < ApplicationRecord
   end
 
   def veritalk_tokens_remaining
+    return Float::INFINITY if admin?
+
     limit = veritalk_monthly_token_limit
     return 0 if limit <= 0
 
@@ -523,6 +530,13 @@ class User < ApplicationRecord
     return "true" if value.to_s == "included"
 
     value
+  end
+
+  def admin_entitlement_value(feature_id)
+    return "true" if feature_id.to_s.end_with?("_enabled")
+    return 1_000_000_000 if feature_id.to_s == "veritalk_monthly_tokens"
+
+    "true"
   end
 
   def current_active_subscription
