@@ -1,5 +1,6 @@
 class TheoriesController < ApplicationController
   before_action :authenticate_user!
+  before_action :ensure_theory_creation_access!, only: [:new, :create]
   layout 'dashboard'
 
   def index
@@ -119,6 +120,20 @@ class TheoriesController < ApplicationController
   end
 
   private
+
+  def ensure_theory_creation_access!
+    return if current_user.can_create_theories?
+
+    respond_to do |format|
+      format.html do
+        redirect_to subscription_settings_path,
+                    alert: 'Theory creation is available on Contributor plan. Please upgrade your plan.'
+      end
+      format.json do
+        render json: { error: 'Theory creation is available on Contributor plan.' }, status: :forbidden
+      end
+    end
+  end
 
   def theory_params
     params.require(:theory).permit(:title, :description)

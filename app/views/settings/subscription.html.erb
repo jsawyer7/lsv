@@ -19,7 +19,7 @@
         <% @plans.each do |plan| %>
           <%= link_to plan_details_settings_path(plan.chargebee_item_price_id), class: "plan-card-link" do %>
             <div class="plan-card <%= 'current-plan' if @current_subscription&.chargebee_plan&.chargebee_item_price_id == plan.chargebee_item_price_id %>">
-              <% if plan.name.downcase.include?('plus') || plan.name.downcase.include?('pro') %>
+              <% if plan.tier == :basic %>
                 <div class="plan-badge">Most Popular</div>
               <% end %>
               
@@ -55,68 +55,44 @@
                   <% end %>
                 <% else %>
                   <!-- Fallback to default features based on plan -->
-                  <% if plan.name.downcase.include?('basic') || plan.name.downcase.include?('free') %>
+                  <% if plan.tier == :free %>
                     <div class="feature-item">
                       <i class="fas fa-check feature-icon"></i>
-                      <span class="feature-text">Basic Claims Creation</span>
+                      <span class="feature-text">View facts and theories</span>
                     </div>
                     <div class="feature-item">
                       <i class="fas fa-check feature-icon"></i>
-                      <span class="feature-text">Community Access</span>
+                      <span class="feature-text">Like, comment, and save favorites</span>
                     </div>
                     <div class="feature-item">
                       <i class="fas fa-check feature-icon"></i>
-                      <span class="feature-text">Limited AI Evidence (5/month)</span>
+                      <span class="feature-text">VeriTalk with monthly token limit</span>
+                    </div>
+                  <% elsif plan.tier == :basic %>
+                    <div class="feature-item">
+                      <i class="fas fa-check feature-icon"></i>
+                      <span class="feature-text">Everything in <%= ENV.fetch("UI_PLAN_NAME_FREE", "Free") %></span>
                     </div>
                     <div class="feature-item">
                       <i class="fas fa-check feature-icon"></i>
-                      <span class="feature-text">Basic Support</span>
+                      <span class="feature-text">Higher VeriTalk monthly token limit</span>
                     </div>
-                  <% elsif plan.name.downcase.include?('plus') || plan.name.downcase.include?('pro') %>
+                  <% elsif plan.tier == :contributor %>
                     <div class="feature-item">
                       <i class="fas fa-check feature-icon"></i>
-                      <span class="feature-text">Everything in Basic</span>
-                    </div>
-                    <div class="feature-item">
-                      <i class="fas fa-check feature-icon"></i>
-                      <span class="feature-text">Unlimited Claims</span>
+                      <span class="feature-text">Everything in <%= ENV.fetch("UI_PLAN_NAME_BASIC", "Basic") %></span>
                     </div>
                     <div class="feature-item">
                       <i class="fas fa-check feature-icon"></i>
-                      <span class="feature-text">Enhanced AI Evidence (25/month)</span>
+                      <span class="feature-text">Create claims</span>
                     </div>
                     <div class="feature-item">
                       <i class="fas fa-check feature-icon"></i>
-                      <span class="feature-text">Priority Support</span>
+                      <span class="feature-text">Challenge facts</span>
                     </div>
                     <div class="feature-item">
                       <i class="fas fa-check feature-icon"></i>
-                      <span class="feature-text">Advanced Analytics</span>
-                    </div>
-                  <% elsif plan.name.downcase.include?('premium') %>
-                    <div class="feature-item">
-                      <i class="fas fa-check feature-icon"></i>
-                      <span class="feature-text">Everything in Plus</span>
-                    </div>
-                    <div class="feature-item">
-                      <i class="fas fa-check feature-icon"></i>
-                      <span class="feature-text">Unlimited AI Evidence</span>
-                    </div>
-                    <div class="feature-item">
-                      <i class="fas fa-check feature-icon"></i>
-                      <span class="feature-text">Premium Support</span>
-                    </div>
-                    <div class="feature-item">
-                      <i class="fas fa-check feature-icon"></i>
-                      <span class="feature-text">24/7 Response Time</span>
-                    </div>
-                    <div class="feature-item">
-                      <i class="fas fa-check feature-icon"></i>
-                      <span class="feature-text">Custom Integrations</span>
-                    </div>
-                    <div class="feature-item">
-                      <i class="fas fa-check feature-icon"></i>
-                      <span class="feature-text">Dedicated Account Manager</span>
+                      <span class="feature-text">Write theories</span>
                     </div>
                   <% end %>
                 <% end %>
@@ -128,13 +104,25 @@
                 <% else %>
                   <% if @current_subscription.present? %>
                     <% if plan.price > @current_subscription.chargebee_plan&.price %>
-                      <%= button_to "Upgrade to #{plan.name}", chargebee_subscriptions_path(plan_id: plan.chargebee_item_price_id), 
-                          method: :post, 
-                          class: "btn btn-upgrade",
-                          data: { 
-                            disable_with: "Upgrading...",
-                            action: "plan-action"
-                          } %>
+                      <% requires_payment_details = @current_subscription.chargebee_plan&.price.to_f.zero? || @payment_methods.blank? %>
+                      <% if requires_payment_details %>
+                        <button class="btn btn-upgrade"
+                                data-plan-id="<%= plan.chargebee_item_price_id %>"
+                                data-plan-name="<%= plan.name %>"
+                                data-plan-price="<%= plan.price %>"
+                                data-plan-period="<%= plan.period_unit %>"
+                                onclick="openSubscriptionModal(this); event.stopPropagation(); event.preventDefault();">
+                          Upgrade to <%= plan.name %>
+                        </button>
+                      <% else %>
+                        <%= button_to "Upgrade to #{plan.name}", chargebee_subscriptions_path(plan_id: plan.chargebee_item_price_id), 
+                            method: :post, 
+                            class: "btn btn-upgrade",
+                            data: { 
+                              disable_with: "Upgrading...",
+                              action: "plan-action"
+                            } %>
+                      <% end %>
                     <% else %>
                       <%= button_to "Downgrade to #{plan.name}", chargebee_subscriptions_path(plan_id: plan.chargebee_item_price_id), 
                           method: :post, 

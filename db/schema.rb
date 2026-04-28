@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_03_30_160507) do
+ActiveRecord::Schema[7.0].define(version: 2026_04_22_110054) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pgcrypto"
@@ -583,6 +583,19 @@ ActiveRecord::Schema[7.0].define(version: 2026_03_30_160507) do
     t.index ["terms_agreed_at"], name: "index_users_on_terms_agreed_at"
   end
 
+  create_table "veritalk_token_usages", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "conversation_id", null: false
+    t.integer "input_tokens"
+    t.integer "output_tokens"
+    t.integer "total_tokens"
+    t.datetime "used_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["conversation_id"], name: "index_veritalk_token_usages_on_conversation_id"
+    t.index ["user_id"], name: "index_veritalk_token_usages_on_user_id"
+  end
+
   create_table "veritalk_validators", force: :cascade do |t|
     t.string "name", null: false
     t.text "description"
@@ -643,4 +656,6 @@ ActiveRecord::Schema[7.0].define(version: 2026_03_30_160507) do
   add_foreign_key "text_translations", "languages", column: "language_target_id"
   add_foreign_key "text_translations", "text_contents"
   add_foreign_key "theories", "users"
+  add_foreign_key "veritalk_token_usages", "conversations"
+  add_foreign_key "veritalk_token_usages", "users"
 end

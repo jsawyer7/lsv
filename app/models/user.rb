@@ -9,6 +9,7 @@ class User < ApplicationRecord
   has_many :chargebee_subscriptions, dependent: :destroy
   has_many :chargebee_billings, dependent: :destroy
   has_many :ai_evidence_usages, dependent: :destroy
+  has_many :veritalk_token_usages, dependent: :destroy
   has_many :likes, dependent: :destroy
   has_many :comments, dependent: :destroy
   has_many :shares, dependent: :destroy
@@ -90,6 +91,7 @@ class User < ApplicationRecord
 
   # Set default role before creation
   before_create :set_default_role
+  after_commit :enqueue_free_plan_assignment, on: :create
 
   has_one_attached :avatar
   has_one_attached :background_image
@@ -260,17 +262,20 @@ class User < ApplicationRecord
 
   # Entitlement-based access control methods
   def has_entitlement?(feature_id)
+    return true if admin?
+
     current_entitlements.any? { |entitlement| entitlement[:feature_id] == feature_id }
   end
 
   def get_entitlement_value(feature_id)
+    return admin_entitlement_value(feature_id) if admin?
+
     entitlement = current_entitlements.find { |entitlement| entitlement[:feature_id] == feature_id }
     entitlement&.dig(:value)
   end
 
   def can_generate_ai_evidence?
-    # Allow AI evidence generation for all users (free service)
-    true
+    has_entitlement?('ai_evidence_limitation')
   end
 
   def ai_evidence_limit
@@ -278,28 +283,82 @@ class User < ApplicationRecord
   end
 
   def ai_evidence_remaining
-    # Return unlimited for all users (free service)
-    Float::INFINITY
+    return Float::INFINITY if ai_evidence_limit.blank?
+
+    limit = ai_evidence_limit.to_i
+    used = ai_evidence_used_this_month
+    [limit - used, 0].max
   end
 
   def can_access_api?
-    # Allow API access for all users (free service)
-    true
+    has_entitlement?('api_access')
   end
 
   def has_priority_support?
-    # Allow priority support for all users (free service)
-    true
+    has_entitlement?('priority_support')
   end
 
   def can_access_advanced_analytics?
-    # Allow advanced analytics for all users (free service)
-    true
+    has_entitlement?('advanced_analytics')
   end
 
   def can_use_custom_integrations?
-    # Allow custom integrations for all users (free service)
-    true
+    has_entitlement?('custom_integrations')
+  end
+
+  def can_use_veritalk?
+    return true if admin?
+    return false unless current_active_subscription.present?
+
+    enabled = get_entitlement_value('veritalk_enabled')
+    enabled_flag = enabled.to_s == 'true' || enabled.to_s == 'included' || enabled == true
+
+    # If entitlements are unavailable, free/basic/contributor should still have access.
+    return veritalk_monthly_token_limit > 0 if enabled.nil?
+
+    enabled_flag && veritalk_monthly_token_limit > 0
+  end
+
+  def veritalk_monthly_token_limit
+    entitlement_value = get_entitlement_value('veritalk_monthly_tokens')
+    parsed = entitlement_value.to_i
+    return parsed if parsed.positive?
+
+    fallback_veritalk_monthly_token_limit
+  end
+
+  def veritalk_tokens_used_this_month
+    veritalk_token_usages.this_month.sum(:total_tokens)
+  end
+
+  def veritalk_tokens_remaining
+    return Float::INFINITY if admin?
+
+    limit = veritalk_monthly_token_limit
+    return 0 if limit <= 0
+
+    [limit - veritalk_tokens_used_this_month, 0].max
+  end
+
+  def can_create_claims?
+    has_entitlement?('can_create_claims')
+  end
+
+  def can_submit_challenges?
+    has_entitlement?('can_submit_challenges')
+  end
+
+  def can_create_theories?
+    has_entitlement?('can_create_theories')
+  end
+
+  def record_veritalk_usage!(conversation:, input_tokens:, output_tokens:)
+    veritalk_token_usages.create!(
+      conversation: conversation,
+      input_tokens: input_tokens.to_i,
+      output_tokens: output_tokens.to_i,
+      used_at: Time.current
+    )
   end
 
   def ai_evidence_used_this_month
@@ -320,6 +379,18 @@ class User < ApplicationRecord
 
   def last_name
     full_name.to_s.split[1..].to_a.join(" ") || ""
+  end
+
+  def enqueue_free_plan_assignment_if_missing!
+    return if chargebee_subscriptions.where(status: %w[active in_trial non_renewing]).exists?
+
+    throttle_key = "free_plan_assignment:#{id}"
+    return if Rails.cache.exist?(throttle_key)
+
+    Rails.cache.write(throttle_key, true, expires_in: 30.minutes)
+    AssignFreePlanJob.perform_later(id)
+  rescue => e
+    Rails.logger.error("Failed to enqueue missing free plan assignment for user #{id}: #{e.message}")
   end
 
   private
@@ -349,10 +420,7 @@ class User < ApplicationRecord
   end
 
   def fetch_current_entitlements
-    current_subscription = chargebee_subscriptions
-      .where(status: %w[active in_trial non_renewing])
-      .order(updated_at: :desc, created_at: :desc)
-      .first
+    current_subscription = current_active_subscription
 
     return [] unless current_subscription&.chargebee_id
 
@@ -361,16 +429,126 @@ class User < ApplicationRecord
         current_subscription.chargebee_id
       )
 
-      result.map do |item|
+      entitlements = result.map do |item|
         {
           feature_id: item.subscription_entitlement.feature_id,
           feature_name: item.subscription_entitlement.feature_name,
           value: item.subscription_entitlement.value
         }
       end
+      return merge_tier_defaults(current_subscription, entitlements) if entitlements.present?
+
+      fallback_entitlements_for_subscription(current_subscription)
     rescue => e
       Rails.logger.error "Error fetching entitlements: #{e.message}"
-      []
+      fallback_entitlements_for_subscription(current_subscription)
     end
+  end
+
+  def merge_tier_defaults(subscription, entitlements)
+    defaults = fallback_entitlements_for_subscription(subscription)
+    merged = defaults.index_by { |e| e[:feature_id] }
+    entitlements.each { |ent| merged[ent[:feature_id]] = ent }
+    merged.values
+  end
+
+  def fallback_entitlements_for_subscription(subscription)
+    plan = subscription&.chargebee_plan
+    tier = plan_tier(plan)
+    tier ||= :free if subscription.present?
+
+    default_entitlements = [
+      { feature_id: "veritalk_enabled", feature_name: "VeriTalk Enabled", value: "true" },
+      { feature_id: "veritalk_monthly_tokens", feature_name: "VeriTalk Monthly Tokens", value: fallback_tokens_for_tier(tier) },
+      { feature_id: "can_like_comment_save_favorites", feature_name: "Community Features", value: "true" }
+    ]
+
+    if tier == :contributor
+      default_entitlements.concat(
+        [
+          { feature_id: "can_create_claims", feature_name: "Can Create Claims", value: "true" },
+          { feature_id: "can_submit_challenges", feature_name: "Can Submit Challenges", value: "true" },
+          { feature_id: "can_create_theories", feature_name: "Can Create Theories", value: "true" }
+        ]
+      )
+    end
+
+    metadata_entitlements = Array(plan&.metadata&.dig("entitlements")).map do |item|
+      {
+        feature_id: item["feature_id"].to_s,
+        feature_name: item["feature_name"],
+        value: normalized_fallback_entitlement_value(item["feature_id"], item["value"], tier)
+      }
+    end
+
+    if metadata_entitlements.present?
+      merged = default_entitlements.index_by { |e| e[:feature_id] }
+      metadata_entitlements.each { |ent| merged[ent[:feature_id]] = ent }
+      return merged.values
+    end
+
+    default_entitlements
+  end
+
+  def plan_tier(plan)
+    return nil unless plan
+
+    name = plan.name.to_s.downcase
+    item_price_id = plan.chargebee_item_price_id.to_s.downcase
+
+    return :contributor if name.include?("contributor") || item_price_id.include?("contributor") ||
+                           name.include?("premium") || item_price_id.include?("premium")
+    return :basic if name.include?("basic") || item_price_id.include?("basic") ||
+                     name.include?("plus") || item_price_id.include?("plus") ||
+                     name.include?("pro") || item_price_id.include?("pro")
+    return :free if name.include?("free") || plan.price.to_f.zero?
+
+    nil
+  end
+
+  def fallback_veritalk_monthly_token_limit
+    subscription = current_active_subscription
+    tier = plan_tier(subscription&.chargebee_plan)
+    return 0 if tier.nil?
+
+    fallback_tokens_for_tier(tier).to_i
+  end
+
+  def fallback_tokens_for_tier(tier)
+    case tier
+    when :contributor
+      ENV.fetch("VERITALK_CONTRIBUTOR_MONTHLY_TOKENS", "200000")
+    when :basic
+      ENV.fetch("VERITALK_BASIC_MONTHLY_TOKENS", "80000")
+    else
+      ENV.fetch("VERITALK_FREE_MONTHLY_TOKENS", "20000")
+    end
+  end
+
+  def normalized_fallback_entitlement_value(feature_id, value, tier)
+    return fallback_tokens_for_tier(tier) if feature_id.to_s == "veritalk_monthly_tokens" && value.to_i <= 0
+    return "true" if value.to_s == "included"
+
+    value
+  end
+
+  def admin_entitlement_value(feature_id)
+    return "true" if feature_id.to_s.end_with?("_enabled")
+    return 1_000_000_000 if feature_id.to_s == "veritalk_monthly_tokens"
+
+    "true"
+  end
+
+  def current_active_subscription
+    chargebee_subscriptions
+      .where(status: %w[active in_trial non_renewing])
+      .order(updated_at: :desc, created_at: :desc)
+      .first
+  end
+
+  def enqueue_free_plan_assignment
+    AssignFreePlanJob.perform_later(id)
+  rescue => e
+    Rails.logger.error("Failed to enqueue free plan assignment for user #{id}: #{e.message}")
   end
 end

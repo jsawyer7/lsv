@@ -2,8 +2,14 @@ class VeritalkController < ApplicationController
   include ActionController::Live
 
   before_action :authenticate_user!
+  before_action :ensure_veritalk_access!, only: [:chat]
 
   def chat
+    if current_user.veritalk_tokens_remaining <= 0
+      render_veritalk_error('Your monthly VeriTalk token limit is reached. Please upgrade your plan.')
+      return
+    end
+
     response.headers['Content-Type'] = 'text/plain; charset=utf-8'
     response.headers['Cache-Control'] = 'no-cache'
     response.headers['X-Accel-Buffering'] = 'no' # Disable nginx buffering
@@ -20,6 +26,13 @@ class VeritalkController < ApplicationController
     )
 
     service.stream(response)
+  rescue VeritalkChatService::TokenLimitExceededError => e
+    Rails.logger.info "VeriTalk token limit reached for user #{current_user.id}: #{e.message}"
+    begin
+      response.stream.write(e.message)
+    rescue StandardError
+      # ignore write errors during failure handling
+    end
   rescue => e
     Rails.logger.error "VeriTalk controller error: #{e.message}"
     begin
@@ -91,6 +104,21 @@ class VeritalkController < ApplicationController
   end
 
   private
+
+  def ensure_veritalk_access!
+    return if current_user.can_use_veritalk?
+
+    render_veritalk_error('VeriTalk requires an active plan with AI chat access.')
+  end
+
+  def render_veritalk_error(message)
+    respond_to do |format|
+      format.json { render json: { error: message }, status: :forbidden }
+      format.any do
+        render plain: message, status: :forbidden
+      end
+    end
+  end
 
   def find_or_create_conversation
     if params[:conversation_id].present?

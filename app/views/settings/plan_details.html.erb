@@ -36,56 +36,44 @@
           <% end %>
         <% else %>
           <!-- Default features based on plan -->
-          <% if @plan.name.downcase.include?('basic') || @plan.name.downcase.include?('free') %>
+          <% if @plan.tier == :free %>
             <div class="feature-item">
               <i class="fas fa-check feature-icon"></i>
-              <span class="feature-text">Basic Claims</span>
+              <span class="feature-text">View facts and theories</span>
             </div>
             <div class="feature-item">
               <i class="fas fa-check feature-icon"></i>
-              <span class="feature-text">Community Access</span>
+              <span class="feature-text">Like, comment, and save favorites</span>
             </div>
             <div class="feature-item">
               <i class="fas fa-check feature-icon"></i>
-              <span class="feature-text">Limited AI Evidence</span>
+              <span class="feature-text">VeriTalk with monthly token limit</span>
             </div>
-          <% elsif @plan.name.downcase.include?('plus') || @plan.name.downcase.include?('pro') %>
+          <% elsif @plan.tier == :basic %>
             <div class="feature-item">
               <i class="fas fa-check feature-icon"></i>
-              <span class="feature-text">Basic Claims</span>
-            </div>
-            <div class="feature-item">
-              <i class="fas fa-check feature-icon"></i>
-              <span class="feature-text">Community Access</span>
+              <span class="feature-text">Everything in <%= ENV.fetch("UI_PLAN_NAME_FREE", "Free") %></span>
             </div>
             <div class="feature-item">
               <i class="fas fa-check feature-icon"></i>
-              <span class="feature-text">Unlimited Claims</span>
+              <span class="feature-text">Higher VeriTalk monthly token limit</span>
+            </div>
+          <% elsif @plan.tier == :contributor %>
+            <div class="feature-item">
+              <i class="fas fa-check feature-icon"></i>
+              <span class="feature-text">Everything in <%= ENV.fetch("UI_PLAN_NAME_BASIC", "Basic") %></span>
             </div>
             <div class="feature-item">
               <i class="fas fa-check feature-icon"></i>
-              <span class="feature-text">Limited AI Evidence</span>
-            </div>
-          <% elsif @plan.name.downcase.include?('premium') %>
-            <div class="feature-item">
-              <i class="fas fa-check feature-icon"></i>
-              <span class="feature-text">Basic Claims</span>
+              <span class="feature-text">Create claims</span>
             </div>
             <div class="feature-item">
               <i class="fas fa-check feature-icon"></i>
-              <span class="feature-text">Community Access</span>
+              <span class="feature-text">Challenge facts</span>
             </div>
             <div class="feature-item">
               <i class="fas fa-check feature-icon"></i>
-              <span class="feature-text">Unlimited Claims</span>
-            </div>
-            <div class="feature-item">
-              <i class="fas fa-check feature-icon"></i>
-              <span class="feature-text">Advance AI Evidence</span>
-            </div>
-            <div class="feature-item">
-              <i class="fas fa-check feature-icon"></i>
-              <span class="feature-text">Priority Support</span>
+              <span class="feature-text">Write theories</span>
             </div>
           <% end %>
         <% end %>
@@ -104,8 +92,20 @@
       <% else %>
         <% if @current_subscription.present? %>
           <% if @plan.price > @current_subscription.chargebee_plan&.price %>
-            <%= button_to "Upgrade to #{@plan.name}", chargebee_subscriptions_path(plan_id: @plan.chargebee_item_price_id), 
-                method: :post, class: "btn btn-upgrade-plan" %>
+            <% requires_payment_details = @current_subscription.chargebee_plan&.price.to_f.zero? || @payment_methods.blank? %>
+            <% if requires_payment_details %>
+              <button class="btn btn-upgrade-plan"
+                      data-plan-id="<%= @plan.chargebee_item_price_id %>"
+                      data-plan-name="<%= @plan.name %>"
+                      data-plan-price="<%= @plan.price %>"
+                      data-plan-period="<%= @plan.period_unit %>"
+                      onclick="openSubscriptionModal(this); event.stopPropagation(); event.preventDefault();">
+                Upgrade to <%= @plan.name %>
+              </button>
+            <% else %>
+              <%= button_to "Upgrade to #{@plan.name}", chargebee_subscriptions_path(plan_id: @plan.chargebee_item_price_id), 
+                  method: :post, class: "btn btn-upgrade-plan" %>
+            <% end %>
           <% else %>
             <%= button_to "Downgrade to #{@plan.name}", chargebee_subscriptions_path(plan_id: @plan.chargebee_item_price_id), 
                 method: :post, class: "btn btn-downgrade-plan" %>

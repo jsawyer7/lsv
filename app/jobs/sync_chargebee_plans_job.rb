@@ -152,16 +152,14 @@ class SyncChargebeePlansJob < ApplicationJob
   def get_plan_feature_mapping(plan_name)
     case plan_name&.downcase
     when /free/
-      ['read_facts', 'read_theories', 'read_source_books', 'like_content', 'comment_content']
-    when /plus/
-      ['read_facts', 'read_theories', 'read_source_books', 'like_content', 'comment_content',
-       'create_claims', 'ai_study_assist', 'follow_leaders', 'follow_groups']
-    when /premium/
-      ['read_facts', 'read_theories', 'read_source_books', 'like_content', 'comment_content',
-       'create_claims', 'create_theories', 'submit_challenges', 'ai_study_assist', 'ai_challenge',
-       'source_study_ai', 'follow_leaders', 'follow_groups']
+      ['veritalk_enabled', 'veritalk_monthly_tokens', 'can_like_comment_save_favorites']
+    when /basic/
+      ['veritalk_enabled', 'veritalk_monthly_tokens', 'can_like_comment_save_favorites']
+    when /contributor/
+      ['veritalk_enabled', 'veritalk_monthly_tokens', 'can_like_comment_save_favorites',
+       'can_create_claims', 'can_submit_challenges', 'can_create_theories']
     else
-      ['read_facts', 'read_theories', 'read_source_books']
+      ['veritalk_enabled', 'veritalk_monthly_tokens']
     end
   end
 end
