@@ -871,6 +871,24 @@
   function generateEvidenceWithQuery(sectionType, userQuery) {
     const claimContent = document.getElementById('validated-claim-display').value;
     const thinkingMessage = addAIEvidenceMessage('Thinking...', 'ai');
+    var fallbackEvidenceMsg = 'Could not verify the provided evidence. Please try another one.';
+
+    function showAiEvidenceFailure(payload, response) {
+      var fromServer =
+        payload && typeof payload.error === 'string' && payload.error.trim()
+          ? payload.error.trim()
+          : null;
+      if (fromServer) {
+        addAIEvidenceMessage(fromServer, 'ai');
+        return;
+      }
+      if (response && !response.ok) {
+        addAIEvidenceMessage('Something went wrong (HTTP ' + response.status + '). Please try again.', 'ai');
+        return;
+      }
+      addAIEvidenceMessage(fallbackEvidenceMsg, 'ai');
+    }
+
     fetch('/claims/generate_ai_evidence', {
       method: 'POST',
       headers: {
@@ -879,18 +897,33 @@
       },
       body: JSON.stringify({ claim_content: claimContent, evidence_type: sectionType, user_query: userQuery })
     })
-    .then(response => response.json())
-    .then(data => {
-      if (thinkingMessage) thinkingMessage.remove();
-      if (data.success) {
-        streamAIEvidenceResponse(data.evidence, sectionType);
-      } else {
-        addAIEvidenceMessage('Could not verify the provided evidence. Please try another one.', 'ai');
-      }
+    .then(function (response) {
+      return response.text().then(function (text) {
+        var data = {};
+        try {
+          data = text ? JSON.parse(text) : {};
+        } catch (e) {
+          data = {};
+        }
+        if (thinkingMessage) thinkingMessage.remove();
+        if (data.success && response.ok) {
+          streamAIEvidenceResponse(data.evidence, sectionType);
+          return;
+        }
+        showAiEvidenceFailure(data, response);
+      });
     })
-    .catch(error => {
+    .catch(function (error) {
       if (thinkingMessage) thinkingMessage.remove();
-      addAIEvidenceMessage('Could not verify the provided evidence. Please try another one.', 'ai');
+      var msg = error && error.message ? String(error.message).trim() : '';
+      var networkish = /^Failed to fetch$/i.test(msg) || /NetworkError|load failed/i.test(msg);
+      if (networkish) {
+        addAIEvidenceMessage('Network error. Check your connection and try again.', 'ai');
+      } else if (msg) {
+        addAIEvidenceMessage('Request failed: ' + msg, 'ai');
+      } else {
+        addAIEvidenceMessage(fallbackEvidenceMsg, 'ai');
+      }
     });
   }
 

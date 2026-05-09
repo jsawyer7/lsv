@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_04_22_110054) do
+ActiveRecord::Schema[7.0].define(version: 2026_05_09_162258) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pgcrypto"
@@ -212,6 +212,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_04_22_110054) do
     t.integer "position", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.text "forensic_content"
     t.index ["conversation_id", "position"], name: "index_conversation_messages_on_conversation_id_and_position", unique: true
     t.index ["conversation_id"], name: "index_conversation_messages_on_conversation_id"
   end
@@ -606,9 +607,11 @@ ActiveRecord::Schema[7.0].define(version: 2026_04_22_110054) do
     t.bigint "created_by_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "purpose", default: "forensic", null: false
     t.index ["created_by_type", "created_by_id"], name: "index_veritalk_validators_on_created_by"
     t.index ["is_active"], name: "index_veritalk_validators_on_is_active"
     t.index ["name"], name: "index_veritalk_validators_on_name"
+    t.index ["purpose"], name: "index_veritalk_validators_on_purpose"
   end
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"

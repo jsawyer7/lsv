@@ -6,10 +6,25 @@
 
   <input type="hidden" id="veritalk-conversation-id" value="">
 
-  <div id="veritalk-messages" class="veritalk-messages">
-    <div class="veritalk-welcome">
-      <p class="veritalk-welcome-text">Whats in your mind, <%= user_display_name %>?</p>
+  <div class="veritalk-chat-layout">
+    <div class="veritalk-chat-main">
+      <div id="veritalk-messages" class="veritalk-messages">
+        <div class="veritalk-welcome">
+          <p class="veritalk-welcome-text">Whats in your mind, <%= user_display_name %>?</p>
+        </div>
+      </div>
     </div>
+    <aside class="veritalk-forensic-rail" id="veritalk-forensic-rail" aria-hidden="true">
+      <div class="veritalk-forensic-rail-inner">
+        <div class="veritalk-forensic-rail-header">
+          <span class="veritalk-forensic-rail-title" id="veritalk-forensic-rail-title">Forensic detail</span>
+          <button type="button" class="veritalk-forensic-rail-close" id="veritalk-forensic-rail-close" aria-label="Close panel">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="veritalk-forensic-live" id="veritalk-forensic-live"></div>
+      </div>
+    </aside>
   </div>
 
   <div class="veritalk-input-container">

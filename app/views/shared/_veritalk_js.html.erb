@@ -26,7 +26,41 @@
     }, 2000);
   }
 
-  function createAssistantMessageContent(initialText) {
+  var STREAM_MARK_FORENSIC = '<<<VERITALK_DUAL_FORENSIC>>>\n';
+  var STREAM_MARK_CONV = '<<<VERITALK_DUAL_CONV>>>\n';
+
+  function shrinkVeritalkForensicRail() {
+    var rail = document.getElementById('veritalk-forensic-rail');
+    var live = document.getElementById('veritalk-forensic-live');
+    if (!rail) return;
+    rail.classList.remove('veritalk-forensic-rail--streaming');
+    rail.classList.remove('veritalk-forensic-rail--peek');
+    rail.setAttribute('aria-hidden', 'true');
+    if (live) live.textContent = '';
+  }
+
+  function openVeritalkForensicPeek(forensicDetail, heading) {
+    var rail = document.getElementById('veritalk-forensic-rail');
+    var live = document.getElementById('veritalk-forensic-live');
+    var titleEl = document.getElementById('veritalk-forensic-rail-title');
+    if (!rail || !live) return;
+    if (titleEl && heading) titleEl.textContent = heading;
+    live.textContent = forensicDetail || '';
+    rail.classList.remove('veritalk-forensic-rail--streaming');
+    rail.classList.add('veritalk-forensic-rail--peek');
+    rail.setAttribute('aria-hidden', 'false');
+  }
+
+  function closeVeritalkForensicPeek() {
+    var rail = document.getElementById('veritalk-forensic-rail');
+    var live = document.getElementById('veritalk-forensic-live');
+    if (!rail) return;
+    rail.classList.remove('veritalk-forensic-rail--peek');
+    rail.setAttribute('aria-hidden', 'true');
+    if (live) live.textContent = '';
+  }
+
+  function createAssistantMessageContent(initialText, forensicDetail) {
     var contentDiv = document.createElement('div');
     contentDiv.className = 'veritalk-message-content';
     var textDiv = document.createElement('div');
@@ -65,7 +99,21 @@
         }).catch(function() {});
       }
     });
-    return { contentDiv: contentDiv, textDiv: textDiv };
+    var forensicChip = null;
+    if (forensicDetail && String(forensicDetail).trim()) {
+      forensicChip = document.createElement('button');
+      forensicChip.type = 'button';
+      forensicChip.className = 'veritalk-forensic-chip';
+      forensicChip.setAttribute('aria-label', 'Show forensic detail');
+      forensicChip.setAttribute('title', 'Forensic detail');
+      forensicChip.innerHTML = '<i class="fas fa-microscope"></i>';
+      forensicChip._vtForensicDetail = String(forensicDetail);
+      forensicChip.addEventListener('click', function(ev) {
+        ev.stopPropagation();
+        openVeritalkForensicPeek(forensicChip._vtForensicDetail, 'Forensic detail');
+      });
+    }
+    return { contentDiv: contentDiv, textDiv: textDiv, forensicChip: forensicChip };
   }
 
   function createUserMessageContent(initialText) {
@@ -126,6 +174,24 @@
     block.classList.toggle('veritalk-input-block--has-messages', !!hasMessages);
   }
 
+  function buildVeritalkMessageDiv(msg, suppressAnimation) {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'veritalk-message ' + msg.role;
+    if (suppressAnimation) messageDiv.style.animation = 'none';
+    if (msg.role === 'assistant') {
+      var result = createAssistantMessageContent(msg.content, msg.forensic_content || null);
+      if (result.forensicChip) {
+        messageDiv.classList.add('has-forensic');
+        messageDiv.appendChild(result.forensicChip);
+      }
+      messageDiv.appendChild(result.contentDiv);
+    } else {
+      var u = createUserMessageContent(msg.content);
+      messageDiv.appendChild(u.contentDiv);
+    }
+    return messageDiv;
+  }
+
   // Use both DOMContentLoaded and window load to ensure everything is ready
   function initVeritalk() {
     const form = document.getElementById('veritalk-form');
@@ -141,6 +207,13 @@
     }
 
     console.log('VeriTalk initialized');
+
+    var forensicRailCloseBtn = document.getElementById('veritalk-forensic-rail-close');
+    if (forensicRailCloseBtn) {
+      forensicRailCloseBtn.addEventListener('click', function() {
+        closeVeritalkForensicPeek();
+      });
+    }
 
     let isStreaming = false;
     
@@ -219,7 +292,7 @@
               messagesDiv.innerHTML = '';
               
               data.messages.forEach(function(msg, index) {
-                appendMessage(msg.role, msg.content, false);
+                appendMessage(msg.role, msg.content, false, msg.forensic_content || null);
               });
               
               // Scroll to bottom after a brief delay to ensure DOM is updated
@@ -299,7 +372,7 @@
       }
     });
 
-    function appendMessage(role, content, animate = true) {
+    function appendMessage(role, content, animate = true, forensicContent = null) {
       // Remove welcome message if it exists
       const welcome = messagesDiv.querySelector('.veritalk-welcome');
       if (welcome) {
@@ -313,7 +386,11 @@
       }
       
       if (role === 'assistant') {
-        var result = createAssistantMessageContent(content);
+        var result = createAssistantMessageContent(content, forensicContent);
+        if (result.forensicChip) {
+          messageDiv.classList.add('has-forensic');
+          messageDiv.appendChild(result.forensicChip);
+        }
         messageDiv.appendChild(result.contentDiv);
       } else {
         var result = createUserMessageContent(content);
@@ -323,41 +400,101 @@
       messagesDiv.appendChild(messageDiv);
       messagesDiv.scrollTop = messagesDiv.scrollHeight;
       updateVeritalkInputHeadingVisibility();
+      return messageDiv;
     }
 
     async function startVeritalkStream(message) {
       isStreaming = true;
-      
-      // Disable input and send button
       input.disabled = true;
-      const sendBtn = document.getElementById('veritalk-send-btn');
-      if (sendBtn) {
-        sendBtn.disabled = true;
+      const sendCtrl = document.getElementById('veritalk-send-btn');
+      if (sendCtrl) sendCtrl.disabled = true;
+
+      closeVeritalkForensicPeek();
+
+      var rail = document.getElementById('veritalk-forensic-rail');
+      var forensicLive = document.getElementById('veritalk-forensic-live');
+      var forensicTitle = document.getElementById('veritalk-forensic-rail-title');
+      if (rail && forensicLive && forensicTitle) {
+        forensicTitle.textContent = 'Forensic analysis';
+        forensicLive.textContent = '';
+        rail.classList.add('veritalk-forensic-rail--streaming');
+        rail.classList.remove('veritalk-forensic-rail--peek');
+        rail.setAttribute('aria-hidden', 'false');
       }
 
-      // Remove welcome message if it exists
       const welcome = messagesDiv.querySelector('.veritalk-welcome');
-      if (welcome) {
-        welcome.remove();
+      if (welcome) welcome.remove();
+
+      function unlockVeritalkInput() {
+        isStreaming = false;
+        input.disabled = false;
+        input.focus();
+        var sb = document.getElementById('veritalk-send-btn');
+        if (sb) sb.disabled = !input.value.trim();
       }
 
-      const thinkingDiv = document.createElement('div');
-      thinkingDiv.className = 'veritalk-message assistant thinking';
-      
-      var streamContent = createAssistantMessageContent('VeriTalk is thinking...');
-      var streamTextDiv = streamContent.textDiv;
-      thinkingDiv.appendChild(streamContent.contentDiv);
-      
-      messagesDiv.appendChild(thinkingDiv);
-      messagesDiv.scrollTop = messagesDiv.scrollHeight;
-      updateVeritalkInputHeadingVisibility();
+      function showStreamErrorAssistant(userText, useForensic) {
+        shrinkVeritalkForensicRail();
+        appendMessage('assistant', userText, true, useForensic || null);
+        updateVeritalkInputHeadingVisibility();
+      }
 
-      const payload = {
-        message: message
-      };
-
+      const payload = { message: message };
       if (conversationIdInput && conversationIdInput.value) {
         payload.conversation_id = conversationIdInput.value;
+      }
+
+      var assistantRowEl = null;
+      var streamTextDiv = null;
+      var streamState = { phase: 'seek_f', buf: '' };
+      var forensicAccum = '';
+      var assistantText = '';
+
+      function ingestDecodedChunk(txt) {
+        streamState.buf += txt;
+        for (;;) {
+          var b = streamState.buf;
+          if (streamState.phase === 'seek_f') {
+            var ix = b.indexOf(STREAM_MARK_FORENSIC);
+            if (ix === -1) {
+              var kf = STREAM_MARK_FORENSIC.length - 1;
+              streamState.buf = b.length <= kf ? b : b.slice(-kf);
+              return;
+            }
+            streamState.buf = b.slice(ix + STREAM_MARK_FORENSIC.length);
+            streamState.phase = 'forensic';
+            continue;
+          }
+          if (streamState.phase === 'forensic') {
+            var jc = b.indexOf(STREAM_MARK_CONV);
+            if (jc !== -1) {
+              forensicAccum += b.slice(0, jc);
+              if (forensicLive) forensicLive.textContent = forensicAccum;
+              streamState.buf = b.slice(jc + STREAM_MARK_CONV.length);
+              streamState.phase = 'conv';
+              shrinkVeritalkForensicRail();
+              assistantRowEl = appendMessage('assistant', '', true, forensicAccum);
+              streamTextDiv = assistantRowEl ? assistantRowEl.querySelector('.veritalk-message-text') : null;
+              continue;
+            }
+            var keep = STREAM_MARK_CONV.length - 1;
+            if (b.length <= keep) return;
+            forensicAccum += b.slice(0, b.length - keep);
+            if (forensicLive) forensicLive.textContent = forensicAccum;
+            streamState.buf = b.slice(b.length - keep);
+            return;
+          }
+          if (streamState.phase === 'conv') {
+            assistantText += b;
+            streamState.buf = '';
+            if (streamTextDiv) {
+              streamTextDiv.textContent = assistantText;
+              messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            }
+            return;
+          }
+          return;
+        }
       }
 
       try {
@@ -370,168 +507,71 @@
           body: JSON.stringify(payload)
         });
 
-        // Check if response is OK and is actually a stream
         if (!response.ok) {
-          const errorText = await response.text();
-          const textEl = thinkingDiv.querySelector('.veritalk-message-text');
-          if (errorText.includes('<!DOCTYPE html>') || errorText.includes('<html>')) {
-            if (textEl) {
-              textEl.textContent = 'AI features require an active subscription. Please upgrade your plan to use VeriTalk.';
-            } else {
-              thinkingDiv.textContent = 'AI features require an active subscription. Please upgrade your plan to use VeriTalk.';
-            }
-          } else {
-            if (textEl) {
-              textEl.textContent = errorText || 'Sorry, VeriTalk had a problem.';
-            } else {
-              thinkingDiv.textContent = errorText || 'Sorry, VeriTalk had a problem.';
-            }
-          }
-          isStreaming = false;
-          input.disabled = false;
-          const sendBtn = document.getElementById('veritalk-send-btn');
-          if (sendBtn) {
-            sendBtn.disabled = !input.value.trim();
-          }
+          var errorRaw = await response.text();
+          var errMsg = errorRaw.includes('<!DOCTYPE html>') || errorRaw.includes('<html>')
+            ? 'AI features require an active subscription. Please upgrade your plan to use VeriTalk.'
+            : (errorRaw || 'Sorry, VeriTalk had a problem.');
+          showStreamErrorAssistant(errMsg, null);
+          unlockVeritalkInput();
           return;
         }
 
-        // Check content type to ensure it's a stream
         const contentType = response.headers.get('Content-Type');
         if (contentType && !contentType.includes('text/event-stream') && !contentType.includes('text/plain')) {
-          const textEl = thinkingDiv.querySelector('.veritalk-message-text');
-          if (textEl) {
-            textEl.textContent = 'AI features require an active subscription. Please upgrade your plan to use VeriTalk.';
-          } else {
-            thinkingDiv.textContent = 'AI features require an active subscription. Please upgrade your plan to use VeriTalk.';
-          }
-          isStreaming = false;
-          input.disabled = false;
-          const sendBtn = document.getElementById('veritalk-send-btn');
-          if (sendBtn) {
-            sendBtn.disabled = !input.value.trim();
-          }
+          showStreamErrorAssistant('AI features require an active subscription. Please upgrade your plan to use VeriTalk.', null);
+          unlockVeritalkInput();
           return;
         }
 
-        const newConversationId = response.headers.get('X-Veritalk-Conversation-Id');
+        var newConversationId = response.headers.get('X-Veritalk-Conversation-Id');
         if (newConversationId) {
-          if (conversationIdInput) {
-            conversationIdInput.value = newConversationId;
-          }
-          // Store in localStorage for persistence across page refreshes
+          if (conversationIdInput) conversationIdInput.value = newConversationId;
           localStorage.setItem('veritalk_conversation_id', newConversationId);
-          console.log('Saved conversation ID to localStorage:', newConversationId);
         }
 
         if (!response.body) {
-          const textEl = thinkingDiv.querySelector('.veritalk-message-text');
-          if (textEl) {
-            textEl.textContent = 'Sorry, VeriTalk had a problem.';
-          } else {
-            thinkingDiv.textContent = 'Sorry, VeriTalk had a problem.';
-          }
-          isStreaming = false;
-          input.disabled = false;
-          const sendBtn = document.getElementById('veritalk-send-btn');
-          if (sendBtn) {
-            sendBtn.disabled = !input.value.trim();
-          }
+          showStreamErrorAssistant('Sorry, VeriTalk had a problem.', null);
+          unlockVeritalkInput();
           return;
         }
 
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
 
-        let assistantText = '';
-        streamTextDiv.textContent = '';
-        thinkingDiv.classList.remove('thinking');
-
-        let isTyping = false;
-        let typingTimeout = null;
-
-        // Read stream and display with character-by-character typing effect
-        let buffer = '';
-        
-        const updateContent = () => {
-          streamTextDiv.textContent = assistantText;
-          messagesDiv.scrollTop = messagesDiv.scrollHeight;
-        };
-        
-        const typeCharacter = () => {
-          if (buffer.length > 0) {
-            const char = buffer[0];
-            buffer = buffer.slice(1);
-            assistantText += char;
-            updateContent();
-            
-            // Continue typing if there's more in buffer
-            if (buffer.length > 0) {
-              // Increased delay for slower, more visible typing effect
-              typingTimeout = setTimeout(typeCharacter, 30); // 30ms delay per character
-            } else {
-              // No more in buffer, but might get more from stream
-              isTyping = false;
-            }
-          } else {
-            isTyping = false;
-          }
-        };
-
         while (true) {
           const { value, done } = await reader.read();
-          if (done) {
-            // Process any remaining buffer
-            while (buffer.length > 0) {
-              typeCharacter();
-              await new Promise(resolve => setTimeout(resolve, 30)); // Increased delay
-            }
-            // Clear any pending timeout
-            if (typingTimeout) {
-              clearTimeout(typingTimeout);
-            }
-            streamTextDiv.textContent = assistantText;
-            break;
-          }
+          if (done) break;
           if (!value) continue;
+          ingestDecodedChunk(decoder.decode(value, { stream: true }));
+        }
 
-          // Add delay between chunks for more visible effect
-          await new Promise(resolve => setTimeout(resolve, 50)); // 50ms delay between chunks
-
-          const chunk = decoder.decode(value, { stream: true });
-          buffer += chunk;
-          
-          // Start typing if not already typing
-          if (!isTyping && buffer.length > 0) {
-            isTyping = true;
-            typeCharacter();
+        if (streamState.phase === 'seek_f') {
+          var legacyBody = streamState.buf.trim();
+          if (legacyBody && !assistantRowEl) {
+            shrinkVeritalkForensicRail();
+            assistantRowEl = appendMessage('assistant', legacyBody, true, null);
+          }
+        } else if (streamState.phase === 'forensic') {
+          if (!assistantRowEl && forensicAccum) {
+            shrinkVeritalkForensicRail();
+            showStreamErrorAssistant('VeriTalk stopped before completing the conversational reply.', forensicAccum);
+          }
+        } else if (streamState.phase === 'conv' && streamState.buf) {
+          assistantText += streamState.buf;
+          streamState.buf = '';
+          if (streamTextDiv) {
+            streamTextDiv.textContent = assistantText;
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
           }
         }
 
-        thinkingDiv.classList.add('assistant-final');
-        isStreaming = false;
-        
-        // Re-enable input and send button
-        input.disabled = false;
-        input.focus();
-        if (sendBtn) {
-          sendBtn.disabled = !input.value.trim();
-        }
+        unlockVeritalkInput();
       } catch (error) {
         console.error('VeriTalk error:', error);
-        const textEl = thinkingDiv.querySelector('.veritalk-message-text');
-        if (textEl) {
-          textEl.textContent = 'Sorry, VeriTalk is unavailable right now.';
-        } else {
-          thinkingDiv.textContent = 'Sorry, VeriTalk is unavailable right now.';
-        }
-        isStreaming = false;
-        
-        // Re-enable input and send button
-        input.disabled = false;
-        if (sendBtn) {
-          sendBtn.disabled = !input.value.trim();
-        }
+        shrinkVeritalkForensicRail();
+        appendMessage('assistant', 'Sorry, VeriTalk is unavailable right now.', true, null);
+        unlockVeritalkInput();
       }
     }
   }
@@ -561,19 +601,7 @@
               if (data.messages && data.messages.length > 0) {
                 welcome.remove();
                 data.messages.forEach(function(msg) {
-                  const messageDiv = document.createElement('div');
-                  messageDiv.className = 'veritalk-message ' + msg.role;
-                  messageDiv.style.animation = 'none';
-                  
-                  if (msg.role === 'assistant') {
-                    var result = createAssistantMessageContent(msg.content);
-                    messageDiv.appendChild(result.contentDiv);
-                  } else {
-                    var result = createUserMessageContent(msg.content);
-                    messageDiv.appendChild(result.contentDiv);
-                  }
-                  
-                  messagesDiv.appendChild(messageDiv);
+                  messagesDiv.appendChild(buildVeritalkMessageDiv(msg, true));
                 });
                 messagesDiv.scrollTop = messagesDiv.scrollHeight;
                 updateVeritalkInputHeadingVisibility();
@@ -773,19 +801,7 @@
           
           if (data.messages && data.messages.length > 0) {
             data.messages.forEach(function(msg) {
-              const messageDiv = document.createElement('div');
-              messageDiv.className = 'veritalk-message ' + msg.role;
-              messageDiv.style.animation = 'none';
-              
-              if (msg.role === 'assistant') {
-                var result = createAssistantMessageContent(msg.content);
-                messageDiv.appendChild(result.contentDiv);
-              } else {
-                var result = createUserMessageContent(msg.content);
-                messageDiv.appendChild(result.contentDiv);
-              }
-              
-              messagesDiv.appendChild(messageDiv);
+              messagesDiv.appendChild(buildVeritalkMessageDiv(msg, true));
             });
             
             setTimeout(function() {
@@ -804,6 +820,8 @@
 
     // Start new chat
     function startNewChat() {
+      shrinkVeritalkForensicRail();
+      closeVeritalkForensicPeek();
       if (conversationIdInput) {
         conversationIdInput.value = '';
       }

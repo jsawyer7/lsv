@@ -1759,14 +1759,25 @@ body.settings-page .dashboard-main {
   top: 189px;
 }
 
-.settings-main.settings-no-header-tab .subscription-page {
+.settings-main.settings-no-header-tab .subscription-settings-stack {
   position: absolute;
   top: 189px;
   left: 390px;
   width: 975px;
   max-width: calc(100vw - 390px - 7vw);
+  box-sizing: border-box;
+  background: transparent;
+}
+
+.settings-main.settings-no-header-tab .subscription-settings-stack .subscription-page {
+  position: relative;
+  left: auto;
+  top: auto;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
   border-radius: 8px;
-  background: #FFFFFF;
+  background: #ffffff;
   opacity: 1;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   padding: 1rem;

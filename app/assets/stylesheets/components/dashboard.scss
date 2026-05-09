@@ -6796,3 +6796,32 @@ a.claim-sidebar-profile-row {
     border-color: #f87171;
   }
 }
+
+// Keep dashboard/feed anchored to a centered frame on ultrawide screens.
+@media (min-width: 90.0625rem) {
+  :root {
+    --dashboard-wide-offset: calc((100vw - 90rem) / 2);
+  }
+
+  .dashboard-nav,
+  .dashboard-sources {
+    left: calc(var(--dashboard-wide-offset) + 5rem);
+  }
+
+  body.collapsed-dashboard-nav .dashboard-nav,
+  body.collapsed-dashboard-nav .dashboard-sources {
+    left: calc(var(--dashboard-wide-offset) + 80px);
+  }
+
+  .feed-list,
+  .notifications-page-main .notifications-page-header,
+  .notifications-page-main .notifications-block {
+    left: calc(var(--dashboard-wide-offset) + 24.375rem);
+  }
+
+  .feed-rightbar .theories-who-to-follow,
+  .feed-rightbar .theories-top-picks,
+  .feed-rightbar .feed-top-picks {
+    left: calc(var(--dashboard-wide-offset) + 65.5rem);
+  }
+}

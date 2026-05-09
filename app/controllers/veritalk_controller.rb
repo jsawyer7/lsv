@@ -57,6 +57,7 @@ class VeritalkController < ApplicationController
         id: msg.id,
         role: msg.role,
         content: msg.content,
+        forensic_content: msg.forensic_content.presence,
         position: msg.position,
         created_at: msg.created_at
       }
