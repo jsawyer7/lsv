@@ -1,10 +1,42 @@
 ActiveAdmin.register VeritalkValidator do
   permit_params :name, :description, :system_prompt, :is_active, :version, :purpose, :created_by_type, :created_by_id
 
-  menu false # Menu is handled manually in sidebar
+  menu false
+
+  before_build do |resource|
+    next unless resource.new_record?
+
+    p = params[:purpose].to_s
+    resource.purpose = p if VeritalkValidator::PURPOSES.include?(p)
+  end
 
   controller do
     layout "active_admin_custom"
+
+    def new
+      forensic_taken = VeritalkValidator.where(purpose: VeritalkValidator::PURPOSE_FORENSIC).exists?
+      conv_taken = VeritalkValidator.where(purpose: VeritalkValidator::PURPOSE_CONVERSATIONAL).exists?
+
+      if forensic_taken && conv_taken
+        redirect_to admin_veritalk_validators_path,
+                    alert: "Forensic and conversational validators already exist. Edit or delete one before adding another."
+        return
+      end
+
+      p = params[:purpose].to_s
+      if VeritalkValidator::PURPOSES.include?(p) && VeritalkValidator.where(purpose: p).exists?
+        redirect_to admin_veritalk_validators_path,
+                    alert: "A #{p.titleize} validator already exists. Edit or delete it first."
+        return
+      end
+
+      super
+    end
+
+    def update
+      params[:veritalk_validator]&.delete(:purpose)
+      super
+    end
 
     def create
       @validator = VeritalkValidator.new(permitted_params[:veritalk_validator])
@@ -19,9 +51,45 @@ ActiveAdmin.register VeritalkValidator do
   end
 
   index do
+    forensic_free = VeritalkValidator.purpose_slot_available?(VeritalkValidator::PURPOSE_FORENSIC)
+    conv_free = VeritalkValidator.purpose_slot_available?(VeritalkValidator::PURPOSE_CONVERSATIONAL)
+
+    forensic_add_control =
+      if forensic_free
+        link_to("Add forensic validator",
+                new_admin_veritalk_validator_path(purpose: VeritalkValidator::PURPOSE_FORENSIC),
+                class: "btn btn-dark")
+      else
+        content_tag(:span, "Forensic slot in use",
+                    class: "btn btn-secondary disabled opacity-75",
+                    title: "Forensic validator record already exists — edit or delete it to replace.")
+      end
+
+    conversational_add_control =
+      if conv_free
+        link_to("Add conversational validator",
+                new_admin_veritalk_validator_path(purpose: VeritalkValidator::PURPOSE_CONVERSATIONAL),
+                class: "btn btn-primary")
+      else
+        content_tag(:span, "Conversational slot in use",
+                    class: "btn btn-secondary disabled opacity-75",
+                    title: "Conversational validator record already exists — edit or delete it to replace.")
+      end
+
     div class: "page-header mb-4" do
-      h1 "VeriTalk Validators", class: "mb-2"
-      para "Manage and test VeriTalk system prompts", class: "text-muted"
+      div class: "d-flex flex-wrap justify-content-between align-items-start gap-3" do
+        div do
+          h1 "VeriTalk Validators", class: "mb-2"
+          div class: "text-muted mb-0" do
+            raw(
+              "Configure <strong>two</strong> prompts: forensic (analysis pass) and conversational (reply users read).".html_safe
+            )
+          end
+        end
+        div class: "d-flex flex-column flex-sm-row gap-2 align-items-stretch" do
+          raw safe_join([forensic_add_control, conversational_add_control], " ".html_safe)
+        end
+      end
     end
 
     current_forensic = VeritalkValidator.current_forensic
@@ -77,9 +145,27 @@ ActiveAdmin.register VeritalkValidator do
       end
     else
       div class: "alert alert-warning mb-4" do
-        div class: "d-flex align-items-center justify-content-between flex-wrap gap-2" do
+        div class: "d-flex align-items-center justify-content-between flex-wrap gap-3" do
           div do
             strong "No active conversational validator"
+            if conv_free
+              div class: "small mt-2 mb-0 text-body" do
+                raw(
+                  safe_join(
+                    [
+                      "You still need a conversational prompt row for user-facing replies — ",
+                      link_to(
+                        "go to create it",
+                        new_admin_veritalk_validator_path(purpose: VeritalkValidator::PURPOSE_CONVERSATIONAL),
+                        class: "fw-semibold"
+                      ),
+                      " (same target as the purple “Add conversational” button above)."
+                    ],
+                    ""
+                  )
+                )
+              end
+            end
           end
           div do
             preview_btn.call("warning")
@@ -184,7 +270,6 @@ ActiveAdmin.register VeritalkValidator do
     end
 
     div class: "row g-4" do
-      # Left Column - Validator Info
       div class: "col-lg-4" do
         div class: "materio-card" do
           div class: "card-body p-4" do
@@ -245,7 +330,6 @@ ActiveAdmin.register VeritalkValidator do
         end
       end
 
-      # Right Column - System Prompt
       div class: "col-lg-8" do
         div class: "materio-card" do
           div class: "materio-header" do
@@ -299,10 +383,33 @@ ActiveAdmin.register VeritalkValidator do
       div class: "card-body p-5" do
         f.inputs do
           f.input :name, input_html: { class: "form-control" }
-          f.input :purpose, as: :select,
-                  collection: VeritalkValidator::PURPOSES.map { |p| [p.titleize, p] },
-                  include_blank: false,
-                  input_html: { class: "form-control" }
+
+          if f.object.new_record?
+            available = VeritalkValidator::PURPOSES.select { |pr| VeritalkValidator.where(purpose: pr).none? }
+            if available.empty?
+              para "Both validator types already exist. Delete a record from the list before creating a new one.", class: "alert alert-warning"
+            else
+              default_purpose = if params[:purpose].present? && available.include?(params[:purpose].to_s)
+                                  params[:purpose].to_s
+                                else
+                                  available.first
+                                end
+              f.input :purpose, as: :select,
+                      collection: available.map { |pr| [pr.titleize, pr] },
+                      selected: default_purpose,
+                      include_blank: false,
+                      hint: "Only types that do not already have a record are listed.",
+                      input_html: { class: "form-control" }
+            end
+          else
+            para class: "mb-3" do
+              span "Purpose: ", class: "text-muted"
+              strong f.object.purpose.titleize
+              span " — type cannot be changed. Delete this validator if you need the other type.", class: "text-muted small ms-1"
+            end
+            f.input :purpose, as: :hidden
+          end
+
           f.input :description, as: :text, input_html: { rows: 3, class: "form-control" }
           f.input :system_prompt, as: :text,
                   input_html: {

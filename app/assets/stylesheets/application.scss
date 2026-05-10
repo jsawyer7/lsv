@@ -204,7 +204,6 @@ h4, .heading-h4 {
     left: calc(var(--dashboard-wide-offset) + 5rem) !important;
   }
 
-  // VeriTalk + New Claim use collapsed rail at 80px (_veritalk.scss / dashboard.scss)
   body.collapsed-dashboard-nav .dashboard-nav,
   body.collapsed-dashboard-nav .dashboard-sources {
     left: calc(var(--dashboard-wide-offset) + 80px) !important;
@@ -309,9 +308,9 @@ h4, .heading-h4 {
   }
 
   body.veritalk-page .veritalk-page > .veritalk-container {
-    left: calc(var(--dashboard-wide-offset) + 169px) !important;
+    left: calc(var(--dashboard-wide-offset) + 24.375rem) !important;
     width: 1548px !important;
-    max-width: #{"min(1548px, calc(100vw - 169px - 48px - var(--dashboard-wide-offset)))"} !important;
+    max-width: #{"min(1548px, calc(100vw - 24.375rem - 48px - var(--dashboard-wide-offset)))"} !important;
   }
 
   body.veritalk-page .veritalk-sidebar {

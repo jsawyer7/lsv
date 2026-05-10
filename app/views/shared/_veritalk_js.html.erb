@@ -29,6 +29,30 @@
   var STREAM_MARK_FORENSIC = '<<<VERITALK_DUAL_FORENSIC>>>\n';
   var STREAM_MARK_CONV = '<<<VERITALK_DUAL_CONV>>>\n';
 
+  function hideVeritalkForensicThinking() {
+    var el = document.getElementById('veritalk-forensic-thinking');
+    if (el) {
+      el.hidden = true;
+      el.setAttribute('aria-hidden', 'true');
+    }
+  }
+
+  function showVeritalkForensicThinking() {
+    var el = document.getElementById('veritalk-forensic-thinking');
+    if (el) {
+      el.hidden = false;
+      el.setAttribute('aria-hidden', 'false');
+    }
+  }
+
+  function hideVeritalkForensicFab() {
+    var fab = document.getElementById('veritalk-forensic-fab');
+    if (fab) {
+      fab.hidden = true;
+      fab._vtForensicDetail = '';
+    }
+  }
+
   function shrinkVeritalkForensicRail() {
     var rail = document.getElementById('veritalk-forensic-rail');
     var live = document.getElementById('veritalk-forensic-live');
@@ -36,7 +60,232 @@
     rail.classList.remove('veritalk-forensic-rail--streaming');
     rail.classList.remove('veritalk-forensic-rail--peek');
     rail.setAttribute('aria-hidden', 'true');
+    hideVeritalkForensicThinking();
+    hideVeritalkForensicFab();
     if (live) live.textContent = '';
+  }
+
+  var vtForensicGuideListeners = null;
+
+  function forensicGuideStorageKey() {
+    var el = document.querySelector('.veritalk-container[data-user-id]');
+    var uid = el && el.getAttribute('data-user-id');
+    return 'veritalk_forensic_guide_v1_' + (uid && String(uid).length ? String(uid) : 'anon');
+  }
+
+  function teardownVeritalkForensicGuide() {
+    var g = document.getElementById('veritalk-forensic-guide');
+    if (g) g.remove();
+    if (vtForensicGuideListeners) {
+      window.removeEventListener('resize', vtForensicGuideListeners.onMove);
+      window.removeEventListener('scroll', vtForensicGuideListeners.onMove);
+      if (vtForensicGuideListeners.messagesEl) {
+        vtForensicGuideListeners.messagesEl.removeEventListener('scroll', vtForensicGuideListeners.onMove);
+      }
+      if (vtForensicGuideListeners.resizeObs) {
+        vtForensicGuideListeners.resizeObs.disconnect();
+      }
+      if (vtForensicGuideListeners.visualViewport) {
+        var vv = vtForensicGuideListeners.visualViewport;
+        vv.removeEventListener('resize', vtForensicGuideListeners.onMove);
+        vv.removeEventListener('scroll', vtForensicGuideListeners.onMove);
+      }
+      if (vtForensicGuideListeners.deferTimer) {
+        clearTimeout(vtForensicGuideListeners.deferTimer);
+      }
+      vtForensicGuideListeners = null;
+    }
+  }
+
+  function dismissForensicGuideForever() {
+    try {
+      localStorage.setItem(forensicGuideStorageKey(), '1');
+    } catch (e) {}
+    teardownVeritalkForensicGuide();
+  }
+
+  function maybeShowForensicGuideNearChip(assistantRowEl) {
+    if (!assistantRowEl) return;
+    try {
+      if (localStorage.getItem(forensicGuideStorageKey()) === '1') return;
+    } catch (e) {
+      return;
+    }
+    if (document.getElementById('veritalk-forensic-guide')) return;
+
+    var anchor = assistantRowEl.querySelector('button.veritalk-forensic-chip');
+    if (!anchor) return;
+
+    var guide = document.createElement('div');
+    guide.id = 'veritalk-forensic-guide';
+    guide.className = 'veritalk-forensic-guide';
+    guide.setAttribute('role', 'dialog');
+    guide.setAttribute('aria-labelledby', 'veritalk-forensic-guide-title');
+
+    var title = document.createElement('div');
+    title.className = 'veritalk-forensic-guide__title';
+    title.id = 'veritalk-forensic-guide-title';
+    title.textContent = 'Forensic detail';
+
+    var text = document.createElement('p');
+    text.className = 'veritalk-forensic-guide__text';
+    text.textContent = 'Click the microscope beside each assistant reply to open the full forensic breakdown.';
+
+    var actions = document.createElement('div');
+    actions.className = 'veritalk-forensic-guide__actions';
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'veritalk-forensic-guide__btn';
+    btn.textContent = 'Got it';
+    btn.addEventListener('click', function(ev) {
+      ev.preventDefault();
+      dismissForensicGuideForever();
+    });
+    actions.appendChild(btn);
+
+    guide.appendChild(title);
+    guide.appendChild(text);
+    guide.appendChild(actions);
+
+    var host = document.querySelector('.veritalk-chat-main');
+
+    if (host) {
+      host.appendChild(guide);
+      guide.style.position = 'absolute';
+    } else {
+      document.body.appendChild(guide);
+      guide.style.position = 'fixed';
+    }
+
+    var guideLayoutAttempts = 0;
+    var guideHostReadyAttempts = 0;
+
+    function positionGuide() {
+      if (!document.body.contains(anchor) || !document.body.contains(guide)) return;
+      if (host && (!host.contains(anchor) || !host.contains(guide))) return;
+      var cr = anchor.getBoundingClientRect();
+      if (cr.width <= 0 || cr.height <= 0) {
+        if (guideHostReadyAttempts < 120) {
+          guideHostReadyAttempts += 1;
+          requestAnimationFrame(positionGuide);
+        }
+        return;
+      }
+      var pad = 10;
+      var gw = guide.offsetWidth;
+      var gh = guide.offsetHeight;
+      if (gw < 2 || gh < 2) {
+        if (guideLayoutAttempts < 40) {
+          guideLayoutAttempts += 1;
+          requestAnimationFrame(positionGuide);
+        }
+        return;
+      }
+      var flip = false;
+      var leftPx;
+      var topPx;
+
+      if (host) {
+        var mr = host.getBoundingClientRect();
+        var edge = 8;
+        var mw = host.clientWidth;
+        var mh = host.clientHeight;
+        /* Flex/layout can briefly report mw/mh≈0 before .veritalk-chat-main settles. Clamping
+           with near-zero mw forces left/top to edge (~8px) — tooltip sticks top-left until a
+           real resize (e.g. DevTools) recomputes. Wait until dimensions are sane. */
+        var minDim = Math.min(140, gw + pad * 4);
+        var hostStable = mw >= minDim && mh >= 72 && mr.width >= minDim && mr.height >= 72;
+        if (!hostStable && guideHostReadyAttempts < 120) {
+          guideHostReadyAttempts += 1;
+          requestAnimationFrame(positionGuide);
+          return;
+        }
+
+        leftPx = cr.right - mr.left + pad;
+        if (leftPx + gw > mw - edge) {
+          leftPx = cr.left - mr.left - gw - pad;
+          flip = true;
+        }
+        leftPx = Math.min(Math.max(leftPx, edge), Math.max(edge, mw - gw - edge));
+
+        topPx = cr.top - mr.top + cr.height / 2 - gh / 2;
+        topPx = Math.min(Math.max(topPx, edge), Math.max(edge, mh - gh - edge));
+      } else {
+        leftPx = cr.right + pad;
+        if (leftPx + gw > window.innerWidth - 16) {
+          leftPx = cr.left - gw - pad;
+          flip = true;
+        }
+        leftPx = Math.min(Math.max(leftPx, 16), Math.max(16, window.innerWidth - 16 - gw));
+        topPx = cr.top + cr.height / 2 - gh / 2;
+        topPx = Math.min(Math.max(topPx, 16), Math.max(16, window.innerHeight - 16 - gh));
+      }
+
+      guide.style.left = Math.round(leftPx) + 'px';
+      guide.style.top = Math.round(topPx) + 'px';
+      guide.classList.toggle('veritalk-forensic-guide--flip', flip);
+    }
+
+    var onMove = function() {
+      requestAnimationFrame(positionGuide);
+    };
+    requestAnimationFrame(function() {
+      requestAnimationFrame(positionGuide);
+    });
+    window.addEventListener('resize', onMove);
+    window.addEventListener('scroll', onMove, { passive: true });
+    var md = document.getElementById('veritalk-messages');
+    if (md) md.addEventListener('scroll', onMove, { passive: true });
+
+    var resizeObs = null;
+    if (host && typeof ResizeObserver !== 'undefined') {
+      resizeObs = new ResizeObserver(onMove);
+      resizeObs.observe(host);
+    }
+
+    var visualViewportEl = typeof window.visualViewport !== 'undefined' ? window.visualViewport : null;
+    if (visualViewportEl) {
+      visualViewportEl.addEventListener('resize', onMove);
+      visualViewportEl.addEventListener('scroll', onMove);
+    }
+
+    var deferTimer = null;
+    if (typeof document !== 'undefined' && document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(function() {
+        requestAnimationFrame(positionGuide);
+      });
+    }
+    deferTimer = setTimeout(function() {
+      deferTimer = null;
+      requestAnimationFrame(positionGuide);
+    }, 200);
+
+    vtForensicGuideListeners = {
+      onMove: onMove,
+      messagesEl: md,
+      resizeObs: resizeObs,
+      visualViewport: visualViewportEl,
+      deferTimer: deferTimer,
+    };
+  }
+
+  function collapseForensicRailToFab(forensicDetail) {
+    var rail = document.getElementById('veritalk-forensic-rail');
+    var live = document.getElementById('veritalk-forensic-live');
+    var fab = document.getElementById('veritalk-forensic-fab');
+    if (!rail) return;
+    rail.classList.remove('veritalk-forensic-rail--streaming');
+    rail.classList.remove('veritalk-forensic-rail--peek');
+    rail.setAttribute('aria-hidden', 'true');
+    hideVeritalkForensicThinking();
+    if (live) live.textContent = '';
+    var text = String(forensicDetail || '').trim();
+    if (fab && text) {
+      fab._vtForensicDetail = text;
+      fab.hidden = false;
+    } else if (fab) {
+      hideVeritalkForensicFab();
+    }
   }
 
   function openVeritalkForensicPeek(forensicDetail, heading) {
@@ -45,6 +294,7 @@
     var titleEl = document.getElementById('veritalk-forensic-rail-title');
     if (!rail || !live) return;
     if (titleEl && heading) titleEl.textContent = heading;
+    hideVeritalkForensicThinking();
     live.textContent = forensicDetail || '';
     rail.classList.remove('veritalk-forensic-rail--streaming');
     rail.classList.add('veritalk-forensic-rail--peek');
@@ -112,8 +362,20 @@
         ev.stopPropagation();
         openVeritalkForensicPeek(forensicChip._vtForensicDetail, 'Forensic detail');
       });
+    } else {
+      forensicChip = document.createElement('div');
+      forensicChip.className = 'veritalk-forensic-turn-spacer';
+      forensicChip.setAttribute('aria-hidden', 'true');
     }
     return { contentDiv: contentDiv, textDiv: textDiv, forensicChip: forensicChip };
+  }
+
+  function createUserTurnForensicSlot() {
+    var slot = document.createElement('div');
+    slot.className = 'veritalk-forensic-turn-slot veritalk-forensic-turn-slot--user';
+    slot.setAttribute('aria-hidden', 'true');
+    slot.innerHTML = '<span class="veritalk-forensic-turn-slot-icon" title="Your message"><i class="fas fa-user"></i></span>';
+    return slot;
   }
 
   function createUserMessageContent(initialText) {
@@ -165,6 +427,22 @@
     return { contentDiv: contentDiv, textDiv: textDiv };
   }
 
+  function wireUserForensicSlot(slotEl, messageDiv) {
+    if (!slotEl || !messageDiv) return;
+    slotEl.style.cursor = 'pointer';
+    slotEl.setAttribute('title', 'Open forensic detail for the reply below');
+    slotEl.addEventListener('click', function(ev) {
+      ev.stopPropagation();
+      var next = messageDiv.nextElementSibling;
+      while (next && !next.classList.contains('veritalk-message')) next = next.nextElementSibling;
+      if (!next || !next.classList.contains('assistant')) return;
+      var chip = next.querySelector('.veritalk-forensic-chip');
+      if (chip && chip._vtForensicDetail) {
+        openVeritalkForensicPeek(chip._vtForensicDetail, 'Forensic detail');
+      }
+    });
+  }
+
   // Show "How can I help you today?" only when chat is empty (no messages)
   function updateVeritalkInputHeadingVisibility() {
     const block = document.querySelector('.veritalk-input-block');
@@ -180,14 +458,17 @@
     if (suppressAnimation) messageDiv.style.animation = 'none';
     if (msg.role === 'assistant') {
       var result = createAssistantMessageContent(msg.content, msg.forensic_content || null);
-      if (result.forensicChip) {
+      if (msg.forensic_content && String(msg.forensic_content).trim()) {
         messageDiv.classList.add('has-forensic');
-        messageDiv.appendChild(result.forensicChip);
       }
+      messageDiv.appendChild(result.forensicChip);
       messageDiv.appendChild(result.contentDiv);
     } else {
+      var slot = createUserTurnForensicSlot();
       var u = createUserMessageContent(msg.content);
+      messageDiv.appendChild(slot);
       messageDiv.appendChild(u.contentDiv);
+      wireUserForensicSlot(slot, messageDiv);
     }
     return messageDiv;
   }
@@ -212,6 +493,14 @@
     if (forensicRailCloseBtn) {
       forensicRailCloseBtn.addEventListener('click', function() {
         closeVeritalkForensicPeek();
+      });
+    }
+
+    var forensicFab = document.getElementById('veritalk-forensic-fab');
+    if (forensicFab) {
+      forensicFab.addEventListener('click', function() {
+        var detail = forensicFab._vtForensicDetail;
+        if (detail) openVeritalkForensicPeek(detail, 'Forensic analysis');
       });
     }
 
@@ -289,6 +578,7 @@
             if (data.messages && data.messages.length > 0) {
               console.log('Loading', data.messages.length, 'messages');
               // Clear any existing messages first (including welcome message)
+              teardownVeritalkForensicGuide();
               messagesDiv.innerHTML = '';
               
               data.messages.forEach(function(msg, index) {
@@ -387,14 +677,17 @@
       
       if (role === 'assistant') {
         var result = createAssistantMessageContent(content, forensicContent);
-        if (result.forensicChip) {
+        if (forensicContent && String(forensicContent).trim()) {
           messageDiv.classList.add('has-forensic');
-          messageDiv.appendChild(result.forensicChip);
         }
+        messageDiv.appendChild(result.forensicChip);
         messageDiv.appendChild(result.contentDiv);
       } else {
+        var slot = createUserTurnForensicSlot();
         var result = createUserMessageContent(content);
+        messageDiv.appendChild(slot);
         messageDiv.appendChild(result.contentDiv);
+        wireUserForensicSlot(slot, messageDiv);
       }
       
       messagesDiv.appendChild(messageDiv);
@@ -404,12 +697,16 @@
     }
 
     async function startVeritalkStream(message) {
+      if (document.getElementById('veritalk-forensic-guide')) {
+        dismissForensicGuideForever();
+      }
       isStreaming = true;
       input.disabled = true;
       const sendCtrl = document.getElementById('veritalk-send-btn');
       if (sendCtrl) sendCtrl.disabled = true;
 
       closeVeritalkForensicPeek();
+      hideVeritalkForensicFab();
 
       var rail = document.getElementById('veritalk-forensic-rail');
       var forensicLive = document.getElementById('veritalk-forensic-live');
@@ -417,6 +714,8 @@
       if (rail && forensicLive && forensicTitle) {
         forensicTitle.textContent = 'Forensic analysis';
         forensicLive.textContent = '';
+        hideVeritalkForensicFab();
+        showVeritalkForensicThinking();
         rail.classList.add('veritalk-forensic-rail--streaming');
         rail.classList.remove('veritalk-forensic-rail--peek');
         rail.setAttribute('aria-hidden', 'false');
@@ -472,14 +771,23 @@
               if (forensicLive) forensicLive.textContent = forensicAccum;
               streamState.buf = b.slice(jc + STREAM_MARK_CONV.length);
               streamState.phase = 'conv';
-              shrinkVeritalkForensicRail();
+              hideVeritalkForensicThinking();
+              collapseForensicRailToFab(forensicAccum);
               assistantRowEl = appendMessage('assistant', '', true, forensicAccum);
               streamTextDiv = assistantRowEl ? assistantRowEl.querySelector('.veritalk-message-text') : null;
+              if (assistantRowEl) {
+                requestAnimationFrame(function() {
+                  requestAnimationFrame(function() {
+                    maybeShowForensicGuideNearChip(assistantRowEl);
+                  });
+                });
+              }
               continue;
             }
             var keep = STREAM_MARK_CONV.length - 1;
             if (b.length <= keep) return;
             forensicAccum += b.slice(0, b.length - keep);
+            if (forensicAccum.trim()) hideVeritalkForensicThinking();
             if (forensicLive) forensicLive.textContent = forensicAccum;
             streamState.buf = b.slice(b.length - keep);
             return;
@@ -797,6 +1105,7 @@
           localStorage.setItem('veritalk_conversation_id', data.conversation_id);
 
           // Clear messages and load new ones
+          teardownVeritalkForensicGuide();
           messagesDiv.innerHTML = '';
           
           if (data.messages && data.messages.length > 0) {
@@ -820,6 +1129,7 @@
 
     // Start new chat
     function startNewChat() {
+      teardownVeritalkForensicGuide();
       shrinkVeritalkForensicRail();
       closeVeritalkForensicPeek();
       if (conversationIdInput) {

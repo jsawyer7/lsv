@@ -109,7 +109,6 @@
   margin-top: 2rem;
 }
 
-// Sidebar/Navigation — full by default; collapsed (icons only) + hover expand only on VeriTalk page
 .dashboard-nav {
   position: fixed;
   width: 17.5rem;
@@ -144,7 +143,6 @@ body.dashboard-nav-page .dashboard-nav {
   }
 }
 
-// VeriTalk page only: collapsed nav (icons only), expand on hover
 body.collapsed-dashboard-nav .dashboard-nav {
   width: 69px;
   height: 312px;
@@ -185,7 +183,6 @@ body.collapsed-dashboard-nav .dashboard-nav {
   }
 }
 
-// Dashboard sources — full by default; collapsed only on VeriTalk page
 .dashboard-sources {
   position: fixed;
   width: 17.5rem;
@@ -224,7 +221,6 @@ body.dashboard-nav-page .dashboard-nav.has-admin ~ .dashboard-sources {
   }
 }
 
-// VeriTalk page only: collapsed sources (icons only), expand on hover
 body.collapsed-dashboard-nav .dashboard-sources {
   width: 69px;
   height: 216px;
@@ -330,7 +326,6 @@ body.collapsed-dashboard-nav .dashboard-sources {
   user-select: none;
 }
 
-// VeriTalk page only: sources items collapsed (icons centered)
 body.collapsed-dashboard-nav .dashboard-sources-items {
   padding: 0;
 }
@@ -378,7 +373,6 @@ body.collapsed-dashboard-nav .dashboard-sources-item {
   color: #111827;
 }
 
-// VeriTalk page only: hide source labels until hover
 body.collapsed-dashboard-nav .dashboard-sources-text {
   max-width: 0;
   overflow: hidden;
@@ -489,7 +483,6 @@ body.collapsed-dashboard-nav .dashboard-sources-text {
   }
 }
 
-// VeriTalk page only: collapsed nav (icons only), expand on hover
 body.collapsed-dashboard-nav .nav-text {
   max-width: 0;
   overflow: hidden;

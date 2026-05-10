@@ -10,6 +10,7 @@ class VeritalkValidator < ApplicationRecord
   validates :system_prompt, presence: true
   validates :version, presence: true, numericality: { greater_than: 0 }
   validates :purpose, presence: true, inclusion: { in: PURPOSES }
+  validate :at_most_one_record_per_purpose
 
   before_save :ensure_single_active_for_purpose, if: :is_active?
 
@@ -50,7 +51,21 @@ class VeritalkValidator < ApplicationRecord
     %w[created_by]
   end
 
+  def self.purpose_slot_available?(purpose)
+    purpose.to_s.in?(PURPOSES) && where(purpose: purpose.to_s).none?
+  end
+
   private
+
+  def at_most_one_record_per_purpose
+    return if purpose.blank? || PURPOSES.exclude?(purpose)
+
+    conflict = VeritalkValidator.where(purpose: purpose)
+    conflict = conflict.where.not(id: id) if persisted?
+    return unless conflict.exists?
+
+    errors.add(:purpose, "already has a validator. Edit or delete the existing #{purpose} validator before adding another.")
+  end
 
   def ensure_single_active_for_purpose
     return unless is_active? && (is_active_changed? || purpose_changed?)
