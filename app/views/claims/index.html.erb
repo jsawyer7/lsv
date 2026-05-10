@@ -12,70 +12,72 @@
     <% end %>
     <%= link_to 'Facts', claims_path(filter: 'facts'), class: "my-claims-filter-pill #{'active' if @filter == 'facts'}" %>
   </nav>
-  <div class="my-claims-list">
-    <% @claims.each do |claim| %>
-      <% if @filter == 'facts' %>
-        <div class="my-claim-card-wrapper">
-          <%= render 'shared/feed_card', fact: claim %>
-        </div>
-      <% else %>
-        <div class="my-claim-card js-card-clickable <%= 'is-draft' if claim.state == 'draft' %>" data-detail-url="<%= claim_path(claim) %>">
-          <div class="my-claim-card-header">
-            <div class="my-claim-user">
-              <%= image_tag claim.user.avatar_url.presence || 'default-avatar.png', class: 'my-claim-avatar' %>
-              <div class="my-claim-user-info">
-                <div class="my-claim-user-name-row">
-                  <span class="my-claim-user-name"><%= claim.user.full_name.presence || claim.user.email %></span>
-                  <%= image_tag 'blue-tick.svg', alt: 'Verified', class: 'my-claim-verified-icon' %>
+  <div class="my-claims-list <%= 'my-claims-list--empty' if @claims.empty? %>">
+    <% if @claims.empty? %>
+      <div class="empty-state">
+        <p><%= @filter == 'facts' ? 'No facts yet.' : 'No claims have been submitted yet.' %></p>
+      </div>
+    <% else %>
+      <% @claims.each do |claim| %>
+        <% if @filter == 'facts' %>
+          <div class="my-claim-card-wrapper">
+            <%= render 'shared/feed_card', fact: claim %>
+          </div>
+        <% else %>
+          <div class="my-claim-card js-card-clickable <%= 'is-draft' if claim.state == 'draft' %>" data-detail-url="<%= claim_path(claim) %>">
+            <div class="my-claim-card-header">
+              <div class="my-claim-user">
+                <%= image_tag claim.user.avatar_url.presence || 'default-avatar.png', class: 'my-claim-avatar' %>
+                <div class="my-claim-user-info">
+                  <div class="my-claim-user-name-row">
+                    <span class="my-claim-user-name"><%= claim.user.full_name.presence || claim.user.email %></span>
+                    <%= image_tag 'blue-tick.svg', alt: 'Verified', class: 'my-claim-verified-icon' %>
+                  </div>
+                  <div class="my-claim-user-rating"><span class="my-claim-stars">★★★★★</span><span class="my-claim-rating-value">4.7</span></div>
                 </div>
-                <div class="my-claim-user-rating"><span class="my-claim-stars">★★★★★</span><span class="my-claim-rating-value">4.7</span></div>
               </div>
-            </div>
-            <% unless @filter == 'verified' %>
-              <% if claim.state == 'ai_validated' && !claim.fact? %>
-                <% if @filter == 'ai_validated' %>
-                  <span class="my-claim-badge verification-pending">Verification Pending</span>
-                <% else %>
-                  <span class="my-claim-badge ai-validated">Review Pending</span>
+              <% unless @filter == 'verified' %>
+                <% if claim.state == 'ai_validated' && !claim.fact? %>
+                  <% if @filter == 'ai_validated' %>
+                    <span class="my-claim-badge verification-pending">Verification Pending</span>
+                  <% else %>
+                    <span class="my-claim-badge ai-validated">Review Pending</span>
+                  <% end %>
+                <% elsif claim.state == 'verified' %>
+                  <span class="my-claim-badge verified">Verified</span>
                 <% end %>
-              <% elsif claim.state == 'verified' %>
-                <span class="my-claim-badge verified">Verified</span>
               <% end %>
+            </div>
+            <div class="my-claim-content"><%= truncate(claim.content_for_user(current_user), length: 220) %></div>
+            <% if @filter == 'verified' %>
+              <button type="button" class="my-claim-make-public-btn btn-publish-fact" data-claim-id="<%= claim.id %>" data-no-card-nav>Make Public</button>
+            <% end %>
+            <% if @filter == 'drafts' %>
+              <div class="my-claim-card-footer">
+                <% if claim.state == 'draft' %>
+                  <%= link_to edit_claim_path(claim), class: 'my-claim-edit-link my-claim-draft-action' do %>
+                    <%= image_tag 'edit.svg', alt: 'Edit', class: 'my-claim-draft-icon' %>
+                  <% end %>
+                  <a href="#" class="my-claim-delete-link my-claim-draft-action" data-claim-id="<%= claim.id %>" data-no-card-nav>
+                    <%= image_tag 'Delete.svg', alt: 'Delete', class: 'my-claim-draft-icon' %>
+                  </a>
+                <% else %>
+                  <%= link_to "View Details", claim_path(claim), class: "my-claim-view-link" %>
+                  <a href="#" class="my-claim-delete-link" data-claim-id="<%= claim.id %>" data-no-card-nav><i class="fa fa-trash"></i> Delete</a>
+                <% end %>
+              </div>
             <% end %>
           </div>
-          <div class="my-claim-content"><%= truncate(claim.content_for_user(current_user), length: 220) %></div>
-          <% if @filter == 'verified' %>
-            <button type="button" class="my-claim-make-public-btn btn-publish-fact" data-claim-id="<%= claim.id %>" data-no-card-nav>Make Public</button>
-          <% end %>
-          <% if @filter == 'drafts' %>
-            <div class="my-claim-card-footer">
-              <% if claim.state == 'draft' %>
-                <%= link_to edit_claim_path(claim), class: 'my-claim-edit-link my-claim-draft-action' do %>
-                  <%= image_tag 'edit.svg', alt: 'Edit', class: 'my-claim-draft-icon' %>
-                <% end %>
-                <a href="#" class="my-claim-delete-link my-claim-draft-action" data-claim-id="<%= claim.id %>" data-no-card-nav>
-                  <%= image_tag 'Delete.svg', alt: 'Delete', class: 'my-claim-draft-icon' %>
-                </a>
-              <% else %>
-                <%= link_to "View Details", claim_path(claim), class: "my-claim-view-link" %>
-                <a href="#" class="my-claim-delete-link" data-claim-id="<%= claim.id %>" data-no-card-nav><i class="fa fa-trash"></i> Delete</a>
-              <% end %>
-            </div>
-          <% end %>
-        </div>
+        <% end %>
       <% end %>
     <% end %>
   </div>
 
-  <% if @claims.empty? %>
-    <div class="empty-state">
-      <p><%= @filter == 'facts' ? 'No facts yet.' : 'No claims have been submitted yet.' %></p>
-    </div>
-  <% else %>
+  <% unless @claims.empty? %>
     <div class="pagination-container">
       <%= paginate @claims %>
     </div>
-  <% end %> 
+  <% end %>
 </div>
 
 <!-- Delete Confirmation Modal -->

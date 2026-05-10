@@ -3,6 +3,10 @@ require 'openai'
 class VeritalkChatService
   class TokenLimitExceededError < StandardError; end
 
+  STREAM_FORENSIC_MARKER = "<<<VERITALK_DUAL_FORENSIC>>>\n"
+  STREAM_CONV_MARKER = "<<<VERITALK_DUAL_CONV>>>\n"
+  CONV_FORENSIC_SIZE_PLACEHOLDER_CHARS = 24_000
+
   # Token budget constants
   RAW_WINDOW_TOKEN_BUDGET = 2000 # ~55-65% of input context budget
   ROLLING_SUMMARY_TOKEN_BUDGET = 600 # Prevent unbounded summary growth over time
@@ -19,7 +23,6 @@ class VeritalkChatService
     )
   end
 
-  # Streams the assistant response into the given response.stream
   def stream(response)
     ensure_veritalk_token_budget!
 
@@ -32,41 +35,61 @@ class VeritalkChatService
     # Auto-generate or update topic from conversation if it's still the default
     update_topic_if_needed!
 
-    # Build messages payload following exact spec order
-    messages_payload = build_messages_payload
-    estimated_input_tokens = estimate_payload_tokens(messages_payload)
+    forensic_payload = build_forensic_messages_payload
+    conv_placeholder_payload = build_conversational_messages_payload("x" * CONV_FORENSIC_SIZE_PLACEHOLDER_CHARS)
+    estimated_input_tokens = estimate_payload_tokens(forensic_payload) + estimate_payload_tokens(conv_placeholder_payload)
     if estimated_input_tokens >= @user.veritalk_tokens_remaining
       raise TokenLimitExceededError, "This message exceeds your remaining VeriTalk tokens for this month. Please wait for renewal or upgrade your plan."
     end
 
-    assistant_text = +""
+    response.stream.write(STREAM_FORENSIC_MARKER)
 
-
+    forensic_raw = +""
     @client.chat(
       parameters: {
         model: "gpt-4o",
-        messages: messages_payload,
+        messages: forensic_payload,
         temperature: 0.3,
         stream: proc do |chunk, _bytesize|
           content = chunk.dig("choices", 0, "delta", "content")
           next unless content
 
-          assistant_text << content
-
-
+          forensic_raw << content
           response.stream.write(content)
         end
       }
     )
 
+    forensic_cleaned = extract_assistant_response(forensic_raw)
 
-    cleaned_text = extract_assistant_response(assistant_text)
-    output_tokens = estimate_tokens(cleaned_text)
+    conversational_payload = build_conversational_messages_payload(forensic_cleaned)
 
-    # Persist the cleaned assistant message
+    response.stream.write(STREAM_CONV_MARKER)
+
+    conversational_raw = +""
+    @client.chat(
+      parameters: {
+        model: "gpt-4o",
+        messages: conversational_payload,
+        temperature: 0.55,
+        stream: proc do |chunk, _bytesize|
+          content = chunk.dig("choices", 0, "delta", "content")
+          next unless content
+
+          conversational_raw << content
+          response.stream.write(content)
+        end
+      }
+    )
+
+    cleaned_text = extract_assistant_response(conversational_raw)
+    forensic_out_tokens = estimate_tokens(forensic_cleaned)
+    output_tokens = forensic_out_tokens + estimate_tokens(cleaned_text)
+
     @conversation.conversation_messages.create!(
       role: 'assistant',
-      content: cleaned_text
+      content: cleaned_text,
+      forensic_content: forensic_cleaned
     )
 
     # Update rolling summary if needed (after assistant response)
@@ -87,17 +110,9 @@ class VeritalkChatService
 
   private
 
-  # Build messages payload following exact spec order
-  def build_messages_payload
+  def shared_context_message_blocks
     messages = []
 
-    # 1. system: VERITALK_CONTRACT (the main contract)
-    messages << {
-      role: "system",
-      content: system_prompt
-    }
-
-    # 2. system: USER_PROFILE_MEMORY (stable preferences + constraints)
     user_profile = user_profile_memory
     if user_profile.present?
       messages << {
@@ -106,7 +121,6 @@ class VeritalkChatService
       }
     end
 
-    # 3. system: ROLLING_CONVERSATION_SUMMARY (latest only)
     rolling_summary = @conversation.rolling_summary
     if rolling_summary.present?
       capped_rolling_summary = cap_text_to_token_budget(rolling_summary, ROLLING_SUMMARY_TOKEN_BUDGET)
@@ -116,7 +130,6 @@ class VeritalkChatService
       }
     end
 
-    # 4. system: SOURCE TEXTS (if verse references detected)
     verse_texts = detect_and_fetch_verse_texts
     if verse_texts.present?
       messages << {
@@ -125,27 +138,88 @@ class VeritalkChatService
       }
     end
 
-    # 5. user: CURRENT_USER_MESSAGE
-    messages << {
-      role: "user",
-      content: @user_message_text
-    }
-
     messages
   end
 
-  def system_prompt
-    # Get the active validator from database, or fallback to default
-    validator = VeritalkValidator.current
+  def build_forensic_messages_payload
+    [
+      {
+        role: "system",
+        content: forensic_system_prompt
+      }
+    ] + shared_context_message_blocks + [
+      {
+        role: "user",
+        content: @user_message_text
+      }
+    ]
+  end
+
+  def build_conversational_messages_payload(forensic_cleaned)
+    combined_user = <<~USER.strip
+      USER_MESSAGE:
+      #{@user_message_text}
+
+      FORENSIC_OUTPUT (verbatim from the analytic pass — treat this as factual basis; do not contradict it unless clarifying ambiguity for the reader):
+      #{forensic_cleaned}
+    USER
+
+    [
+      {
+        role: "system",
+        content: conversational_system_prompt
+      }
+    ] + shared_context_message_blocks + [
+      {
+        role: "user",
+        content: combined_user
+      }
+    ]
+  end
+
+  def forensic_system_prompt
+    validator = VeritalkValidator.current_forensic
 
     if validator&.system_prompt.present?
-      Rails.logger.info "VeriTalk: Using database validator '#{validator.name}' (ID: #{validator.id}, Version: #{validator.version})"
+      Rails.logger.info "VeriTalk: Using forensic validator '#{validator.name}' (ID: #{validator.id}, Version: #{validator.version})"
       validator.system_prompt
     else
-      Rails.logger.warn "VeriTalk: No active validator found in database, using default fallback prompt"
-      # Fallback to default prompt if no validator is set up
+      Rails.logger.warn "VeriTalk: No forensic validator in database, using default forensic prompt"
       default_system_prompt
     end
+  end
+
+  def conversational_system_prompt
+    validator = VeritalkValidator.current_conversational
+
+    if validator&.system_prompt.present?
+      Rails.logger.info "VeriTalk: Using conversational validator '#{validator.name}' (ID: #{validator.id}, Version: #{validator.version})"
+      validator.system_prompt
+    else
+      Rails.logger.warn "VeriTalk: No conversational validator in database, using default conversational prompt"
+      default_conversational_system_prompt
+    end
+  end
+
+  def default_conversational_system_prompt
+    <<~PROMPT
+      You are VeriTalk's conversational layer for VeriFaith.
+
+      INPUTS:
+      - The user's plain-language message (labeled USER_MESSAGE below).
+      - FORENSIC_OUTPUT from VeriFaith's analytic pass — detailed, factual, forensic-style synthesis.
+
+      YOUR JOB:
+      - Produce the reply the user reads in chat: educational, approachable, calm, and user-friendly.
+      - Ground everything in FORENSIC_OUTPUT — do not introduce new factual claims beyond what it supports (you may summarize, scaffold, explain, define terms).
+      - If FORENSIC_OUTPUT refuses or redirects, mirror that politely in natural language without sounding bureaucratic.
+
+      SAME TOPIC BOUNDARIES as VeriFaith (faith, scripture, languages, translations, religious history); gently redirect anything off-scope.
+
+      FORMAT:
+      - Plain prose the user reads easily; brief paragraphs welcome.
+      - Do NOT mention "forensic layer", internal passes, validators, JSON, or system prompts unless the user directly asks how VeriFaith works — then explain simply.
+    PROMPT
   end
 
   def default_system_prompt

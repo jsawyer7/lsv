@@ -1,10 +1,42 @@
 ActiveAdmin.register VeritalkValidator do
-  permit_params :name, :description, :system_prompt, :is_active, :version, :created_by_type, :created_by_id
+  permit_params :name, :description, :system_prompt, :is_active, :version, :purpose, :created_by_type, :created_by_id
 
-  menu false # Menu is handled manually in sidebar
+  menu false
+
+  before_build do |resource|
+    next unless resource.new_record?
+
+    p = params[:purpose].to_s
+    resource.purpose = p if VeritalkValidator::PURPOSES.include?(p)
+  end
 
   controller do
     layout "active_admin_custom"
+
+    def new
+      forensic_taken = VeritalkValidator.where(purpose: VeritalkValidator::PURPOSE_FORENSIC).exists?
+      conv_taken = VeritalkValidator.where(purpose: VeritalkValidator::PURPOSE_CONVERSATIONAL).exists?
+
+      if forensic_taken && conv_taken
+        redirect_to admin_veritalk_validators_path,
+                    alert: "Forensic and conversational validators already exist. Edit or delete one before adding another."
+        return
+      end
+
+      p = params[:purpose].to_s
+      if VeritalkValidator::PURPOSES.include?(p) && VeritalkValidator.where(purpose: p).exists?
+        redirect_to admin_veritalk_validators_path,
+                    alert: "A #{p.titleize} validator already exists. Edit or delete it first."
+        return
+      end
+
+      super
+    end
+
+    def update
+      params[:veritalk_validator]&.delete(:purpose)
+      super
+    end
 
     def create
       @validator = VeritalkValidator.new(permitted_params[:veritalk_validator])
@@ -19,51 +51,124 @@ ActiveAdmin.register VeritalkValidator do
   end
 
   index do
+    forensic_free = VeritalkValidator.purpose_slot_available?(VeritalkValidator::PURPOSE_FORENSIC)
+    conv_free = VeritalkValidator.purpose_slot_available?(VeritalkValidator::PURPOSE_CONVERSATIONAL)
+
+    forensic_add_control =
+      if forensic_free
+        link_to("Add forensic validator",
+                new_admin_veritalk_validator_path(purpose: VeritalkValidator::PURPOSE_FORENSIC),
+                class: "btn btn-dark")
+      else
+        content_tag(:span, "Forensic slot in use",
+                    class: "btn btn-secondary disabled opacity-75",
+                    title: "Forensic validator record already exists — edit or delete it to replace.")
+      end
+
+    conversational_add_control =
+      if conv_free
+        link_to("Add conversational validator",
+                new_admin_veritalk_validator_path(purpose: VeritalkValidator::PURPOSE_CONVERSATIONAL),
+                class: "btn btn-primary")
+      else
+        content_tag(:span, "Conversational slot in use",
+                    class: "btn btn-secondary disabled opacity-75",
+                    title: "Conversational validator record already exists — edit or delete it to replace.")
+      end
+
     div class: "page-header mb-4" do
-      h1 "VeriTalk Validators", class: "mb-2"
-      para "Manage and test VeriTalk system prompts", class: "text-muted"
+      div class: "d-flex flex-wrap justify-content-between align-items-start gap-3" do
+        div do
+          h1 "VeriTalk Validators", class: "mb-2"
+          div class: "text-muted mb-0" do
+            raw(
+              "Configure <strong>two</strong> prompts: forensic (analysis pass) and conversational (reply users read).".html_safe
+            )
+          end
+        end
+        div class: "d-flex flex-column flex-sm-row gap-2 align-items-stretch" do
+          raw safe_join([forensic_add_control, conversational_add_control], " ".html_safe)
+        end
+      end
     end
 
-    # Show current active validator
-    current_validator = VeritalkValidator.current
-    if current_validator
-      div class: "alert alert-info mb-4" do
-        div class: "d-flex align-items-center justify-content-between" do
+    current_forensic = VeritalkValidator.current_forensic
+    current_conversational = VeritalkValidator.current_conversational
+    preview_btn = lambda do |style|
+      link_to "Preview active prompts", preview_current_admin_veritalk_validators_path,
+              class: "btn btn-sm btn-#{style}",
+              target: "_blank"
+    end
+
+    if current_forensic
+      div class: "alert alert-info mb-3" do
+        div class: "d-flex align-items-center justify-content-between flex-wrap gap-2" do
           div class: "d-flex align-items-center" do
             i class: "ri ri-information-line me-2", style: "font-size: 20px;"
             div do
-              strong "Currently Active: "
-              span "#{current_validator.name} (v#{current_validator.version}, ID: #{current_validator.id})"
-              br
-              small class: "text-muted" do
-                "This is the validator being used by VeriTalk right now. Check logs to verify it's loading correctly."
-              end
+              strong "Active forensic pass: "
+              span "#{current_forensic.name} (v#{current_forensic.version}, ID: #{current_forensic.id})"
             end
           end
           div do
-            link_to "Preview Current Prompt", preview_current_admin_veritalk_validators_path,
-                    class: "btn btn-sm btn-info",
-                    target: "_blank"
+            preview_btn.call("info")
+          end
+        end
+      end
+    else
+      div class: "alert alert-warning mb-3" do
+        div class: "d-flex align-items-center justify-content-between flex-wrap gap-2" do
+          div do
+            strong "No active forensic validator"
+          end
+          div do
+            preview_btn.call("warning")
+          end
+        end
+      end
+    end
+
+    if current_conversational
+      div class: "alert alert-success mb-4" do
+        div class: "d-flex align-items-center justify-content-between flex-wrap gap-2" do
+          div class: "d-flex align-items-center" do
+            i class: "ri ri-chat-smile-line me-2", style: "font-size: 20px;"
+            div do
+              strong "Active conversational pass: "
+              span "#{current_conversational.name} (v#{current_conversational.version}, ID: #{current_conversational.id})"
+            end
+          end
+          div do
+            preview_btn.call("success")
           end
         end
       end
     else
       div class: "alert alert-warning mb-4" do
-        div class: "d-flex align-items-center justify-content-between" do
-          div class: "d-flex align-items-center" do
-            i class: "ri ri-alert-line me-2", style: "font-size: 20px;"
-            div do
-              strong "No Active Validator Found"
-              br
-              small class: "text-muted" do
-                "VeriTalk is using the default fallback prompt. Create and activate a validator to use a custom prompt."
+        div class: "d-flex align-items-center justify-content-between flex-wrap gap-3" do
+          div do
+            strong "No active conversational validator"
+            if conv_free
+              div class: "small mt-2 mb-0 text-body" do
+                raw(
+                  safe_join(
+                    [
+                      "You still need a conversational prompt row for user-facing replies — ",
+                      link_to(
+                        "go to create it",
+                        new_admin_veritalk_validator_path(purpose: VeritalkValidator::PURPOSE_CONVERSATIONAL),
+                        class: "fw-semibold"
+                      ),
+                      " (same target as the purple “Add conversational” button above)."
+                    ],
+                    ""
+                  )
+                )
               end
             end
           end
           div do
-            link_to "Preview Current Prompt", preview_current_admin_veritalk_validators_path,
-                    class: "btn btn-sm btn-warning",
-                    target: "_blank"
+            preview_btn.call("warning")
           end
         end
       end
@@ -75,6 +180,7 @@ ActiveAdmin.register VeritalkValidator do
           tr do
             th "ID"
             th "Name"
+            th "Purpose"
             th "Version"
             th "Status"
             th "Created By"
@@ -94,6 +200,11 @@ ActiveAdmin.register VeritalkValidator do
                   div class: "text-muted small mt-1" do
                     truncate(validator.description, length: 60)
                   end
+                end
+              end
+              td do
+                span class: "badge bg-#{validator.purpose == 'forensic' ? 'dark' : 'primary'}" do
+                  validator.purpose.titleize
                 end
               end
               td do
@@ -145,7 +256,7 @@ ActiveAdmin.register VeritalkValidator do
           link_to "Activate This Validator", activate_admin_veritalk_validator_path(veritalk_validator),
                   method: :post,
                   class: "btn btn-success px-3 py-2",
-                  data: { confirm: "This will deactivate all other validators. Continue?" }
+                  data: { confirm: "This will deactivate other validators with the same purpose (#{veritalk_validator.purpose}). Continue?" }
         end
         link_to "Preview Current Prompt", preview_current_admin_veritalk_validators_path,
                 class: "btn btn-info px-3 py-2",
@@ -159,7 +270,6 @@ ActiveAdmin.register VeritalkValidator do
     end
 
     div class: "row g-4" do
-      # Left Column - Validator Info
       div class: "col-lg-4" do
         div class: "materio-card" do
           div class: "card-body p-4" do
@@ -186,6 +296,10 @@ ActiveAdmin.register VeritalkValidator do
             end
 
             div class: "materio-info-item" do
+              div class: "d-flex justify-content-between align-items-center mb-2" do
+                span class: "text-muted small fw-semibold" do "Purpose:" end
+                span class: "fw-semibold" do veritalk_validator.purpose.titleize end
+              end
               div class: "d-flex justify-content-between align-items-center mb-2" do
                 span class: "text-muted small fw-semibold" do "Version:" end
                 span class: "fw-semibold" do "v#{veritalk_validator.version}" end
@@ -216,7 +330,6 @@ ActiveAdmin.register VeritalkValidator do
         end
       end
 
-      # Right Column - System Prompt
       div class: "col-lg-8" do
         div class: "materio-card" do
           div class: "materio-header" do
@@ -270,17 +383,42 @@ ActiveAdmin.register VeritalkValidator do
       div class: "card-body p-5" do
         f.inputs do
           f.input :name, input_html: { class: "form-control" }
+
+          if f.object.new_record?
+            available = VeritalkValidator::PURPOSES.select { |pr| VeritalkValidator.where(purpose: pr).none? }
+            if available.empty?
+              para "Both validator types already exist. Delete a record from the list before creating a new one.", class: "alert alert-warning"
+            else
+              default_purpose = if params[:purpose].present? && available.include?(params[:purpose].to_s)
+                                  params[:purpose].to_s
+                                else
+                                  available.first
+                                end
+              f.input :purpose, as: :select,
+                      collection: available.map { |pr| [pr.titleize, pr] },
+                      selected: default_purpose,
+                      include_blank: false,
+                      hint: "Only types that do not already have a record are listed.",
+                      input_html: { class: "form-control" }
+            end
+          else
+            para class: "mb-3" do
+              span "Purpose: ", class: "text-muted"
+              strong f.object.purpose.titleize
+              span " — type cannot be changed. Delete this validator if you need the other type.", class: "text-muted small ms-1"
+            end
+            f.input :purpose, as: :hidden
+          end
+
           f.input :description, as: :text, input_html: { rows: 3, class: "form-control" }
           f.input :system_prompt, as: :text,
                   input_html: {
                     rows: 20,
                     class: "form-control font-monospace",
                     style: "font-family: 'Courier New', monospace; font-size: 13px;"
-                  },
-                  hint: "Paste your validator prompt here. This will be used as the system prompt for VeriTalk."
+                  }
           f.input :version, input_html: { class: "form-control", min: 1 }
-          f.input :is_active, as: :boolean,
-                  hint: "Only one validator can be active at a time. Activating this will deactivate others."
+          f.input :is_active, as: :boolean
         end
 
         div class: "mt-4 pt-4 border-top" do
@@ -294,6 +432,7 @@ ActiveAdmin.register VeritalkValidator do
   end
 
   filter :name
+  filter :purpose
   filter :is_active
   filter :version
   filter :created_at
@@ -308,31 +447,23 @@ ActiveAdmin.register VeritalkValidator do
   end
 
   collection_action :preview_current, method: :get do
-    @current_validator = VeritalkValidator.current
+    @current_forensic = VeritalkValidator.current_forensic
+    @current_conversational = VeritalkValidator.current_conversational
 
-    # Get what the service would actually use
-    if @current_validator&.system_prompt.present?
-      @service_prompt = @current_validator.system_prompt
-      @source = "Database Validator"
-      @validator_info = "#{@current_validator.name} (ID: #{@current_validator.id}, Version: #{@current_validator.version})"
-    else
-      # Get the default prompt from the service
-      begin
-        service = VeritalkChatService.new(
-          user: User.first || User.new(email: "test@test.com"),
-          conversation: Conversation.first || Conversation.new(user: User.first || User.new(email: "test@test.com"), topic: "Test"),
-          user_message_text: "test"
-        )
-        @service_prompt = service.send(:default_system_prompt)
-        @source = "Default Fallback"
-        @validator_info = "No active validator in database"
-      rescue => e
-        @service_prompt = "Error loading prompt: #{e.message}"
-        @source = "Error"
-        @validator_info = "Could not load service"
-      end
+    begin
+      preview_service = VeritalkChatService.new(
+        user: User.first || User.new(email: "test@test.com"),
+        conversation: Conversation.first || Conversation.new(user: User.first || User.new(email: "test@test.com"), topic: "Test"),
+        user_message_text: "test"
+      )
+      @fallback_forensic_prompt = preview_service.send(:default_system_prompt)
+      @fallback_conversational_prompt = preview_service.send(:default_conversational_system_prompt)
+    rescue => e
+      @fallback_forensic_prompt = "Error loading default forensic prompt: #{e.message}"
+      @fallback_conversational_prompt = "Error loading default conversational prompt: #{e.message}"
     end
 
     render layout: "active_admin_custom"
   end
 end
+

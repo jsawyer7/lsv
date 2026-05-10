@@ -2,7 +2,7 @@
 .subscription-page {
   max-width: 1200px;
   margin: 0 auto;
-  padding-bottom: 8rem;
+  padding-bottom: 0;
 }
 
 // User Profile Section (Removed)
@@ -559,22 +559,23 @@
 }
 
 .subscription-settings-content {
-  top: 920px;
-  position: absolute;
-  left: 390px;
-  width: 950px;
-  height: 363px;
-  border-radius: 8px;
-  transform: rotate(0deg);
+  position: relative;
+  left: auto;
+  top: auto;
+  width: 100%;
+  height: auto;
+  border-radius: 0;
+  transform: none;
   opacity: 1;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding-bottom: 8rem;
+  max-width: 100%;
+  margin: 1.25rem auto 0;
+  padding: 0;
+  padding-bottom: 4rem;
   box-sizing: border-box;
 }
 
 .subscription-page-block.payment-methods-block {
-  margin-top: 2.5rem;
+  margin-top: 0;
   width: 100%;
   max-width: 975px;
   min-height: 363px;

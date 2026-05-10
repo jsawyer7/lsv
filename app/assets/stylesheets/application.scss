@@ -188,3 +188,137 @@ h4, .heading-h4 {
     transform: translateX(100%);
   }
 }
+
+// Keep the left rail + center column centered on ultrawide screens.
+@media (min-width: 90.0625rem) {
+  :root {
+    --dashboard-wide-offset: calc((100vw - 90rem) / 2);
+  }
+
+  .user-info-block {
+    left: calc(var(--dashboard-wide-offset) + 5rem) !important;
+  }
+
+  .dashboard-nav,
+  .dashboard-sources {
+    left: calc(var(--dashboard-wide-offset) + 5rem) !important;
+  }
+
+  body.collapsed-dashboard-nav .dashboard-nav,
+  body.collapsed-dashboard-nav .dashboard-sources {
+    left: calc(var(--dashboard-wide-offset) + 80px) !important;
+  }
+
+  body.collapsed-dashboard-nav #claim-form-wrapper .new-claim-main {
+    left: calc(var(--dashboard-wide-offset) + 180px) !important;
+  }
+
+  .post-composer-block,
+  .sort-divider-container,
+  .feed-list,
+  .feed-loader,
+  .facts-page-main .facts-page-header,
+  .profile-page-main .profile-page-header,
+  .profile-page-main .profile-page-tabs,
+  .profile-page-main .profile-content-wrap,
+  .notifications-page-main .notifications-page-header,
+  .notifications-page-main .notifications-block,
+  .peers-page-main .peers-page-header,
+  .peers-page-main .peers-know-block {
+    left: calc(var(--dashboard-wide-offset) + 24.375rem) !important;
+  }
+
+  .facts-page-main .facts-page-header {
+    padding-left: 0 !important;
+  }
+
+  .feed-rightbar.facts-page-rightbar,
+  .feed-rightbar.theories-page-rightbar,
+  .feed-rightbar.peers-page-rightbar,
+  .feed-rightbar.profile-page-rightbar {
+    left: calc(var(--dashboard-wide-offset) + 65.5rem) !important;
+  }
+
+  .all-claims-page-main .all-claims-page-header {
+    padding-left: calc(var(--dashboard-wide-offset) + 24.375rem) !important;
+  }
+
+  .all-claims-page-main .all-claims-list,
+  .all-claims-page-main .all-claims-empty,
+  .all-claims-page-main .all-claims-pagination {
+    margin-left: calc(var(--dashboard-wide-offset) + 390px) !important;
+  }
+
+  // My Claims (/claims index) — title/filter use px left; list uses px margin-left
+  .my-claims-page .my-claims-title,
+  .my-claims-page .my-claims-filter-bar {
+    left: calc(var(--dashboard-wide-offset) + 390px) !important;
+  }
+
+  .my-claims-page .my-claims-list {
+    margin-left: calc(var(--dashboard-wide-offset) + 360px) !important;
+  }
+
+  .my-claims-page .pagination-container {
+    margin-left: calc(var(--dashboard-wide-offset) + 360px) !important;
+    justify-content: flex-start;
+  }
+
+  // Theories (/theories/public) + My Theories (/theories) — header is full-width with padding-left (not `left`)
+  .theories-page-main .theories-page-header {
+    padding-left: calc(var(--dashboard-wide-offset) + 24.375rem) !important;
+  }
+
+  .theories-page-main .theories-page-new-btn {
+    right: calc(var(--dashboard-wide-offset) + 24.375rem) !important;
+  }
+
+  // New / edit theory form (theories.scss absolute positions)
+  // Note: .theory-actions-right lives inside .theory-new-form-section — do not add --dashboard-wide-offset again or buttons sit past the form edge and cause horizontal scroll.
+  .theory-new-main .theory-new-title,
+  .theory-new-main .theory-new-form-section {
+    left: calc(var(--dashboard-wide-offset) + 390px) !important;
+  }
+
+  .theory-new-main .theory-new-form-section {
+    width: #{"min(975px, calc(100vw - var(--dashboard-wide-offset) - 414px))"} !important;
+  }
+
+  // Settings (/settings/*) — title, tabs, profile header, edit form strip
+  body.settings-page .settings-main .settings-title,
+  body.settings-page .settings-main .settings-tabs,
+  body.settings-page .settings-main .settings-header-section,
+  body.settings-page .settings-main .settings-form-section {
+    left: calc(var(--dashboard-wide-offset) + 390px) !important;
+  }
+
+  // Subscription + payment blocks (stack shifts as one unit on ultrawide)
+  body.settings-page .settings-main.settings-no-header-tab .subscription-settings-stack {
+    left: calc(var(--dashboard-wide-offset) + 390px) !important;
+    max-width: #{"min(975px, calc(100vw - 390px - 7vw - var(--dashboard-wide-offset)))"} !important;
+  }
+
+  // Billing history linked from subscription
+  body.settings-page .billing-page .billing-title {
+    margin-left: calc(var(--dashboard-wide-offset) + 390px) !important;
+  }
+
+  body.settings-page .billing-page .billing-table-container {
+    margin-left: calc(var(--dashboard-wide-offset) + 390px) !important;
+  }
+
+  body.veritalk-page .veritalk-page > .veritalk-container {
+    left: calc(var(--dashboard-wide-offset) + 24.375rem) !important;
+    width: 1548px !important;
+    max-width: #{"min(1548px, calc(100vw - 24.375rem - 48px - var(--dashboard-wide-offset)))"} !important;
+  }
+
+  body.veritalk-page .veritalk-sidebar {
+    right: calc(var(--dashboard-wide-offset) + 24px) !important;
+  }
+
+  // Claim / theory detail — flex row with px-based inner offsets; pad once so middle + rightbar track centered rail
+  .claim-main {
+    padding-left: var(--dashboard-wide-offset);
+  }
+}

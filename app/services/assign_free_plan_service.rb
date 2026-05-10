@@ -76,8 +76,6 @@ class AssignFreePlanService
   end
 
   def find_active_subscription_for_customer(customer_id)
-    # chargebee-ruby v2.60.0 is picky about nested/filter formats.
-    # List by customer and filter statuses locally to avoid format errors.
     subscriptions = ChargeBee::Subscription.list(customer_id: customer_id)
 
     match = subscriptions.find do |response|
@@ -91,7 +89,6 @@ class AssignFreePlanService
     nil
   end
 
-  # List responses may omit embedded line items; retrieve full subscription when needed.
   def subscription_with_line_items(subscription)
     return subscription if subscription.subscription_items.present?
 
@@ -126,7 +123,6 @@ class AssignFreePlanService
   end
 
   def discover_free_item_price_id
-    # Prefer active plans with "free" in either item_price_id, name, or item_id.
     candidates = ChargeBee::ItemPrice.list(status: "active", limit: 100)
     free = candidates.map(&:item_price).find do |ip|
       [ip.id, ip.name, ip.item_id].any? { |v| v.to_s.downcase.include?("free") }

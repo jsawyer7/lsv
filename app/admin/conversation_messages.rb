@@ -1,5 +1,5 @@
 ActiveAdmin.register ConversationMessage do
-  permit_params :conversation_id, :role, :content, :position
+  permit_params :conversation_id, :role, :content, :forensic_content, :position
 
   menu label: "VeriTalk Messages", priority: 5, parent: "VeriTalk Conversations"
 
@@ -96,6 +96,17 @@ ActiveAdmin.register ConversationMessage do
               end
             end
 
+            if conversation_message.role == 'assistant' && conversation_message.forensic_content.present?
+              div class: "mt-4 pt-4 border-top" do
+                h6 "Forensic content", class: "fw-semibold text-dark mb-3"
+                div class: "bg-light p-3 rounded border" do
+                  pre class: "mb-0 text-dark", style: "white-space: pre-wrap; font-size: 13px;" do
+                    conversation_message.forensic_content
+                  end
+                end
+              end
+            end
+
             div class: "row g-3" do
               div class: "col-md-6" do
                 div class: "materio-info-item" do
@@ -177,6 +188,8 @@ ActiveAdmin.register ConversationMessage do
           f.input :conversation, as: :select, collection: Conversation.all.map { |c| ["##{c.id} - #{truncate(c.topic, length: 40)}", c.id] }
           f.input :role, as: :select, collection: [['User', 'user'], ['Assistant', 'assistant']]
           f.input :content, as: :text, input_html: { rows: 10 }
+          f.input :forensic_content, as: :text,
+                  input_html: { rows: 8, class: "font-monospace small" }
           f.input :position
         end
 

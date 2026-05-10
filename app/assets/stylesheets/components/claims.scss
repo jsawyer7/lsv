@@ -410,9 +410,21 @@ body {
     }
   }
 
-  .my-claims-page .empty-state {
-    margin-top: 100px;
-    margin-left: 360px;
+  .my-claims-list .empty-state {
+    margin: 0;
+    margin-left: 0;
+    text-align: left;
+    padding: 0;
+    align-self: flex-start;
+    max-width: 42rem;
+  }
+
+  .my-claims-list .empty-state p {
+    margin: 0;
+    margin-bottom: 0;
+    color: #64748b;
+    font-size: 1rem;
+    line-height: 1.5;
   }
 
   .my-claims-list {

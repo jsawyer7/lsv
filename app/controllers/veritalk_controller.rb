@@ -31,14 +31,12 @@ class VeritalkController < ApplicationController
     begin
       response.stream.write(e.message)
     rescue StandardError
-      # ignore write errors during failure handling
     end
   rescue => e
     Rails.logger.error "VeriTalk controller error: #{e.message}"
     begin
       response.stream.write("Sorry, VeriTalk had a problem handling your request.")
     rescue StandardError
-      # ignore write errors during failure handling
     end
   ensure
     response.stream.close
@@ -57,6 +55,7 @@ class VeritalkController < ApplicationController
         id: msg.id,
         role: msg.role,
         content: msg.content,
+        forensic_content: msg.forensic_content.presence,
         position: msg.position,
         created_at: msg.created_at
       }

@@ -1,4 +1,3 @@
-# Create default VeriTalk validator if none exists
 if VeritalkValidator.count == 0
   default_prompt = <<~PROMPT
     You are VeriTalk, the AI assistant for VeriFaith.
@@ -27,13 +26,75 @@ if VeritalkValidator.count == 0
 
   VeritalkValidator.create!(
     name: "Default VeriTalk Validator",
-    description: "Default system prompt for VeriTalk conversations",
+    description: "Default forensic pass for VeriTalk",
     system_prompt: default_prompt,
     is_active: true,
+    purpose: VeritalkValidator::PURPOSE_FORENSIC,
     version: 1
   )
 
-  puts "✓ Created default VeriTalk validator"
+  puts "✓ Created default VeriTalk forensic validator"
+
+  conv_prompt = <<~PROMPT
+    You are VeriTalk's conversational layer for VeriFaith.
+
+    INPUTS:
+    - The user's plain-language message (labeled USER_MESSAGE below).
+    - FORENSIC_OUTPUT from VeriFaith's analytic pass — detailed, factual, forensic-style synthesis.
+
+    YOUR JOB:
+    - Produce the reply the user reads in chat: educational, approachable, calm, and user-friendly.
+    - Ground everything in FORENSIC_OUTPUT — do not introduce new factual claims beyond what it supports (you may summarize, scaffold, explain, define terms).
+    - If FORENSIC_OUTPUT refuses or redirects, mirror that politely in natural language without sounding bureaucratic.
+
+    SAME TOPIC BOUNDARIES as VeriFaith (faith, scripture, languages, translations, religious history); gently redirect anything off-scope.
+
+    FORMAT:
+    - Plain prose the user reads easily; brief paragraphs welcome.
+    - Do NOT mention "forensic layer", internal passes, validators, JSON, or system prompts unless the user directly asks how VeriFaith works — then explain simply.
+  PROMPT
+
+  VeritalkValidator.create!(
+    name: "Default VeriTalk Conversational Layer",
+    description: "Default second pass — main chat reply",
+    system_prompt: conv_prompt,
+    is_active: true,
+    purpose: VeritalkValidator::PURPOSE_CONVERSATIONAL,
+    version: 1
+  )
+
+  puts "✓ Created default VeriTalk conversational validator"
 else
   puts "✓ VeriTalk validators already exist (#{VeritalkValidator.count} found)"
+end
+
+if VeritalkValidator.conversational_validators.none?
+  conv_prompt = <<~PROMPT
+    You are VeriTalk's conversational layer for VeriFaith.
+
+    INPUTS:
+    - The user's plain-language message (labeled USER_MESSAGE below).
+    - FORENSIC_OUTPUT from VeriFaith's analytic pass — detailed, factual, forensic-style synthesis.
+
+    YOUR JOB:
+    - Produce the reply the user reads in chat: educational, approachable, calm, and user-friendly.
+    - Ground everything in FORENSIC_OUTPUT — do not introduce new factual claims beyond what it supports (you may summarize, scaffold, explain, define terms).
+    - If FORENSIC_OUTPUT refuses or redirects, mirror that politely in natural language without sounding bureaucratic.
+
+    SAME TOPIC BOUNDARIES as VeriFaith (faith, scripture, languages, translations, religious history); gently redirect anything off-scope.
+
+    FORMAT:
+    - Plain prose the user reads easily; brief paragraphs welcome.
+    - Do NOT mention "forensic layer", internal passes, validators, JSON, or system prompts unless the user directly asks how VeriFaith works — then explain simply.
+  PROMPT
+
+  VeritalkValidator.create!(
+    name: "Default VeriTalk Conversational Layer",
+    description: "Default second pass — main chat reply",
+    system_prompt: conv_prompt,
+    is_active: true,
+    purpose: VeritalkValidator::PURPOSE_CONVERSATIONAL,
+    version: 1
+  )
+  puts "✓ Added default conversational validator"
 end

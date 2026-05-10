@@ -283,6 +283,8 @@ class User < ApplicationRecord
   end
 
   def ai_evidence_remaining
+    return Float::INFINITY if admin?
+
     return Float::INFINITY if ai_evidence_limit.blank?
 
     limit = ai_evidence_limit.to_i
