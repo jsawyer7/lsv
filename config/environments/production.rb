@@ -22,8 +22,10 @@ Rails.application.configure do
   # Apache or NGINX already handles this.
   config.public_file_server.enabled = ENV['RAILS_SERVE_STATIC_FILES'].present?
 
-  # Compress CSS using a preprocessor.
-  # config.assets.css_compressor = :sass
+  # SassC’s CSS compressor parses output as Sass again; CSS `min()`, `max()`, and `clamp()`
+  # are misinterpreted ("not a number for `min'") and asset precompile fails (e.g. on Heroku).
+  # Brotli/gzip at the CDN/origin still compresses responses.
+  config.assets.css_compressor = nil
 
   # Do not fallback to assets pipeline if a precompiled asset is missed.
   config.assets.compile = false
