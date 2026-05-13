@@ -5,9 +5,14 @@
 
   <div class="veritalk-chat-layout">
     <div class="veritalk-chat-main">
-      <button type="button" class="veritalk-history-button" id="veritalk-history-btn" title="History" aria-label="Open chat history">
-        <i class="fas fa-history"></i>
-      </button>
+      <div class="veritalk-history-toolbar">
+        <button type="button" class="veritalk-new-chat-toolbar-btn" id="veritalk-new-chat-btn" title="Start a new chat" aria-label="Start a new chat">
+          + chat
+        </button>
+        <button type="button" class="veritalk-history-button" id="veritalk-history-btn" title="History" aria-label="Open chat history">
+          <i class="fas fa-history"></i>
+        </button>
+      </div>
       <div id="veritalk-messages" class="veritalk-messages">
         <div class="veritalk-welcome">
           <p class="veritalk-welcome-text">Whats in your mind, <%= user_display_name %>?</p>
@@ -72,10 +77,6 @@
 
     <div class="veritalk-history-content">
       <div class="veritalk-history-tab-content active" data-content="chats">
-        <button type="button" class="veritalk-new-chat-btn" id="veritalk-new-chat-btn">
-          <%= image_tag 'Add_icone.svg', alt: '', class: 'veritalk-new-chat-icon', width: 24, height: 24 %>
-          <span class="veritalk-new-chat-text">New Chat</span>
-        </button>
         <h3 class="veritalk-your-chats-title">Your chats</h3>
         <div class="veritalk-history-search-wrap">
           <%= image_tag 'search.svg', alt: '', class: 'veritalk-history-search-icon', width: 20, height: 20 %>

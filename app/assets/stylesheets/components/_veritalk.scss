@@ -403,11 +403,44 @@
   text-align: center;
 }
 
-.veritalk-chat-main > .veritalk-history-button {
+.veritalk-chat-main > .veritalk-history-toolbar {
   position: absolute;
   right: 16px;
   top: 16px;
   z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.veritalk-new-chat-toolbar-btn {
+  appearance: none;
+  border: 1px solid #2196f3;
+  background: #ffffff;
+  color: #2196f3;
+  font-family: Roboto, sans-serif;
+  font-weight: 600;
+  font-size: 13px;
+  line-height: 1;
+  padding: 7px 12px;
+  border-radius: 100px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s ease, color 0.2s ease;
+
+  &:hover {
+    background: rgba(33, 150, 243, 0.08);
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+
+  &:focus-visible {
+    outline: 2px solid #90caf9;
+    outline-offset: 2px;
+  }
 }
 
 .veritalk-history-button {
@@ -1065,49 +1098,8 @@
   }
 }
 
-.veritalk-new-chat-btn {
-  width: 264px;
-  height: 45px;
-  margin: 24px 0 20px 0;
-  padding: 12px 30px;
-  background: transparent;
-  color: #2196F3;
-  border: 1px solid #2196F3;
-  border-radius: 100px;
-  font-family: Roboto, sans-serif;
-  font-weight: 600;
-  font-size: 16px;
-  line-height: 100%;
-  letter-spacing: 0;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  transition: background 0.2s ease, color 0.2s ease;
-  
-  &:hover {
-    background: rgba(33, 150, 243, 0.08);
-  }
-  
-  .veritalk-new-chat-icon {
-    width: 24px;
-    height: 24px;
-    flex-shrink: 0;
-  }
-  
-  .veritalk-new-chat-text {
-    font-family: Roboto, sans-serif;
-    font-weight: 600;
-    font-size: 16px;
-    line-height: 100%;
-    letter-spacing: 0;
-    color: #2196F3;
-  }
-}
-
 .veritalk-your-chats-title {
-  margin: 0 0 16px 0;
+  margin: 24px 0 16px 0;
   font-family: Roboto, sans-serif;
   font-weight: 500;
   font-size: 18px;
