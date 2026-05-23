@@ -1,0 +1,17 @@
+<div class="cms-page-hero">
+  <% headline  = element.ingredient_by_role(:headline) %>
+  <% subtitle  = element.ingredient_by_role(:subtitle) %>
+  <% body_text = element.ingredient_by_role(:body_text) %>
+
+  <% if headline&.value.present? %>
+    <h1 class="cms-hero-headline"><%= headline.value %></h1>
+  <% end %>
+
+  <% if subtitle&.value.present? %>
+    <p class="cms-hero-subtitle"><%= subtitle.value %></p>
+  <% end %>
+
+  <% if body_text&.value.present? %>
+    <div class="cms-hero-body"><%= body_text.value.html_safe %></div>
+  <% end %>
+</div>

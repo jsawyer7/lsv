@@ -1,4 +1,5 @@
 module ApplicationHelper
+  include Alchemy::ElementsHelper
   def unread_notifications_count
     return 0 unless user_signed_in?
     current_user.notifications.unread.count

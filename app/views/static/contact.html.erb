@@ -1,8 +1,11 @@
+<% hero_el    = @alchemy_page&.draft_version&.elements&.find_by(name: 'page_hero') %>
+<% contact_el = @alchemy_page&.draft_version&.elements&.find_by(name: 'contact_section') %>
+
 <%= render 'shared/header' %>
 <div class="contact-hero">
   <div class="contact-hero-left">
-    <h1>We're Available For You 24/7</h1>
-    <p>No matter the time of day, our support team is always here to assist you. Whether you have questions, need help with an issue, or just want to reach out, we're available around the clock to provide fast, reliable support—anytime you need it.</p>
+    <h1><%= hero_el&.ingredient_by_role(:headline)&.value.presence || "We're Available For You 24/7" %></h1>
+    <p><%= hero_el&.ingredient_by_role(:subtitle)&.value.presence || "No matter the time of day, our support team is always here to assist you. Whether you have questions, need help with an issue, or just want to reach out, we're available around the clock to provide fast, reliable support—anytime you need it." %></p>
   </div>
   <div class="contact-hero-right">
     <%= image_tag 'contact-first.png', alt: 'Contact Illustration', class: 'contact-hero-img' %>
@@ -10,23 +13,23 @@
 </div>
 
 <div class="contact-section">
-  <h2 class="contact-title">Contact Us</h2>
-  <p class="contact-subtitle">Have a question in mind? Reach out we'd love to hear from you.</p>
+  <h2 class="contact-title"><%= contact_el&.ingredient_by_role(:headline)&.value.presence || 'Contact Us' %></h2>
+  <p class="contact-subtitle"><%= contact_el&.ingredient_by_role(:subtitle)&.value.presence || "Have a question in mind? Reach out we'd love to hear from you." %></p>
   <div class="contact-info-cards">
     <div class="contact-info-card">
       <%= image_tag 'contact-email.png', alt: 'Email', class: 'contact-info-icon' %>
       <div class="contact-info-label">Email Address</div>
-      <div class="contact-info-value">legal@verifaith.org</div>
+      <div class="contact-info-value"><%= contact_el&.ingredient_by_role(:email)&.value.presence || 'legal@verifaith.org' %></div>
     </div>
     <div class="contact-info-card">
       <%= image_tag 'contact-phone.png', alt: 'Phone', class: 'contact-info-icon' %>
       <div class="contact-info-label">Phone Number</div>
-      <div class="contact-info-value">+1-23456789</div>
+      <div class="contact-info-value"><%= contact_el&.ingredient_by_role(:phone)&.value.presence || '+1-23456789' %></div>
     </div>
     <div class="contact-info-card">
       <%= image_tag 'contact-address.png', alt: 'Address', class: 'contact-info-icon' %>
       <div class="contact-info-label">Address</div>
-      <div class="contact-info-value">Street 123 Florida, United States</div>
+      <div class="contact-info-value"><%= contact_el&.ingredient_by_role(:address)&.value.presence || 'Street 123 Florida, United States' %></div>
     </div>
   </div>
   <% if flash[:notice] %>
@@ -56,6 +59,6 @@
       <%= image_tag 'contact-map.png', alt: 'Map', class: 'contact-map-img' %>
     </div>
   </div>
-</div> 
+</div>
 
 <%= render 'shared/footer' %>

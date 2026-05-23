@@ -1,4 +1,7 @@
 Rails.application.routes.draw do
+  # Alchemy CMS admin at /cms/admin — keep before ActiveAdmin so /cms/* routes are handled
+  mount Alchemy::Engine, at: '/cms'
+
   ActiveAdmin.routes(self)
 
   root to: "home#index"

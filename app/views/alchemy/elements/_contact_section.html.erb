@@ -1,0 +1,38 @@
+<% headline = element.ingredient_by_role(:headline) %>
+<% subtitle  = element.ingredient_by_role(:subtitle) %>
+<% email     = element.ingredient_by_role(:email) %>
+<% phone     = element.ingredient_by_role(:phone) %>
+<% address   = element.ingredient_by_role(:address) %>
+
+<div class="contact-section">
+  <% if headline&.value.present? %>
+    <h2 class="contact-title"><%= headline.value %></h2>
+  <% end %>
+  <% if subtitle&.value.present? %>
+    <p class="contact-subtitle"><%= subtitle.value %></p>
+  <% end %>
+
+  <div class="contact-info-cards">
+    <% if email&.value.present? %>
+      <div class="contact-info-card">
+        <%= image_tag 'contact-email.png', alt: 'Email', class: 'contact-info-icon' %>
+        <div class="contact-info-label">Email Address</div>
+        <div class="contact-info-value"><a href="mailto:<%= email.value %>"><%= email.value %></a></div>
+      </div>
+    <% end %>
+    <% if phone&.value.present? %>
+      <div class="contact-info-card">
+        <%= image_tag 'contact-phone.png', alt: 'Phone', class: 'contact-info-icon' %>
+        <div class="contact-info-label">Phone Number</div>
+        <div class="contact-info-value"><a href="tel:<%= phone.value %>"><%= phone.value %></a></div>
+      </div>
+    <% end %>
+    <% if address&.value.present? %>
+      <div class="contact-info-card">
+        <%= image_tag 'contact-address.png', alt: 'Address', class: 'contact-info-icon' %>
+        <div class="contact-info-label">Address</div>
+        <div class="contact-info-value"><%= address.value %></div>
+      </div>
+    <% end %>
+  </div>
+</div>

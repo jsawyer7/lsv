@@ -1,0 +1,38 @@
+# Page layouts for VeriFaith CMS-managed pages
+
+- name: home
+  unique: true
+  cache: true
+  elements:
+    - page_hero
+    - text_section
+  autogenerate:
+    - page_hero
+
+- name: standard
+  cache: true
+  elements:
+    - page_hero
+    - text_section
+  autogenerate:
+    - page_hero
+    - text_section
+
+- name: contact
+  unique: true
+  cache: true
+  elements:
+    - page_hero
+    - contact_section
+  autogenerate:
+    - page_hero
+    - contact_section
+
+- name: faq
+  unique: true
+  cache: true
+  elements:
+    - page_hero
+    - faq_item
+  autogenerate:
+    - page_hero

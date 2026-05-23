@@ -1,0 +1,12 @@
+<div class="cms-text-section">
+  <% headline = element.ingredient_by_role(:headline) %>
+  <% content = element.ingredient_by_role(:content) %>
+
+  <% if headline&.value.present? %>
+    <h2><%= headline.value %></h2>
+  <% end %>
+
+  <% if content&.value.present? %>
+    <div class="cms-rich-text"><%= content.value.html_safe %></div>
+  <% end %>
+</div>

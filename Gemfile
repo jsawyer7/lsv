@@ -93,3 +93,6 @@ gem 'concurrent-ruby'
 # Background job processing with Sidekiq
 gem 'sidekiq'
 gem 'sidekiq-cron' # Optional: for scheduled jobs
+
+# Alchemy CMS - content management for static/marketing pages
+gem 'alchemy_cms', '~> 7.4'

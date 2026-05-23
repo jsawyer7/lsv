@@ -1,0 +1,45 @@
+# Elements for VeriFaith CMS-managed pages
+
+- name: page_hero
+  hint: "Hero section at the top of the page"
+  ingredients:
+    - role: headline
+      type: Text
+      default: "Page Title"
+    - role: subtitle
+      type: Text
+    - role: body_text
+      type: Richtext
+
+- name: text_section
+  hint: "A section with an optional headline and rich text body"
+  ingredients:
+    - role: headline
+      type: Text
+    - role: content
+      type: Richtext
+
+- name: contact_section
+  hint: "Contact information block"
+  ingredients:
+    - role: headline
+      type: Text
+      default: "Contact Us"
+    - role: subtitle
+      type: Text
+      default: "Have a question? We'd love to hear from you."
+    - role: email
+      type: Text
+      default: "legal@verifaith.org"
+    - role: phone
+      type: Text
+    - role: address
+      type: Text
+
+- name: faq_item
+  hint: "A single FAQ question and answer"
+  ingredients:
+    - role: question
+      type: Text
+    - role: answer
+      type: Richtext

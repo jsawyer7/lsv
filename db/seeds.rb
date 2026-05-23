@@ -55,3 +55,4 @@ puts "✓ Genre Types seeded"
 
 # Load VeriTalk validator seeds
 load Rails.root.join('db', 'seeds', 'veritalk_validators.rb')
+load Rails.root.join('db', 'seeds', 'alchemy_pages.rb')

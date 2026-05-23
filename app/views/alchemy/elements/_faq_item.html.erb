@@ -1,0 +1,13 @@
+<% question = element.ingredient_by_role(:question) %>
+<% answer = element.ingredient_by_role(:answer) %>
+<% if question&.value.present? %>
+  <div class="faq-item">
+    <button class="faq-question" aria-expanded="false">
+      <%= question.value %>
+      <span class="faq-toggle">+</span>
+    </button>
+    <% if answer&.value.present? %>
+      <div class="faq-answer"><%= answer.value.html_safe %></div>
+    <% end %>
+  </div>
+<% end %>

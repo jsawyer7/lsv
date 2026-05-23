@@ -49,6 +49,17 @@ class User < ApplicationRecord
     admin: 2
   }
 
+  # Alchemy CMS role mapping
+  def alchemy_roles
+    if admin?
+      ['admin']
+    elsif moderator?
+      ['editor']
+    else
+      []
+    end
+  end
+
   # Define naming preferences
   enum naming_preference: {
     hebrew_aramaic: 0,
