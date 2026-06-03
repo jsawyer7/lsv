@@ -1,4 +1,4 @@
-<% if user_signed_in? && !current_user.terms_agreed_at.present? %>
+<% if user_signed_in? && !current_user.terms_agreed_at.present? && !@show_onboarding_modal %>
 <div id="terms-consent-modal" class="terms-consent-modal" style="display: none;">
   <div class="terms-consent-content">
     <div class="terms-consent-header">

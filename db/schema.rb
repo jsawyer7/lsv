@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_05_23_105317) do
+ActiveRecord::Schema[7.0].define(version: 2026_05_26_134700) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pgcrypto"
@@ -822,6 +822,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_05_23_105317) do
     t.string "religious_tradition"
     t.string "tradition_canon"
     t.text "favorite_teachers"
+    t.integer "preset_avatar_id"
     t.index ["confirmation_token"], name: "index_users_on_confirmation_token", unique: true
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["latitude", "longitude"], name: "index_users_on_latitude_and_longitude"

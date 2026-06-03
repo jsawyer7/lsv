@@ -104,13 +104,51 @@ class User < ApplicationRecord
   before_create :set_default_role
   after_commit :enqueue_free_plan_assignment, on: :create
 
+  PRESET_AVATAR_COUNT = 20
+
   has_one_attached :avatar
   has_one_attached :background_image
   validates :about, length: { maximum: 1000 }
   # Only validate naming preference for existing users who are trying to perform actions that require it
   validates :naming_preference, presence: true, if: :requires_naming_preference?
+  validates :preset_avatar_id,
+            inclusion: { in: 1..PRESET_AVATAR_COUNT },
+            allow_nil: true,
+            if: -> { has_attribute?(:preset_avatar_id) }
   validate :avatar_type_and_size
   validate :background_image_type_and_size
+
+  def preset_avatar_id
+    has_attribute?(:preset_avatar_id) ? read_attribute(:preset_avatar_id) : nil
+  end
+
+  def preset_avatar_id=(value)
+    write_attribute(:preset_avatar_id, value) if has_attribute?(:preset_avatar_id)
+  end
+
+  def has_avatar?
+    avatar.attached? || preset_avatar_id.present? || self[:avatar_url].present?
+  end
+
+  def assign_preset_avatar!(avatar_id)
+    id = avatar_id.to_i
+    raise ArgumentError, 'Invalid preset avatar' unless id.between?(1, PRESET_AVATAR_COUNT)
+
+    avatar.purge if avatar.attached?
+    update!(preset_avatar_id: id, avatar_url: nil)
+  end
+
+  def can_remove_uploaded_avatar?
+    avatar.attached?
+  end
+
+  def revert_uploaded_avatar!
+    return false unless avatar.attached?
+
+    avatar.purge
+    update!(avatar_url: nil) if preset_avatar_id.present?
+    true
+  end
 
   # Helper method to get avatar URL that works in both development and production
   def avatar_url
@@ -118,6 +156,8 @@ class User < ApplicationRecord
       # Use compressed version for better performance
       compressed_avatar = avatar.variant(resize_to_limit: [300, 300], quality: 85)
       Rails.application.routes.url_helpers.rails_blob_url(compressed_avatar, only_path: true)
+    elsif preset_avatar_id.present?
+      preset_avatar_asset_path
     elsif self[:avatar_url].present?
       self[:avatar_url]
     else
@@ -141,6 +181,8 @@ class User < ApplicationRecord
   def avatar_url_original
     if avatar.attached?
       Rails.application.routes.url_helpers.rails_blob_url(avatar, only_path: true)
+    elsif preset_avatar_id.present?
+      preset_avatar_asset_path
     elsif self[:avatar_url].present?
       self[:avatar_url]
     else
@@ -160,9 +202,21 @@ class User < ApplicationRecord
     super && (confirmed? || provider.present?)
   end
 
-  # Check if user has completed onboarding (has set naming preference)
-  def onboarding_complete?
+  def onboarding_naming_complete?
     naming_preference.present?
+  end
+
+  def onboarding_complete?
+    onboarding_naming_complete? && terms_agreed_at.present?
+  end
+
+  def onboarding_wizard_step
+    return nil if onboarding_complete?
+
+    return 'terms' if onboarding_naming_complete? && terms_agreed_at.blank?
+    return 'naming' if has_avatar? && !onboarding_naming_complete?
+
+    'avatar'
   end
 
   # Map naming preference to tradition for name translation
@@ -407,6 +461,10 @@ class User < ApplicationRecord
   end
 
   private
+
+  def preset_avatar_asset_path
+    ActionController::Base.helpers.asset_path("avatars/#{preset_avatar_id}.png")
+  end
 
   def set_default_role
     self.role ||= :user
