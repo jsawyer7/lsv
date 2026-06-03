@@ -20,6 +20,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
     <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
+    <% if user_signed_in? && @show_onboarding_modal %>
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+    <% end %>
 
     <%# Force reload styles in development %>
     <% if Rails.env.development? %>
@@ -41,6 +44,9 @@
     <%= render 'shared/omniauth_facebook_js' %>
     <%= render 'shared/flash_messages' %>
     <%= render 'shared/terms_consent_modal' %>
+    <% if user_signed_in? && @show_onboarding_modal %>
+      <%= render 'onboarding/modal' %>
+    <% end %>
 
     <%= yield %>
 

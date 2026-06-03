@@ -1,0 +1,332 @@
+<script>
+let avatarCropper = null;
+let selectedAvatarFile = null;
+let lastSliderValue = 1;
+let isUserDraggingSlider = false;
+let isUsingZoomButtons = false;
+
+let avatarCropContext = {
+  fileInputId: 'avatar-upload-input',
+  saveButtonLabel: 'Save & Upload',
+  onSave: null,
+  onCancel: null,
+  onError: null
+};
+
+function configureAvatarCrop(context) {
+  avatarCropContext = Object.assign({}, avatarCropContext, context);
+  const saveLabel = document.getElementById('image-crop-save-label');
+  if (saveLabel && avatarCropContext.saveButtonLabel) {
+    saveLabel.textContent = avatarCropContext.saveButtonLabel;
+  }
+}
+
+function avatarCropError(message) {
+  if (typeof avatarCropContext.onError === 'function') {
+    avatarCropContext.onError(message);
+  } else {
+    alert(message);
+  }
+}
+
+function showImageCropModal(file) {
+  const modal = document.getElementById('image-crop-modal');
+  const preview = document.getElementById('image-crop-preview');
+
+  if (!modal || !preview) {
+    if (typeof avatarCropContext.onFallback === 'function') {
+      avatarCropContext.onFallback(file);
+    }
+    return;
+  }
+
+  selectedAvatarFile = file;
+  const imageUrl = URL.createObjectURL(file);
+  preview.src = imageUrl;
+
+  modal.classList.add('show');
+  document.body.style.overflow = 'hidden';
+
+  const initializeCropper = function() {
+    if (avatarCropper) {
+      avatarCropper.destroy();
+      avatarCropper = null;
+    }
+
+    avatarCropper = new Cropper(preview, {
+      aspectRatio: 1,
+      viewMode: 1,
+      dragMode: 'move',
+      autoCropArea: 0.8,
+      restore: false,
+      guides: true,
+      center: true,
+      highlight: false,
+      cropBoxMovable: true,
+      cropBoxResizable: true,
+      toggleDragModeOnDblclick: false,
+      minCropBoxWidth: 100,
+      minCropBoxHeight: 100,
+      zoomable: true,
+      scalable: false,
+      rotatable: true,
+      ready: function() {
+        lastSliderValue = 1;
+        isUserDraggingSlider = false;
+        isUsingZoomButtons = false;
+
+        const zoomSlider = document.getElementById('image-crop-zoom-slider');
+        if (zoomSlider) {
+          zoomSlider.addEventListener('mousedown', function() {
+            isUserDraggingSlider = true;
+          });
+          zoomSlider.addEventListener('touchstart', function() {
+            isUserDraggingSlider = true;
+          });
+          zoomSlider.addEventListener('mouseup', function() {
+            setTimeout(function() {
+              isUserDraggingSlider = false;
+            }, 100);
+          });
+          zoomSlider.addEventListener('touchend', function() {
+            setTimeout(function() {
+              isUserDraggingSlider = false;
+            }, 100);
+          });
+        }
+
+        updateZoomSlider();
+        updateZoomSliderProgress();
+        updateZoomButtonsState();
+        showDragHint();
+      },
+      crop: function() {
+        hideDragHint();
+        updateZoomSliderProgress();
+      },
+      zoom: function() {
+        if (!isUserDraggingSlider && !isUsingZoomButtons) {
+          updateZoomSlider();
+          updateZoomSliderProgress();
+        }
+      }
+    });
+
+    updateZoomSlider();
+  };
+
+  if (preview.complete) {
+    setTimeout(initializeCropper, 100);
+  } else {
+    preview.onload = initializeCropper;
+  }
+}
+
+function closeImageCropModal(skipCancel) {
+  const modal = document.getElementById('image-crop-modal');
+  if (!modal) return;
+
+  modal.classList.remove('show');
+  document.body.style.overflow = '';
+
+  if (avatarCropper) {
+    avatarCropper.destroy();
+    avatarCropper = null;
+  }
+
+  const preview = document.getElementById('image-crop-preview');
+  if (preview && preview.src) {
+    URL.revokeObjectURL(preview.src);
+    preview.src = '';
+  }
+
+  const fileInput = document.getElementById(avatarCropContext.fileInputId);
+  if (fileInput) {
+    fileInput.value = '';
+  }
+
+  lastSliderValue = 1;
+  selectedAvatarFile = null;
+
+  if (!skipCancel && typeof avatarCropContext.onCancel === 'function') {
+    avatarCropContext.onCancel();
+  }
+}
+
+function saveCroppedImage() {
+  if (!avatarCropper || !selectedAvatarFile) {
+    closeImageCropModal();
+    return;
+  }
+
+  const canvas = avatarCropper.getCroppedCanvas({
+    width: 400,
+    height: 400,
+    imageSmoothingEnabled: true,
+    imageSmoothingQuality: 'high'
+  });
+
+  if (!canvas) {
+    avatarCropError('Failed to crop image. Please try again.');
+    closeImageCropModal();
+    return;
+  }
+
+  canvas.toBlob(function(blob) {
+    if (!blob) {
+      avatarCropError('Failed to process image. Please try again.');
+      closeImageCropModal();
+      return;
+    }
+
+    const croppedFile = new File([blob], selectedAvatarFile.name, {
+      type: selectedAvatarFile.type,
+      lastModified: Date.now()
+    });
+
+    closeImageCropModal(true);
+
+    if (typeof avatarCropContext.onSave === 'function') {
+      avatarCropContext.onSave(croppedFile);
+    }
+  }, selectedAvatarFile.type, 0.95);
+}
+
+document.addEventListener('click', function(e) {
+  if (e.target.classList.contains('image-crop-overlay')) {
+    closeImageCropModal();
+  }
+});
+
+function rotateImage(degrees) {
+  if (avatarCropper) {
+    avatarCropper.rotate(degrees);
+  }
+}
+
+function zoomImage(ratio) {
+  if (avatarCropper) {
+    const zoomSlider = document.getElementById('image-crop-zoom-slider');
+    if (zoomSlider) {
+      const currentValue = parseFloat(zoomSlider.value) ?? 1;
+
+      if (ratio > 0 && currentValue >= 2) {
+        return;
+      }
+      if (ratio < 0 && currentValue <= 0) {
+        return;
+      }
+
+      isUsingZoomButtons = true;
+
+      const newValue = Math.max(0, Math.min(2, currentValue + (ratio * 2)));
+      zoomSlider.value = newValue;
+      lastSliderValue = newValue;
+      updateZoomSliderProgress();
+      updateZoomButtonsState();
+    }
+
+    avatarCropper.zoom(ratio);
+
+    setTimeout(function() {
+      isUsingZoomButtons = false;
+    }, 150);
+  }
+}
+
+function updateZoomButtonsState() {
+  const zoomSlider = document.getElementById('image-crop-zoom-slider');
+  const minusBtn = document.getElementById('image-crop-zoom-minus-btn');
+  const plusBtn = document.getElementById('image-crop-zoom-plus-btn');
+
+  if (zoomSlider && minusBtn && plusBtn) {
+    const sliderValue = parseFloat(zoomSlider.value) ?? 1;
+
+    if (sliderValue <= 0) {
+      minusBtn.disabled = true;
+      minusBtn.style.opacity = '0.5';
+      minusBtn.style.cursor = 'not-allowed';
+    } else {
+      minusBtn.disabled = false;
+      minusBtn.style.opacity = '1';
+      minusBtn.style.cursor = 'pointer';
+    }
+
+    if (sliderValue >= 2) {
+      plusBtn.disabled = true;
+      plusBtn.style.opacity = '0.5';
+      plusBtn.style.cursor = 'not-allowed';
+    } else {
+      plusBtn.disabled = false;
+      plusBtn.style.opacity = '1';
+      plusBtn.style.cursor = 'pointer';
+    }
+  }
+}
+
+function updateZoom(value) {
+  if (avatarCropper) {
+    isUserDraggingSlider = true;
+    const sliderValue = parseFloat(value);
+    const sliderDiff = sliderValue - lastSliderValue;
+    const zoomRatio = sliderDiff * 0.5;
+
+    if (Math.abs(zoomRatio) > 0.01) {
+      avatarCropper.zoom(zoomRatio);
+      lastSliderValue = sliderValue;
+    }
+
+    updateZoomSliderProgress();
+    updateZoomButtonsState();
+
+    setTimeout(function() {
+      isUserDraggingSlider = false;
+    }, 100);
+  }
+}
+
+function updateZoomSliderProgress() {
+  const zoomSlider = document.getElementById('image-crop-zoom-slider');
+  if (zoomSlider) {
+    const sliderValue = parseFloat(zoomSlider.value) ?? 1;
+    const progress = Math.max(0, Math.min(100, (sliderValue / 2) * 100));
+    zoomSlider.style.setProperty('--slider-progress', progress + '%');
+    updateZoomButtonsState();
+  }
+}
+
+function updateZoomSlider() {
+  if (avatarCropper && !isUserDraggingSlider && !isUsingZoomButtons) {
+    const zoomSlider = document.getElementById('image-crop-zoom-slider');
+    if (zoomSlider) {
+      lastSliderValue = parseFloat(zoomSlider.value) ?? 1;
+      updateZoomSliderProgress();
+    }
+  }
+}
+
+function showDragHint() {
+  const dragHint = document.querySelector('.image-crop-drag-hint');
+  if (dragHint) {
+    dragHint.style.opacity = '1';
+    dragHint.style.visibility = 'visible';
+  }
+}
+
+function hideDragHint() {
+  const dragHint = document.querySelector('.image-crop-drag-hint');
+  if (dragHint) {
+    dragHint.style.opacity = '0';
+    dragHint.style.visibility = 'hidden';
+  }
+}
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    const modal = document.getElementById('image-crop-modal');
+    if (modal && modal.classList.contains('show')) {
+      closeImageCropModal();
+    }
+  }
+});
+</script>

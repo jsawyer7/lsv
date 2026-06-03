@@ -617,10 +617,10 @@ body.settings-page .dashboard-main {
     background: white;
     border-radius: 16px;
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
-    max-width: 400px;
+    max-width: 420px;
     width: 90%;
     max-height: 90vh;
-    overflow: hidden;
+    overflow-y: auto;
     transform: translateY(20px) scale(0.95);
     transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   }
@@ -668,6 +668,13 @@ body.settings-page .dashboard-main {
     display: flex;
     flex-direction: column;
     gap: 12px;
+
+    .avatar-options-desc {
+      margin: 0;
+      color: #64748b;
+      font-size: 14px;
+      text-align: center;
+    }
 
     .avatar-options-btn {
       display: flex;
@@ -1094,14 +1101,27 @@ body.settings-page .dashboard-main {
 
       &.image-crop-save-btn {
         background: #2196f3;
-        color: white;
+        color: #fff;
         border: 1px solid #2196f3;
+
+        i,
+        span,
+        #image-crop-save-label {
+          color: #fff;
+        }
 
         &:hover {
           background: #1976d2;
           border-color: #1976d2;
+          color: #fff;
           transform: translateY(-1px);
           box-shadow: 0 4px 8px rgba(33, 150, 243, 0.3);
+
+          i,
+          span,
+          #image-crop-save-label {
+            color: #fff;
+          }
         }
 
         &:active {

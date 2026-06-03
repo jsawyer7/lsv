@@ -1,0 +1,15 @@
+<% picker_id = local_assigns[:picker_id] || 'avatar-picker' %>
+<% selected_id = local_assigns[:selected_id] %>
+<div class="avatar-picker-grid" id="<%= picker_id %>">
+  <% (1..User::PRESET_AVATAR_COUNT).each do |i| %>
+    <button
+      type="button"
+      class="avatar-picker-option<%= ' is-selected' if selected_id.to_i == i %>"
+      data-avatar-id="<%= i %>"
+      aria-label="Choose avatar <%= i %>"
+      aria-pressed="<%= selected_id.to_i == i %>"
+    >
+      <%= image_tag "avatars/#{i}.png", alt: "Avatar #{i}", class: 'avatar-picker-img' %>
+    </button>
+  <% end %>
+</div>

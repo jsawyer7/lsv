@@ -8,17 +8,37 @@ class SettingsController < ApplicationController
   layout 'dashboard'
 
   def edit
-    # @user is set by before_action
-    # @languages is set by ApplicationController
+    @require_avatar_selection = !@user.has_avatar?
   end
 
   def update
-    # @user is set by before_action
-    # Remove avatar if requested
+    if params[:preset_avatar_id].present?
+      begin
+        @user.assign_preset_avatar!(params[:preset_avatar_id])
+        return redirect_to edit_settings_path, notice: 'Profile picture updated.'
+      rescue ArgumentError, ActiveRecord::RecordInvalid
+        flash.now[:alert] = 'Please choose a valid profile picture.'
+        @require_avatar_selection = !@user.has_avatar?
+        return render :edit
+      end
+    end
+
     if params[:remove_avatar] == "true"
-      @user.avatar.purge
+      if @user.revert_uploaded_avatar!
+        notice = if @user.preset_avatar_id.present?
+                   'Photo removed. Your selected avatar has been restored.'
+                 else
+                   'Photo removed.'
+                 end
+        return redirect_to edit_settings_path, notice: notice
+      end
+
+      flash.now[:alert] = 'Choose an avatar first, then you can remove an uploaded photo to switch back to it.'
+      @require_avatar_selection = !@user.has_avatar?
+      return render :edit
     elsif params[:user] && params[:user][:avatar]
       @user.avatar.attach(params[:user][:avatar])
+      @user.update!(preset_avatar_id: nil, avatar_url: nil) if @user.preset_avatar_id.present? || @user[:avatar_url].present?
     end
 
     # Remove background image if requested
@@ -31,6 +51,7 @@ class SettingsController < ApplicationController
     if params[:user] && @user.update(user_params.except(:avatar, :background_image))
       redirect_to edit_settings_path, notice: 'Profile updated successfully.'
     else
+      @require_avatar_selection = !@user.has_avatar?
       render :edit
     end
   end
@@ -548,7 +569,7 @@ class SettingsController < ApplicationController
   end
 
   def user_params
-    params.require(:user).permit(:full_name, :phone, :email, :about, :avatar, :avatar_cache, :remove_avatar, :background_image, :remove_background_image, :naming_preference, :religious_tradition, :tradition_canon, :favorite_teachers)
+    params.require(:user).permit(:full_name, :phone, :email, :about, :avatar, :avatar_cache, :remove_avatar, :background_image, :remove_background_image, :naming_preference, :religious_tradition, :tradition_canon, :favorite_teachers, :preset_avatar_id)
   end
 
   def clean_plan_name(plan_name)

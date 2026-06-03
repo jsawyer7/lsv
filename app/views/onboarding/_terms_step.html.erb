@@ -1,0 +1,33 @@
+<div class="onboarding-terms-text">
+  <h3>1. Location Access</h3>
+  <p>We use your approximate location (derived from your IP address) to:</p>
+  <ul>
+    <li>Suggest nearby peers and connections</li>
+    <li>Improve your experience by showing relevant local content</li>
+    <li>Help you discover users in your area</li>
+  </ul>
+  <p><strong>Your location data is:</strong></p>
+  <ul>
+    <li>Stored securely and used only for peer recommendations</li>
+    <li>Not shared with third parties</li>
+    <li>Approximate (city/region level, not precise GPS)</li>
+    <li>You can update or remove it anytime in settings</li>
+  </ul>
+
+  <h3>2. Data Usage</h3>
+  <p>We use your data to provide and improve our services, including:</p>
+  <ul>
+    <li>Peer recommendations based on mutual connections and location</li>
+    <li>Social network integration (Facebook, Google, Twitter) for finding connections</li>
+    <li>Personalized content and features</li>
+  </ul>
+
+  <h3>3. Privacy</h3>
+  <p>Your privacy is important to us. We comply with GDPR, CCPA, and other privacy regulations.</p>
+  <p>For more details, please read our <%= link_to 'Privacy Policy', privacy_path, target: '_blank', rel: 'noopener' %> and <%= link_to 'Terms of Service', terms_path, target: '_blank', rel: 'noopener' %>.</p>
+</div>
+
+<label class="onboarding-terms-checkbox">
+  <input type="checkbox" id="onboarding-terms-agree" name="accept_all">
+  <span>I have read and agree to the <%= link_to 'Terms of Service', terms_path, target: '_blank', rel: 'noopener' %>, <%= link_to 'Privacy Policy', privacy_path, target: '_blank', rel: 'noopener' %>, and consent to the use of my approximate location for peer recommendations</span>
+</label>

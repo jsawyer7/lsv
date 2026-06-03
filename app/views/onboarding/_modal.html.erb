@@ -1,89 +1,316 @@
-<div class="onboarding-overlay" id="onboarding-modal">
-  <div class="onboarding-modal">
-    <div class="onboarding-header">
-      <h2>Welcome to VeriFaith!</h2>
-      <p>Please select your preferred naming convention to get started.</p>
+<% start_step = current_user.onboarding_wizard_step || 'avatar' %>
+<div class="onboarding-overlay" id="onboarding-modal" data-initial-step="<%= start_step %>">
+  <div class="onboarding-modal" id="onboarding-modal-panel">
+    <div class="onboarding-progress" aria-hidden="true">
+      <span class="onboarding-progress-step" data-step="avatar">1</span>
+      <span class="onboarding-progress-line"></span>
+      <span class="onboarding-progress-step" data-step="naming">2</span>
+      <span class="onboarding-progress-line"></span>
+      <span class="onboarding-progress-step" data-step="terms">3</span>
     </div>
-    
-    <%= form_with url: onboarding_path, method: :patch, local: false, class: "onboarding-form", id: "onboarding-form" do |f| %>
-      <div class="preference-options">
-        <% @naming_preferences.each do |preference| %>
-          <div class="preference-option">
-            <input type="radio" id="<%= preference[:id] %>" name="naming_preference" value="<%= preference[:id] %>" required>
-            <label for="<%= preference[:id] %>" class="preference-label">
-              <div class="preference-title"><%= preference[:name] %></div>
-              <div class="preference-description"><%= preference[:description] %></div>
-            </label>
-          </div>
-        <% end %>
+
+    <div class="onboarding-header">
+      <h2 id="onboarding-title">Welcome to VeriFaith!</h2>
+      <p id="onboarding-subtitle">Choose a profile picture to get started.</p>
+    </div>
+
+    <div id="onboarding-step-avatar" class="onboarding-step" data-step="avatar">
+      <div class="onboarding-form" id="onboarding-avatar-form">
+        <input type="hidden" name="preset_avatar_id" id="onboarding-preset-avatar-id" value="<%= current_user.preset_avatar_id %>">
+        <%= render 'shared/avatar_picker', picker_id: 'onboarding-avatar-picker', selected_id: current_user.preset_avatar_id %>
+        <div class="onboarding-upload-row">
+          <label for="onboarding-avatar-upload" class="btn-secondary onboarding-upload-btn">
+            <i class="fas fa-upload"></i>
+            Upload your photo
+          </label>
+          <input type="file" id="onboarding-avatar-upload" name="user[avatar]" accept="image/png,image/jpg,image/jpeg" class="onboarding-avatar-file-input">
+        </div>
+        <p class="onboarding-avatar-hint" id="onboarding-avatar-hint">Select an avatar, upload and crop a photo, or skip for now.</p>
+        <div class="onboarding-actions onboarding-actions--split">
+          <button type="button" class="btn-secondary" id="onboarding-avatar-skip">Skip for now</button>
+          <button type="button" class="btn-primary" id="onboarding-avatar-continue" disabled>Continue</button>
+        </div>
       </div>
-      
-      <div class="onboarding-actions">
-        <button type="submit" class="btn-primary" id="onboarding-submit">Continue</button>
+    </div>
+
+    <div id="onboarding-step-naming" class="onboarding-step is-hidden" data-step="naming">
+      <div class="onboarding-form" id="onboarding-naming-form">
+        <div class="preference-options">
+          <% @naming_preferences.each do |preference| %>
+            <div class="preference-option">
+              <input type="radio"
+                     id="onboarding-<%= preference[:id] %>"
+                     name="naming_preference"
+                     value="<%= preference[:id] %>"
+                     <%= 'checked' if current_user.naming_preference == preference[:id] %>
+                     required>
+              <label for="onboarding-<%= preference[:id] %>" class="preference-label">
+                <div class="preference-title"><%= preference[:name] %></div>
+                <div class="preference-description"><%= preference[:description] %></div>
+              </label>
+            </div>
+          <% end %>
+        </div>
+        <div class="onboarding-actions">
+          <button type="button" class="btn-primary" id="onboarding-naming-continue">Continue</button>
+        </div>
       </div>
-    <% end %>
+    </div>
+
+    <div id="onboarding-step-terms" class="onboarding-step is-hidden" data-step="terms">
+      <div class="onboarding-form" id="onboarding-terms-form">
+        <%= render 'onboarding/terms_step' %>
+        <div class="onboarding-actions">
+          <button type="button" class="btn-primary" id="onboarding-terms-finish" disabled>Accept and finish</button>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
+<%= render 'shared/avatar_crop_modal' %>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+<%= render 'shared/avatar_crop_js' %>
+
 <script>
-  document.addEventListener('DOMContentLoaded', function() {
-    const modal = document.getElementById('onboarding-modal');
-    const form = document.getElementById('onboarding-form');
-    const submitBtn = document.getElementById('onboarding-submit');
-    
-    // Prevent closing the modal by clicking outside or pressing escape
-    modal.addEventListener('click', function(e) {
-      if (e.target === modal) {
-        e.preventDefault();
-      }
+document.addEventListener('DOMContentLoaded', function() {
+  const modal = document.getElementById('onboarding-modal');
+  if (!modal) return;
+
+  const panel = document.getElementById('onboarding-modal-panel');
+  const title = document.getElementById('onboarding-title');
+  const subtitle = document.getElementById('onboarding-subtitle');
+  const steps = {
+    avatar: document.getElementById('onboarding-step-avatar'),
+    naming: document.getElementById('onboarding-step-naming'),
+    terms: document.getElementById('onboarding-step-terms')
+  };
+  const progressSteps = modal.querySelectorAll('.onboarding-progress-step');
+
+  const presetField = document.getElementById('onboarding-preset-avatar-id');
+  const avatarContinue = document.getElementById('onboarding-avatar-continue');
+  const avatarSkip = document.getElementById('onboarding-avatar-skip');
+  const avatarUpload = document.getElementById('onboarding-avatar-upload');
+  const avatarHint = document.getElementById('onboarding-avatar-hint');
+  const namingContinue = document.getElementById('onboarding-naming-continue');
+  const termsFinish = document.getElementById('onboarding-terms-finish');
+  const termsCheckbox = document.getElementById('onboarding-terms-agree');
+
+  const onboardingUrl = '<%= onboarding_path %>';
+  const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+
+  let currentStep = modal.dataset.initialStep || 'avatar';
+  let selectedPresetId = presetField.value || null;
+  let hasUpload = false;
+  let croppedAvatarFile = null;
+
+  const stepCopy = {
+    avatar: {
+      title: 'Welcome to VeriFaith!',
+      subtitle: 'Choose a profile picture to get started.',
+      wide: false
+    },
+    naming: {
+      title: 'Naming preference',
+      subtitle: 'Choose how names appear in your feed and validations.',
+      wide: false
+    },
+    terms: {
+      title: 'Terms and conditions',
+      subtitle: 'Please review and accept to finish setting up your account.',
+      wide: true
+    }
+  };
+
+  function showStep(step) {
+    currentStep = step;
+    Object.keys(steps).forEach(function(key) {
+      steps[key].classList.toggle('is-hidden', key !== step);
     });
-    
-    document.addEventListener('keydown', function(e) {
-      if (e.key === 'Escape') {
-        e.preventDefault();
-      }
+    progressSteps.forEach(function(el) {
+      const active = el.dataset.step === step;
+      el.classList.toggle('is-active', active);
+      el.classList.toggle('is-complete', stepOrder(el.dataset.step) < stepOrder(step));
     });
-    
-    // Handle form submission
-    form.addEventListener('submit', function(e) {
-      e.preventDefault();
-      
-      submitBtn.disabled = true;
-      submitBtn.textContent = 'Setting up...';
-      
-      const formData = new FormData(form);
-      
-      fetch(form.action, {
-        method: 'PATCH',
-        body: formData,
-        headers: {
-          'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content,
-          'Accept': 'application/json'
+    const copy = stepCopy[step];
+    title.textContent = copy.title;
+    subtitle.textContent = copy.subtitle;
+    panel.classList.toggle('onboarding-modal--wide', copy.wide);
+  }
+
+  function stepOrder(step) {
+    return { avatar: 0, naming: 1, terms: 2 }[step] || 0;
+  }
+
+  function updateAvatarContinueState() {
+    const ready = Boolean(selectedPresetId) || hasUpload;
+    avatarContinue.disabled = !ready;
+    avatarHint.textContent = ready
+      ? 'Click Continue to save your profile picture.'
+      : 'Select an avatar, upload and crop a photo, or skip for now.';
+  }
+
+  function submitAvatarStep() {
+    if (!selectedPresetId && !hasUpload) return;
+
+    const body = new FormData();
+    body.append('step', 'avatar');
+    if (selectedPresetId) {
+      body.append('preset_avatar_id', selectedPresetId);
+    }
+    if (hasUpload && croppedAvatarFile) {
+      body.append('user[avatar]', croppedAvatarFile);
+    }
+    return patchOnboarding(body, avatarContinue, 'Continue');
+  }
+
+  function patchOnboarding(body, button, defaultLabel) {
+    button.disabled = true;
+    const originalLabel = button.textContent;
+    button.textContent = 'Saving...';
+
+    return fetch(onboardingUrl, {
+      method: 'PATCH',
+      body: body,
+      headers: {
+        'X-CSRF-Token': csrfToken,
+        'Accept': 'application/json'
+      }
+    })
+    .then(function(response) { return response.json(); })
+    .then(function(data) {
+      if (data.success) {
+        if (data.redirect_url) {
+          button.textContent = 'Done!';
+          button.style.backgroundColor = '#28a745';
+          setTimeout(function() { window.location.href = data.redirect_url; }, 600);
+          return;
         }
-      })
-      .then(response => response.json())
-      .then(data => {
-        if (data.success) {
-          // Show success message briefly
-          submitBtn.textContent = 'Success!';
-          submitBtn.style.backgroundColor = '#28a745';
-          
-          setTimeout(() => {
-            window.location.href = data.redirect_url;
-          }, 1000);
-        } else {
-          // Show error message
-          alert(data.message);
-          submitBtn.disabled = false;
-          submitBtn.textContent = 'Continue';
+        if (data.step) {
+          showStep(data.step);
         }
-      })
-      .catch(error => {
-        console.error('Error:', error);
-        alert('An error occurred. Please try again.');
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Continue';
+        button.disabled = false;
+        button.textContent = defaultLabel;
+      } else {
+        alert(data.message || 'Something went wrong. Please try again.');
+        button.disabled = false;
+        button.textContent = defaultLabel;
+      }
+    })
+    .catch(function() {
+      alert('An error occurred. Please try again.');
+      button.disabled = false;
+      button.textContent = defaultLabel;
+    });
+  }
+
+  modal.addEventListener('click', function(e) {
+    if (e.target === modal) e.preventDefault();
+  });
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && modal) e.preventDefault();
+  });
+
+  document.querySelectorAll('#onboarding-avatar-picker .avatar-picker-option').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      selectedPresetId = btn.dataset.avatarId;
+      presetField.value = selectedPresetId;
+      hasUpload = false;
+      croppedAvatarFile = null;
+      avatarUpload.value = '';
+      document.querySelectorAll('#onboarding-avatar-picker .avatar-picker-option').forEach(function(el) {
+        el.classList.remove('is-selected');
+        el.setAttribute('aria-pressed', 'false');
       });
+      btn.classList.add('is-selected');
+      btn.setAttribute('aria-pressed', 'true');
+      updateAvatarContinueState();
     });
   });
+
+  avatarUpload.addEventListener('change', function() {
+    const file = avatarUpload.files && avatarUpload.files[0];
+    if (!file) {
+      croppedAvatarFile = null;
+      hasUpload = false;
+      updateAvatarContinueState();
+      return;
+    }
+
+    const allowedTypes = ['image/png', 'image/jpg', 'image/jpeg'];
+    if (!allowedTypes.includes(file.type)) {
+      alert('Please select a PNG or JPG image.');
+      avatarUpload.value = '';
+      croppedAvatarFile = null;
+      hasUpload = false;
+      updateAvatarContinueState();
+      return;
+    }
+
+    selectedPresetId = null;
+    presetField.value = '';
+    croppedAvatarFile = null;
+    hasUpload = false;
+    document.querySelectorAll('#onboarding-avatar-picker .avatar-picker-option').forEach(function(el) {
+      el.classList.remove('is-selected');
+      el.setAttribute('aria-pressed', 'false');
+    });
+    updateAvatarContinueState();
+    showImageCropModal(file);
+  });
+
+  avatarSkip.addEventListener('click', function() {
+    const body = new FormData();
+    body.append('step', 'avatar');
+    body.append('skip_avatar', '1');
+    patchOnboarding(body, avatarSkip, 'Skip for now');
+  });
+
+  avatarContinue.addEventListener('click', submitAvatarStep);
+
+  configureAvatarCrop({
+    fileInputId: 'onboarding-avatar-upload',
+    saveButtonLabel: 'Submit',
+    onSave: function(croppedFile) {
+      croppedAvatarFile = croppedFile;
+      hasUpload = true;
+      submitAvatarStep();
+    },
+    onCancel: function() {
+      croppedAvatarFile = null;
+      hasUpload = false;
+      updateAvatarContinueState();
+    }
+  });
+
+  namingContinue.addEventListener('click', function() {
+    const selected = document.querySelector('#onboarding-naming-form input[name="naming_preference"]:checked');
+    if (!selected) {
+      alert('Please select a naming preference.');
+      return;
+    }
+    const body = new FormData();
+    body.append('step', 'naming');
+    body.append('naming_preference', selected.value);
+    patchOnboarding(body, namingContinue, 'Continue');
+  });
+
+  termsCheckbox.addEventListener('change', function() {
+    termsFinish.disabled = !termsCheckbox.checked;
+  });
+
+  termsFinish.addEventListener('click', function() {
+    if (!termsCheckbox.checked) return;
+    const body = new FormData();
+    body.append('step', 'terms');
+    body.append('terms_agreed', '1');
+    body.append('privacy_agreed', '1');
+    body.append('location_consent', '1');
+    patchOnboarding(body, termsFinish, 'Accept and finish');
+  });
+
+  showStep(currentStep);
+  updateAvatarContinueState();
+});
 </script>
