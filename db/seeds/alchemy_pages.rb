@@ -1,7 +1,8 @@
 puts "Seeding Alchemy CMS..."
 
 # -- Site --
-site = Alchemy::Site.find_or_create_by!(host: 'localhost') do |s|
+host = ENV.fetch('ALCHEMY_HOST', 'localhost')
+site = Alchemy::Site.find_or_create_by!(host: host) do |s|
   s.name   = 'VeriFaith'
   s.public = true
 end
