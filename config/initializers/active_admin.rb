@@ -315,7 +315,19 @@ ActiveAdmin.setup do |config|
   # You can enabled or disable the inclusion
   # of those filters by default here.
   #
-  # config.include_default_association_filters = true
+  # Disabled app-wide: for any resource that doesn't declare explicit
+  # `filter`s (e.g. app/admin/text_unit_types.rb), ActiveAdmin auto-generates
+  # a default filter for every association on the model - which loads every
+  # row of the associated table just to build the filter dropdown. On
+  # TextUnitType, its `has_many :text_contents` association triggered 44k+
+  # queries for an index page showing just 5 records, because building the
+  # dropdown labels calls TextContent#display_name (which touches two more
+  # un-preloaded belongs_to associations) on all 22k rows. The filters
+  # sidebar is also hidden via CSS in the custom admin layout (see
+  # app/views/layouts/active_admin_custom.html.erb), so nobody ever saw it -
+  # it was pure wasted server-side cost. Resources with explicit `filter`
+  # declarations (books.rb, sources.rb, etc.) are unaffected by this setting.
+  config.include_default_association_filters = false
 
   # config.maximum_association_filter_arity = 256 # default value of :unlimited will change to 256 in a future version
   # config.filter_columns_for_large_association = [
