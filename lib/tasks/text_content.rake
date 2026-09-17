@@ -1396,6 +1396,129 @@ namespace :text_content do
     puts "Done!"
   end
 
+  desc "Clear party/genre metadata, LSV literal reconstruction, and word-for-word JSON. Usage: rake 'text_content:clear_party_and_genre[source_id,book_code]' or ALL=true. DRY_RUN=true by default; VERIFY_ONLY=true only reports remaining data"
+  task :clear_party_and_genre, [:source_id, :book_code] => :environment do |_t, args|
+    dry_run = ENV['DRY_RUN'] != 'false'
+    verify_only = ENV['VERIFY_ONLY'] == 'true'
+    clear_all = ENV['ALL'] == 'true'
+
+    puts "=" * 80
+    puts "Clear Party / Genre / Reconstruction Metadata"
+    puts "Mode: #{verify_only ? 'VERIFY ONLY' : (dry_run ? 'DRY RUN (no changes)' : 'LIVE (will clear fields)')}"
+    puts "=" * 80
+    puts ""
+
+    service = ClearPartyAndGenreMetadataService.new(
+      source_id: args[:source_id],
+      book_code: args[:book_code],
+      all: clear_all,
+      dry_run: dry_run
+    )
+
+    begin
+      if verify_only
+        result = service.verify
+        print_party_genre_verify_result(result)
+      else
+        unless clear_all || args[:source_id].present? || args[:book_code].present?
+          puts "Usage:"
+          puts "  Clear specific source/book: rake 'text_content:clear_party_and_genre[source_id,book_code]'"
+          puts "  Clear ALL text contents: ALL=true rake text_content:clear_party_and_genre"
+          puts "  Verify remaining data: VERIFY_ONLY=true ALL=true rake text_content:clear_party_and_genre"
+          puts ""
+          puts "To actually clear (not dry run): DRY_RUN=false rake 'text_content:clear_party_and_genre[...]'"
+          exit 1
+        end
+
+        result = service.call
+        print_party_genre_clear_result(result)
+
+        unless result[:dry_run]
+          puts ""
+          puts "Verifying fields were cleared..."
+          verify_result = service.verify
+          print_party_genre_verify_result(verify_result)
+          exit 1 unless verify_result[:cleared]
+        end
+      end
+    rescue ClearPartyAndGenreMetadataService::ScopeError => e
+      puts "✗ #{e.message}"
+      exit 1
+    end
+
+    puts ""
+    puts "Done!"
+  end
+
+  def print_party_genre_field_counts(counts)
+    counts.each do |field, count|
+      puts "  - #{field}: #{count}"
+    end
+  end
+
+  def print_party_genre_clear_result(result)
+    if result[:source]
+      puts "Source: #{result[:source].name} (ID: #{result[:source].id})"
+    end
+    if result[:book]
+      puts "Book: #{result[:book].std_name} (#{result[:book].code})"
+    end
+    if result[:source].nil? && result[:book].nil?
+      puts "Scope: ALL text contents"
+    end
+
+    puts ""
+    puts "Total records in scope: #{result[:total_records]}"
+    puts "Records with party/genre/reconstruction data: #{result[:records_with_data]}"
+    puts ""
+    puts "Field counts before:"
+    print_party_genre_field_counts(result[:before])
+
+    if result[:dry_run]
+      puts ""
+      puts "DRY RUN MODE: No records will be cleared."
+      puts "Would clear #{result[:would_clear]} record(s)."
+      puts ""
+      puts "To actually clear these records, run:"
+      if result[:source] && result[:book]
+        puts "  DRY_RUN=false rake 'text_content:clear_party_and_genre[#{result[:source].id},#{result[:book].code}]'"
+      elsif result[:source]
+        puts "  DRY_RUN=false rake 'text_content:clear_party_and_genre[#{result[:source].id}]'"
+      else
+        puts "  DRY_RUN=false ALL=true rake text_content:clear_party_and_genre"
+      end
+    else
+      puts ""
+      puts "Cleared #{result[:cleared_count]} record(s)."
+      puts ""
+      puts "Field counts after:"
+      print_party_genre_field_counts(result[:after])
+    end
+  end
+
+  def print_party_genre_verify_result(result)
+    puts ""
+    puts "Verification"
+    puts "  Total records: #{result[:total_records]}"
+    puts "  Remaining records with data: #{result[:remaining_record_count]}"
+    puts "  Remaining field counts:"
+    print_party_genre_field_counts(result[:remaining])
+
+    if result[:cleared]
+      puts ""
+      puts "✓ All party, genre, LSV literal reconstruction, and word-for-word fields are cleared."
+    else
+      puts ""
+      puts "✗ Data still remains in one or more fields."
+      if result[:sample_remaining].any?
+        puts "  Sample remaining records:"
+        result[:sample_remaining].each do |row|
+          puts "    - #{row[:unit_key]}: addressed=#{row[:addressed_party_code].inspect}/#{row[:addressed_party_custom_name].inspect}, responsible=#{row[:responsible_party_code].inspect}/#{row[:responsible_party_custom_name].inspect}, genre=#{row[:genre_code].inspect}, lsv=#{row[:lsv_literal_reconstruction].present?}, wfw=#{row[:word_for_word_translation].present?}"
+        end
+      end
+    end
+  end
+
   desc "Delete content for specific verses by unit_key. Usage: rake 'text_content:delete_verse_content' or use DRY_RUN=false to actually delete (default: DRY_RUN=true)"
   task :delete_verse_content => :environment do
     dry_run = ENV['DRY_RUN'] != 'false'  # Default to dry run for safety
