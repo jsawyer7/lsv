@@ -1396,6 +1396,93 @@ namespace :text_content do
     puts "Done!"
   end
 
+  desc "Delete text_contents records. Usage: ALL=true rake text_content:delete_all  (DRY_RUN=true by default). Optional: source_id and/or book_code."
+  task :delete_all, [:source_id, :book_code] => :environment do |_t, args|
+    dry_run = ENV['DRY_RUN'] != 'false'
+    clear_all = ENV['ALL'] == 'true'
+
+    puts "=" * 80
+    puts "Delete Text Contents"
+    puts "Mode: #{dry_run ? 'DRY RUN (no changes)' : 'LIVE (will DELETE records)'}"
+    puts "=" * 80
+    puts ""
+
+    unless clear_all || args[:source_id].present? || args[:book_code].present?
+      puts "Usage:"
+      puts "  Delete ALL text contents: ALL=true rake text_content:delete_all"
+      puts "  Delete by source: rake 'text_content:delete_all[source_id]'"
+      puts "  Delete by source+book: rake 'text_content:delete_all[source_id,book_code]'"
+      puts ""
+      puts "To actually delete: DRY_RUN=false ALL=true rake text_content:delete_all"
+      exit 1
+    end
+
+    service = DeleteTextContentsService.new(
+      source_id: args[:source_id],
+      book_code: args[:book_code],
+      all: clear_all,
+      dry_run: dry_run
+    )
+
+    begin
+      result = service.call
+    rescue DeleteTextContentsService::ScopeError => e
+      puts "✗ #{e.message}"
+      exit 1
+    end
+
+    if result[:source]
+      puts "Source: #{result[:source].name} (ID: #{result[:source].id}, code: #{result[:source].code})"
+    end
+    if result[:book]
+      puts "Book: #{result[:book].std_name} (#{result[:book].code})"
+    end
+    puts "Scope: ALL text contents" if clear_all
+
+    puts ""
+    puts "Records in scope: #{result[:total_records]}"
+    puts "By source:"
+    result[:before_by_source].sort.each do |code, count|
+      puts "  - #{code}: #{count}"
+    end
+    puts ""
+    puts "Dependent rows that would also be removed:"
+    result[:dependent_counts].each do |name, count|
+      puts "  - #{name}: #{count}"
+    end
+    puts "  - text_content_api_logs: kept (optional association, no FK)"
+
+    if result[:dry_run]
+      puts ""
+      puts "DRY RUN MODE: No records deleted."
+      puts "Would delete #{result[:would_delete]} text_content record(s)."
+      puts ""
+      puts "To actually delete, run:"
+      if clear_all
+        puts "  DRY_RUN=false ALL=true rake text_content:delete_all"
+      elsif result[:source] && result[:book]
+        puts "  DRY_RUN=false rake 'text_content:delete_all[#{result[:source].id},#{result[:book].code}]'"
+      elsif result[:source]
+        puts "  DRY_RUN=false rake 'text_content:delete_all[#{result[:source].id}]'"
+      end
+    else
+      puts ""
+      puts "Deleted #{result[:deleted_count]} text_content record(s)."
+      puts "Remaining in scope: #{result[:remaining_count]}"
+      if result[:remaining_count].zero?
+        puts ""
+        puts "✓ Deletion verified — no text_contents remain in scope."
+      else
+        puts ""
+        puts "✗ Deletion incomplete — #{result[:remaining_count]} record(s) still present."
+        exit 1
+      end
+    end
+
+    puts ""
+    puts "Done!"
+  end
+
   desc "Clear party/genre metadata, LSV literal reconstruction, and word-for-word JSON. Usage: rake 'text_content:clear_party_and_genre[source_id,book_code]' or ALL=true. DRY_RUN=true by default; VERIFY_ONLY=true only reports remaining data"
   task :clear_party_and_genre, [:source_id, :book_code] => :environment do |_t, args|
     dry_run = ENV['DRY_RUN'] != 'false'
