@@ -10,9 +10,22 @@ ActiveAdmin.register TextContent do
     layout "active_admin_custom"
     
     def scoped_collection
+      # unit is a string (supports "59a", "a.1", etc.), so plain ORDER BY unit is
+      # lexicographic (1, 10, 11, 2...). Use numeric-then-suffix natural order.
+      # unscope(:order) drops TextContent default_scope created_at ordering.
       super.includes(:source, :book, :text_unit_type, :language)
            .joins(:book)
-           .order('books.std_name ASC, text_contents.unit_group ASC NULLS LAST, text_contents.unit ASC NULLS LAST')
+           .unscope(:order)
+           .order(Arel.sql(<<~SQL.squish))
+             books.std_name ASC,
+             text_contents.unit_group ASC NULLS LAST,
+             CASE
+               WHEN text_contents.unit ~ '^[0-9]+'
+               THEN CAST(substring(text_contents.unit from '^[0-9]+') AS integer)
+               ELSE NULL
+             END ASC NULLS LAST,
+             text_contents.unit ASC NULLS LAST
+           SQL
     end
     
     def create

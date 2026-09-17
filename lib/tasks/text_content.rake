@@ -1396,6 +1396,67 @@ namespace :text_content do
     puts "Done!"
   end
 
+  desc "Import OT token files from app/admin/books/OT into text_contents. DRY_RUN=true by default. LIVE: DRY_RUN=false rake text_content:import_ot_token_files"
+  task import_ot_token_files: :environment do
+    dry_run = ENV['DRY_RUN'] != 'false'
+    source_code = ENV['SOURCE_CODE'].presence || 'LXX_SWETE'
+
+    puts "=" * 80
+    puts "Import OT Token Files → text_contents"
+    puts "Mode: #{dry_run ? 'DRY RUN (no changes)' : 'LIVE (will INSERT records)'}"
+    puts "Source: #{source_code}"
+    puts "Directory: #{ImportOtTokenFilesService::OT_DIR}"
+    puts "=" * 80
+    puts ""
+
+    begin
+      result = ImportOtTokenFilesService.new(source_code: source_code, dry_run: dry_run).call
+    rescue ImportOtTokenFilesService::Error => e
+      puts "✗ #{e.message}"
+      exit 1
+    end
+
+    puts "Files processed: #{result[:files_processed]}"
+    puts "Verses parsed: #{result[:verses_parsed]}"
+    puts ""
+    puts "Per-file summary:"
+    result[:file_summaries].each do |s|
+      puts "  - #{s[:file]} → #{s[:books].join(',')} | tokens=#{s[:tokens]} verses=#{s[:verses]} bad_lines=#{s[:bad_lines]}"
+    end
+
+    if result[:warnings].any?
+      puts ""
+      puts "Warnings:"
+      result[:warnings].each { |w| puts "  - #{w}" }
+    end
+
+    if result[:errors].any?
+      puts ""
+      puts "Errors:"
+      result[:errors].first(30).each { |e| puts "  - #{e}" }
+      puts "  ... (#{result[:errors].size} total)" if result[:errors].size > 30
+      exit 1
+    end
+
+    puts ""
+    if result[:dry_run]
+      puts "DRY RUN: would create #{result[:would_create]} text_content row(s)."
+      puts "To import for real:"
+      puts "  DRY_RUN=false rake text_content:import_ot_token_files"
+    else
+      puts "Created: #{result[:created_count]}"
+      if result[:verified]
+        puts "✓ Import verified against parsed file content."
+      else
+        puts "✗ Import verification failed."
+        exit 1
+      end
+    end
+
+    puts ""
+    puts "Done!"
+  end
+
   desc "Delete text_contents records. Usage: ALL=true rake text_content:delete_all  (DRY_RUN=true by default). Optional: source_id and/or book_code."
   task :delete_all, [:source_id, :book_code] => :environment do |_t, args|
     dry_run = ENV['DRY_RUN'] != 'false'
