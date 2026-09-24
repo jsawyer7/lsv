@@ -68,7 +68,7 @@
       </ul>
     </li>
 
-    <% data_tables_controllers = %w[directions languages sources books canons canon_books text_unit_types text_contents name_mappings text_translations] %>
+    <% data_tables_controllers = %w[directions languages sources books canons canon_books text_unit_types text_contents name_mappings text_translations dictionary_entries] %>
     <% data_tables_active = data_tables_controllers.include?(controller_name) %>
 
     <!-- Data Tables (Collapsible Group) -->
@@ -126,6 +126,11 @@
         <li class="menu-item <%= 'active' if controller_name == 'text_translations' %>">
           <%= link_to admin_text_translations_path, class: "menu-link" do %>
             <div data-i18n="Text Translations">Text Translations</div>
+          <% end %>
+        </li>
+        <li class="menu-item <%= 'active' if controller_name == 'dictionary_entries' %>">
+          <%= link_to admin_dictionary_entries_path, class: "menu-link" do %>
+            <div data-i18n="Dictionary">Dictionary</div>
           <% end %>
         </li>
       </ul>

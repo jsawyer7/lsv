@@ -10,9 +10,10 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_05_26_134700) do
+ActiveRecord::Schema[7.0].define(version: 2026_09_22_180000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
+  enable_extension "pg_trgm"
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
   enable_extension "vector"
@@ -462,6 +463,33 @@ ActiveRecord::Schema[7.0].define(version: 2026_05_26_134700) do
     t.datetime "last_summary_update_at"
     t.integer "message_count_since_summary"
     t.index ["user_id"], name: "index_conversations_on_user_id"
+  end
+
+  create_table "dictionary_entries", force: :cascade do |t|
+    t.integer "line_number", null: false
+    t.text "word", null: false
+    t.text "lang", null: false
+    t.string "lang_code", limit: 16, null: false
+    t.string "pos", limit: 64, null: false
+    t.text "etymology_number"
+    t.text "etymology_text"
+    t.text "source"
+    t.text "original_title"
+    t.integer "senses_count", default: 0, null: false
+    t.text "raw_json", null: false
+    t.jsonb "payload", default: {}, null: false
+    t.string "raw_sha256", limit: 64, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index "lower(word) text_pattern_ops", name: "index_dictionary_entries_on_lower_word_pattern"
+    t.index ["lang_code", "pos"], name: "index_dictionary_entries_on_lang_code_and_pos"
+    t.index ["lang_code", "word"], name: "index_dictionary_entries_on_lang_code_and_word"
+    t.index ["line_number"], name: "index_dictionary_entries_on_line_number", unique: true
+    t.index ["payload"], name: "index_dictionary_entries_on_payload_gin", opclass: :jsonb_path_ops, using: :gin
+    t.index ["pos"], name: "index_dictionary_entries_on_pos"
+    t.index ["raw_sha256"], name: "index_dictionary_entries_on_raw_sha256"
+    t.index ["word"], name: "index_dictionary_entries_on_word_pattern", opclass: :text_pattern_ops
+    t.index ["word"], name: "index_dictionary_entries_on_word_trgm", opclass: :gin_trgm_ops, using: :gin
   end
 
   create_table "directions", force: :cascade do |t|

@@ -10,7 +10,7 @@ ActiveAdmin.register_page "Data Tables" do
         end
       end
       div class: "card-body" do
-        para "Browse and manage data tables: directions, languages, sources, books, canons, unit types, and text contents.", class: "text-muted"
+        para "Browse and manage data tables: directions, languages, sources, books, canons, unit types, text contents, and dictionary entries.", class: "text-muted"
       end
     end
   end

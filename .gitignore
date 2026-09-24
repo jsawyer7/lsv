@@ -34,3 +34,8 @@
 .env.*
 node_modules/
 node_modules/
+
+# Large local corpus / DB dumps (keep on disk; do not push to GitHub)
+/app/admin/dictionary/*.jsonl
+/latest.dump
+.DS_Store
