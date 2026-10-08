@@ -23,8 +23,26 @@ class DictionaryEntry < ApplicationRecord
   scope :word_continuous, ->(q) { where('word ILIKE ?', "%#{sanitize_sql_like(q)}%") }
   scope :for_index, -> { select(INDEX_COLUMNS.map { |c| "#{table_name}.#{c}" }) }
 
+  # Case-insensitive prefix match backing the admin "Word starts with" filter
+  # (q[word_start]). Ransack's built-in *_start predicate emits `word ILIKE 'x%'`,
+  # which cannot use a btree prefix index (1–2 char prefixes scan the table);
+  # `lower(word) LIKE` hits index_dictionary_entries_on_lower_word_pattern.
+  scope :word_start, ->(prefix) {
+    where("lower(#{table_name}.word) LIKE lower(?)", "#{sanitize_sql_like(prefix.to_s)}%")
+  }
+
   def self.ransackable_attributes(_auth_object = nil)
     %w[id line_number word lang lang_code pos etymology_number source original_title senses_count created_at updated_at]
+  end
+
+  def self.ransackable_scopes(_auth_object = nil)
+    %w[word_start]
+  end
+
+  # Without this Ransack casts "t"/"1"/"f"/"0" to booleans, so prefixes like
+  # "t" would search for "true%" and "f"/"0" would drop the filter entirely.
+  def self.ransackable_scopes_skip_sanitize_args
+    %w[word_start]
   end
 
   def self.ransackable_associations(_auth_object = nil)

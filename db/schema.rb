@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_09_22_180000) do
+ActiveRecord::Schema[7.0].define(version: 2026_10_08_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -488,6 +488,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_09_22_180000) do
     t.index ["payload"], name: "index_dictionary_entries_on_payload_gin", opclass: :jsonb_path_ops, using: :gin
     t.index ["pos"], name: "index_dictionary_entries_on_pos"
     t.index ["raw_sha256"], name: "index_dictionary_entries_on_raw_sha256"
+    t.index ["word", "id"], name: "index_dictionary_entries_on_word_and_id"
     t.index ["word"], name: "index_dictionary_entries_on_word_pattern", opclass: :text_pattern_ops
     t.index ["word"], name: "index_dictionary_entries_on_word_trgm", opclass: :gin_trgm_ops, using: :gin
   end

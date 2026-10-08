@@ -43,6 +43,11 @@ ActiveAdmin.register DictionaryEntry do
       return chain if params["format"] == "csv"
       return chain if chain.respond_to?(:total_pages)
 
+      # ~84k words repeat, so ORDER BY word alone is non-deterministic and
+      # OFFSET pages can repeat/skip rows. id breaks ties and matches the
+      # (word, id) index.
+      chain = chain.order(DictionaryEntry.arel_table[:id].asc)
+
       page = params[Kaminari.config.param_name]
       per = per_page
       page_i = [(page.presence || 1).to_i, 1].max
@@ -54,15 +59,16 @@ ActiveAdmin.register DictionaryEntry do
                 exact_total(chain)
               end
 
+      page_chain = params.dig(:q, :word_start).present? ? filter_before_sort(chain) : chain
       offset = (page_i - 1) * per
-      rows = chain.offset(offset).limit(per).to_a
+      rows = page_chain.offset(offset).limit(per).to_a
 
       if rows.empty? && page_i > 1
         total = exact_total(chain) if used_estimate
         max_page = [(total.to_f / per).ceil, 1].max
         page_i = [page_i, max_page].min
         offset = (page_i - 1) * per
-        rows = chain.offset(offset).limit(per).to_a
+        rows = page_chain.offset(offset).limit(per).to_a
       end
 
       # Pass limit/offset so Kaminari treats +rows+ as the already-fetched page
@@ -79,6 +85,18 @@ ActiveAdmin.register DictionaryEntry do
 
     def exact_total(chain)
       chain.except(:select, :order, :offset, :limit).count(:all)
+    end
+
+    # With a prefix filter, Postgres misjudges where matches sit in the
+    # (word, id) index and walks it from "A" (6s+ for a one-letter prefix).
+    # OFFSET 0 stops the planner flattening the subquery, so it fetches matches
+    # via the lower(word) prefix index first, then sorts that smaller set.
+    def filter_before_sort(chain)
+      filtered = chain.except(:order, :offset, :limit).offset(0)
+      DictionaryEntry.unscoped
+                     .from(filtered, DictionaryEntry.table_name)
+                     .select(chain.select_values)
+                     .order(chain.order_values)
     end
 
     def use_estimated_total_count?
@@ -133,7 +151,9 @@ ActiveAdmin.register DictionaryEntry do
           div class: "col-md-2" do
             label "Part of speech", class: "form-label"
             select class: "form-select", id: "dict-pos" do
-              option "All", value: ""
+              # Arbre drops empty attributes, so `option "All", value: ""` renders
+              # <option>All</option> and the browser submits "All" as pos_eq.
+              text_node '<option value="">All</option>'.html_safe
               DictionaryEntry::POS_OPTIONS.each do |pos|
                 option pos, value: pos, selected: (params.dig(:q, :pos_eq) == pos)
               end
@@ -171,6 +191,13 @@ ActiveAdmin.register DictionaryEntry do
           end
         end
         tbody do
+          if collection.empty?
+            tr do
+              td colspan: 6, class: "text-center text-muted py-4" do
+                "No dictionary entries match these filters."
+              end
+            end
+          end
           collection.each do |entry|
             tr do
               td do
@@ -244,7 +271,7 @@ ActiveAdmin.register DictionaryEntry do
           text_node entry.word
           span class: "badge bg-info ms-2" do entry.pos end
         end
-        p class: "text-muted mb-0" do
+        para class: "text-muted mb-0" do
           "#{entry.lang} (#{entry.lang_code}) · line #{entry.line_number} · #{entry.senses_count} sense(s)"
         end
       end
@@ -259,7 +286,7 @@ ActiveAdmin.register DictionaryEntry do
           div class: "materio-header" do
             h5 class: "mb-0 fw-semibold" do
               i class: "ri ri-information-line me-2"
-              "Entry"
+              text_node "Entry"
             end
           end
           div class: "card-body p-4" do
@@ -289,7 +316,7 @@ ActiveAdmin.register DictionaryEntry do
             div class: "materio-header" do
               h5 class: "mb-0 fw-semibold" do
                 i class: "ri ri-node-tree me-2"
-                "Etymology"
+                text_node "Etymology"
               end
             end
             div class: "card-body p-4" do
@@ -306,7 +333,7 @@ ActiveAdmin.register DictionaryEntry do
             div class: "materio-header" do
               h5 class: "mb-0 fw-semibold" do
                 i class: "ri ri-book-open-line me-2"
-                "Senses (#{senses.size})"
+                text_node "Senses (#{senses.size})"
               end
             end
             div class: "card-body p-4" do
@@ -318,7 +345,7 @@ ActiveAdmin.register DictionaryEntry do
                   glosses = sense['glosses'] || sense['raw_glosses']
                   if glosses.is_a?(Array)
                     ul class: "mb-2" do
-                      glosses.each { |g| li { g } }
+                      glosses.each { |g| li g.to_s }
                     end
                   end
                   if sense['tags'].is_a?(Array) && sense['tags'].any?
@@ -376,7 +403,7 @@ ActiveAdmin.register DictionaryEntry do
           div class: "materio-header" do
             h5 class: "mb-0 fw-semibold" do
               i class: "ri ri-code-s-slash-line me-2"
-              "Raw JSON (letter-perfect file line)"
+              text_node "Raw JSON (letter-perfect file line)"
             end
           end
           div class: "card-body p-3" do
@@ -393,6 +420,29 @@ ActiveAdmin.register DictionaryEntry do
             end
           end
         end
+      end
+    end
+  end
+end
+
+# The index block above renders its own header, search card and table. AA's
+# default page (1) nests that markup inside an IndexAsTable <table> and (2)
+# swaps it for a bare "No Dictionary Entries found" blank slate when a search
+# has no hits, which also hides the search card. Rendered via
+# app/views/admin/dictionary_entries/index.html.arb.
+class DictionaryEntriesIndexPage < ActiveAdmin::Views::Pages::Index
+  protected
+
+  def build_collection
+    paginated_collection(
+      collection,
+      entry_name: active_admin_config.resource_label,
+      entries_name: active_admin_config.plural_resource_label(count: collection_size),
+      download_links: false,
+      per_page: config.fetch(:per_page, active_admin_config.per_page)
+    ) do
+      div class: "index_content" do
+        instance_exec(&config.block)
       end
     end
   end
