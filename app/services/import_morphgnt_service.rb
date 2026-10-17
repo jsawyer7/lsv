@@ -103,8 +103,10 @@ class ImportMorphgntService
     end
 
     check_parsed!(verses)
+    resolve_reference_data!
 
     source = Source.unscoped.find_by(code: SOURCE_ATTRIBUTES[:code])
+    check_existing_source!(source)
     book_ids = books.values.map(&:id)
     existing = source ? TextContent.unscoped.where(source_id: source.id, book_id: book_ids).count : 0
     if existing.positive? && !@replace
@@ -234,15 +236,39 @@ class ImportMorphgntService
     end
   end
 
-  def ensure_source!
-    language = Language.unscoped.find_by(code: 'grc') or raise Error, 'Language grc (Greek) missing'
-    unit_type = TextUnitType.unscoped.find_by(code: 'BIB_VERSE') or raise Error, 'TextUnitType BIB_VERSE missing'
+  # Rows always use these explicitly resolved ids, never whatever an existing
+  # source row happens to hold (ids differ between environments).
+  def resolve_reference_data!
+    @language = Language.unscoped.find_by(code: 'grc') or raise Error, 'Language grc (Greek) missing'
+    @unit_type = TextUnitType.unscoped.find_by(code: 'BIB_VERSE') or raise Error, 'TextUnitType BIB_VERSE missing'
+  end
 
-    Source.unscoped.find_or_create_by!(code: SOURCE_ATTRIBUTES[:code]) do |s|
-      s.assign_attributes(SOURCE_ATTRIBUTES.except(:code))
-      s.language = language
-      s.text_unit_type = unit_type
+  # A GRK_SBLGNT source may already exist (e.g. created by hand in admin).
+  # Checked during dry runs too, so a bad source is reported before any write.
+  def check_existing_source!(source)
+    return unless source
+
+    if source.language_id != @language.id
+      actual = Language.unscoped.find_by(id: source.language_id)&.code || 'none'
+      @errors << "Existing source #{source.code} (id #{source.id}) has language #{actual}, expected grc. Fix it in admin before importing."
     end
+
+    if source.text_unit_type_id.nil?
+      @warnings << "Existing source #{source.code} (id #{source.id}) has no text unit type; it will be set to BIB_VERSE."
+    elsif source.text_unit_type_id != @unit_type.id
+      actual = TextUnitType.unscoped.find_by(id: source.text_unit_type_id)&.code
+      @errors << "Existing source #{source.code} (id #{source.id}) has text unit type #{actual}, expected BIB_VERSE. Fix it in admin before importing."
+    end
+  end
+
+  def ensure_source!
+    source = Source.unscoped.find_or_create_by!(code: SOURCE_ATTRIBUTES[:code]) do |s|
+      s.assign_attributes(SOURCE_ATTRIBUTES.except(:code))
+      s.language = @language
+      s.text_unit_type = @unit_type
+    end
+    source.update!(text_unit_type: @unit_type) if source.text_unit_type_id.nil?
+    source
   end
 
   # Only the books being imported, so a FILES=... run never touches other books.
@@ -266,8 +292,8 @@ class ImportMorphgntService
         {
           source_id: source.id,
           book_id: books.fetch(v.book_code).id,
-          text_unit_type_id: source.text_unit_type_id,
-          language_id: source.language_id,
+          text_unit_type_id: @unit_type.id,
+          language_id: @language.id,
           unit_group: v.chapter,
           unit: v.verse.to_s,
           unit_key: v.unit_key(source.code),
@@ -306,19 +332,21 @@ class ImportMorphgntService
     book_codes = books.values.to_h { |b| [b.id, b.code] }
     expected = verses.to_h { |v| [v.unit_key(source.code), v] }
 
-    db_verses = TextContent.unscoped.where(source_id: source.id, book_id: books.values.map(&:id)).pluck(:id, :unit_key, :content, :book_id, :population_status)
+    db_verses = TextContent.unscoped.where(source_id: source.id, book_id: books.values.map(&:id)).pluck(:id, :unit_key, :content, :book_id, :population_status, :language_id, :text_unit_type_id)
     if db_verses.size != expected.size
       @errors << "Verify: DB has #{db_verses.size} verses, expected #{expected.size}"
       return false
     end
 
     key_by_id = {}
-    db_verses.each do |id, key, content, book_id, status|
+    db_verses.each do |id, key, content, book_id, status, language_id, unit_type_id|
       v = expected[key]
       problem = if v.nil? then 'unexpected verse'
                 elsif content != v.content then 'content mismatch'
                 elsif book_codes[book_id] != v.book_code then 'wrong book'
                 elsif status != TextContent::SOURCE_IMPORT_STATUS then "status #{status}"
+                elsif language_id != @language.id then 'wrong language'
+                elsif unit_type_id != @unit_type.id then 'wrong text unit type'
                 end
       if problem
         @errors << "Verify: #{key}: #{problem}"

@@ -101,6 +101,29 @@ class ImportMorphgntServiceTest < ActiveSupport::TestCase
     assert_equal 'ἀπὸ τοῦ πονηροῦ.', verse('MAT|6|13').content
   end
 
+  test 'an existing source with no text unit type (as in production) is fixed and imported' do
+    grc = Language.unscoped.find_by!(code: 'grc')
+    Source.unscoped.create!(code: 'GRK_SBLGNT', name: 'SBLGNT (created by hand)', language: grc, text_unit_type: nil)
+
+    dry = ImportMorphgntService.new(dir: @dir, filenames: FILES).call
+    assert_empty dry[:errors]
+    assert_match(/no text unit type; it will be set to BIB_VERSE/, dry[:warnings].join)
+
+    result = import
+    assert result[:verified], result[:errors].inspect
+    assert_equal 'BIB_VERSE', source.reload.text_unit_type.code
+    assert_equal ['BIB_VERSE'], TextContent.unscoped.where(source: source).map { |tc| tc.text_unit_type.code }.uniq
+  end
+
+  test 'an existing source with the wrong language is reported in the dry run and blocks the import' do
+    other = Language.unscoped.find_or_create_by!(code: 'eng') { |l| l.name = 'English' }
+    Source.unscoped.create!(code: 'GRK_SBLGNT', name: 'SBLGNT (wrong language)', language: other)
+
+    assert_match(/has language eng, expected grc/, ImportMorphgntService.new(dir: @dir, filenames: FILES).call[:errors].join)
+    assert_match(/has language eng, expected grc/, import[:errors].join)
+    assert_equal 0, TextContent.unscoped.where(source: source).count
+  end
+
   test 'AI population refuses imported verses and writes nothing' do
     import
     tc = verse('MAT|6|13')
