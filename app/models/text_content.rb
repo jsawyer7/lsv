@@ -11,7 +11,17 @@ class TextContent < ApplicationRecord
   has_many :text_translations, dependent: :destroy
   has_many :canon_text_contents, dependent: :destroy
   has_many :canons, through: :canon_text_contents
-  
+  has_many :tokens, -> { order(:position) }, class_name: 'TextContentToken', dependent: :delete_all
+
+  # Sources imported verbatim from files. AI population must never write to
+  # these rows (see TextContentPopulationService#populate_content_fields).
+  AI_LOCKED_SOURCE_CODES = %w[GRK_SBLGNT].freeze
+  SOURCE_IMPORT_STATUS = 'source_import'.freeze
+
+  def ai_population_locked?
+    population_status == SOURCE_IMPORT_STATUS || AI_LOCKED_SOURCE_CODES.include?(source&.code)
+  end
+
   validates :source, presence: true
   validates :book, presence: true
   validates :text_unit_type, presence: true

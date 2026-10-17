@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_10_08_120000) do
+ActiveRecord::Schema[7.0].define(version: 2026_10_17_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -737,6 +737,22 @@ ActiveRecord::Schema[7.0].define(version: 2026_10_08_120000) do
     t.index ["text_content_id"], name: "index_text_content_api_logs_on_text_content_id"
   end
 
+  create_table "text_content_tokens", force: :cascade do |t|
+    t.uuid "text_content_id", null: false
+    t.integer "position", null: false
+    t.string "ref", limit: 16, null: false
+    t.text "surface", null: false
+    t.text "word", null: false
+    t.text "normalized", null: false
+    t.text "lemma", null: false
+    t.string "pos", limit: 8, null: false
+    t.string "parsing", limit: 16, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["lemma"], name: "index_text_content_tokens_on_lemma"
+    t.index ["text_content_id", "position"], name: "index_text_content_tokens_on_text_content_id_and_position", unique: true
+  end
+
   create_table "text_contents", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.bigint "source_id", null: false
     t.bigint "book_id", null: false
@@ -935,6 +951,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_10_08_120000) do
   add_foreign_key "shares", "users", column: "recipient_id"
   add_foreign_key "sources", "languages"
   add_foreign_key "sources", "text_unit_types"
+  add_foreign_key "text_content_tokens", "text_contents", on_delete: :cascade
   add_foreign_key "text_contents", "books"
   add_foreign_key "text_contents", "genre_types", column: "genre_code", primary_key: "code"
   add_foreign_key "text_contents", "languages"

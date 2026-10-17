@@ -22,6 +22,18 @@ class TextContentPopulationService
   end
 
   def populate_content_fields(force: false)
+    # Verbatim file imports (e.g. MorphGNT SBLGNT) are never sent to AI, even
+    # with force: true. Return a status every caller already treats as a no-op
+    # and write nothing — an unknown status would make the job mark it 'error'.
+    if @text_content.ai_population_locked?
+      Rails.logger.info "Skipping AI population for #{@text_content.unit_key}: source is locked to its file import"
+      return {
+        status: 'already_populated',
+        message: "AI population disabled for source #{@source&.code} (verbatim file import)",
+        content_populated_at: @text_content.content_populated_at
+      }
+    end
+
     Rails.logger.info "Populating content fields for #{@text_content.unit_key}"
 
     # Update attempt timestamp
