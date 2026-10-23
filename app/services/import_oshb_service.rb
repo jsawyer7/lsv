@@ -82,16 +82,19 @@ class ImportOshbService
     raise Error, "No OSHB book files found in #{@dir}" if files.empty?
 
     books = resolve_books!(files)
-    file_summaries = []
-    verses = []
 
+    # Pass 1: parse and check every file, keeping only counts. Files are
+    # processed one at a time so memory stays at one book (the whole OT held at
+    # once peaked at ~1.3 GB and was killed on a Heroku one-off dyno).
+    file_summaries = []
+    token_kinds = Hash.new(0)
     files.each do |path|
-      summary, file_verses = parse_file(path)
+      summary, verses = parse_file(path)
+      check_parsed!(verses)
+      verses.each { |v| v.tokens.each { |t| token_kinds[t[:kind]] += 1 } }
       file_summaries << summary
-      verses.concat(file_verses)
     end
 
-    check_parsed!(verses)
     resolve_reference_data!
 
     source = Source.unscoped.find_by(code: SOURCE_CODE)
@@ -108,9 +111,9 @@ class ImportOshbService
       source_exists: source.present?,
       existing_rows: existing,
       files_processed: file_summaries.size,
-      verses_parsed: verses.size,
-      tokens_parsed: verses.sum { |v| v.tokens.size },
-      token_kinds: verses.flat_map(&:tokens).group_by { |t| t[:kind] }.transform_values(&:size),
+      verses_parsed: file_summaries.sum { |s| s[:verses] },
+      tokens_parsed: file_summaries.sum { |s| s[:tokens] },
+      token_kinds: token_kinds,
       file_summaries: file_summaries,
       created_verses: 0,
       created_tokens: 0,
@@ -118,14 +121,29 @@ class ImportOshbService
     }
 
     unless @dry_run || @errors.any?
+      # Pass 2: still one transaction for the whole OT, but each book is parsed,
+      # inserted and verified before the next is loaded.
       # requires_new: a savepoint, so the Rollback below also works when called inside another transaction.
-      ActiveRecord::Base.transaction(requires_new: true) do
-        source = ensure_source!
-        delete_existing!(source, books) if existing.positive?
-        result[:created_verses], result[:created_tokens] = insert_verses!(source, books, verses)
-        result[:verified] = verify_import!(source, books, verses)
-        # Never leave a partial or unverified import behind.
-        raise ActiveRecord::Rollback unless result[:verified]
+      without_sql_logging do
+        ActiveRecord::Base.transaction(requires_new: true) do
+          source = ensure_source!
+          delete_existing!(source, books) if existing.positive?
+
+          verified = files.all? do |path|
+            _summary, verses = parse_file(path)
+            next false if @errors.any? # file changed since pass 1
+
+            book_code = FILE_BOOK_MAP.fetch(path.basename.to_s).last
+            created_verses, created_tokens = insert_verses!(source, books, verses)
+            result[:created_verses] += created_verses
+            result[:created_tokens] += created_tokens
+            verify_import!(source, books.slice(book_code), verses)
+          end
+
+          result[:verified] = verified && totals_match?(source, books, result)
+          # Never leave a partial or unverified import behind.
+          raise ActiveRecord::Rollback unless result[:verified]
+        end
       end
       if result[:verified]
         result[:source_exists] = true
@@ -399,6 +417,29 @@ class ImportOshbService
     end
 
     [created_verses, created_tokens]
+  end
+
+  # Production logs SQL at DEBUG; inserting 300k rows would print ~130 MB of SQL.
+  def without_sql_logging
+    logger = ActiveRecord::Base.logger
+    return yield unless logger
+
+    previous = logger.level
+    logger.level = [previous, Logger::INFO].max
+    yield
+  ensure
+    logger.level = previous if logger && previous
+  end
+
+  # Final whole-import check after the per-book verification.
+  def totals_match?(source, books, result)
+    scope = TextContent.unscoped.where(source_id: source.id, book_id: books.values.map(&:id))
+    verses = scope.count
+    tokens = TextContentToken.unscoped.where(text_content_id: scope.select(:id)).count
+    return true if verses == result[:verses_parsed] && tokens == result[:tokens_parsed]
+
+    @errors << "Verify: DB has #{verses} verses / #{tokens} tokens, expected #{result[:verses_parsed]} / #{result[:tokens_parsed]}"
+    false
   end
 
   TOKEN_FIELDS = %i[position ref kind surface word lemma parsing source_word_id source_n source_xml].freeze
