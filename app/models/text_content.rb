@@ -15,7 +15,7 @@ class TextContent < ApplicationRecord
 
   # Sources imported verbatim from files. AI population must never write to
   # these rows (see TextContentPopulationService#populate_content_fields).
-  AI_LOCKED_SOURCE_CODES = %w[GRK_SBLGNT].freeze
+  AI_LOCKED_SOURCE_CODES = %w[GRK_SBLGNT MT_WLC].freeze
   SOURCE_IMPORT_STATUS = 'source_import'.freeze
 
   def ai_population_locked?

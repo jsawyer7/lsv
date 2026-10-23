@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_10_17_120000) do
+ActiveRecord::Schema[7.0].define(version: 2026_10_23_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -743,12 +743,16 @@ ActiveRecord::Schema[7.0].define(version: 2026_10_17_120000) do
     t.string "ref", limit: 16, null: false
     t.text "surface", null: false
     t.text "word", null: false
-    t.text "normalized", null: false
+    t.text "normalized"
     t.text "lemma", null: false
-    t.string "pos", limit: 8, null: false
-    t.string "parsing", limit: 16, null: false
+    t.string "pos", limit: 8
+    t.string "parsing", limit: 32, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "kind", limit: 16, default: "word", null: false
+    t.string "source_word_id", limit: 16
+    t.string "source_n", limit: 16
+    t.text "source_xml"
     t.index ["lemma"], name: "index_text_content_tokens_on_lemma"
     t.index ["text_content_id", "position"], name: "index_text_content_tokens_on_text_content_id_and_position", unique: true
   end
@@ -781,6 +785,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_10_17_120000) do
     t.string "population_status", default: "pending"
     t.text "population_error_message"
     t.datetime "last_population_attempt_at"
+    t.text "source_xml"
     t.index ["book_id", "population_status"], name: "index_text_contents_on_book_id_and_population_status"
     t.index ["book_id"], name: "index_text_contents_on_book_id"
     t.index ["language_id"], name: "index_text_contents_on_language_id"
