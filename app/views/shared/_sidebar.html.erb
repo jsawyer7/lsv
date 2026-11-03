@@ -40,6 +40,14 @@
       <% end %>
     </li>
 
+    <!-- Grok Bot Connections -->
+    <li class="menu-item <%= 'active' if controller_name == 'grok_bot_connections' %>">
+      <%= link_to admin_grok_bot_connections_path, class: "menu-link" do %>
+        <i class="menu-icon icon-base ri ri-robot-2-line"></i>
+        <div data-i18n="Grok Bot">Grok Bot</div>
+      <% end %>
+    </li>
+
     <% veritalk_controllers = %w[conversations conversation_messages veritalk_validators] %>
     <% veritalk_active = veritalk_controllers.include?(controller_name) %>
 
