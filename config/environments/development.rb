@@ -9,6 +9,11 @@ Rails.application.configure do
   # Do not eager load code on boot.
   config.eager_load = false
 
+  # Allow ngrok tunnels so external clients (e.g. a Grok Bot connector) can reach /mcp locally.
+  config.hosts << ".ngrok-free.app"
+  config.hosts << ".ngrok-free.dev"
+  config.hosts << ".ngrok.app"
+
   # Show full error reports.
   config.consider_all_requests_local = true
 

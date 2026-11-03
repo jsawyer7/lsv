@@ -1,0 +1,61 @@
+<div class="page-header mb-4">
+  <div class="d-flex justify-content-between align-items-center">
+    <div>
+      <h1 class="mb-2">Token for <%= @connection.name %></h1>
+      <p class="text-muted mb-0">Copy it now. LSV does not store it and cannot show it again.</p>
+    </div>
+    <div>
+      <%= link_to "Done", admin_grok_bot_connection_path(@connection), class: "btn btn-primary" %>
+    </div>
+  </div>
+</div>
+
+<div class="alert alert-warning d-flex align-items-start mb-4">
+  <i class="ri ri-error-warning-line me-2" style="font-size: 20px;"></i>
+  <div>Anyone with this token can read the LSV data this connection allows. Paste it only into Grok Bot.</div>
+</div>
+
+<div class="materio-card mb-4">
+  <div class="card-body p-4">
+    <label class="text-muted small fw-semibold mb-1" for="grok-bot-token">Token</label>
+    <div class="input-group mb-4">
+      <input id="grok-bot-token" type="text" class="form-control font-monospace" value="<%= @plain_token %>" readonly autocomplete="off" spellcheck="false">
+      <button type="button" class="btn btn-outline-primary" data-copy-target="grok-bot-token">Copy</button>
+    </div>
+
+    <label class="text-muted small fw-semibold mb-1" for="grok-bot-url">MCP server URL</label>
+    <div class="input-group">
+      <input id="grok-bot-url" type="text" class="form-control font-monospace" value="<%= mcp_url %>" readonly>
+      <button type="button" class="btn btn-outline-primary" data-copy-target="grok-bot-url">Copy</button>
+    </div>
+  </div>
+</div>
+
+<div class="materio-card">
+  <div class="materio-header">
+    <h5 class="mb-0 fw-semibold"><i class="ri ri-robot-2-line me-2"></i>Add LSV to Grok Bot</h5>
+  </div>
+  <div class="card-body p-4">
+    <ol class="mb-0">
+      <li class="mb-2">In Grok Bot, open <strong>Connectors</strong> and add a <strong>custom MCP server</strong>.</li>
+      <li class="mb-2">Server URL: <code><%= mcp_url %></code></li>
+      <li class="mb-2">Add an HTTP header named <code>X-LSV-Token</code> with the token above as its value.
+        If Grok Bot only offers an <code>Authorization</code> header, use <code>Bearer &lt;token&gt;</code> as its value instead.</li>
+      <li class="mb-2">Save. Grok Bot should list <%= LsvMcp::Server.tools_for(@connection).size %> LSV tools.
+        Set them to run without asking for approval so routines are not paused.</li>
+      <li>Calls appear under <em>Recent tool calls</em> on this connection's page.</li>
+    </ol>
+  </div>
+</div>
+
+<script>
+  document.querySelectorAll('[data-copy-target]').forEach(function (button) {
+    button.addEventListener('click', function () {
+      var input = document.getElementById(button.getAttribute('data-copy-target'));
+      input.select();
+      (navigator.clipboard ? navigator.clipboard.writeText(input.value) : Promise.reject())
+        .catch(function () { document.execCommand('copy'); })
+        .finally(function () { button.textContent = 'Copied'; });
+    });
+  });
+</script>

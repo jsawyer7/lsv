@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_10_23_120000) do
+ActiveRecord::Schema[7.0].define(version: 2026_11_03_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -547,6 +547,36 @@ ActiveRecord::Schema[7.0].define(version: 2026_10_23_120000) do
     t.index ["code"], name: "index_genre_types_on_code", unique: true
   end
 
+  create_table "grok_bot_connections", force: :cascade do |t|
+    t.string "name", null: false
+    t.text "description"
+    t.boolean "enabled", default: true, null: false
+    t.string "token_digest", limit: 64, null: false
+    t.string "token_prefix", limit: 16, null: false
+    t.string "scopes", default: [], null: false, array: true
+    t.bigint "created_by_id"
+    t.datetime "token_generated_at", null: false
+    t.datetime "last_used_at"
+    t.string "last_used_ip"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["created_by_id"], name: "index_grok_bot_connections_on_created_by_id"
+    t.index ["token_digest"], name: "index_grok_bot_connections_on_token_digest", unique: true
+  end
+
+  create_table "grok_bot_tool_calls", force: :cascade do |t|
+    t.bigint "grok_bot_connection_id", null: false
+    t.string "tool_name", null: false
+    t.jsonb "arguments", default: {}, null: false
+    t.string "status", null: false
+    t.text "error_message"
+    t.integer "result_count"
+    t.integer "duration_ms", null: false
+    t.string "remote_ip"
+    t.datetime "created_at", null: false
+    t.index ["grok_bot_connection_id", "created_at"], name: "index_grok_bot_tool_calls_on_connection_and_created_at"
+  end
+
   create_table "group_memberships", force: :cascade do |t|
     t.bigint "user_id", null: false
     t.bigint "group_id", null: false
@@ -943,6 +973,8 @@ ActiveRecord::Schema[7.0].define(version: 2026_10_23_120000) do
   add_foreign_key "evidences", "claims"
   add_foreign_key "follows", "users"
   add_foreign_key "follows", "users", column: "followed_user"
+  add_foreign_key "grok_bot_connections", "users", column: "created_by_id", on_delete: :nullify
+  add_foreign_key "grok_bot_tool_calls", "grok_bot_connections", on_delete: :cascade
   add_foreign_key "group_memberships", "groups"
   add_foreign_key "group_memberships", "users"
   add_foreign_key "groups", "users", column: "leader_id"

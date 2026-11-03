@@ -163,6 +163,9 @@ Rails.application.routes.draw do
     post '/text-content/ai-validate-structure', to: 'text_contents#ai_validate_structure'
   end
 
+  # Model Context Protocol endpoint for Grok Bot connectors (read-only, token auth; see McpController)
+  match '/mcp', to: 'mcp#handle', via: %i[get post delete], as: :mcp
+
   # Sidekiq Web UI for monitoring background jobs
   # Note: Redis connection is configured in config/initializers/sidekiq.rb
   require 'sidekiq/web'

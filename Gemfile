@@ -96,3 +96,6 @@ gem 'sidekiq-cron' # Optional: for scheduled jobs
 
 # Alchemy CMS - content management for static/marketing pages
 gem 'alchemy_cms', '~> 7.4'
+
+# Model Context Protocol server: lets Grok Bot connectors read LSV data (see McpController)
+gem 'mcp', '~> 1.8'
