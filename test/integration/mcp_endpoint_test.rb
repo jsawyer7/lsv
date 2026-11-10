@@ -95,6 +95,46 @@ class McpEndpointTest < ActionDispatch::IntegrationTest
     assert_equal ['δεύτερος'], whole['verses'][1]['words'].map { |w| w['lemma'] }
   end
 
+  test 'include_words allows up to 60 verses' do
+    verse_type = TextUnitType.unscoped.find_by!(code: 'BIB_VERSE')
+    rows = (1..61).map do |n|
+      { source_id: @source.id, book_id: @book.id, text_unit_type_id: verse_type.id, language_id: @source.language_id,
+        unit_group: 22, unit: n.to_s, content: "v#{n}", unit_key: "LXX_TEST|JOS|22|#{n}",
+        created_at: Time.current, updated_at: Time.current }
+    end
+    TextContent.insert_all!(rows)
+
+    assert_equal 60, tool_data('get_verses', { source: 'LXX_TEST', book: 'JOS', chapter: 22, verse_to: 60, verse_from: 1,
+                                               include_words: true })['count']
+    error, text = call_tool('get_verses', { source: 'LXX_TEST', book: 'JOS', chapter: 22, include_words: true })
+    assert error
+    assert_match(/limited to 60 verses/, text)
+  end
+
+  test 'lookup_dictionary returns every sense of an entry' do
+    senses = (1..21).map { |n| { 'glosses' => ["sense #{n}"] } }
+    DictionaryEntry.create!(line_number: 1, word: 'in', lang: 'English', lang_code: 'en', pos: 'prep',
+                            raw_json: '{}', raw_sha256: '0' * 64, payload: { 'senses' => senses })
+
+    entry = tool_data('lookup_dictionary', { word: 'in', pos: 'prep', limit: 20 })['entries'].sole
+    assert_equal 21, entry['senses_total']
+    assert_equal (1..21).map { |n| ["sense #{n}"] }, entry['senses'].map { |s| s['glosses'] }
+  end
+
+  test 'connecting and listing tools are logged' do
+    rpc('initialize', { protocolVersion: '2025-06-18', capabilities: {}, clientInfo: { name: 'grok', version: '1' } })
+    rpc('tools/list')
+
+    list, init = @connection.tool_calls.recent.first(2)
+    assert_equal ['tools/list', 'ok', LsvMcp::Server::TOOLS.size], [list.tool_name, list.status, list.result_count]
+    assert_equal ['initialize', 'ok', { 'protocolVersion' => '2025-06-18', 'clientInfo' => { 'name' => 'grok', 'version' => '1' } }],
+                 [init.tool_name, init.status, init.arguments]
+    assert @connection.reload.last_used_at
+
+    rpc('tools/list', token: 'lsv_not-a-real-token')
+    assert_equal 2, GrokBotToolCall.count
+  end
+
   test 'tool errors are reported to the Bot and logged' do
     error, text = call_tool('get_verses', { source: 'NOPE', book: 'JOS', chapter: 1 })
     assert error

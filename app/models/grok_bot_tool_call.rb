@@ -1,4 +1,4 @@
-# Audit log: one row per MCP tool call made with a GrokBotConnection.
+# Audit log: one row per MCP tool call, initialize or tools/list request made with a GrokBotConnection.
 class GrokBotToolCall < ApplicationRecord
   STATUSES = %w[ok error].freeze
 

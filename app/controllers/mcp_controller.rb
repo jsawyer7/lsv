@@ -5,6 +5,11 @@
 # decides which tools are listed (LsvMcp::Server). The transport is stateless,
 # so any web process can serve any request.
 class McpController < ActionController::API
+  # Tool calls are logged by LsvMcp::Tool. Connecting and listing tools are
+  # logged here too, so a client's "tool discovery failed" can be checked
+  # against what LSV actually received.
+  DISCOVERY_METHODS = %w[initialize tools/list].freeze
+
   before_action :require_https
   before_action :authenticate_connection
 
@@ -20,9 +25,12 @@ class McpController < ActionController::API
     )
     server.transport = transport
 
+    discovery = discovery_request
+    started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
     # Rails may already have read the JSON body for params; the transport reads it again.
     request.body.rewind
     status, headers, body = transport.handle_request(Rack::Request.new(request.env))
+    record_discovery(discovery, status, body, started) if discovery
 
     content_type = nil
     headers.each do |name, value|
@@ -38,6 +46,34 @@ class McpController < ActionController::API
   end
 
   private
+
+  def discovery_request
+    message = JSON.parse(request.raw_post)
+    message if message.is_a?(Hash) && DISCOVERY_METHODS.include?(message['method'])
+  rescue JSON::ParserError
+    nil
+  end
+
+  def record_discovery(message, status, body, started)
+    reply = JSON.parse(Array(body).join) rescue {}
+    error = reply['error'] && reply['error']['message']
+    error ||= "HTTP #{status}" unless status == 200
+    params = message['params'].is_a?(Hash) ? message['params'].slice('protocolVersion', 'clientInfo') : {}
+
+    GrokBotToolCall.create!(
+      grok_bot_connection: @connection,
+      tool_name: message['method'],
+      arguments: params,
+      status: error ? 'error' : 'ok',
+      error_message: error,
+      result_count: reply.dig('result', 'tools')&.size,
+      duration_ms: ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - started) * 1000).round,
+      remote_ip: request.remote_ip
+    )
+    @connection.touch_usage!(request.remote_ip)
+  rescue StandardError => e
+    Rails.logger.error("[LsvMcp] could not record #{message['method']}: #{e.class}: #{e.message}")
+  end
 
   def require_https
     return unless Rails.env.production?
