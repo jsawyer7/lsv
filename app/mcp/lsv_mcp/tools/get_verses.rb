@@ -2,14 +2,14 @@ module LsvMcp
   module Tools
     class GetVerses < LsvMcp::Tool
       MAX_VERSES = 200
-      MAX_WORD_VERSES = 30
+      MAX_WORD_VERSES = 60
 
       requires_scope 'scripture'
       tool_name 'get_verses'
       description 'Get the exact text of verses from one source, e.g. source MT_WLC, book GEN, chapter 1, verses 1-5. ' \
                   'Omit verse_from/verse_to for the whole chapter. Lettered verses (e.g. LXX 21:42a) are included in ' \
                   'the range of their number. With include_words, each verse also lists its words with lemma and ' \
-                  'morphology (Greek NT and Hebrew OT only; at most 30 verses).'
+                  'morphology (Greek NT and Hebrew OT only; at most 60 verses).'
       input_schema(
         properties: {
           source: { type: 'string', maxLength: 50, description: 'Source code from list_sources, e.g. GRK_SBLGNT.' },

@@ -1,7 +1,8 @@
 module LsvMcp
   module Tools
     class LookupDictionary < LsvMcp::Tool
-      MAX_SENSES = 15
+      # A safety ceiling, not a working limit: the largest entry has 157 senses.
+      MAX_SENSES = 200
       SENSES_SQL = Arel.sql(<<~SQL.squish).freeze
         (SELECT jsonb_agg(jsonb_build_object('glosses', COALESCE(s.value->'glosses', s.value->'raw_glosses'),
                                              'tags', s.value->'tags') ORDER BY s.n)
